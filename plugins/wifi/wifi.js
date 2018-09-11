@@ -34,26 +34,32 @@ function updateInfoText(option,retry){
 
 function CARDSTATEtoString(CARDSTATE){
 	switch(CARDSTATE) {
-		case defines.PLUGINS.wifi.CARDSTATE.CARDSTATE_NOT_INSERTED:
-			return "Not Inserted";
-		case defines.PLUGINS.wifi.CARDSTATE.CARDSTATE_NOT_ASSOCIATED:
-			return "Not Associated";
-		case defines.PLUGINS.wifi.CARDSTATE.CARDSTATE_ASSOCIATED:
-			return "Associated";
-		case defines.PLUGINS.wifi.CARDSTATE.CARDSTATE_AUTHENTICATED:
-			return "Authenticated";
-		case defines.PLUGINS.wifi.CARDSTATE.CARDSTATE_FCCTEST:
-			return "FCC Test";
-		case defines.PLUGINS.wifi.CARDSTATE.CARDSTATE_NOT_SDC:
-			return "Not Laird";
-		case defines.PLUGINS.wifi.CARDSTATE.CARDSTATE_DISABLED:
-			return "Disabled";
-		case defines.PLUGINS.wifi.CARDSTATE.CARDSTATE_ERROR:
-			return "Error";
-		case defines.PLUGINS.wifi.CARDSTATE.CARDSTATE_AP_MODE:
-			return "AP Mode";
+		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_UNKNOWN:
+			return "Unknown";
+		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_UNMANAGED:
+			return "Unmanaged";
+		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_UNAVAILABLE:
+			return "Unavailable";
+		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_DISCONNECTED:
+			return "Disconnected";
+		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_PREPARE:
+			return "Preparing";
+		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_NEED_AUTH:
+			return "Need Auth";
+		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_IP_CONFIG:
+			return "Connecting";
+		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_IP_CHECK:
+			return "IP Check";
+		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_SECONDARIES:
+			return "Secondaries";
+		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_ACTIVATED:
+			return "Activated";
+		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_DEACTIVATING:
+			return "Deactivating";
+		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_FAILED:
+			return "Failed";
 		default:
-			return "Unknown card state";
+			return "Unknown State";
 	}
 }
 
@@ -156,7 +162,8 @@ function onChangeSecurity(){
 }
 
 function updateStatus(){
-	var getStatusJSON = $.getJSON( "plugins/wifi/php/status.php", function( data ) {
+	var getStatusJSON = $.getJSON( "wifi_status", function( data ) {
+		consoleLog(data)
 		if (data.SESSION == defines.SDCERR.SDCERR_FAIL){
 			$("#loggout").addClass("hidden");
 			$("#loggin").removeClass("hidden");
@@ -169,8 +176,7 @@ function updateStatus(){
 		} else {
 			$("#status-success").removeClass("hidden");
 			$("#status-hardware").addClass("hidden");
-			var rssi = data.rssi;
-			var rssiMeter = rssi + 120;
+			var strength = data.strength.toString().concat("%");
 			var SSID_Array = [];
 
 			if (data.ssid != null){
@@ -183,7 +189,7 @@ function updateStatus(){
 			$('#cardState').html(CARDSTATEtoString(data.cardState));
 			$('#configName').html(data.configName);
 			$('#channel').html(data.channel);
-			$('#rssi').html(rssi);
+			$('#strength').html(strength);
 			$('#clientName').html(data.clientName);
 			$('#client_MAC').html(data.client_MAC);
 			$('#client_IP').html(data.client_IP);
@@ -195,14 +201,14 @@ function updateStatus(){
 			while (IPv6.hasChildNodes()) {
 				IPv6.removeChild(IPv6.lastChild);
 			}
-			if (data.IPv6.size > 0){
-				for (var i = 0; i < data.IPv6.size; i++) {
+			if (data.IPv6.length > 0){
+				for (var i = 0; i < data.IPv6.length; i++) {
 					var divAddress = document.createElement("div");
 					divAddress.className = "col-xs-6 col-sm-6 placeholder text-left";
 					var divStrong = document.createElement("strong");
 					var strongText = document.createTextNode("IPv6: ");
 					var divSpan = document.createElement("span");
-					var spanText = document.createTextNode(data.IPv6[i]);
+					var spanText = document.createTextNode(data.IPv6[i].address);
 					divAddress.appendChild(divStrong);
 					divStrong.appendChild(strongText);
 					divAddress.appendChild(divSpan);
@@ -217,21 +223,20 @@ function updateStatus(){
 			$('#DTIM').html(data.DTIM);
 
 			$("#progressbar").removeClass("progress-bar-danger progress-bar-warning progress-bar-success");
-			var rssiWidth = rssiMeter.toString().concat("%");
-			if (rssi == 0){ //Not connected
+			if (data.strength == 0){ //Not connected
 				$("#progressbar").addClass("progress-bar-danger");
-				$("#progressbar").css('width',rssiWidth);
-			} else if (rssi < -90){ //red
+				$("#progressbar").css('width',strength);
+			} else if (data.strength < 30){ //red
 				$("#progressbar").addClass("progress-bar-danger");
-				$("#progressbar").css('width',rssiWidth);
-			} else if (rssi < -70){ //yellow
+				$("#progressbar").css('width',strength);
+			} else if (data.strength < 50){ //yellow
 				$("#progressbar").addClass("progress-bar-warning");
-				$("#progressbar").css('width',rssiWidth);
+				$("#progressbar").css('width',strength);
 			} else { //green
 				$("#progressbar").addClass("progress-bar-success");
-				$("#progressbar").css('width',rssiWidth);
+				$("#progressbar").css('width',strength);
 			}
-			document.getElementById("progressbar").innerHTML = rssi + " dBm";
+			document.getElementById("progressbar").innerHTML = strength;
 		}
 	})
 	.fail(function(data) {
@@ -1465,7 +1470,7 @@ function getScan(retry){
 				}
 				cell1.innerHTML = msg["scanList"][scanItem].BSSID;
 				cell2.innerHTML = msg["scanList"][scanItem].channel;
-				cell3.innerHTML = msg["scanList"][scanItem].RSSI;
+				cell3.innerHTML = msg["scanList"][scanItem].Strength;
 				cell4.innerHTML = msg["scanList"][scanItem].security[0];
 				row.onclick=function(){
 					document.getElementById("newSSID").value = this.cells[0].innerText;
@@ -1827,8 +1832,8 @@ function clickAdvancedPage(retry){
 
 function getVersion(retry){
 	$.ajax({
-		url: "plugins/wifi/php/version.php",
-		type: "POST",
+		url: "version",
+		type: "GET",
 		contentType: "application/json",
 	})
 	.done(function(msg) {
@@ -1842,7 +1847,7 @@ function getVersion(retry){
 		document.getElementById("driver").innerHTML = msg.driver;
 		document.getElementById("firmware").innerHTML = msg.firmware;
 		document.getElementById("supplicant").innerHTML = msg.supplicant;
-		document.getElementById("php_sdk").innerHTML = msg.php_sdk;
+		document.getElementById("lrd_nm_webapp").innerHTML = msg.lrd_nm_webapp;
 		document.getElementById("build").innerHTML = msg.build;
 	})
 	.fail(function() {

@@ -46,8 +46,8 @@
 		var main_menu_list = [];
 		var mini_menu_list = [];
 		$.ajax({
-			url: "php/defines.php",
-			type: "POST",
+			url: "definitions",
+			type: "GET",
 			contentType: "application/json",
 			retry: 1,
 			error: function(){
@@ -90,7 +90,7 @@
 		}
 
 		function loadjscssfile(key, filetype){
-			var jsPath = "../plugins/" + key + "/" + key + "." + filetype;
+			var jsPath = "plugins/" + key + "/" + key + "." + filetype;
 			if (filetype=="js"){ //if jsPath is a external JavaScript file
 				var fileref=document.createElement('script');
 				fileref.setAttribute("type","text/javascript");
@@ -106,7 +106,7 @@
 		}
 
 		function addPlugin(retry, key, index){
-			var pluginPath = "../plugins/" + key + "/" + key + ".html";
+			var pluginPath = "plugins/" + key + "/" + key + ".html";
 			$.ajax({
 				url: pluginPath,
 				data: {},
@@ -524,7 +524,7 @@
 						<span class="icon-bar"></span>
 					</button>
 					<a class="navbar-brand hidden-xs hidden-sm" href="#">WebLCM</a>
-					<img class="navbar-brand img-responsive visible-xs-block visible-sm-block" alt="Brand" src="/assets/img/logo_white.png" width="90" height="34" style="padding-left:2px;padding-right:0px;">
+					<img class="navbar-brand img-responsive visible-xs-block visible-sm-block" alt="Brand" src="assets/img/logo_white.png" width="90" height="34" style="padding-left:2px;padding-right:0px;">
 					<span class="navbar-brand visible-xs-block visible-sm-block" style="padding-top:13px;padding-left:8px;padding-right:8px;">
 						<span id="returnDataNav" class="" style="padding-left:8px;padding-right:8px;" role="alert"></span>
 					</span>
@@ -569,7 +569,7 @@
 						</div>
 						<div id="helpSection" class="col-md-4 col-lg-4 hidden-xs hidden-sm placeholder">
 							<div id="returnDataHelp" class="" role="alert"></div>
-							<img src="/assets/img/logo.png" width="320" height="87" class="img-responsive" alt="Responsive image" style="border-radius: 0%" ondragstart="return false;">
+							<img src="assets/img/logo.png" width="320" height="87" class="img-responsive" alt="Responsive image" style="border-radius: 0%" ondragstart="return false;">
 							<h4>Need help?</h4>
 							<span id="helpText" class="text-muted">This page shows the current state of WiFi</span>
 							<br>
