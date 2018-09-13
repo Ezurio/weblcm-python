@@ -577,6 +577,7 @@ function updateSelectProfilePage(retry){
 			var friendly_connection_name = msg.profiles[UUID] + "(" + UUID + ")"
 			var option = document.createElement("option");
 			option.text = friendly_connection_name;
+			option.value = UUID;
 			x.add(option);
 			if (UUID == msg.currentConfig){
 				x.selectedIndex = i;
@@ -716,19 +717,15 @@ function showRenameProfile(){
 
 function removeProfile(){
 	var profileSelect = document.getElementById("profileSelect");
-	var profileSelect_Array = [];
-	for (var i = 0, len = profileSelect.value.length; i < len; i++) {
-		profileSelect_Array[i] = profileSelect.value.charCodeAt(i);
-	}
 	var activeProfile = document.getElementById("activeProfile");
-	var oldProfile = {
-		profileName: profileSelect_Array
+	var connection_to_remove = {
+		UUID: profileSelect.value
 	}
-	if (profileSelect.value != activeProfile.text){
+	if (profileSelect.value != activeProfile.value){
 		$.ajax({
-			url: "plugins/wifi/php/removeProfile.php",
+			url: "remove_connection",
 			type: "POST",
-			data: JSON.stringify(oldProfile),
+			data: JSON.stringify(connection_to_remove),
 			contentType: "application/json",
 		})
 		.done(function( msg ) {
@@ -739,7 +736,7 @@ function removeProfile(){
 			SDCERRtoString(msg.SDCERR);
 			if (document.getElementById("returnDataNav").innerHTML == "Success"){
 				for(var i = 0; i < profileSelect.options.length; i++) {
-					if (profileSelect.value == profileSelect.options[i].text){
+					if (profileSelect.value == profileSelect.options[i].value){
 						profileSelect.options.remove(i);
 						profileSelect.size = profileSelect.size - 1;
 					}

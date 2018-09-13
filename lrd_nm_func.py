@@ -155,6 +155,32 @@ class Connections(object):
 		return result
 
 @cherrypy.expose
+class Remove_Connection(object):
+	@cherrypy.tools.accept(media='application/json')
+	@cherrypy.tools.json_in()
+	@cherrypy.tools.json_out()
+	def POST(self):
+		result = {
+			'SDCERR': 1,
+			"SESSION": 0,
+		}
+		post_data = cherrypy.request.json
+		try:
+			bus = dbus.SystemBus()
+			proxy = bus.get_object(lrd_nm_def.NM_IFACE, lrd_nm_def.NM_SETTINGS_OBJ)
+			manager = dbus.Interface(proxy, lrd_nm_def.NM_SETTINGS_IFACE)
+			connection_for_deletion = manager.GetConnectionByUuid(post_data['UUID'])
+			connection_proxy = bus.get_object(lrd_nm_def.NM_IFACE, connection_for_deletion)
+			connection = dbus.Interface(connection_proxy, lrd_nm_def.NM_CONNECTION_IFACE)
+			connection.Delete()
+			result['SDCERR'] = 0
+
+		except Exception as e:
+			print(e)
+
+		return result
+
+@cherrypy.expose
 class Version(object):
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()

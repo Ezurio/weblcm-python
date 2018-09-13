@@ -35,6 +35,11 @@ if __name__ == '__main__':
 			'tools.response_headers.on': True,
 			'tools.response_headers.headers': [('Content-Type', 'application/json')],
 		},
+		'/remove_connection': {
+			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+			'tools.response_headers.on': True,
+			'tools.response_headers.headers': [('Content-Type', 'application/json')],
+		},
 		'/version': {
 			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
 			'tools.response_headers.on': True,
@@ -55,6 +60,7 @@ if __name__ == '__main__':
 	webapp.definitions = lrd_nm_func.Definitions()
 	webapp.wifi_status = lrd_nm_func.Wifi_Status()
 	webapp.connections = lrd_nm_func.Connections()
+	webapp.remove_connection = lrd_nm_func.Remove_Connection()
 	webapp.version = lrd_nm_func.Version()
 	cherrypy.quickstart(webapp, '/', conf)
 
