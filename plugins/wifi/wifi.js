@@ -560,8 +560,8 @@ function enableAutoProfileSubmit(){
 
 function updateSelectProfilePage(retry){
 	$.ajax({
-		url: "plugins/wifi/php/listProfile.php",
-		type: "POST",
+		url: "connections",
+		type: "GET",
 		contentType: "application/json",
 	})
 	.done(function( msg ) {
@@ -572,38 +572,19 @@ function updateSelectProfilePage(retry){
 		}
 		var x = document.getElementById("profileSelect");
 		x.size = String(msg.NumConfigs);
-		for (i = 0; i < msg.NumConfigs; i++) {
+		var i = 0;
+		for (var UUID in msg.profiles) {
+			var friendly_connection_name = msg.profiles[UUID] + "(" + UUID + ")"
 			var option = document.createElement("option");
-			option.text = msg.profiles[i];
+			option.text = friendly_connection_name;
 			x.add(option);
-			if (msg.profiles[i] == msg.currentConfig){
+			if (UUID == msg.currentConfig){
 				x.selectedIndex = i;
 				option.id = "activeProfile";
 				var helpText = document.getElementById("helpText").innerHTML;
-				$("#helpText").html(helpText + " Profile " + msg.currentConfig + " is the active profile.");
+				$("#helpText").html(helpText + " Profile " + friendly_connection_name + " is the active WiFi profile.");
 			}
-		}
-		if (msg.autoProfiles){
-			var table = document.getElementById("autoProfileTable").getElementsByTagName('tbody')[0];
-			var row, cell1, cell2, checkbox,button,buttonText;
-			for (var profile in msg.autoProfiles){
-				row = table.insertRow(-1);
-				cell1 = row.insertCell(0);
-				cell2 = row.insertCell(1);
-				checkbox = document.createElement('input');
-				cell1.innerHTML = profile;
-				checkbox.type = "checkbox";
-				checkbox.name = profile;
-				checkbox.value = profile;
-				checkbox.setAttribute("onchange","enableAutoProfileSubmit()");
-				if (msg.autoProfiles[profile] == true){
-					checkbox.checked = true;
-				}
-				cell2.appendChild(checkbox);
-			}
-			row.style.borderBottom="1px solid rgb(211, 211, 211)";
-			$("#activateButton").addClass("hidden");
-			$("#autoProfileDisplay").removeClass("hidden");
+			i++;
 		}
 	})
 	.fail(function() {

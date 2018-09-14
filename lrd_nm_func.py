@@ -112,6 +112,49 @@ class Wifi_Status(object):
 		return result
 
 @cherrypy.expose
+class Connections(object):
+	@cherrypy.tools.accept(media='application/json')
+	@cherrypy.tools.json_out()
+	def GET(self):
+		result = {
+			'SDCERR': 1,
+			"SESSION": 0,
+			'profiles': {},
+		}
+		try:
+			bus = dbus.SystemBus()
+			proxy = bus.get_object(lrd_nm_def.NM_IFACE, lrd_nm_def.NM_OBJ)
+			manager = dbus.Interface(proxy, lrd_nm_def.NM_IFACE)
+
+			wifi_device = manager.GetDeviceByIpIface(lrd_nm_def.WIFI_DEVICE_NAME)
+			dev_proxy = bus.get_object(lrd_nm_def.NM_IFACE, wifi_device)
+			prop_iface = dbus.Interface(dev_proxy, lrd_nm_def.DBUS_PROP_IFACE)
+
+			if prop_iface.Get(lrd_nm_def.NM_DEVICE_IFACE, "State") > lrd_nm_def.NM_DBUS_API_TYPES['NMDeviceState']['NM_DEVICE_STATE_UNAVAILABLE']:
+				result['SDCERR'] = 0
+
+			active_connection = prop_iface.Get(lrd_nm_def.NM_DEVICE_IFACE, "ActiveConnection")
+			active_connection_proxy = bus.get_object(lrd_nm_def.NM_IFACE, active_connection)
+			active_connection_prop_iface = dbus.Interface(active_connection_proxy, lrd_nm_def.DBUS_PROP_IFACE)
+			result['currentConfig'] = active_connection_prop_iface.Get(lrd_nm_def.NM_CONNECTION_ACTIVE_IFACE, "Uuid")
+
+			settings_proxy = bus.get_object(lrd_nm_def.NM_IFACE, lrd_nm_def.NM_SETTINGS_OBJ)
+			settings_manager = dbus.Interface(settings_proxy, lrd_nm_def.NM_SETTINGS_IFACE)
+			connections = settings_manager.ListConnections()
+			result['length'] = len(connections)
+			for c in connections:
+				connection_proxy = bus.get_object(lrd_nm_def.NM_IFACE, c)
+				connection = dbus.Interface(connection_proxy, lrd_nm_def.NM_CONNECTION_IFACE)
+				connection_settings = connection.GetSettings()
+				if connection_settings['connection']['type'] == '802-11-wireless':
+					result['profiles'][connection_settings['connection']['uuid']] = connection_settings['connection']['id']
+
+		except Exception as e:
+			print(e)
+
+		return result
+
+@cherrypy.expose
 class Version(object):
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()

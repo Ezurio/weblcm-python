@@ -4,7 +4,10 @@ LRD_NM_WEBAPP_VERSION = '0.0.0.0'
 WIFI_DEVICE_NAME = 'wlan0'
 
 DBUS_PROP_IFACE =				'org.freedesktop.DBus.Properties'
+
 NM_OBJ =						'/org/freedesktop/NetworkManager'
+NM_SETTINGS_OBJ =				'/org/freedesktop/NetworkManager/Settings'
+
 NM_IFACE =						'org.freedesktop.NetworkManager'
 NM_DEVICE_IFACE =				'org.freedesktop.NetworkManager.Device'
 NM_SETTINGS_IFACE =				'org.freedesktop.NetworkManager.Settings'
