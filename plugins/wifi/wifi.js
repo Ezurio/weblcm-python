@@ -859,9 +859,10 @@ function clickAddProfilePage(retry) {
 			$('#main_section').html(data);
 			clearReturnData();
 			var profile = {
-				userCert:"",
-				CACert:"",
-				PACFileName:"",
+				client_cert:"",
+				private_key:"",
+				ca_cert:"",
+				pac_file:"",
 			}
 			getCerts(profile,0);
 			$("li").removeClass("active");
@@ -1555,12 +1556,14 @@ function uploadCert(retry){
 }
 
 function generateCertList(profile,certs){
-	var userCert_id = document.getElementById("userCert");
-	var CAcert_id = document.getElementById("CACert");
-	var PACFilename_id = document.getElementById("PACFilename");
-	var userCert_index = userCert_id.length;
-	var CAcert_index = CAcert_id.length;
-	var PACFilename_index = PACFilename_id.length;
+	var client_cert_id = document.getElementById("client-cert");
+	var private_key_id = document.getElementById("private-key");
+	var ca_cert_id = document.getElementById("ca-cert");
+	var pac_file_id = document.getElementById("pac-file");
+	var client_cert_index = client_cert_id.length;
+	var private_key_index = private_key_id.length;
+	var ca_cert_index = ca_cert_id.length;
+	var pac_file_index = pac_file_id.length;
 
 	function exists(id,option){
 		var exists = false;
@@ -1577,41 +1580,50 @@ function generateCertList(profile,certs){
 	}
 
 	for (var key in certs) {
-		var option_userCert = document.createElement("option");
-		var option_CACert = document.createElement("option");
-		var option_PACFile = document.createElement("option");
-		option_userCert.text = certs[key];
-		option_CACert.text = certs[key];
-		option_PACFile.text = certs[key];
+		var option_client_cert = document.createElement("option");
+		var option_private_key = document.createElement("option");
+		var option_ca_cert = document.createElement("option");
+		var option_pac_file = document.createElement("option");
+		option_client_cert.text = certs[key];
+		option_private_key.text = certs[key];
+		option_ca_cert.text = certs[key];
+		option_pac_file.text = certs[key];
 		// Add unique certs
-		if (!exists("userCert",certs[key])){
-			userCert_id.add(option_userCert);
-			if(option_userCert.text === profile.userCert) {
-				userCert_id.selectedIndex = userCert_index;
+		if (!exists("client_cert",certs[key])){
+			client_cert_id.add(option_client_cert);
+			if(option_client_cert.text === profile.client_cert) {
+				client_cert_id.selectedIndex = userCert_index;
 			}
-			userCert_index++;
+			client_cert_index++;
 		}
-		if (!exists("CACert",certs[key])){
-			CAcert_id.add(option_CACert);
-			if(option_CACert.text === profile.CACert) {
-				CAcert_id.selectedIndex = CAcert_index;
+		if (!exists("private_key",certs[key])){
+			private_key_id.add(option_private_key);
+			if(option_private_key.text === profile.private_key) {
+				private_key_id.selectedIndex = private_key_index;
 			}
-			CAcert_index++;
+			client_cert_index++;
 		}
-		if (!exists("PACFilename",certs[key])){
-			PACFilename_id.add(option_PACFile);
-			if(option_PACFile.text === profile.PACFileName) {
-				PACFilename_id.selectedIndex = PACFilename_index;
+		if (!exists("ca_cert",certs[key])){
+			ca_cert_id.add(option_ca_cert);
+			if(option_ca_cert.text === profile.ca_cert) {
+				ca_cert_id.selectedIndex = ca_cert_index;
 			}
-			PACFilename_index++;
+			ca_cert_index++;
+		}
+		if (!exists("pac_file",certs[key])){
+			pac_file_id.add(option_pac_file);
+			if(option_pac_file.text === profile.pac_file) {
+				pac_file_id.selectedIndex = pac_file_index;
+			}
+			pac_file_index++;
 		}
 	}
 }
 
 function getCerts(profile,retry){
 	$.ajax({
-		url: "plugins/wifi/php/getCerts.php",
-		type: "POST",
+		url: "get_certificates",
+		type: "GET",
 		contentType: "application/json",
 	})
 	.done(function(msg) {

@@ -1,6 +1,7 @@
 import cherrypy
 import dbus
 import subprocess
+import os
 import lrd_nm_def
 
 @cherrypy.expose
@@ -151,6 +152,35 @@ class Connections(object):
 
 		except Exception as e:
 			print(e)
+
+		return result
+
+@cherrypy.expose
+class Get_Certificates(object):
+	@cherrypy.tools.accept(media='application/json')
+	@cherrypy.tools.json_out()
+	def GET(self):
+		result = {
+			'SDCERR': 0,
+			"SESSION": 0,
+			"certs": {},
+		}
+
+		cert_directory = "/etc/ssl"
+		supported_certs = ('.cer','.der','.pem','.pfx','.pac','.p7b')
+		certs = []
+		i = 1
+
+		with os.scandir(cert_directory) as listOfEntries:
+			for entry in listOfEntries:
+				if entry.is_file():
+					if entry.name.lower().endswith(supported_certs):
+						certs.append(entry.name)
+
+		certs.sort()
+		for cert in certs:
+			result['certs'][i] = cert
+			i += 1
 
 		return result
 
