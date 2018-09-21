@@ -80,79 +80,81 @@ function onChangePowersave(){
 }
 
 function onChangeSecurity(){
-	var wepType = parseInt(document.getElementById("wepType").value);
-	var eapType = parseInt(document.getElementById("eapType").value);
+	var authalg = document.getElementById("auth-alg").value;
+	var keymgmt = document.getElementById("key-mgmt").value;
+	var eap = document.getElementById("eap").value;
 	function clearCredsDisplay(){
 		$("#certDisplay").addClass("hidden");
 		$("#eapTypeDisplay").addClass("hidden");
+		$("#phase2-auth-display").addClass("hidden");
 		$("#wepIndexDisplay").addClass("hidden");
 		$("#wepTypeOnDisplay").addClass("hidden");
 		$("#pskDisplay").addClass("hidden");
-		$("#userNameDisplay").addClass("hidden");
+		$("#leapUserNameDisplay").addClass("hidden");
+		$("#leapPassWordDisplay").addClass("hidden");
+		$("#identityDisplay").addClass("hidden");
 		$("#passWordDisplay").addClass("hidden");
+		$("#private-key-display").addClass("hidden");
+		$("#private-key-password-display").addClass("hidden");
 		$("#userCertDisplay").addClass("hidden");
 		$("#userCertPasswordDisplay").addClass("hidden");
 		$("#CACertDisplay").addClass("hidden");
+		$("#CACertPasswordDisplay").addClass("hidden");
 		$("#PACFilenameDisplay").addClass("hidden");
 		$("#PACPasswordDisplay").addClass("hidden");
 	}
+	// FIXME Verify settings
 	function displayProperEAPCreds(){
 		$("#eapTypeDisplay").removeClass("hidden");
-		$("#userNameDisplay").removeClass("hidden");
-		if (!(eapType == defines.PLUGINS.wifi.EAPTYPE.EAP_EAPTLS || eapType == defines.PLUGINS.wifi.EAPTYPE.EAP_PEAPTLS)){
+		// FIXME is this valid for all EAP types
+		$("#phase2-auth-display").removeClass("hidden");
+
+		if (eap == "fast"){
+			$("#identityDisplay").removeClass("hidden");
 			$("#passWordDisplay").removeClass("hidden");
-		} else {
+			$("#PACFilenameDisplay").removeClass("hidden");
+		} else if (eap == "tls"){
+			$("#identityDisplay").removeClass("hidden");
+			$("#passWordDisplay").removeClass("hidden");
 			$("#userCertDisplay").removeClass("hidden");
 			$("#userCertPasswordDisplay").removeClass("hidden");
-		}
-		if (eapType > defines.PLUGINS.wifi.EAPTYPE.EAP_EAPFAST && eapType < defines.PLUGINS.wifi.EAPTYPE.EAP_WAPI_CERT){
-			$("#certDisplay").removeClass("hidden");
+			$("#private-key-display").removeClass("hidden");
+			$("#private-key-password-display").removeClass("hidden");
 			$("#CACertDisplay").removeClass("hidden");
-		}
-		if (eapType == defines.PLUGINS.wifi.EAPTYPE.EAP_EAPFAST){
-			$("#certDisplay").removeClass("hidden");
-			$("#PACFilenameDisplay").removeClass("hidden");
-			$("#PACPasswordDisplay").removeClass("hidden");
+			$("#CACertPasswordDisplay").removeClass("hidden");
+		} else if (eap == "ttls"){
+			$("#identityDisplay").removeClass("hidden");
+			$("#passWordDisplay").removeClass("hidden");
+			$("#CACertDisplay").removeClass("hidden");
+			$("#CACertPasswordDisplay").removeClass("hidden");
+		} else {
+			$("#identityDisplay").removeClass("hidden");
+			$("#passWordDisplay").removeClass("hidden");
 		}
 	}
-	switch (wepType){
-		case defines.PLUGINS.wifi.WEPTYPE.WEP_OFF:
+	switch (keymgmt){
+		case "none":
 			clearCredsDisplay();
 			break;
-		case defines.PLUGINS.wifi.WEPTYPE.WEP_ON:
+		case "static":
 			clearCredsDisplay();
 			$("#wepIndexDisplay").removeClass("hidden");
 			$("#wepTypeOnDisplay").removeClass("hidden");
 			break;
-		case defines.PLUGINS.wifi.WEPTYPE.WEP_AUTO:
+		case "ieee8021x":
 			clearCredsDisplay();
-			displayProperEAPCreds();
+			if (authalg == "leap"){
+				$("#leapUserNameDisplay").removeClass("hidden");
+				$("#leapPassWordDisplay").removeClass("hidden");
+			} else {
+				displayProperEAPCreds();
+			}
 			break;
-		case defines.PLUGINS.wifi.WEPTYPE.WPA_PSK:
-			clearCredsDisplay();
-			$("#pskDisplay").removeClass("hidden");
-			break;
-		case defines.PLUGINS.wifi.WEPTYPE.WPA_TKIP:
-			clearCredsDisplay();
-			displayProperEAPCreds();
-			break;
-		case defines.PLUGINS.wifi.WEPTYPE.WPA2_PSK:
+		case "wpa-psk":
 			clearCredsDisplay();
 			$("#pskDisplay").removeClass("hidden");
 			break;
-		case defines.PLUGINS.wifi.WEPTYPE.WPA2_AES:
-		case defines.PLUGINS.wifi.WEPTYPE.CCKM_TKIP:
-		case defines.PLUGINS.wifi.WEPTYPE.WEP_CKIP:
-		case defines.PLUGINS.wifi.WEPTYPE.WEP_AUTO_CKIP:
-		case defines.PLUGINS.wifi.WEPTYPE.CCKM_AES:
-			clearCredsDisplay();
-			displayProperEAPCreds();
-			break;
-		case defines.PLUGINS.wifi.WEPTYPE.WPA_PSK_AES:
-			clearCredsDisplay();
-			$("#pskDisplay").removeClass("hidden");
-			break;
-		case defines.PLUGINS.wifi.WEPTYPE.WPA_AES:
+		case "wpa-eap":
 			clearCredsDisplay();
 			displayProperEAPCreds();
 			break;
@@ -293,7 +295,7 @@ function clickStatusPage(retry) {
 function checkProfileValues(){
 	var result = true;
 	pspDelay = document.getElementById("pspDelay");
-	wepType = document.getElementById("wepType");
+	keymgmt = document.getElementById("key-mgmt");
 	psk = document.getElementById("psk");
 
 	if (!(parseInt(pspDelay.value) >= pspDelay.min && parseInt(pspDelay.value) <= pspDelay.max)){
@@ -302,21 +304,13 @@ function checkProfileValues(){
 	} else {
 		$("#pspDelayDisplay").removeClass("has-error");
 	}
-	switch(parseInt(wepType.value)) {
-		case defines.PLUGINS.wifi.WEPTYPE.WPA_PSK:
-		case defines.PLUGINS.wifi.WEPTYPE.WPA2_PSK:
-		case defines.PLUGINS.wifi.WEPTYPE.WPA_PSK_AES:
-		case defines.PLUGINS.wifi.WEPTYPE.WPA2_PSK_TKIP:
-			if (!(psk.value.length >= 8 && psk.value.length <= 64)){
-				$("#pskDisplay").addClass("has-error");
-				result = false;
-			} else {
-				$("#pskDisplay").removeClass("has-error");
-			}
-			break;
-		default:
+	if (keymgmt.value == "wpa-psk") {
+		if (!(psk.value.length >= 8 && psk.value.length <= 64)){
+			$("#pskDisplay").addClass("has-error");
+			result = false;
+		} else {
 			$("#pskDisplay").removeClass("has-error");
-			break;
+		}
 	}
 
 	return result;
@@ -819,8 +813,8 @@ function clickProfileEditPage(retry) {
 
 function getAddProfileList(retry){
 	$.ajax({
-		url: "plugins/wifi/php/listProfile.php",
-		type: "POST",
+		url: "connections",
+		type: "GET",
 		contentType: "application/json",
 	})
 	.done(function( msg ) {
@@ -828,10 +822,6 @@ function getAddProfileList(retry){
 		if (msg.SESSION == defines.SDCERR.SDCERR_FAIL){
 			expiredSession();
 			return;
-		}
-		if (msg.NumConfigs == defines.PLUGINS.wifi.DEFINES.MAX_CFGS){
-			document.getElementById("addNewProfile").innerHTML = "Max number of profiles exist";
-			document.getElementById("addNewProfile").disabled=true;
 		}
 	})
 	.fail(function() {
@@ -876,7 +866,6 @@ function clickAddProfilePage(retry) {
 			expiredSession();
 			return;
 		}
-		getAddProfileList(0);
 	})
 	.fail(function() {
 		consoleLog("Error, couldn't get addProfile.html.. retrying");
@@ -898,67 +887,68 @@ function updateAddProfile(){
 }
 
 function addProfile(){
-	profileName_Value = document.getElementById("profileName").value.trim();
-	var profileName_Array = [];
-	for (var i = 0, len = profileName_Value.length; i < len; i++) {
-		profileName_Array[i] = profileName_Value.charCodeAt(i);
+	id = document.getElementById("id").value.trim();
+	var id_array = [];
+	for (var i = 0, len = id.length; i < len; i++) {
+		id_array[i] = id.charCodeAt(i);
 	}
-	SSID_Value = document.getElementById("SSID").value;
-	var CharCode_Array = [];
-	for (var i = 0, len = SSID_Value.length; i < len; i++) {
-		CharCode_Array[i] = SSID_Value.charCodeAt(i);
+	ssid = document.getElementById("ssid").value;
+	var ssid_array = [];
+	for (var i = 0, len = ssid.length; i < len; i++) {
+		ssid_array[i] = ssid.charCodeAt(i);
 	}
-	var txPower_value = document.getElementById("txPower").value;
-	var txPower = parseInt(txPower_value);
-	if (txPower_value.toLowerCase() == "auto" || txPower <= 0){
-		txPower = 0;
-		document.getElementById("txPower").value = "Auto";
-	} else if (txPower > defines.PLUGINS.wifi.MAX_TX_POWER.MAX_MW) {
-		if (defines.PLUGINS.wifi.MAX_TX_POWER.MAX_MW != 0){
-			CustomErrMsg("TX Power is out of range");
-			return;
-		}
+	var txpower = document.getElementById("tx-power").value;
+	var txpower_int = parseInt(txpower);
+	if (txpower.toLowerCase() == "auto" || txpower_int <= 0){
+		txpower = 0;
+		document.getElementById("tx-power").value = "Auto";
 	}
-	PSK_Value = document.getElementById("psk").value;
-	var PSK_Array = [];
-	for (var i = 0, len = PSK_Value.length; i < len; i++) {
-		PSK_Array[i] = PSK_Value.charCodeAt(i);
+	psk = document.getElementById("psk").value;
+	var psk_array = [];
+	for (var i = 0, len = psk.length; i < len; i++) {
+		psk_array[i] = psk.charCodeAt(i);
 	}
-	if (profileName_Value != ""){
-		var newProfile = {
-			profileName: profileName_Array,
-			SSID: CharCode_Array,
+	if (id != ""){
+		var new_connection = {
+			id: id_array,
+			ssid: ssid_array,
 			clientName: document.getElementById("clientName").value,
-			txPower: txPower,
-			authType: parseInt(document.getElementById("authType").value),
-			eapType: parseInt(document.getElementById("eapType").value),
-			wepType: parseInt(document.getElementById("wepType").value),
-			radioMode: parseInt(document.getElementById("radioMode").value),
-			powerSave: parseInt(document.getElementById("powerSave").value),
+			txpower: txpower,
+			authalg: document.getElementById("auth-alg").value,
+			leapusername: document.getElementById("leap-username").value,
+			leappassword: document.getElementById("leap-password").value,
+			eap: document.getElementById("eap").value,
+			//FIXME phase2auth should be a checkbox, not limited to one value
+			phase2auth: document.getElementById("phase2-auth").value,
+			keymgmt: document.getElementById("key-mgmt").value,
+			band: document.getElementById("band").value,
+			powersave: parseInt(document.getElementById("powersave").value),
 			pspDelay: parseInt(document.getElementById("pspDelay").value),
-			wepIndex: parseInt(document.getElementById("wepIndex").value),
-			index1: document.getElementById("index1").value,
-			index2: document.getElementById("index2").value,
-			index3: document.getElementById("index3").value,
-			index4: document.getElementById("index4").value,
-			psk: PSK_Array,
-			userName: document.getElementById("userName").value,
-			passWord: document.getElementById("passWord").value,
-			userCert: document.getElementById("userCert").value,
-			userCertPassword: document.getElementById("userCertPassword").value,
-			CACert: document.getElementById("CACert").value,
-			PACFilename: document.getElementById("PACFilename").value,
-			PACPassword: document.getElementById("PACPassword").value,
+			weptxkeyidx: parseInt(document.getElementById("wep-tx-keyidx").value),
+			wepkey0: document.getElementById("wep-key0").value,
+			wepkey1: document.getElementById("wep-key1").value,
+			wepkey2: document.getElementById("wep-key2").value,
+			wepkey3: document.getElementById("wep-key3").value,
+			psk: psk_array,
+			identity: document.getElementById("identity").value,
+			password: document.getElementById("password-eap").value,
+			clientcert: document.getElementById("client-cert").value,
+			clientcertpassword: document.getElementById("client-cert-password").value,
+			cacert: document.getElementById("ca-cert").value,
+			cacertpassword: document.getElementById("ca-cert-password").value,
+			privatekey: document.getElementById("private-key").value,
+			privatekeypassword: document.getElementById("private-key-password").value,
+			pacfile: document.getElementById("pac-file").value,
 		}
-		consoleLog(newProfile);
+		consoleLog(new_connection);
 		if (!checkProfileValues()){
 			CustomErrMsg("Invalid Value");
 			return;
 		}
 		$.ajax({
-			url: "plugins/wifi/php/addProfile.php",
+			url: "add_connection",
 			type: "POST",
-			data: JSON.stringify(newProfile),
+			data: JSON.stringify(new_connection),
 			contentType: "application/json",
 		})
 		.done(function( msg ) {
@@ -969,7 +959,6 @@ function addProfile(){
 				return;
 			}
 			SDCERRtoString(msg.SDCERR);
-			getAddProfileList(0);
 			if (msg.SDCERR == defines.SDCERR.SDCERR_SUCCESS){
 				clearProfileInts();
 			}

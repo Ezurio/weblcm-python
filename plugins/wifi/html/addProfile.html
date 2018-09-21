@@ -8,158 +8,176 @@
 	<form class="col-xs-12 col-sm-12 placeholder" style="height:900px;overflow-y:auto">
 		<div class="form-group">
 			<div class="form-group">
-				<label class="pull-left" for="profileName">Profile Name:</label>
-				<input type="text" class="form-control" id="profileName" maxlength="32">
+				<label class="pull-left" for="id">Profile Name:</label>
+				<input type="text" class="form-control" id="id" maxlength="32">
 			</div>
 			<div class="form-group" id="SSIDDisplay">
-				<label class="pull-left" for="SSID">SSID:</label>
-				<input type="text" class="form-control" id="SSID" maxlength="32">
+				<label class="pull-left" for="ssid">SSID:</label>
+				<input type="text" class="form-control" id="ssid" maxlength="32">
 			</div>
 			<div class="collapse" id="collapseAdvanced">
-			<div class="form-group">
-				<label class="pull-left" for="clientName">Client Name:</label>
-				<input type="text" class="form-control" id="clientName" maxlength="16">
-			</div>
-			<div class="form-group">
-				<label class="pull-left" for="txPower">TX Power:</label>
-				<input type="text" class="form-control" id="txPower" value="Auto">
-			</div>
-			<div class="form-group">
-				<label class="pull-left" for="authType">Auth Type:</label>
-				<select class="form-control" id="authType">
-					<option value="0">Open</option>
-					<option value="1">Shared</option>
-					<option value="2">EAP</option>
-				</select>
-			</div>
-			<div class="form-group">
-				<label class="pull-left" for="radioMode">Radio Mode:</label>
-				<select class="form-control" id="radioMode">
-					<option value="0">B</option>
-					<option value="1">BG</option>
-					<option value="2">G</option>
-					<option value="4">A</option>
-					<option value="5">ABG</option>
-					<option value="6">BGA</option>
-					<option value="12">BGN</option>
-					<option value="8">GN</option>
-					<option value="9">AN</option>
-					<option value="10" selected>ABGN</option>
-					<option value="11">BGAN</option>
-					<option value="7">adhoc</option>
-				</select>
-			</div>
-			<div class="form-group">
-				<label class="pull-left" for="powerSave">Power Save:</label>
-				<select onchange="onChangePowersave()" class="form-control" id="powerSave">
-					<option value="0">Off</option>
-					<option value="1">Max</option>
-					<option value="2" selected>Fast</option>
-				</select>
-			</div>
-			<div class="form-group" id="pspDelayDisplay">
-				<label class="pull-left" for="pspDelay">PSP Delay:</label>
-				<input type="number" class="form-control" id="pspDelay" min="10" max="500" value="200">
-			</div>
-			<div class="form-group">
-				<label class="pull-left" for="wepType">WEP Type:</label>
-				<select class="form-control" id="wepType" onchange="onChangeSecurity()">
-					<option value="0">None</option>
-					<option value="1">WEP</option>
-					<option value="2">WEP-EAP</option>
-					<option value="3">WPA-PSK</option>
-					<option value="4">WPA-TKIP</option>
-					<option value="5">WPA2-PSK</option>
-					<option value="6">WPA2-AES</option>
-					<option value="7">CCKM-TKIP</option>
-					<option value="10">CCKM-AES</option>
-					<option value="11">WPA-PSK-AES</option>
-					<option value="12">WPA-AES</option>
-				</select>
-			</div>
-			<div class="form-group hidden" id="eapTypeDisplay">
-				<label class="pull-left" for="eapType">EAP Type:</label>
-				<select class="form-control" id="eapType" onchange="onChangeSecurity()">
-					<option value="1">LEAP</option>
-					<option value="2">EAP-FAST</option>
-					<option value="3" selected>PEAP-MSCHAPv2</option>
-					<option value="4">PEAP-GTC</option>
-					<option value="5">EAP-TLS</option>
-					<option value="6">EAP-TTLS</option>
-					<option value="7">PEAP-TLS</option>
-				</select>
-			</div>
-			<div class="form-group hidden" id="wepIndexDisplay">
-				<label class="pull-left" for="wepIndex">WEP Key Index:</label>
-				<select class="form-control" id="wepIndex">
-					<option value="1">1</option>
-					<option value="2">2</option>
-					<option value="3">3</option>
-					<option value="4">4</option>
-				</select>
-			</div>
-			<div class="form-group hidden" id="wepTypeOnDisplay">
-				<label class="pull-left" for="index1">Index 1:</label>
-				<input type="text" class="form-control" id="index1">
-				<label class="pull-left" for="index2">Index 2:</label>
-				<input type="text" class="form-control" id="index2">
-				<label class="pull-left" for="index3">Index 3:</label>
-				<input type="text" class="form-control" id="index3">
-				<label class="pull-left" for="index4">Index 4:</label>
-				<input type="text" class="form-control" id="index4">
-			</div>
-			<div class="form-group hidden" id="pskDisplay">
-				<label class="pull-left" for="psk">PreShared Key:</label>
-				<input type="text" class="form-control" id="psk">
-			</div>
-			<div class="form-group hidden" id="userNameDisplay">
-				<label class="pull-left" for="userName">Username:</label>
-				<input type="text" class="form-control" id="userName">
-			</div>
-			<div class="form-group hidden" id="passWordDisplay">
-				<label class="pull-left" for="passWord">Password:</label>
-				<input type="password" class="form-control" id="passWord">
-			</div>
-			<div id="certDisplay" class="hidden">
 				<div class="form-group">
-					<label class="pull-left">Upload Certificate to device:</label>
+					<label class="pull-left" for="clientName">Client Name:</label>
+					<input type="text" class="form-control" id="clientName" maxlength="16">
 				</div>
-				<div class="form-group col-lg-12">
-					<label class="btn btn-default btn-file">Select Certificate
-						<input id="fileToUpload" type="file" onchange="allowCertUpload($(this).val());" style="display:none;" hidden>
-					</label>
-					<span class="" id="upload-file-info"></span>
-					<a id="submitCertButton" onclick="uploadCert(0)" role="button" class="btn btn-default disabled">Upload</a>
-					<span id="certSuccess" class="glyphicon glyphicon-ok hidden" aria-hidden="true"></span>
-					<span id="certFail" class="glyphicon glyphicon-remove hidden" aria-hidden="true"></span>
+				<div class="form-group">
+					<label class="pull-left" for="tx-power">TX Power:</label>
+					<input type="text" class="form-control" id="tx-power" value="Auto">
 				</div>
-			</div>
-			<div class="form-group hidden" id="userCertDisplay">
-				<label class="pull-left" for="userCert">User Cert:</label>
-				<select onchange="onChangeSubmit()" class="form-control" id="userCert">
-					<option value="" selected>None</option>
-				</select>
-			</div>
-			<div class="form-group hidden" id="userCertPasswordDisplay">
-				<label class="pull-left" for="userCertPassword">User Cert Password:</label>
-				<input type="password" class="form-control" id="userCertPassword">
-			</div>
-			<div class="form-group hidden" id="CACertDisplay">
-				<label class="pull-left" for="CACert">CA Cert:</label>
-				<select onchange="onChangeSubmit()" class="form-control" id="CACert">
-					<option value="" selected>None</option>
-				</select>
-			</div>
-			<div class="form-group hidden" id="PACFilenameDisplay">
-				<label class="pull-left" for="PACFilename">PAC Filename:</label>
-				<select onchange="onChangeSubmit()" class="form-control" id="PACFilename">
-					<option value="" selected>None</option>
-				</select>
-			</div>
-			<div class="form-group hidden" id="PACPasswordDisplay">
-				<label class="pull-left" for="PACPassword">PAC Password:</label>
-				<input type="password" class="form-control" id="PACPassword">
-			</div>
+				<div class="form-group">
+					<label class="pull-left" for="band">Radio Band:</label>
+					<select class="form-control" id="band">
+						<option value="all">All</option>
+						<option value="a">A</option>
+						<option value="bg">BG</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label class="pull-left" for="powersave">Power Save:</label>
+					<select onchange="onChangePowersave()" class="form-control" id="powersave">
+						<option value="0" selected>Default</option>
+						<option value="1">Ignore</option>
+						<option value="2">Disable</option>
+						<option value="3">Enable</option>
+					</select>
+				</div>
+				<div class="form-group" id="pspDelayDisplay">
+					<label class="pull-left" for="pspDelay">PSP Delay:</label>
+					<input type="number" class="form-control" id="pspDelay" min="10" max="500" value="200">
+				</div>
+				<div class="form-group">
+					<label class="pull-left" for="auth-alg">Authentication Algorithm:</label>
+					<select class="form-control" id="auth-alg" onchange="onChangeSecurity()">
+						<option value="open">Open</option>
+						<option value="shared">Shared</option>
+						<option value="leap">LEAP</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label class="pull-left" for="key-mgmt">WEP Type:</label>
+					<select class="form-control" id="key-mgmt" onchange="onChangeSecurity()">
+						<option value="none">None</option>
+						<option value="static">Static WEP</option>
+						<option value="ieee8021x">Dynamic WEP</option>
+						<option value="wpa-psk">infrastructure WPA-PSK</option>
+						<option value="wpa-eap">WPA-Enterprise</option>
+					</select>
+				</div>
+				<div class="form-group hidden" id="eapTypeDisplay">
+					<label class="pull-left" for="eap">EAP Method:</label>
+					<select class="form-control" id="eap" onchange="onChangeSecurity()">
+						<option value="leap">LEAP</option>
+						<option value="md5">MD5</option>
+						<option value="tls">TLS</option>
+						<option value="peap" selected>PEAP</option>
+						<option value="ttls">TTLS</option>
+						<option value="pwd">PWD</option>
+						<option value="fast">FAST</option>
+					</select>
+				</div>
+				<div class="form-group hidden" id="wepIndexDisplay">
+					<label class="pull-left" for="wep-tx-keyidx">WEP Key Index:</label>
+					<select class="form-control" id="wep-tx-keyidx">
+						<option value="1">1</option>
+						<option value="2">2</option>
+						<option value="3">3</option>
+						<option value="4">4</option>
+					</select>
+				</div>
+				<div class="form-group hidden" id="wepTypeOnDisplay">
+					<label class="pull-left" for="wep-key0">Index 1:</label>
+					<input type="text" class="form-control" id="wep-key0">
+					<label class="pull-left" for="wep-key1">Index 2:</label>
+					<input type="text" class="form-control" id="wep-key1">
+					<label class="pull-left" for="wep-key2">Index 3:</label>
+					<input type="text" class="form-control" id="wep-key2">
+					<label class="pull-left" for="wep-key3">Index 4:</label>
+					<input type="text" class="form-control" id="wep-key3">
+				</div>
+				<div class="form-group hidden" id="pskDisplay">
+					<label class="pull-left" for="psk">PreShared Key:</label>
+					<input type="text" class="form-control" id="psk">
+				</div>
+				<div class="form-group hidden" id="leapUserNameDisplay">
+					<label class="pull-left" for="leap-username">LEAP Username:</label>
+					<input type="text" class="form-control" id="leap-username">
+				</div>
+				<div class="form-group hidden" id="leapPassWordDisplay">
+					<label class="pull-left" for="leap-password">LEAP Password:</label>
+					<input type="password" class="form-control" id="leap-password">
+				</div>
+				<div class="form-group hidden" id="identityDisplay">
+					<label class="pull-left" for="identity">Identity:</label>
+					<input type="text" class="form-control" id="identity">
+				</div>
+				<div class="form-group hidden" id="passWordDisplay">
+					<label class="pull-left" for="password-eap">Password:</label>
+					<input type="password" class="form-control" id="password-eap">
+				</div>
+				<div id="certDisplay" class="hidden">
+					<div class="form-group">
+						<label class="pull-left">Upload Certificate to device:</label>
+					</div>
+					<div class="form-group col-lg-12">
+						<label class="btn btn-default btn-file">Select Certificate
+							<input id="fileToUpload" type="file" onchange="allowCertUpload($(this).val());" style="display:none;" hidden>
+						</label>
+						<span class="" id="upload-file-info"></span>
+						<a id="submitCertButton" onclick="uploadCert(0)" role="button" class="btn btn-default disabled">Upload</a>
+						<span id="certSuccess" class="glyphicon glyphicon-ok hidden" aria-hidden="true"></span>
+						<span id="certFail" class="glyphicon glyphicon-remove hidden" aria-hidden="true"></span>
+					</div>
+				</div>
+				<div class="form-group hidden" id="userCertDisplay">
+					<label class="pull-left" for="client-cert">Client Cert:</label>
+					<select onchange="onChangeSubmit()" class="form-control" id="client-cert">
+						<option value="" selected>None</option>
+					</select>
+				</div>
+				<div class="form-group hidden" id="userCertPasswordDisplay">
+					<label class="pull-left" for="client-cert-password">Client Cert Password:</label>
+					<input type="password" class="form-control" id="client-cert-password">
+				</div>
+				<div class="form-group hidden" id="private-key-display">
+					<label class="pull-left" for="private-key">Private Cert:</label>
+					<select onchange="onChangeSubmit()" class="form-control" id="private-key">
+						<option value="" selected>None</option>
+					</select>
+				</div>
+				<div class="form-group hidden" id="private-key-password-display">
+					<label class="pull-left" for="private-key-password">Private Key Password:</label>
+					<input type="password" class="form-control" id="private-key-password">
+				</div>
+				<div class="form-group hidden" id="CACertDisplay">
+					<label class="pull-left" for="ca-cert">CA Cert:</label>
+					<select onchange="onChangeSubmit()" class="form-control" id="ca-cert">
+						<option value="" selected>None</option>
+					</select>
+				</div>
+				<div class="form-group hidden" id="CACertPasswordDisplay">
+					<label class="pull-left" for="ca-cert-password">CA Cert Password:</label>
+					<input type="password" class="form-control" id="ca-cert-password">
+				</div>
+				<div class="form-group hidden" id="PACFilenameDisplay">
+					<label class="pull-left" for="pac-file">PAC Filename:</label>
+					<select onchange="onChangeSubmit()" class="form-control" id="pac-file">
+						<option value="" selected>None</option>
+					</select>
+				</div>
+				<div class="form-group hidden" id="phase2-auth-display">
+					<label class="pull-left" for="phase2-auth">Phase 2 Method:</label>
+					<select class="form-control" id="phase2-auth" onchange="onChangeSecurity()">
+						<option value="auto" selected>Auto</option>
+						<option value="pap">PAP</option>
+						<option value="chap">CHAP</option>
+						<option value="mschap">MSCHAP</option>
+						<option value="mschapv2">MSCHAPv2</option>
+						<option value="gtc">GTC</option>
+						<option value="otp">OTP</option>
+						<option value="md5">MD5</option>
+						<option value="tls">TLS</option>
+					</select>
+				</div>
 			</div>
 		</div>
 		<div>
