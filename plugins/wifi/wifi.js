@@ -594,18 +594,14 @@ function updateSelectProfilePage(retry){
 }
 
 function activateProfile(retry){
-	var currentActiveProfile = document.getElementById("activeProfile");
-	var newActiveProfile = document.getElementById("profileSelect");
-	var newActiveProfile_Array = [];
-	for (var i = 0, len = newActiveProfile.value.length; i < len; i++) {
-		newActiveProfile_Array[i] = newActiveProfile.value.charCodeAt(i);
-	}
+	var current_connection = document.getElementById("activeProfile");
+	var connection_to_activate = document.getElementById("profileSelect");
 	var data = {
-			profileName: newActiveProfile_Array,
+			UUID: connection_to_activate.value,
 	}
-	consoleLog("Activating profile " + newActiveProfile.value);
+	consoleLog("Activating profile " + connection_to_activate.value);
 	$.ajax({
-		url: "plugins/wifi/php/activateProfile.php",
+		url: "activate_connection",
 		type: "POST",
 		data: JSON.stringify(data),
 		contentType: "application/json",
@@ -616,7 +612,7 @@ function activateProfile(retry){
 			}
 		},
 		error: function (xhr, status) {
-			consoleLog("Error, couldn't get activateProfile.php");
+			consoleLog("Error, couldn't get activate_connection");
 		},
 	})
 	.done(function( msg ) {
@@ -627,9 +623,9 @@ function activateProfile(retry){
 		}
 		SDCERRtoString(msg.SDCERR);
 		if (msg.SDCERR == defines.SDCERR.SDCERR_SUCCESS){
-			currentActiveProfile.removeAttribute("id");
-			newActiveProfile[newActiveProfile.selectedIndex].setAttribute("id", "activeProfile");
-			$("#helpText").html("These are the current WiFi profiles. Profile " + newActiveProfile.value + " is the active profile.");
+			current_connection.removeAttribute("id");
+			connection_to_activate[connection_to_activate.selectedIndex].setAttribute("id", "activeProfile");
+			$("#helpText").html("These are the current WiFi profiles. Profile " + connection_to_activate[connection_to_activate.selectedIndex].text + " is the active profile.");
 		}
 	})
 	.fail(function() {

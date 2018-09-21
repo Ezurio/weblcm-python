@@ -157,6 +157,35 @@ class Connections(object):
 		return result
 
 @cherrypy.expose
+class Activate_Connection(object):
+	@cherrypy.tools.accept(media='application/json')
+	@cherrypy.tools.json_in()
+	@cherrypy.tools.json_out()
+	def POST(self):
+		result = {
+			'SDCERR': 1,
+			"SESSION": 0,
+		}
+		post_data = cherrypy.request.json
+		try:
+			bus = dbus.SystemBus()
+
+			settings_proxy = bus.get_object(lrd_nm_def.NM_IFACE, lrd_nm_def.NM_SETTINGS_OBJ)
+			settings_manager = dbus.Interface(settings_proxy, lrd_nm_def.NM_SETTINGS_IFACE)
+			conection_to_activate = settings_manager.GetConnectionByUuid(post_data['UUID'])
+
+			nm_proxy = bus.get_object(lrd_nm_def.NM_IFACE, lrd_nm_def.NM_OBJ)
+			nm_manager = dbus.Interface(nm_proxy, lrd_nm_def.NM_IFACE)
+			wifi_device = nm_manager.GetDeviceByIpIface(lrd_nm_def.WIFI_DEVICE_NAME)
+			active_connection = nm_manager.ActivateConnection(conection_to_activate,wifi_device,"/")
+			result['SDCERR'] = 0
+
+		except Exception as e:
+			print(e)
+
+		return result
+
+@cherrypy.expose
 class Get_Certificates(object):
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()
