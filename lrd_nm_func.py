@@ -3,6 +3,7 @@ import dbus
 import subprocess
 import os
 import uuid
+import time
 import lrd_nm_def
 
 @cherrypy.expose
@@ -257,8 +258,9 @@ class Add_Connection(object):
 			'ipv6': settings_ip6,
 		})
 
-		if post_data['band'] != 'all':
-			settings_wireless['band'] = post_data['band']
+		if 'band' in post_data:
+			if post_data['band'] != 'all':
+				settings_wireless['band'] = post_data['band']
 
 		if post_data['keymgmt'] != 'none':
 			settings_wireless['security'] = '802-11-wireless-security'
@@ -266,20 +268,23 @@ class Add_Connection(object):
 			if post_data['keymgmt'] == 'static':
 				# key-mgmt of 'static' is also 'none'
 				settings_wireless_security['key-mgmt'] = 'none'
-				settings_wireless_security['auth-alg'] = post_data['authalg']
+				if 'authalg' in post_data:
+					settings_wireless_security['auth-alg'] = post_data['authalg']
 				settings_wireless_security['wep-key-type'] = 1 # NM_WEP_KEY_TYPE_KEY
-				settings_wireless_security['wep-tx-keyidx'] = post_data['weptxkeyidx']
-				if (len(post_data['wepkey0'])):
-					settings_wireless_security['wep-key0'] = post_data['wepkey0']
-				if (len(post_data['wepkey1'])):
-					settings_wireless_security['wep-key1'] = post_data['wepkey1']
-				if (len(post_data['wepkey2'])):
-					settings_wireless_security['wep-key2'] = post_data['wepkey2']
-				if (len(post_data['wepkey3'])):
-					settings_wireless_security['wep-key3'] = post_data['wepkey3']
+				if 'weptxkeyidx' in post_data:
+					settings_wireless_security['wep-tx-keyidx'] = post_data['weptxkeyidx']
+					if (len(post_data['wepkey0'])):
+						settings_wireless_security['wep-key0'] = post_data['wepkey0']
+					if (len(post_data['wepkey1'])):
+						settings_wireless_security['wep-key1'] = post_data['wepkey1']
+					if (len(post_data['wepkey2'])):
+						settings_wireless_security['wep-key2'] = post_data['wepkey2']
+					if (len(post_data['wepkey3'])):
+						settings_wireless_security['wep-key3'] = post_data['wepkey3']
 
 			elif post_data['keymgmt'] == 'wpa-psk':
-				settings_wireless_security['psk'] = bytearray(post_data['psk']).decode("utf-8")
+				if 'psk' in post_data:
+					settings_wireless_security['psk'] = bytearray(post_data['psk']).decode("utf-8")
 
 			else:
 				if post_data['keymgmt'] == 'ieee8021x':
@@ -290,25 +295,34 @@ class Add_Connection(object):
 
 				settings_8021x = dbus.Dictionary({
 					'eap':[post_data['eap']],
-					'identity': post_data['identity'],
-					'password': post_data['password'],
-					'client-cert': path_to_cert(post_data['clientcert']),
-					'private-key': path_to_cert(post_data['privatekey']),
-					'ca-cert': path_to_cert(post_data['cacert']),
 				})
 
-				if post_data['clientcertpassword'] != '':
-					settings_8021x['client-cert-password'] = post_data['clientcertpassword']
-				if post_data['privatekeypassword'] != '':
+				if 'identity' in post_data:
+					settings_8021x['identity'] = post_data['identity']
+				if 'password' in post_data:
+					settings_8021x['password'] = post_data['password']
+				if 'clientcert' in post_data:
+					settings_8021x['client-cert'] = path_to_cert(post_data['clientcert'])
+				if 'privatekey' in post_data:
+					settings_8021x['private-key'] = path_to_cert(post_data['privatekey'])
+				if 'cacert' in post_data:
+					settings_8021x['ca-cert'] = path_to_cert(post_data['cacert'])
+				if 'clientcertpassword' in post_data:
+					if post_data['clientcertpassword'] != '':
+						settings_8021x['client-cert-password'] = post_data['clientcertpassword']
+				if 'privatekeypassword' in post_data:
 					settings_8021x['private-key-password'] = post_data['privatekeypassword']
-				if post_data['cacertpassword'] != '':
-					settings_8021x['ca-cert-password'] = post_data['cacertpassword']
+				if 'cacertpassword' in post_data:
+					if post_data['cacertpassword'] != '':
+						settings_8021x['ca-cert-password'] = post_data['cacertpassword']
 
 				if post_data['eap'] == 'fast':
 					settings_8021x['pac-file'] = post_data['pacfile']
 
-				if post_data['phase2auth'] != 'auto':
-					settings_8021x['phase2-auth'] = [post_data['phase2auth']]
+				settings_8021x['phase2-auth'] = ['md5', 'mschapv2', 'otp', 'gtc', 'tls']
+				if 'phase2auth' in post_data:
+					if post_data['phase2auth'] != 'auto':
+						settings_8021x['phase2-auth'] = [post_data['phase2auth']]
 
 				complete_connection['802-1x'] = settings_8021x
 
@@ -359,6 +373,92 @@ class Remove_Connection(object):
 		except Exception as e:
 			print(e)
 
+		return result
+
+@cherrypy.expose
+class Wifi_Scan(object):
+	@cherrypy.tools.accept(media='application/json')
+	@cherrypy.tools.json_out()
+	def GET(self):
+		result = {
+			'SDCERR': 1,
+			"SESSION": 0,
+			'accesspoints': {},
+		}
+		bus = dbus.SystemBus()
+		proxy = bus.get_object(lrd_nm_def.NM_IFACE, lrd_nm_def.NM_OBJ)
+		manager = dbus.Interface(proxy, lrd_nm_def.NM_IFACE)
+		wifi_device = manager.GetDeviceByIpIface(lrd_nm_def.WIFI_DEVICE_NAME)
+		dev_proxy = bus.get_object(lrd_nm_def.NM_IFACE, wifi_device)
+		prop_iface = dbus.Interface(dev_proxy, lrd_nm_def.DBUS_PROP_IFACE)
+		wifi_iface = dbus.Interface(dev_proxy, lrd_nm_def.NM_WIRELESS_IFACE)
+		wifi_prop_iface = dbus.Interface(dev_proxy, lrd_nm_def.DBUS_PROP_IFACE)
+		wireless_active_access_point = wifi_prop_iface.Get(lrd_nm_def.NM_WIRELESS_IFACE, "ActiveAccessPoint")
+		wireless_hwaddress = wifi_prop_iface.Get(lrd_nm_def.NM_WIRELESS_IFACE, "HwAddress")
+		wireless_permhwaddress = wifi_prop_iface.Get(lrd_nm_def.NM_WIRELESS_IFACE, "PermHwAddress")
+		wireless_mode = wifi_prop_iface.Get(lrd_nm_def.NM_WIRELESS_IFACE, "Mode")
+		wireless_bitrate = wifi_prop_iface.Get(lrd_nm_def.NM_WIRELESS_IFACE, "BitRate")
+		wireless_lastscan = wifi_prop_iface.Get(lrd_nm_def.NM_WIRELESS_IFACE, "LastScan")
+		print('Last scan:' + str(wireless_lastscan))
+		scan_diff_in_seconds = ((time.clock_gettime(time.CLOCK_MONOTONIC) * 1000) - wireless_lastscan) / 1000
+		print('Time difference since last scan: ' + str(scan_diff_in_seconds))
+		try:
+			options = []
+			wifi_iface.RequestScan(options)
+			print('Scan requested')
+		except Exception as e:
+			print(e)
+
+		aps = wifi_iface.GetAllAccessPoints()
+		i = 0
+		for path in aps:
+			ap_proxy = bus.get_object(lrd_nm_def.NM_IFACE, path)
+			ap_prop_iface = dbus.Interface(ap_proxy, lrd_nm_def.DBUS_PROP_IFACE)
+			ssid = ap_prop_iface.Get(lrd_nm_def.NM_ACCESSPOINT_IFACE, "Ssid")
+			bssid = ap_prop_iface.Get(lrd_nm_def.NM_ACCESSPOINT_IFACE, "HwAddress")
+			strength = ap_prop_iface.Get(lrd_nm_def.NM_ACCESSPOINT_IFACE, "Strength")
+			maxbitrate = ap_prop_iface.Get(lrd_nm_def.NM_ACCESSPOINT_IFACE, "MaxBitrate")
+			freq = ap_prop_iface.Get(lrd_nm_def.NM_ACCESSPOINT_IFACE, "Frequency")
+			flags = ap_prop_iface.Get(lrd_nm_def.NM_ACCESSPOINT_IFACE, "Flags")
+			wpaflags = ap_prop_iface.Get(lrd_nm_def.NM_ACCESSPOINT_IFACE, "WpaFlags")
+			rsnflags = ap_prop_iface.Get(lrd_nm_def.NM_ACCESSPOINT_IFACE, "RsnFlags")
+			security_string = ""
+			ssid_string = "%s" % ''.join([str(v) for v in ssid])
+			keymgmt = 'none'
+			if ((flags & lrd_nm_def.NM_DBUS_API_TYPES['NM80211ApFlags']['NM_802_11_AP_FLAGS_PRIVACY']) and (wpaflags == lrd_nm_def.NM_DBUS_API_TYPES['NM80211ApSecurityFlags']['NM_802_11_AP_SEC_NONE']) and (rsnflags == lrd_nm_def.NM_DBUS_API_TYPES['NM80211ApSecurityFlags']['NM_802_11_AP_SEC_NONE'])):
+				security_string = security_string + 'WEP '
+				keymgmt = 'static'
+
+			if (wpaflags != lrd_nm_def.NM_DBUS_API_TYPES['NM80211ApSecurityFlags']['NM_802_11_AP_SEC_NONE']):
+				security_string = security_string + 'WPA1 '
+
+			if (rsnflags != lrd_nm_def.NM_DBUS_API_TYPES['NM80211ApSecurityFlags']['NM_802_11_AP_SEC_NONE']):
+				security_string = security_string + 'WPA2 '
+
+			if ((wpaflags & lrd_nm_def.NM_DBUS_API_TYPES['NM80211ApSecurityFlags']['NM_802_11_AP_SEC_KEY_MGMT_802_1X']) or (rsnflags & lrd_nm_def.NM_DBUS_API_TYPES['NM80211ApSecurityFlags']['NM_802_11_AP_SEC_KEY_MGMT_802_1X'])):
+				security_string = security_string + '802.1X '
+				keymgmt = 'wpa-eap'
+
+			if ((wpaflags & lrd_nm_def.NM_DBUS_API_TYPES['NM80211ApSecurityFlags']['NM_802_11_AP_SEC_KEY_MGMT_PSK']) or (rsnflags & lrd_nm_def.NM_DBUS_API_TYPES['NM80211ApSecurityFlags']['NM_802_11_AP_SEC_KEY_MGMT_PSK'])):
+				security_string = security_string + 'PSK'
+				keymgmt = 'wpa-psk'
+
+			ap_data = {
+				'ssid': ssid_string,
+				'bssid': bssid,
+				'strength': strength,
+				'maxbitrate': maxbitrate,
+				'freq': freq,
+				'flags': flags,
+				'wpaflags': wpaflags,
+				'rsnflags': rsnflags,
+				'security': security_string,
+				'keymgmt': keymgmt,
+			}
+
+			result['accesspoints'][i] = ap_data
+			result['last_scan'] = scan_diff_in_seconds
+			i += 1
 		return result
 
 @cherrypy.expose

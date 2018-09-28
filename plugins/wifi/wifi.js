@@ -1320,32 +1320,34 @@ function scanToProfile(){
 }
 
 function addScanProfile(retry){
-	profileName_Value = document.getElementById("profileName").value;
-	var profileName_Array = [];
-	for (var i = 0, len = profileName_Value.length; i < len; i++) {
-		profileName_Array[i] = profileName_Value.charCodeAt(i);
-	}
-	SSID_Value = document.getElementById("newSSID").value;
-	var CharCode_Array = [];
-	for (var i = 0, len = SSID_Value.length; i < len; i++) {
-		CharCode_Array[i] = SSID_Value.charCodeAt(i);
-	}
-	var newProfile = {
-		profileName: profileName_Array,
-		SSID: CharCode_Array,
-		wepType: document.getElementById("security").value,
-		psk: "        ",
-	}
-	if (newProfile.profileName == ""){
+	id = document.getElementById("profileName").value.trim();
+	if (id == ""){
 		$("#profileNameDisplay").addClass("has-error");
 		$("#profileName").popover({content:'Please enter profile name',placement:'bottom'});
 		$("#profileName").popover('show')
 		return;
 	}
+
+	var id_array = [];
+	for (var i = 0, len = id.length; i < len; i++) {
+		id_array[i] = id.charCodeAt(i);
+	}
+	ssid = document.getElementById("newSSID").value;
+	var ssid_array = [];
+	for (var i = 0, len = ssid.length; i < len; i++) {
+		ssid_array[i] = ssid.charCodeAt(i);
+	}
+	var new_connection = {
+		id: id_array,
+		ssid: ssid_array,
+		keymgmt: document.getElementById("security").getAttribute("keymgmt"),
+		eap: 'peap',
+		identity: 'foobar',
+	}
 	$.ajax({
-		url: "plugins/wifi/php/addProfile.php",
+		url: "add_connection",
 		type: "POST",
-		data: JSON.stringify(newProfile),
+		data: JSON.stringify(new_connection),
 		contentType: "application/json",
 	})
 	.done(function( msg ) {
@@ -1357,14 +1359,14 @@ function addScanProfile(retry){
 		}
 		SDCERRtoString(msg.SDCERR);
 		if (document.getElementById("returnDataNav").innerHTML == "Success"){
-			document.getElementById("goToProfile").textContent = "Edit Profile " + profileName_Value;
+			document.getElementById("goToProfile").textContent = "Edit Profile " + id;
 			$("#goToProfileDisplay").removeClass("hidden");
-			document.getElementById("profileNameHidden").value = profileName_Value;
+			document.getElementById("profileNameHidden").value = id;
 			document.getElementById("addTable").reset();
 		}
 	})
 	.fail(function() {
-		consoleLog("Error, couldn't get addProfile.php.. retrying");
+		consoleLog("Error, couldn't new_connection.. retrying");
 		if (retry < 5){
 			retry++;
 			getScan(retry);
@@ -1384,6 +1386,7 @@ function drag(ev){
 	if (index > 0){
 		ev.dataTransfer.setData("ssid", table.rows[index].cells[0].innerText);
 		ev.dataTransfer.setData("security",table.rows[index].cells[4].innerHTML);
+		ev.dataTransfer.setData("keymgmt",table.rows[index].getAttribute("keymgmt"));
 	}
 }
 
@@ -1392,14 +1395,15 @@ function drop(ev){
 	var table = document.getElementById("addTable");
 	document.getElementById("newSSID").value = ev.dataTransfer.getData("ssid");
 	document.getElementById("security").value = ev.dataTransfer.getData("security");
+	document.getElementById("security").setAttribute("keymgmt",ev.dataTransfer.getData("keymgmt"));
 	$("#profileNameDisplay").removeClass("has-error");
 	$("#addScanDisplay").removeClass("hidden");
 }
 
 function getScan(retry){
 	$.ajax({
-		url: "plugins/wifi/php/scan.php",
-		type: "POST",
+		url: "wifi_scan",
+		type: "GET",
 		contentType: "application/json",
 	})
 	.done(function(msg) {
@@ -1416,29 +1420,27 @@ function getScan(retry){
 			$("#status-hardware").removeClass("hidden");
 		} else {
 			var table = document.getElementById("scanTable");
-			for (var scanItem in msg["scanList"]){
-				var SSID_Array = [];
+			for (var ap in msg["accesspoints"]){
 				var row = table.insertRow(-1);
 				row.setAttribute('draggable', true);
 				row.setAttribute('ondragstart', 'drag(event)');
+				row.setAttribute('keymgmt', msg["accesspoints"][ap].keymgmt);
 				var cell0 = row.insertCell(0);
 				var cell1 = row.insertCell(1);
 				var cell2 = row.insertCell(2);
 				var cell3 = row.insertCell(3);
 				var cell4 = row.insertCell(4);
-				if (msg["scanList"][scanItem].SSID != null){
-					for(var i = 0; i < msg["scanList"][scanItem].SSID.length; i++) {
-						SSID_Array.push(String.fromCharCode(msg["scanList"][scanItem].SSID[i]));
-					}
-					cell0.innerHTML = SSID_Array.join('');
+				if (msg["accesspoints"][ap].ssid != ""){
+					cell0.innerHTML = msg["accesspoints"][ap].ssid;
 				}
-				cell1.innerHTML = msg["scanList"][scanItem].BSSID;
-				cell2.innerHTML = msg["scanList"][scanItem].channel;
-				cell3.innerHTML = msg["scanList"][scanItem].Strength;
-				cell4.innerHTML = msg["scanList"][scanItem].security[0];
+				cell1.innerHTML = msg["accesspoints"][ap].bssid;
+				cell2.innerHTML = msg["accesspoints"][ap].freq;
+				cell3.innerHTML = msg["accesspoints"][ap].strength;
+				cell4.innerHTML = msg["accesspoints"][ap].security;
 				row.onclick=function(){
 					document.getElementById("newSSID").value = this.cells[0].innerText;
 					document.getElementById("security").value = this.cells[4].innerHTML;
+					document.getElementById("security").setAttribute("keymgmt",this.getAttribute("keymgmt"));
 					$("#profileNameDisplay").removeClass("has-error");
 					$("#addScanDisplay").removeClass("hidden");
 				};
@@ -1452,7 +1454,7 @@ function getScan(retry){
 		}
 	})
 	.fail(function() {
-		consoleLog("Error, couldn't get scan.php.. retrying");
+		consoleLog("Error, couldn't get WiFi scan.. retrying");
 		if (retry < 5){
 			retry++;
 			getScan(retry);

@@ -12,6 +12,24 @@ NM_DEVICE_IFACE =		'org.freedesktop.NetworkManager.Device'
 NM_WIRELESS_IFACE =		'org.freedesktop.NetworkManager.Device.Wireless'
 NM_ACCESSPOINT_IFACE =	'org.freedesktop.NetworkManager.AccessPoint'
 
+NM_802_11_AP_FLAGS_NONE =		0x00000000
+NM_802_11_AP_FLAGS_PRIVACY =	0x00000001
+NM_802_11_AP_FLAGS_WPS =		0x00000002
+NM_802_11_AP_FLAGS_WPS_PBC =	0x00000004
+NM_802_11_AP_FLAGS_WPS_PIN =	0x00000008
+
+NM_802_11_AP_SEC_NONE =				0x00000000
+NM_802_11_AP_SEC_PAIR_WEP40 =		0x00000001
+NM_802_11_AP_SEC_PAIR_WEP104 =		0x00000002
+NM_802_11_AP_SEC_PAIR_TKIP =		0x00000004
+NM_802_11_AP_SEC_PAIR_CCMP =		0x00000008
+NM_802_11_AP_SEC_GROUP_WEP40 =		0x00000010
+NM_802_11_AP_SEC_GROUP_WEP104 =		0x00000020
+NM_802_11_AP_SEC_GROUP_TKIP =		0x00000040
+NM_802_11_AP_SEC_GROUP_CCMP =		0x00000080
+NM_802_11_AP_SEC_KEY_MGMT_PSK =		0x00000100
+NM_802_11_AP_SEC_KEY_MGMT_802_1X =	0x00000200
+
 def ap_sec_to_str(sec):
 	list = []
 
@@ -94,6 +112,9 @@ for path in aps:
 	flags = ap_prop_iface.Get(NM_ACCESSPOINT_IFACE, "Flags")
 	wpaflags = ap_prop_iface.Get(NM_ACCESSPOINT_IFACE, "WpaFlags")
 	rsnflags = ap_prop_iface.Get(NM_ACCESSPOINT_IFACE, "RsnFlags")
+	security_string = "\t\t"
+	wpa_flag_string = "\t\t"
+	rsn_flag_string = "\t\t"
 	print('\tSSID:')
 	print("\t\t%s" % ''.join([str(v) for v in ssid]))
 	print('\tBSSID:')
@@ -107,6 +128,90 @@ for path in aps:
 	print('\tFlags:')
 	print('\t\t' + str(int(flags)))
 	print('\tWPA Flags:')
-	print('\t\t' + str(ap_sec_to_str(wpaflags)))
+	print('\t\t' + str(int(wpaflags)))
 	print('\tRSN Flags:')
+	print('\t\t' + str(int(rsnflags)))
+	print('\tWPA Flags String:')
+	print('\t\t' + str(ap_sec_to_str(wpaflags)))
+	print('\tRSN Flags String:')
 	print('\t\t' + str(ap_sec_to_str(rsnflags)))
+	print('\tSecurity:')
+	# Logic pulled from network-manager/clients/cli/devices.c
+	if ((flags & NM_802_11_AP_FLAGS_PRIVACY) and (wpaflags == NM_802_11_AP_SEC_NONE) and (rsnflags == NM_802_11_AP_SEC_NONE)):
+		security_string = security_string + 'WEP '
+
+	if (wpaflags != NM_802_11_AP_SEC_NONE):
+		security_string = security_string + 'WPA1 '
+
+	if (rsnflags != NM_802_11_AP_SEC_NONE):
+		security_string = security_string + 'WPA2 '
+
+	if ((wpaflags & NM_802_11_AP_SEC_KEY_MGMT_802_1X) or (rsnflags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)):
+		security_string = security_string + '802.1X '
+
+	if ((wpaflags & NM_802_11_AP_SEC_KEY_MGMT_PSK) or (rsnflags & NM_802_11_AP_SEC_KEY_MGMT_PSK)):
+		security_string = security_string + 'PSK'
+
+	print(security_string)
+
+	# Show all flags as human readable.
+	if (wpaflags & NM_802_11_AP_SEC_PAIR_WEP40):
+		wpa_flag_string = wpa_flag_string + 'WEP40 '
+
+	if (wpaflags & NM_802_11_AP_SEC_PAIR_WEP104):
+		wpa_flag_string = wpa_flag_string + 'WEP104 '
+
+	if (wpaflags & NM_802_11_AP_SEC_PAIR_TKIP):
+		wpa_flag_string = wpa_flag_string + 'TKIP '
+
+	if (wpaflags & NM_802_11_AP_SEC_PAIR_CCMP):
+		wpa_flag_string = wpa_flag_string + 'CCMP '
+
+	if (wpaflags & NM_802_11_AP_SEC_GROUP_WEP40):
+		wpa_flag_string = wpa_flag_string + 'GROUP_WEP40 '
+
+	if (wpaflags & NM_802_11_AP_SEC_GROUP_WEP104):
+		wpa_flag_string = wpa_flag_string + 'GROUP_WEP104 '
+
+	if (wpaflags & NM_802_11_AP_SEC_GROUP_TKIP):
+		wpa_flag_string = wpa_flag_string + 'GROUP_TKIP '
+
+	if (wpaflags & NM_802_11_AP_SEC_GROUP_CCMP):
+		wpa_flag_string = wpa_flag_string + 'GROUP_CCMP '
+
+	if (wpaflags & NM_802_11_AP_SEC_KEY_MGMT_802_1X):
+		wpa_flag_string = wpa_flag_string + '802.1X '
+
+	print('\tWPA Security Flags:')
+	print(wpa_flag_string)
+
+	if (rsnflags & NM_802_11_AP_SEC_PAIR_WEP40):
+		rsn_flag_string = rsn_flag_string + 'WEP40 '
+
+	if (rsnflags & NM_802_11_AP_SEC_PAIR_WEP104):
+		rsn_flag_string = rsn_flag_string + 'WEP104 '
+
+	if (rsnflags & NM_802_11_AP_SEC_PAIR_TKIP):
+		rsn_flag_string = rsn_flag_string + 'TKIP '
+
+	if (rsnflags & NM_802_11_AP_SEC_PAIR_CCMP):
+		rsn_flag_string = rsn_flag_string + 'CCMP '
+
+	if (rsnflags & NM_802_11_AP_SEC_GROUP_WEP40):
+		rsn_flag_string = rsn_flag_string + 'GROUP_WEP40 '
+
+	if (rsnflags & NM_802_11_AP_SEC_GROUP_WEP104):
+		rsn_flag_string = rsn_flag_string + 'GROUP_WEP104 '
+
+	if (rsnflags & NM_802_11_AP_SEC_GROUP_TKIP):
+		rsn_flag_string = rsn_flag_string + 'GROUP_TKIP '
+
+	if (rsnflags & NM_802_11_AP_SEC_GROUP_CCMP):
+		rsn_flag_string = rsn_flag_string + 'GROUP_CCMP '
+
+	if (rsnflags & NM_802_11_AP_SEC_KEY_MGMT_802_1X):
+		rsn_flag_string = rsn_flag_string + '802.1X '
+
+	print('\tRSN Security Flags:')
+	print(rsn_flag_string)
+	print()
