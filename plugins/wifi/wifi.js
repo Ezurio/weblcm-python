@@ -292,11 +292,18 @@ function clickStatusPage(retry) {
 	}
 }
 
+function checkUUID(uuid) {
+	var regexUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+	return regexUUID.test(uuid);
+}
+
 function checkProfileValues(){
 	var result = true;
 	pspDelay = document.getElementById("pspDelay");
 	keymgmt = document.getElementById("key-mgmt");
 	psk = document.getElementById("psk");
+	ssid = document.getElementById("ssid");
+	uuid = document.getElementById("uuid");
 
 	if (!(parseInt(pspDelay.value) >= pspDelay.min && parseInt(pspDelay.value) <= pspDelay.max)){
 		$("#pspDelayDisplay").addClass("has-error");
@@ -310,6 +317,22 @@ function checkProfileValues(){
 			result = false;
 		} else {
 			$("#pskDisplay").removeClass("has-error");
+		}
+	}
+
+	if (ssid.value == ''){
+		("#SSIDDisplay").addClass("has-error");
+		result = false;
+	} else {
+		$("#SSIDDisplay").removeClass("has-error");
+	}
+
+	if (uuid.value != ''){
+		if (!checkUUID(uuid.value)) {
+			$("#UUIDDisplay").addClass("has-error");
+			result = false;
+		} else {
+			$("#UUIDDisplay").removeClass("has-error");
 		}
 	}
 
@@ -402,98 +425,163 @@ function submitProfile(retry){
 	});
 }
 
-function SelectedIndex(sel, val) {
-	for(var i = 0, j = sel.options.length; i < j; ++i) {
-		if(sel.options[i].value == val) {
-		sel.selectedIndex = i;
-		break;
-		}
+function cleanup_output(value){
+	if (value == null){
+		return '';
 	}
+	return value;
 }
 
-function updateGetProfilePage(profileName,retry){
+function updateGetProfilePage(uuid,retry){
 	var data = {
-			profileName: profileName,
+			UUID: uuid,
 		}
 	$.ajax({
-		url: "plugins/wifi/php/getProfile.php",
+		url: "edit_connection",
 		type: "POST",
 		data: JSON.stringify(data),
 		contentType: "application/json",
 	})
 	.done(function( msg ) {
 		consoleLog(msg);
-		document.getElementById("profileName").value = msg.configName;
-		var profileName_Array = [];
-		if (msg.configName != null){
-			for(var i = 0; i < msg.configName.length; i++) {
-				profileName_Array.push(String.fromCharCode(msg.configName[i]));
-			}
-			document.getElementById("profileName").value = profileName_Array.join('');
+		var certs = {
+			client_cert:"",
+			private_key:"",
+			ca_cert:"",
+			pac_file:"",
 		}
-		document.getElementById("SSID").value = msg.SSID;
-		var SSID_Array = [];
-		if (msg.SSID != null){
-			for(var i = 0; i < msg.SSID.length; i++) {
-				SSID_Array.push(String.fromCharCode(msg.SSID[i]));
-			}
-			document.getElementById("SSID").value = SSID_Array.join('');
-		}
-		document.getElementById("clientName").value = msg.clientName;
-		if (msg.txPower == 0){
-			document.getElementById("txPower").value = "Auto";
-		} else {
-			document.getElementById("txPower").value = msg.txPower;
-		}
-		document.getElementById("authType").selectedIndex =  msg.authType;
-		//If index does not start at 0 and run contiguously we must check against options value
-		SelectedIndex(document.getElementById("wepType"),msg.wepType);
-		SelectedIndex(document.getElementById("eapType"),msg.eapType);
-		SelectedIndex(document.getElementById("radioMode"),msg.radioMode);
-		document.getElementById("powerSave").selectedIndex =  msg.powerSave;
-		if (msg.powerSave == defines.PLUGINS.wifi.POWERSAVE.POWERSAVE_FAST){
-			$("#pspDelayDisplay").removeClass("hidden");
-			document.getElementById("pspDelay").value = msg.pspDelay;
-		}
-		if (msg.wepType == defines.PLUGINS.wifi.WEPTYPE.WEP_ON){
-			$("#wepIndexDisplay").removeClass("hidden");
-			document.getElementById("wepIndex").selectedIndex =  msg.wepIndex - 1;
-			$("#wepTypeOnDisplay").removeClass("hidden");
-			document.getElementById("index1").value =  msg.WEPKey1;
-			document.getElementById("index2").value =  msg.WEPKey2;
-			document.getElementById("index3").value =  msg.WEPKey3;
-			document.getElementById("index4").value =  msg.WEPKey4;
-		} else if (msg.wepType == defines.PLUGINS.wifi.WEPTYPE.WPA_PSK || msg.wepType == defines.PLUGINS.wifi.WEPTYPE.WPA2_PSK || msg.wepType == defines.PLUGINS.wifi.WEPTYPE.WPA_PSK_AES || msg.wepType == defines.PLUGINS.wifi.WEPTYPE.WPA2_PSK_TKIP){
-			$("#pskDisplay").removeClass("hidden");
-			document.getElementById("psk").value =  msg.PSK;
-		} else if (msg.eapType >= defines.PLUGINS.wifi.EAPTYPE.EAP_LEAP){
-			if (msg.eapType > defines.PLUGINS.wifi.EAPTYPE.EAP_LEAP){
-				$("#certDisplay").removeClass("hidden");
-			}
-			$("#eapTypeDisplay").removeClass("hidden");
-			$("#userNameDisplay").removeClass("hidden");
-			document.getElementById("userName").value =  msg.userName;
-			if (!(msg.eapType == defines.PLUGINS.wifi.EAPTYPE.EAP_EAPTLS || msg.eapType == defines.PLUGINS.wifi.EAPTYPE.EAP_PEAPTLS)){
-				$("#passWordDisplay").removeClass("hidden");
-				document.getElementById("passWord").value =  msg.passWord;
+		document.getElementById("uuid").setAttribute("disabled","");
+		document.getElementById("uuid").value = msg.connection.connection.uuid;
+		document.getElementById("id").value = msg.connection.connection.id;
+		document.getElementById("ssid").value = char_code_array_to_string(msg.connection['802-11-wireless'].ssid);
+		document.getElementById("clientName").value = cleanup_output(msg.connection['802-11-wireless'].clientName);
+		if (msg.connection['802-11-wireless'].txpower){
+			if (msg.connection['802-11-wireless'].txpower == 0){
+				document.getElementById("txPower").value = "Auto";
 			} else {
-				$("#userCertDisplay").removeClass("hidden");
-				document.getElementById("userCert").value =  msg.userCert;
-				$("#userCertPasswordDisplay").removeClass("hidden");
-				document.getElementById("userCertPassword").value =  msg.userCertPassword;
+				document.getElementById("txPower").value = msg.connection['802-11-wireless'].txpower;
 			}
-			if (msg.eapType > defines.PLUGINS.wifi.EAPTYPE.EAP_EAPFAST && msg.eapType < defines.PLUGINS.wifi.EAPTYPE.EAP_WAPI_CERT){
-				$("#CACertDisplay").removeClass("hidden");
-				document.getElementById("CACert").value =  msg.CACert;
-			}
-			if (msg.eapType == defines.PLUGINS.wifi.EAPTYPE.EAP_EAPFAST){
-				$("#PACFilenameDisplay").removeClass("hidden");
-				document.getElementById("PACFilename").value =  msg.PACFileName;
-				$("#PACPasswordDisplay").removeClass("hidden");
-				document.getElementById("PACPassword").value =  msg.PACPassword;
-			}
-			getCerts(msg,0);
 		}
+
+		switch(msg.connection['802-11-wireless'].band) {
+			case 'all':
+				document.getElementById("band").selectedIndex = 0;
+				break;
+			case 'a':
+				document.getElementById("band").selectedIndex = 1;
+				break;
+			case 'bg':
+				document.getElementById("band").selectedIndex = 2;
+				break;
+			default:
+				document.getElementById("band").selectedIndex = 0;
+		}
+
+		switch(msg.connection['802-11-wireless-security']['auth-alg']) {
+			case 'open':
+				document.getElementById("auth-alg").selectedIndex = 0;
+				break;
+			case 'shared':
+				document.getElementById("auth-alg").selectedIndex = 1;
+				break;
+			case 'leap':
+				document.getElementById("auth-alg").selectedIndex = 2;
+				break;
+			default:
+				document.getElementById("auth-alg").selectedIndex = 0;
+		}
+
+		switch (msg.connection['802-11-wireless-security']['key-mgmt']){
+				case "none":
+					document.getElementById("key-mgmt").selectedIndex = 0;
+					break;
+				case "static":
+					document.getElementById("key-mgmt").selectedIndex = 1;
+					break;
+				case "ieee8021x":
+					document.getElementById("key-mgmt").selectedIndex = 2;
+					break;
+				case "wpa-psk":
+					document.getElementById("key-mgmt").selectedIndex = 3;
+					break;
+				case "wpa-eap":
+					document.getElementById("key-mgmt").selectedIndex = 4;
+					break;
+				default:
+					break;
+		}
+
+		if (msg.connection['802-11-wireless-security'].eap){
+			switch (msg.connection['802-11-wireless-security'].eap[0]){
+					case "leap":
+						document.getElementById("eap").selectedIndex = 0;
+						break;
+					case "md5":
+						document.getElementById("eap").selectedIndex = 1;
+						break;
+					case "tls":
+						document.getElementById("eap").selectedIndex = 2;
+						break;
+					case "peap":
+						document.getElementById("eap").selectedIndex = 3;
+						break;
+					case "ttls":
+						document.getElementById("eap").selectedIndex = 4;
+						break;
+					case "pwd":
+						document.getElementById("eap").selectedIndex = 5;
+						break;
+					case "fast":
+						document.getElementById("eap").selectedIndex = 6;
+						break;
+					default:
+						break;
+			}
+		}
+
+		switch(msg.connection['802-11-wireless'].powersave) {
+			case 0:
+				document.getElementById("powersave").selectedIndex = 0;
+				break;
+			case 1:
+				document.getElementById("powersave").selectedIndex = 1;
+				break;
+			case 2:
+				document.getElementById("powersave").selectedIndex = 2;
+				break;
+			case 3:
+				document.getElementById("powersave").selectedIndex = 2;
+				break;
+			default:
+				document.getElementById("powersave").selectedIndex = 0;
+		}
+		if (msg.connection['802-11-wireless-security']['key-mgmt'] == 'static'){
+			document.getElementById("wep-tx-keyidx").selectedIndex =  msg.connection['802-11-wireless-security']['wep-tx-keyidx'];
+			document.getElementById("wep-key0").value = cleanup_output(msg.connection['802-11-wireless-security']['wep-key0']);
+			document.getElementById("wep-key1").value = cleanup_output(msg.connection['802-11-wireless-security']['wep-key1']);
+			document.getElementById("wep-key2").value = cleanup_output(msg.connection['802-11-wireless-security']['wep-key2']);
+			document.getElementById("wep-key3").value = cleanup_output(msg.connection['802-11-wireless-security']['wep-key3']);
+		} else if (msg.connection['802-11-wireless-security']['key-mgmt'] == 'wpa-psk'){
+			document.getElementById("psk").value =  cleanup_output(msg.connection['802-11-wireless-security'].psk);
+		} else if (msg.connection['802-11-wireless-security']['key-mgmt'] == 'wpa-eap' || 'ieee8021x'){
+			try {
+				document.getElementById("identity").value =  cleanup_output(msg.connection['802-1x'].identity);
+				document.getElementById("password-eap").value =  cleanup_output(msg.connection['802-1x'].password);
+				document.getElementById("client-cert-password").value =  cleanup_output(msg.connection['802-1x']['client-cert-password']);
+				document.getElementById("private-key-password").value =  cleanup_output(msg.connection['802-1x']['private-key-password']);
+				document.getElementById("ca-cert-password").value =  cleanup_output(msg.connection['802-1x']['ca-cert-password']);
+
+				certs.client_cert = strip_cert_file_text(msg.connection['802-1x']['client-cert']);
+				certs.private_key = strip_cert_file_text(msg.connection['802-1x']['private-key']);
+				certs.ca_cert = strip_cert_file_text(msg.connection['802-1x']['ca-cert']);
+				certs.pac_file = strip_cert_file_text(msg.connection['802-1x']['pac-file']);
+			}
+			catch(err){
+				consoleLog(err);
+			}
+			getCerts(certs,5);
+		}
+		onChangeSecurity();
 	})
 	.fail(function() {
 		consoleLog("Failed to get profile data, retrying");
@@ -506,17 +594,12 @@ function updateGetProfilePage(profileName,retry){
 	});
 }
 
-function selectedProfile(selectedProfile,retry){
-	if(!selectedProfile){
-		var selectedProfile_value = document.getElementById("profileSelect").value;
-		var selectedProfile_Array = [];
-		for (var i = 0, len = selectedProfile_value.length; i < len; i++) {
-			selectedProfile_Array[i] = selectedProfile_value.charCodeAt(i);
-		}
-		var selectedProfile = selectedProfile_Array;
+function selectedProfile(uuid,retry){
+	if(!uuid){
+		var uuid = document.getElementById("profileSelect").value;
 	}
 	$.ajax({
-		url: "plugins/wifi/html/getProfile.html",
+		url: "plugins/wifi/html/addProfile.html",
 		data: {},
 		type: "GET",
 		dataType: "html",
@@ -531,17 +614,17 @@ function selectedProfile(selectedProfile,retry){
 			$(".infoText").addClass("hidden");
 		},
 		error: function (xhr, status) {
-			consoleLog("Error, couldn't get getProfile.html");
+			consoleLog("Error, couldn't get addProfile.html");
 		},
 	})
 	.done(function( msg ) {
-		updateGetProfilePage(selectedProfile,0);
+		updateGetProfilePage(uuid,0);
 	})
 	.fail(function() {
 		consoleLog("Failed to get get Profile, retrying");
 		if (retry < 5){
 			retry++;
-			selectedProfile(selectedProfile,retry);
+			selectedProfile(uuid,retry);
 		} else {
 			consoleLog("Retry max attempt reached");
 		}
@@ -906,6 +989,7 @@ function addProfile(){
 	}
 	if (id != ""){
 		var new_connection = {
+			uuid: document.getElementById("uuid").value,
 			id: id_array,
 			ssid: ssid_array,
 			clientName: document.getElementById("clientName").value,
@@ -1233,15 +1317,31 @@ function uploadCert(retry){
 	}
 }
 
+function char_code_array_to_string(code_array){
+	var string_array = [];
+	for(var i = 0; i < code_array.length; i++) {
+		if (code_array[i] != 0){
+			string_array.push(String.fromCharCode(code_array[i]));
+		}
+	}
+	return string_array.join('');
+}
+
+function strip_cert_file_text(cert){
+	if (cert != null){
+		var cert_string = char_code_array_to_string(cert);
+		return cert_string.trim().replace('file:///etc/ssl/','');
+	}
+
+	return "";
+}
+
 function generateCertList(profile,certs){
 	var client_cert_id = document.getElementById("client-cert");
 	var private_key_id = document.getElementById("private-key");
 	var ca_cert_id = document.getElementById("ca-cert");
 	var pac_file_id = document.getElementById("pac-file");
-	var client_cert_index = client_cert_id.length;
-	var private_key_index = private_key_id.length;
-	var ca_cert_index = ca_cert_id.length;
-	var pac_file_index = pac_file_id.length;
+	var index = 1;
 
 	function exists(id,option){
 		var exists = false;
@@ -1270,31 +1370,28 @@ function generateCertList(profile,certs){
 		if (!exists("client_cert",certs[key])){
 			client_cert_id.add(option_client_cert);
 			if(option_client_cert.text === profile.client_cert) {
-				client_cert_id.selectedIndex = userCert_index;
+				client_cert_id.selectedIndex = index;
 			}
-			client_cert_index++;
 		}
 		if (!exists("private_key",certs[key])){
 			private_key_id.add(option_private_key);
 			if(option_private_key.text === profile.private_key) {
-				private_key_id.selectedIndex = private_key_index;
+				private_key_id.selectedIndex = index;
 			}
-			client_cert_index++;
 		}
 		if (!exists("ca_cert",certs[key])){
 			ca_cert_id.add(option_ca_cert);
 			if(option_ca_cert.text === profile.ca_cert) {
-				ca_cert_id.selectedIndex = ca_cert_index;
+				ca_cert_id.selectedIndex = index;
 			}
-			ca_cert_index++;
 		}
 		if (!exists("pac_file",certs[key])){
 			pac_file_id.add(option_pac_file);
 			if(option_pac_file.text === profile.pac_file) {
-				pac_file_id.selectedIndex = pac_file_index;
+				pac_file_id.selectedIndex = index;
 			}
-			pac_file_index++;
 		}
+		index++;
 	}
 }
 
@@ -1309,14 +1406,13 @@ function getCerts(profile,retry){
 			clearInterval(intervalId);
 			intervalId = 0;
 		}
-		consoleLog(msg);
 		generateCertList(profile,msg.certs);
 	})
 	.fail(function() {
 		consoleLog("Error, couldn't get getCerts.php.. retrying");
 		if (retry < 5){
 			retry++;
-			getCerts(retry);
+			getCerts(profile,retry);
 		} else {
 			consoleLog("Retry max attempt reached");
 		}

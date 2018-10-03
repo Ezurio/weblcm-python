@@ -6,6 +6,16 @@ import uuid
 import time
 import lrd_nm_def
 
+def merge_secrets(proxy, config, setting_name):
+	try:
+		secrets = proxy.GetSecrets(setting_name)
+
+		for setting in secrets:
+			for key in secrets[setting]:
+				config[setting_name][key] = secrets[setting][key]
+	except Exception as e:
+		pass
+
 @cherrypy.expose
 class Basic_Type_test(object):
 
@@ -233,11 +243,15 @@ class Add_Connection(object):
 
 		setting_connection = dbus.Dictionary({
 			'type': '802-11-wireless',
-			'uuid': str(uuid.uuid4()),
 			'id': bytearray(post_data['id']).decode("utf-8"),
 			'autoconnect': True,
 			'interface-name': 'wlan0',
 		})
+
+		if post_data['uuid'] == '':
+			setting_connection['uuid'] = str(uuid.uuid4())
+		else:
+			setting_connection['uuid'] = post_data['uuid']
 
 		settings_wireless = dbus.Dictionary({
 			'mode': 'infrastructure',
@@ -333,7 +347,14 @@ class Add_Connection(object):
 			proxy = bus.get_object(lrd_nm_def.NM_IFACE, lrd_nm_def.NM_SETTINGS_OBJ)
 			settings = dbus.Interface(proxy, lrd_nm_def.NM_SETTINGS_IFACE)
 
-			settings.AddConnection(complete_connection)
+			try:
+				settings.AddConnection(complete_connection)
+			except:
+				update_connection = settings.GetConnectionByUuid(setting_connection['uuid'])
+				connection_proxy = bus.get_object(lrd_nm_def.NM_IFACE, update_connection)
+				connection = dbus.Interface(connection_proxy, lrd_nm_def.NM_CONNECTION_IFACE)
+				connection.Update(complete_connection)
+
 
 			added_connection = settings.GetConnectionByUuid(setting_connection['uuid'])
 			connection_proxy = bus.get_object(lrd_nm_def.NM_IFACE, added_connection)
@@ -368,6 +389,41 @@ class Remove_Connection(object):
 			connection_proxy = bus.get_object(lrd_nm_def.NM_IFACE, connection_for_deletion)
 			connection = dbus.Interface(connection_proxy, lrd_nm_def.NM_CONNECTION_IFACE)
 			connection.Delete()
+			result['SDCERR'] = 0
+
+		except Exception as e:
+			print(e)
+
+		return result
+
+@cherrypy.expose
+class Edit_Connection(object):
+	@cherrypy.tools.accept(media='application/json')
+	@cherrypy.tools.json_in()
+	@cherrypy.tools.json_out()
+	def POST(self):
+		result = {
+			'SDCERR': 1,
+			"SESSION": 0,
+		}
+		post_data = cherrypy.request.json
+		print(post_data)
+		try:
+			bus = dbus.SystemBus()
+			proxy = bus.get_object(lrd_nm_def.NM_IFACE, lrd_nm_def.NM_SETTINGS_OBJ)
+			settings = dbus.Interface(proxy, lrd_nm_def.NM_SETTINGS_IFACE)
+			uuid_connection = settings.GetConnectionByUuid(post_data['UUID'])
+			connection_proxy = bus.get_object(lrd_nm_def.NM_IFACE, uuid_connection)
+			connection = dbus.Interface(connection_proxy, lrd_nm_def.NM_CONNECTION_IFACE)
+			connection_settings = connection.GetSettings()
+			merge_secrets(connection,connection_settings,'802-11-wireless')
+			merge_secrets(connection,connection_settings,'802-11-wireless-security')
+			merge_secrets(connection,connection_settings,'802-1x')
+
+			if 'wep-tx-keyidx' in connection_settings['802-11-wireless-security']:
+				if connection_settings['802-11-wireless-security']['key-mgmt'] == 'none':
+					connection_settings['802-11-wireless-security']['key-mgmt'] = 'static'
+			result['connection'] = connection_settings
 			result['SDCERR'] = 0
 
 		except Exception as e:

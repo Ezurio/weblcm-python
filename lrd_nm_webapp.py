@@ -55,6 +55,11 @@ if __name__ == '__main__':
 			'tools.response_headers.on': True,
 			'tools.response_headers.headers': [('Content-Type', 'application/json')],
 		},
+		'/edit_connection': {
+			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+			'tools.response_headers.on': True,
+			'tools.response_headers.headers': [('Content-Type', 'application/json')],
+		},
 		'/wifi_scan': {
 			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
 			'tools.response_headers.on': True,
@@ -84,6 +89,7 @@ if __name__ == '__main__':
 	webapp.get_certificates = lrd_nm_func.Get_Certificates()
 	webapp.add_connection = lrd_nm_func.Add_Connection()
 	webapp.remove_connection = lrd_nm_func.Remove_Connection()
+	webapp.edit_connection = lrd_nm_func.Edit_Connection()
 	webapp.wifi_scan = lrd_nm_func.Wifi_Scan()
 	webapp.version = lrd_nm_func.Version()
 	cherrypy.quickstart(webapp, '/', conf)

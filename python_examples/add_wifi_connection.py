@@ -49,3 +49,13 @@ connection_settings = connection.GetSettings()
 print('Connection added:')
 print('Name: ' + connection_settings['connection']['id'])
 print('UUID: ' + connection_settings['connection']['uuid'])
+
+s_con['id'] = 'wfa9_updated'
+con['connection'] = s_con
+
+connection.Update(con)
+
+updated_connection_settings = connection.GetSettings()
+print('Connection updated:')
+print('Name: ' + updated_connection_settings['connection']['id'])
+print('UUID: ' + updated_connection_settings['connection']['uuid'])
