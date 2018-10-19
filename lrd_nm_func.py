@@ -6,6 +6,17 @@ import uuid
 import time
 import lrd_nm_def
 
+def in_session(value):
+	if value in cherrypy.session:
+		return True
+	else:
+		return False
+
+@cherrypy.tools.register('before_request_body')
+def check_session():
+	if not in_session('SESSION'):
+		cherrypy.session['SESSION'] = 1
+
 def merge_secrets(proxy, config, setting_name):
 	try:
 		secrets = proxy.GetSecrets(setting_name)
@@ -15,54 +26,6 @@ def merge_secrets(proxy, config, setting_name):
 				config[setting_name][key] = secrets[setting][key]
 	except Exception as e:
 		pass
-
-@cherrypy.expose
-class Basic_Type_test(object):
-
-	@cherrypy.tools.accept(media='text/plain')
-	def GET(self):
-		print("GET")
-		return "GET"
-
-	def POST(self):
-		print("POST")
-		return "POST"
-
-	def PUT(self):
-		print("PUT")
-		return "PUT"
-
-	def DELETE(self):
-		print("AJAX_DELETE")
-		return "AJAX_DELETE"
-
-@cherrypy.expose
-class Definitions(object):
-
-	@cherrypy.tools.accept(media='application/json')
-	@cherrypy.tools.json_out()
-	def GET(self):
-		result = {
-				'SDCERR': {
-					'SDCERR_SUCCESS': 0, 'SDCERR_FAIL': 1
-				},
-				"PLUGINS": {
-					'count': 1,
-					'list': {
-						'wifi': True, 'interfaces': False, 'remote_update': False,
-					},
-					'wifi': lrd_nm_def.NM_DBUS_API_TYPES,
-				},
-				"DEBUG": 3,
-				"IGNORE_SESION": 0,
-				"SESSION": 0,
-		}
-
-		#input_json = cherrypy.request.json
-		#print(input_json)
-
-		# Responses are serialized to JSON (because of the json_out decorator)
-		return result
 
 @cherrypy.expose
 class Wifi_Status(object):
@@ -125,13 +88,14 @@ class Wifi_Status(object):
 		return result
 
 @cherrypy.expose
+@cherrypy.tools.check_session()
 class Connections(object):
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()
 	def GET(self):
 		result = {
 			'SDCERR': 1,
-			"SESSION": 0,
+			'SESSION': cherrypy.session['SESSION'],
 			'profiles': {},
 		}
 		try:
@@ -175,7 +139,7 @@ class Activate_Connection(object):
 	def POST(self):
 		result = {
 			'SDCERR': 1,
-			"SESSION": 0,
+			'SESSION': cherrypy.session['SESSION'],
 		}
 		post_data = cherrypy.request.json
 		try:
@@ -203,7 +167,7 @@ class Get_Certificates(object):
 	def GET(self):
 		result = {
 			'SDCERR': 0,
-			"SESSION": 0,
+			'SESSION': cherrypy.session['SESSION'],
 			"certs": {},
 		}
 
@@ -236,7 +200,7 @@ class Add_Connection(object):
 
 		result = {
 			'SDCERR': 1,
-			"SESSION": 0,
+			'SESSION': cherrypy.session['SESSION'],
 		}
 		post_data = cherrypy.request.json
 		print(post_data)
@@ -378,7 +342,7 @@ class Remove_Connection(object):
 	def POST(self):
 		result = {
 			'SDCERR': 1,
-			"SESSION": 0,
+			'SESSION': cherrypy.session['SESSION'],
 		}
 		post_data = cherrypy.request.json
 		try:
@@ -404,7 +368,7 @@ class Edit_Connection(object):
 	def POST(self):
 		result = {
 			'SDCERR': 1,
-			"SESSION": 0,
+			'SESSION': cherrypy.session['SESSION'],
 		}
 		post_data = cherrypy.request.json
 		print(post_data)
@@ -438,7 +402,7 @@ class Wifi_Scan(object):
 	def GET(self):
 		result = {
 			'SDCERR': 1,
-			"SESSION": 0,
+			'SESSION': cherrypy.session['SESSION'],
 			'accesspoints': {},
 		}
 		bus = dbus.SystemBus()

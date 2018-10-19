@@ -42,6 +42,7 @@
 		<script type="text/javascript" src="assets/js/jquery.tablesorter.min.js"></script>
 		<script>
 		var intervalId;
+		var plugin_count;
 		var defines = [];
 		var main_menu_list = [];
 		var mini_menu_list = [];
@@ -69,6 +70,7 @@
 					index++;
 				}
 			}
+			plugin_count = index;
 			checkLocks();
 		});
 
@@ -116,7 +118,7 @@
 			.done(function( data ) {
 				main_menu_list[index] = $(data)[1];
 				mini_menu_list[index] = $(data)[3];
-				if (defines.PLUGINS.count == main_menu_list.length){
+				if (plugin_count == main_menu_list.length){
 					$("#main_menu").append(main_menu_list);
 					$("#mini_menu").append(mini_menu_list);
 					consoleLog(main_menu_list);
@@ -315,7 +317,7 @@
 			clearReturnData()
 
 			$.ajax({
-				url: "php/login.php",
+				url: "login",
 				data: JSON.stringify(creds),
 				type: "POST",
 				contentType: "application/json",
@@ -337,8 +339,9 @@
 				document.getElementById("username").value = null;
 				document.getElementById("password").value = null;
 			})
-			.fail(function() {
-				consoleLog("Error, couldn't get startSession.php.. retrying");
+			.fail(function(data) {
+				consoleLog(data.status);
+				consoleLog("Error, couldn't get login.. retrying");
 				if (retry < 5){
 					retry++;
 					login(retry);
@@ -350,7 +353,7 @@
 
 		function logout(retry){
 			$.ajax({
-				url: "php/logout.php",
+				url: "logout",
 				data: {},
 				type: "GET",
 				contentType: "application/json",
@@ -366,10 +369,10 @@
 				document.getElementById("password").value = null;
 			})
 			.fail(function() {
-				consoleLog("Error, couldn't get stopSession.php.. retrying");
+				consoleLog("Error, couldn't get logout.. retrying");
 				if (retry < 5){
 					retry++;
-					loggout(retry);
+					logout(retry);
 				} else {
 					consoleLog("Retry max attempt reached");
 				}

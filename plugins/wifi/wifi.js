@@ -199,24 +199,29 @@ function updateStatus(){
 			$('#AP_MAC').html(data.AP_MAC);
 			$('#AP_IP').html(data.AP_IP);
 
-			var IPv6 = document.getElementById("IPv6");
-			while (IPv6.hasChildNodes()) {
-				IPv6.removeChild(IPv6.lastChild);
-			}
-			if (data.IPv6.length > 0){
-				for (var i = 0; i < data.IPv6.length; i++) {
-					var divAddress = document.createElement("div");
-					divAddress.className = "col-xs-6 col-sm-6 placeholder text-left";
-					var divStrong = document.createElement("strong");
-					var strongText = document.createTextNode("IPv6: ");
-					var divSpan = document.createElement("span");
-					var spanText = document.createTextNode(data.IPv6[i].address);
-					divAddress.appendChild(divStrong);
-					divStrong.appendChild(strongText);
-					divAddress.appendChild(divSpan);
-					divSpan.appendChild(spanText);
-					IPv6.appendChild(divAddress);
+			try {
+				var IPv6 = document.getElementById("IPv6");
+				while (IPv6.hasChildNodes()) {
+					IPv6.removeChild(IPv6.lastChild);
 				}
+				if (data.IPv6.length > 0){
+					for (var i = 0; i < data.IPv6.length; i++) {
+						var divAddress = document.createElement("div");
+						divAddress.className = "col-xs-6 col-sm-6 placeholder text-left";
+						var divStrong = document.createElement("strong");
+						var strongText = document.createTextNode("IPv6: ");
+						var divSpan = document.createElement("span");
+						var spanText = document.createTextNode(data.IPv6[i].address);
+						divAddress.appendChild(divStrong);
+						divStrong.appendChild(strongText);
+						divAddress.appendChild(divSpan);
+						divSpan.appendChild(spanText);
+						IPv6.appendChild(divAddress);
+					}
+				}
+			}
+			catch(err){
+				consoleLog(err);
 			}
 
 			$('#bitRate').html(data.bitRate);

@@ -1,5 +1,60 @@
+import cherrypy
+
 LRD_NM_WEBAPP_BUILD = '0.0.0.0'
 LRD_NM_WEBAPP_VERSION = '0.0.0.0'
+
+USERS = {
+	'user1': 'user1',
+	'user2': 'user2',
+}
+
+WIFI_CONF = {
+		'/wifi_status': {
+			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+			'tools.response_headers.on': True,
+			'tools.response_headers.headers': [('Content-Type', 'application/json')],
+		},
+		'/connections': {
+			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+			'tools.response_headers.on': True,
+			'tools.response_headers.headers': [('Content-Type', 'application/json')],
+		},
+		'/activate_connection': {
+			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+			'tools.response_headers.on': True,
+			'tools.response_headers.headers': [('Content-Type', 'application/json')],
+		},
+		'/get_certificates': {
+			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+			'tools.response_headers.on': True,
+			'tools.response_headers.headers': [('Content-Type', 'application/json')],
+		},
+		'/add_connection': {
+			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+			'tools.response_headers.on': True,
+			'tools.response_headers.headers': [('Content-Type', 'application/json')],
+		},
+		'/remove_connection': {
+			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+			'tools.response_headers.on': True,
+			'tools.response_headers.headers': [('Content-Type', 'application/json')],
+		},
+		'/edit_connection': {
+			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+			'tools.response_headers.on': True,
+			'tools.response_headers.headers': [('Content-Type', 'application/json')],
+		},
+		'/wifi_scan': {
+			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+			'tools.response_headers.on': True,
+			'tools.response_headers.headers': [('Content-Type', 'application/json')],
+		},
+		'/version': {
+			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+			'tools.response_headers.on': True,
+			'tools.response_headers.headers': [('Content-Type', 'application/json')],
+		},
+	}
 
 WIFI_DEVICE_NAME = 'wlan0'
 
