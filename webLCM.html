@@ -450,38 +450,38 @@
 			$("#submitButton").removeClass("disabled");
 		}
 
-		function submitSetUserPass(retry,userName,passWord){
+		function submitSetUserPass(retry){
 			var credentials = {
+				updateUserName: userName.checked,
+				updatePassWord: passWord.checked,
 				currentUserName: document.getElementById("currentUserName").value,
 				currentPassWord: document.getElementById("currentPassWord").value,
+				newUserName: document.getElementById("newUserName").value,
+				newPassWord: document.getElementById("newPassWord").value,
 			}
-			var newUserName = document.getElementById("newUserName").value;
-			var newPassWord = document.getElementById("newPassWord").value;
 			if (userName.checked == true){
-				if (newUserName != document.getElementById("checkUserName").value){
+				if (credentials.newUserName != document.getElementById("checkUserName").value){
 					CustomErrMsg("New username does not match");
 					return;
 				}
-				if (newUserName.trim().length <= 0){
+				if (credentials.newUserName.trim().length <= 0){
 					CustomErrMsg("New username cannot be blank");
 					return;
 				}
-				credentials.newUserName = newUserName;
 			}
 			if (passWord.checked == true){
 				var passw = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,20}$/;
-				if (newPassWord != document.getElementById("checkPassWord").value){
+				if (credentials.newPassWord != document.getElementById("checkPassWord").value){
 					CustomErrMsg("New password does not match");
 					return;
 				}
-				if(!newPassWord.match(passw)){
+				if(!credentials.newPassWord.match(passw)){
 					CustomErrMsg("Password not strong enough");
 					return;
 				}
-				credentials.newPassWord = newPassWord;
 			}
 			$.ajax({
-				url: "/php/setUserPass.php",
+				url: "update_users",
 				type: "POST",
 				data: JSON.stringify(credentials),
 				contentType: "application/json",

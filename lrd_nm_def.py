@@ -3,11 +3,6 @@ import cherrypy
 LRD_NM_WEBAPP_BUILD = '0.0.0.0'
 LRD_NM_WEBAPP_VERSION = '0.0.0.0'
 
-USERS = {
-	'user1': 'user1',
-	'user2': 'user2',
-}
-
 WIFI_CONF = {
 		'/wifi_status': {
 			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
