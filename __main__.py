@@ -3,11 +3,11 @@ import cherrypy
 import configparser
 import uuid
 import hashlib
-import lrd_nm_def
-import lrd_nm_func
+import weblcm_python_def
+import weblcm_python_func
 
 config = configparser.ConfigParser()
-config.read('lrd_nm_webapp.ini')
+config.read(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR + 'weblcm-python.ini')
 
 passwords = configparser.ConfigParser()
 
@@ -64,8 +64,8 @@ def update_users_password(update, current_password, new_password):
 class Root(object):
 	@cherrypy.expose
 	def index(self):
-		lrd_nm_func.check_session()
-		return open('webLCM.html')
+		weblcm_python_func.check_session()
+		return open(weblcm_python_def.WEBLCM_PYTHON_DOC_ROOT + 'webLCM.html')
 
 @cherrypy.expose
 class Login(object):
@@ -78,7 +78,7 @@ class Login(object):
 			'SDCERR': 1,
 		}
 		post_data = cherrypy.request.json
-		passwords.read('lrd_nm_webapp_passwords.ini')
+		passwords.read(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini')
 		if post_data['username'] in passwords and post_data['password']:
 			attempted_password = hashlib.sha256(passwords[post_data['username']]['salt'].encode() + post_data['password'].encode()).hexdigest()
 			if attempted_password == passwords[post_data['username']]['password']:
@@ -112,10 +112,10 @@ class Update_Users(object):
 			'SDCERR': 1,
 		}
 		post_data = cherrypy.request.json
-		passwords.read('lrd_nm_webapp_passwords.ini')
+		passwords.read(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini')
 		if ( not update_users_password(post_data['updatePassWord'], post_data['currentPassWord'], post_data['newPassWord']) and
 			not update_users_username(post_data['updateUserName'],post_data['currentUserName'],post_data['newUserName'])):
-			with open('lrd_nm_webapp_passwords.ini', 'w') as configfile:
+			with open(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini', 'w') as configfile:
 				passwords.write(configfile)
 			result['SDCERR'] = 0
 
@@ -152,7 +152,7 @@ if __name__ == '__main__':
 		},
 		'/': {
 			'tools.sessions.on': True,
-			'tools.staticdir.root': os.path.abspath(os.getcwd()),
+			'tools.staticdir.root': weblcm_python_def.WEBLCM_PYTHON_DOC_ROOT,
 			'tools.sessions.timeout': int(check_dict_value('session_timeout',config['CORE'])),
 		},
 		'/definitions': {
@@ -177,15 +177,15 @@ if __name__ == '__main__':
 		},
 		'/assets': {
 			'tools.staticdir.on': True,
-			'tools.staticdir.dir': './assets'
+			'tools.staticdir.dir': 'assets'
 		},
 		'/plugins': {
 			'tools.staticdir.on': True,
-			'tools.staticdir.dir': './plugins'
+			'tools.staticdir.dir': 'plugins'
 		},
 		'/html': {
 			'tools.staticdir.on': True,
-			'tools.staticdir.dir': './html'
+			'tools.staticdir.dir': 'html'
 		}
 	}
 
@@ -193,17 +193,17 @@ if __name__ == '__main__':
 
 	if check_dict_value('wifi',config['PLUGINS']):
 		PLUGINS['list']['wifi'] = True
-		PLUGINS['wifi'] = lrd_nm_def.NM_DBUS_API_TYPES
-		cherrypy_conf.update(lrd_nm_def.WIFI_CONF)
-		webapp.wifi_status = lrd_nm_func.Wifi_Status()
-		webapp.connections = lrd_nm_func.Connections()
-		webapp.activate_connection = lrd_nm_func.Activate_Connection()
-		webapp.get_certificates = lrd_nm_func.Get_Certificates()
-		webapp.add_connection = lrd_nm_func.Add_Connection()
-		webapp.remove_connection = lrd_nm_func.Remove_Connection()
-		webapp.edit_connection = lrd_nm_func.Edit_Connection()
-		webapp.wifi_scan = lrd_nm_func.Wifi_Scan()
-		webapp.version = lrd_nm_func.Version()
+		PLUGINS['wifi'] = weblcm_python_def.NM_DBUS_API_TYPES
+		cherrypy_conf.update(weblcm_python_def.WIFI_CONF)
+		webapp.wifi_status = weblcm_python_func.Wifi_Status()
+		webapp.connections = weblcm_python_func.Connections()
+		webapp.activate_connection = weblcm_python_func.Activate_Connection()
+		webapp.get_certificates = weblcm_python_func.Get_Certificates()
+		webapp.add_connection = weblcm_python_func.Add_Connection()
+		webapp.remove_connection = weblcm_python_func.Remove_Connection()
+		webapp.edit_connection = weblcm_python_func.Edit_Connection()
+		webapp.wifi_scan = weblcm_python_func.Wifi_Scan()
+		webapp.version = weblcm_python_func.Version()
 
 	webapp.definitions = Definitions()
 	webapp.login = Login()

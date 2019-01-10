@@ -1,7 +1,10 @@
 import cherrypy
 
-LRD_NM_WEBAPP_BUILD = '0.0.0.0'
-LRD_NM_WEBAPP_VERSION = '0.0.0.0'
+WEBLCM_PYTHON_BUILD = '0.0.0.0'
+WEBLCM_PYTHON_VERSION = '0.0.0.0'
+
+WEBLCM_PYTHON_DOC_ROOT = '/var/www/'
+WEBLCM_PYTHON_CONF_DIR = '/etc/weblcm-python/'
 
 WIFI_CONF = {
 		'/wifi_status': {
