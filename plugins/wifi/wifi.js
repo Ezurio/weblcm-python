@@ -1,4 +1,4 @@
-// Copyright (c) 2017, Laird
+// Copyright (c) 2018, Laird Connectivity
 // Contact: ews-support@lairdtech.com
 
 function wifiAUTORUN(retry){
@@ -44,10 +44,12 @@ function CARDSTATEtoString(CARDSTATE){
 			return "Disconnected";
 		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_PREPARE:
 			return "Preparing";
+		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_CONFIG:
+			return "Connecting";
 		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_NEED_AUTH:
 			return "Need Auth";
 		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_IP_CONFIG:
-			return "Connecting";
+			return "Requesting IP";
 		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_IP_CHECK:
 			return "IP Check";
 		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_SECONDARIES:
@@ -204,19 +206,21 @@ function updateStatus(){
 				while (IPv6.hasChildNodes()) {
 					IPv6.removeChild(IPv6.lastChild);
 				}
-				if (data.IPv6.length > 0){
-					for (var i = 0; i < data.IPv6.length; i++) {
-						var divAddress = document.createElement("div");
-						divAddress.className = "col-xs-6 col-sm-6 placeholder text-left";
-						var divStrong = document.createElement("strong");
-						var strongText = document.createTextNode("IPv6: ");
-						var divSpan = document.createElement("span");
-						var spanText = document.createTextNode(data.IPv6[i].address);
-						divAddress.appendChild(divStrong);
-						divStrong.appendChild(strongText);
-						divAddress.appendChild(divSpan);
-						divSpan.appendChild(spanText);
-						IPv6.appendChild(divAddress);
+				if (data.IPv6 != null){
+					if (data.IPv6.length > 0){
+						for (var i = 0; i < data.IPv6.length; i++) {
+							var divAddress = document.createElement("div");
+							divAddress.className = "col-xs-6 col-sm-6 placeholder text-left";
+							var divStrong = document.createElement("strong");
+							var strongText = document.createTextNode("IPv6: ");
+							var divSpan = document.createElement("span");
+							var spanText = document.createTextNode(data.IPv6[i].address);
+							divAddress.appendChild(divStrong);
+							divStrong.appendChild(strongText);
+							divAddress.appendChild(divSpan);
+							divSpan.appendChild(spanText);
+							IPv6.appendChild(divAddress);
+						}
 					}
 				}
 			}
@@ -711,7 +715,11 @@ function activateProfile(retry){
 		}
 		SDCERRtoString(msg.SDCERR);
 		if (msg.SDCERR == defines.SDCERR.SDCERR_SUCCESS){
-			current_connection.removeAttribute("id");
+			try {
+				current_connection.removeAttribute("id");
+			}catch(err){
+				consoleLog("No current connection: " + err);
+			}
 			connection_to_activate[connection_to_activate.selectedIndex].setAttribute("id", "activeProfile");
 			$("#helpText").html("These are the current WiFi profiles. Profile " + connection_to_activate[connection_to_activate.selectedIndex].text + " is the active profile.");
 		}
@@ -1195,7 +1203,7 @@ function getScan(retry){
 			expiredSession();
 			return;
 		}
-		if (msg.SDCERR == defines.SDCERR.SDCERR_NO_HARDWARE){
+		if (msg.SDCERR == defines.SDCERR.SDCERR_NO_HARDWARE || msg.SDCERR == defines.SDCERR.SDCERR_FAIL){
 			$("#updateProgressDisplay").addClass("hidden");
 			$("#status-hardware").removeClass("hidden");
 		} else {
@@ -1616,7 +1624,7 @@ function getVersion(retry){
 		document.getElementById("driver").innerHTML = msg.driver;
 		document.getElementById("firmware").innerHTML = msg.firmware;
 		document.getElementById("supplicant").innerHTML = msg.supplicant;
-		document.getElementById("lrd_nm_webapp").innerHTML = msg.lrd_nm_webapp;
+		document.getElementById("weblcm_python_webapp").innerHTML = msg.weblcm_python_webapp;
 		document.getElementById("build").innerHTML = msg.build;
 	})
 	.fail(function() {
