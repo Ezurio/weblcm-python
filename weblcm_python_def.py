@@ -6,6 +6,9 @@ WEBLCM_PYTHON_VERSION = '0.0.0.0'
 WEBLCM_PYTHON_DOC_ROOT = '/var/www/'
 WEBLCM_PYTHON_CONF_DIR = '/etc/weblcm-python/'
 
+WIFI_DEVICE_NAME =				'wlan0'
+WIFI_DRIVER_DEBUG_PARAM =		'/sys/module/lrdmwl/parameters/lrd_debug'
+
 WIFI_CONF = {
 		'/wifi_status': {
 			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
@@ -54,9 +57,44 @@ WIFI_CONF = {
 		},
 	}
 
-WIFI_DEVICE_NAME = 'wlan0'
+DEFAULT_LOG_SERVICES =			['NetworkManager', 'wpa_supplicant']
+LOGGING_REGENERATE_LOG_TIMER =	10
+LOGGING_UPDATE_LOG_TIMER =		1
+LOGGING_STORAGE_PATH =			"/tmp/weblcm_python/"
+LOGGING_SYSD_JOURNAL_LOG_NAME =	"SOM60_SYSD_JOURNAL.txt"
+
+LOGGING_CONF = {
+		'/request_log': {
+			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+			'tools.response_headers.on': True,
+			'tools.response_headers.headers': [('Content-Type', 'application/json')],
+		},
+		'/generate_log': {
+			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+			'tools.response_headers.on': True,
+			'tools.response_headers.headers': [('Content-Type', 'application/json')],
+		},
+		'/download_log': {
+			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+			'tools.response_headers.on': True,
+			'tools.response_headers.headers': [('Content-Type', 'application/json')],
+		},
+		'/set_logging': {
+			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+			'tools.response_headers.on': True,
+			'tools.response_headers.headers': [('Content-Type', 'application/json')],
+		},
+		'/get_logging': {
+			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
+			'tools.response_headers.on': True,
+			'tools.response_headers.headers': [('Content-Type', 'application/json')],
+		},
+	}
 
 DBUS_PROP_IFACE =				'org.freedesktop.DBus.Properties'
+
+WPA_OBJ =						'/fi/w1/wpa_supplicant1'
+WPA_IFACE =						'fi.w1.wpa_supplicant1'
 
 NM_OBJ =						'/org/freedesktop/NetworkManager'
 NM_SETTINGS_OBJ =				'/org/freedesktop/NetworkManager/Settings'

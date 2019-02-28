@@ -205,6 +205,16 @@ if __name__ == '__main__':
 		webapp.wifi_scan = weblcm_python_func.Wifi_Scan()
 		webapp.version = weblcm_python_func.Version()
 
+	if check_dict_value('logging',config['PLUGINS']):
+		PLUGINS['list']['logging'] = True
+		weblcm_python_func.Log_Data.journal_entries = check_dict_value('journal',config['CORE'])
+		cherrypy_conf.update(weblcm_python_def.LOGGING_CONF)
+		webapp.request_log = weblcm_python_func.Request_Log()
+		webapp.generate_log = weblcm_python_func.Generate_Log()
+		webapp.download_log = weblcm_python_func.Download_Log()
+		webapp.set_logging = weblcm_python_func.Set_Logging()
+		webapp.get_logging = weblcm_python_func.Get_Logging()
+
 	webapp.definitions = Definitions()
 	webapp.login = Login()
 	webapp.logout = Logout()

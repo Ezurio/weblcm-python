@@ -270,6 +270,7 @@ function clickStatusPage(retry) {
 		consoleLog("Status already active");
 	} else {
 		$("li").removeClass("active");
+		$("#wifi_main_menu>ul>li.active").removeClass("active");
 		$("#wifi_status").addClass("active");
 		clearReturnData();
 		$("#helpText").html("This page shows the current state of WiFi");
@@ -884,6 +885,7 @@ function clickProfileEditPage(retry) {
 				intervalId = 0;
 			}
 			$("li").removeClass("active");
+			$("#wifi_main_menu>ul>li.active").removeClass("active");
 			$("#wifi_edit").addClass("active");
 			$('#main_section').html(data);
 			clearReturnData();
@@ -948,6 +950,7 @@ function clickAddProfilePage(retry) {
 			}
 			getCerts(profile,0);
 			$("li").removeClass("active");
+			$("#wifi_main_menu>ul>li.active").removeClass("active");
 			$("#wifi_Add").addClass("active");
 			$("#helpText").html("Enter the name of the profile you would like to add.");
 			$(".infoText").addClass("hidden");
@@ -1103,6 +1106,7 @@ function scanToProfile(){
 	}
 	selectedProfile(profileName_Array,0);
 	$("li").removeClass("active");
+	$("#wifi_main_menu>ul>li.active").removeClass("active");
 	$("#submenuEdit").addClass("active");
 
 }
@@ -1266,6 +1270,7 @@ function clickScanPage(retry){
 			$('#main_section').html(data);
 			clearReturnData();
 			$("li").removeClass("active");
+			$("#wifi_main_menu>ul>li.active").removeClass("active");
 			$("#wifi_scan").addClass("active");
 			$("#helpText").html("Scan for wireless networks");
 			$(".infoText").addClass("hidden");
@@ -1432,181 +1437,6 @@ function getCerts(profile,retry){
 	});
 }
 
-function generateLog(retry){
-	$.ajax({
-		url: "plugins/wifi/php/generateLog.php",
-		type: "POST",
-		contentType: "application/json",
-	})
-	.done(function(msg) {
-		if (intervalId){
-			clearInterval(intervalId);
-			intervalId = 0;
-		}
-		setIntervalUpdate(checkLog);
-	})
-	.fail(function() {
-		consoleLog("Error, couldn't get generateLog.php.. retrying");
-		if (retry < 5){
-			retry++;
-			generateLog(retry);
-		} else {
-			consoleLog("Retry max attempt reached");
-		}
-	});
-}
-
-function removeLog(retry){
-	$.ajax({
-		url: "plugins/wifi/php/removeLog.php",
-		type: "POST",
-		contentType: "application/json",
-	})
-	.done(function(msg) {
-		if (intervalId){
-			clearInterval(intervalId);
-			intervalId = 0;
-		}
-		document.getElementById("generateLog").textContent = "Generate";
-		$("#generateLog").removeClass("disabled");
-		$("#downloadLog").addClass("disabled");
-	})
-	.fail(function() {
-		consoleLog("Error, couldn't get removeLog.php.. retrying");
-		if (retry < 5){
-			retry++;
-			removeLog(retry);
-		} else {
-			consoleLog("Retry max attempt reached");
-		}
-	});
-}
-
-function checkLog(){
-	var getStatusJSON = $.getJSON( "plugins/wifi/php/checkLog.php", function( data ) {
-		if (data.state == "finished"){
-			document.getElementById("generateLog").textContent = "Finished";
-			$("#generateLog").addClass("disabled");
-			$("#downloadLog").removeClass("disabled");
-			if (intervalId){
-				clearInterval(intervalId);
-				intervalId = 0;
-			}
-		} else if (data.state == "stopped"){
-			$("#generateLog").removeClass("disabled");
-			$("#downloadLog").addClass("disabled");
-			if (intervalId){
-				clearInterval(intervalId);
-				intervalId = 0;
-			}
-		} else if (data.state == "running"){
-			document.getElementById("generateLog").textContent = "Generating";
-			$("#generateLog").addClass("disabled");
-			$("#downloadLog").addClass("disabled");
-		}
-	})
-	.fail(function(data) {
-		consoleLog("Error, couldn't get checkLog.php.. retrying");
-		setIntervalUpdate(checkLog);
-	});
-}
-
-function submitAdvanced(retry){
-	var AdvancedData = {
-		suppDebugLevel: parseInt(document.getElementById("suppDebugLevel").value),
-		driverDebugLevel: parseInt(document.getElementById("driverDebugLevel").value),
-	}
-	$.ajax({
-		url: "plugins/wifi/php/setAdvanced.php",
-		type: "POST",
-		data: JSON.stringify(AdvancedData),
-		contentType: "application/json",
-	})
-	.done(function( msg ) {
-		if (msg.SESSION == defines.SDCERR.SDCERR_FAIL){
-			expiredSession();
-			return;
-		}
-		SDCERRtoString(msg.SDCERR);
-		$("#submitButton").addClass("disabled");
-	})
-	.fail(function() {
-		consoleLog("Failed to send advanced data, retrying");
-		if (retry < 5){
-			retry++;
-			submitAdvanced(retry);
-		} else {
-			consoleLog("Retry max attempt reached");
-		}
-	});
-}
-
-function getAdvanced(retry){
-	$.ajax({
-		url: "plugins/wifi/php/getAdvanced.php",
-		type: "POST",
-		contentType: "application/json",
-	})
-	.done(function(msg) {
-		if (intervalId){
-			clearInterval(intervalId);
-			intervalId = 0;
-		}
-		consoleLog(msg);
-		if (msg.SESSION == defines.SDCERR.SDCERR_FAIL){
-			expiredSession();
-			return;
-		}
-		document.getElementById("suppDebugLevel").value = msg.suppDebugLevel;
-		document.getElementById("driverDebugLevel").value = msg.driverDebugLevel;
-		setIntervalUpdate(checkLog);
-	})
-	.fail(function() {
-		consoleLog("Error, couldn't get getAdvanced.php.. retrying");
-		if (retry < 5){
-			retry++;
-			getAdvanced(retry);
-		} else {
-			consoleLog("Retry max attempt reached");
-		}
-	});
-}
-
-function clickAdvancedPage(retry){
-	$.ajax({
-		url: "plugins/wifi/html/advanced.html",
-		data: {},
-		type: "GET",
-		dataType: "html",
-		success: function (data) {
-			if (intervalId){
-				clearInterval(intervalId);
-				intervalId = 0;
-			}
-			$('#main_section').html(data);
-			clearReturnData();
-			$("li").removeClass("active");
-			$("#wifi_advanced").addClass("active");
-			$("#helpText").html("Advanced configuration options");
-			$(".infoText").addClass("hidden");
-		},
-	})
-	.done(function( data ) {
-		$('input[type=file]').bootstrapFileInput();
-		$('.file-inputs').bootstrapFileInput();
-		getAdvanced(0);
-	})
-	.fail(function() {
-		consoleLog("Error, couldn't get advanced.html.. retrying");
-		if (retry < 5){
-			retry++;
-			clickAdvancedPage(retry);
-		} else {
-			consoleLog("Retry max attempt reached");
-		}
-	});
-}
-
 function getVersion(retry){
 	$.ajax({
 		url: "version",
@@ -1652,6 +1482,7 @@ function clickVersionPage(retry){
 			$('#main_section').html(data);
 			clearReturnData();
 			$("li").removeClass("active");
+			$("#wifi_main_menu>ul>li.active").removeClass("active");
 			$("#wifi_version").addClass("active");
 			$("#helpText").html("System version information");
 			$(".infoText").addClass("hidden");
