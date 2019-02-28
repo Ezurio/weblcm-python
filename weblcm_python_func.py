@@ -4,6 +4,7 @@ import subprocess
 import os
 import uuid
 import time
+from systemd import journal
 import weblcm_python_def
 
 def in_session(value):
@@ -533,5 +534,165 @@ class Version(object):
 		result['build'] = subprocess.check_output(['cat','/etc/laird-release']).decode('ascii').rstrip()
 		result['supplicant'] = subprocess.check_output(['sdcsupp','-v']).decode('ascii').rstrip()
 		result['weblcm_python_webapp'] = weblcm_python_def.WEBLCM_PYTHON_BUILD + '-' + weblcm_python_def.WEBLCM_PYTHON_VERSION
+
+		return result
+
+class Log_Data():
+	last_cursor = ''
+	age_of_last_cursor = 0
+	full_log = None
+	journal_entries = ''
+
+@cherrypy.expose
+class Request_Log(object):
+
+	@cherrypy.tools.accept(media='application/json')
+	@cherrypy.tools.json_out()
+	def GET(self):
+		result = {
+			'SDCERR': 1,
+		}
+
+		current_time = time.time()
+		age="--"
+
+		# systemd journal
+		if os.path.isfile(weblcm_python_def.LOGGING_STORAGE_PATH + weblcm_python_def.LOGGING_SYSD_JOURNAL_LOG_NAME):
+			st=os.stat(weblcm_python_def.LOGGING_STORAGE_PATH + weblcm_python_def.LOGGING_SYSD_JOURNAL_LOG_NAME)
+			age=round((current_time-st.st_mtime))
+
+		result['systemd_age'] = str(age)
+
+		log = []
+
+		if (Log_Data.age_of_last_cursor  + weblcm_python_def.LOGGING_REGENERATE_LOG_TIMER ) < current_time:
+			if type(Log_Data.full_log) is 'systemd.journal.Reader':
+				Log_Data.full_log.close()
+			buffer = journal.Reader()
+			for service in weblcm_python_def.DEFAULT_LOG_SERVICES:
+				buffer.add_match(_SYSTEMD_UNIT=service + ".service")
+			if Log_Data.journal_entries:
+				for service in Log_Data.journal_entries:
+					buffer.add_match(_SYSTEMD_UNIT=service + ".service")
+			buffer.this_boot()
+			buffer.seek_head()
+		else:
+			buffer = Log_Data.full_log
+			if buffer.test_cursor(Log_Data.last_cursor):
+				buffer.seek_cursor(Log_Data.last_cursor)
+				buffer.get_next()
+
+		#loop for LOGGING_UPDATE_LOG_TIMER seconds.
+		t_end = time.time() + weblcm_python_def.LOGGING_UPDATE_LOG_TIMER
+		Log_Data.age_of_last_cursor = t_end
+		while time.time() < t_end:
+			entry = buffer.get_next()
+			# See if at end of log
+			try:
+				data = [str(entry['__REALTIME_TIMESTAMP']),entry['SYSLOG_IDENTIFIER'],entry['MESSAGE']]
+				log.append(data)
+				Log_Data.last_cursor = entry['__CURSOR']
+			except:
+				time.sleep(1)
+
+		Log_Data.full_log = buffer
+		result['log'] = log
+		result['SDCERR'] = 0
+
+		return result
+
+@cherrypy.expose
+class Generate_Log(object):
+	@cherrypy.tools.json_in()
+	@cherrypy.tools.json_out()
+	def POST(self):
+		result = {
+			'SDCERR': 1,
+		}
+
+		post_data = cherrypy.request.json
+
+		if os.path.isfile(weblcm_python_def.LOGGING_STORAGE_PATH + weblcm_python_def.LOGGING_SYSD_JOURNAL_LOG_NAME):
+			os.remove(weblcm_python_def.LOGGING_STORAGE_PATH + weblcm_python_def.LOGGING_SYSD_JOURNAL_LOG_NAME)
+		buffer = journal.Reader()
+		buffer.this_boot()
+		if not os.path.isdir(weblcm_python_def.LOGGING_STORAGE_PATH):
+			try:
+				os.mkdir(weblcm_python_def.LOGGING_STORAGE_PATH)
+			except OSError:
+				print("Creation of the directory %s failed" % weblcm_python_def.LOGGING_STORAGE_PATH)
+		log_file = open(weblcm_python_def.LOGGING_STORAGE_PATH + weblcm_python_def.LOGGING_SYSD_JOURNAL_LOG_NAME, "w")
+		if log_file.mode == 'w':
+			for entry in buffer:
+				line = str(entry['__REALTIME_TIMESTAMP']) + " " + entry['SYSLOG_IDENTIFIER'] + ":" + entry['MESSAGE'] + "\n"
+				log_file.write(line)
+			log_file.close()
+			result['SDCERR'] = 0
+
+		return result
+
+@cherrypy.expose
+class Download_Log(object):
+
+	def GET(self):
+		from cherrypy.lib import static
+
+		return static.serve_file(weblcm_python_def.LOGGING_STORAGE_PATH + weblcm_python_def.LOGGING_SYSD_JOURNAL_LOG_NAME, 'application/x-download','attachment', weblcm_python_def.LOGGING_SYSD_JOURNAL_LOG_NAME)
+
+@cherrypy.expose
+class Set_Logging(object):
+
+	@cherrypy.tools.accept(media='application/json')
+	@cherrypy.tools.json_in()
+	@cherrypy.tools.json_out()
+	def POST(self):
+		result = {
+			'SDCERR': 1,
+		}
+
+		post_data = cherrypy.request.json
+
+		bus = dbus.SystemBus()
+		proxy = bus.get_object(weblcm_python_def.WPA_IFACE, weblcm_python_def.WPA_OBJ)
+		wpas = dbus.Interface(proxy, weblcm_python_def.DBUS_PROP_IFACE)
+		wpas.Set(weblcm_python_def.WPA_IFACE, "DebugLevel", str(post_data['suppDebugLevel']))
+
+		try:
+			driver_debug_file = open(weblcm_python_def.WIFI_DRIVER_DEBUG_PARAM, "w")
+			if driver_debug_file.mode == 'w':
+				driver_debug_file.write(str(post_data['driverDebugLevel']))
+		except Exception as e:
+			print(e)
+
+		result['SDCERR'] = 0
+
+		return result
+
+@cherrypy.expose
+class Get_Logging(object):
+
+	@cherrypy.tools.accept(media='application/json')
+	@cherrypy.tools.json_out()
+	def GET(self):
+		result = {
+			'SDCERR': 1,
+		}
+
+		bus = dbus.SystemBus()
+		proxy = bus.get_object(weblcm_python_def.WPA_IFACE, weblcm_python_def.WPA_OBJ)
+		wpas = dbus.Interface(proxy, weblcm_python_def.DBUS_PROP_IFACE)
+		debug_level = wpas.Get(weblcm_python_def.WPA_IFACE, "DebugLevel")
+
+		result['suppDebugLevel'] = debug_level
+
+		try:
+			driver_debug_file = open(weblcm_python_def.WIFI_DRIVER_DEBUG_PARAM, "r")
+			if driver_debug_file.mode == 'r':
+				contents = driver_debug_file.read(1)
+				result['driverDebugLevel'] = contents
+		except Exception as e:
+			print(e)
+
+		result['SDCERR'] = 0
 
 		return result
