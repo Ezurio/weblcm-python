@@ -9,8 +9,8 @@ WEBLCM_PYTHON_CONF_DIR = '/etc/weblcm-python/'
 WIFI_DEVICE_NAME =				'wlan0'
 WIFI_DRIVER_DEBUG_PARAM =		'/sys/module/lrdmwl/parameters/lrd_debug'
 
-WIFI_CONF = {
-		'/wifi_status': {
+NETWORKING_CONF = {
+		'/networking_status': {
 			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
 			'tools.response_headers.on': True,
 			'tools.response_headers.headers': [('Content-Type', 'application/json')],

@@ -191,11 +191,11 @@ if __name__ == '__main__':
 
 	webapp = Root()
 
-	if check_dict_value('wifi',config['PLUGINS']):
-		PLUGINS['list']['wifi'] = True
-		PLUGINS['wifi'] = weblcm_python_def.NM_DBUS_API_TYPES
-		cherrypy_conf.update(weblcm_python_def.WIFI_CONF)
-		webapp.wifi_status = weblcm_python_func.Wifi_Status()
+	if check_dict_value('networking',config['PLUGINS']):
+		PLUGINS['list']['networking'] = True
+		PLUGINS['networking'] = weblcm_python_def.NM_DBUS_API_TYPES
+		cherrypy_conf.update(weblcm_python_def.NETWORKING_CONF)
+		webapp.networking_status = weblcm_python_func.Networking_Status()
 		webapp.connections = weblcm_python_func.Connections()
 		webapp.activate_connection = weblcm_python_func.Activate_Connection()
 		webapp.get_certificates = weblcm_python_func.Get_Certificates()
@@ -221,4 +221,3 @@ if __name__ == '__main__':
 	webapp.update_users = Update_Users()
 
 	cherrypy.quickstart(webapp, "/", cherrypy_conf)
-

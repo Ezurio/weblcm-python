@@ -162,7 +162,7 @@ function getLogging(retry){
 
 function clickLoggingPage(retry){
 	$.ajax({
-		url: "plugins/wifi/html/logging.html",
+		url: "plugins/logging/html/logging.html",
 		data: {},
 		type: "GET",
 		dataType: "html",
@@ -173,7 +173,7 @@ function clickLoggingPage(retry){
 			}
 			$('#main_section').html(data);
 			clearReturnData();
-			$("#wifi_main_menu>ul>li.active").removeClass("active");
+			$("#networking_main_menu>ul>li.active").removeClass("active");
 			$("#main_menu>li.active").removeClass("active");
 			$("#logging_main_menu").addClass("active");
 			$("#helpText").html("Logging options");
