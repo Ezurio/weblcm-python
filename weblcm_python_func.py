@@ -29,7 +29,7 @@ def merge_secrets(proxy, config, setting_name):
 		pass
 
 @cherrypy.expose
-class Wifi_Status(object):
+class Networking_Status(object):
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()
 	def GET(self):
@@ -104,7 +104,7 @@ class Connections(object):
 		result = {
 			'SDCERR': 1,
 			'SESSION': cherrypy.session['SESSION'],
-			'profiles': {},
+			'connections': {},
 		}
 		try:
 			bus = dbus.SystemBus()
@@ -139,7 +139,7 @@ class Connections(object):
 			connection = dbus.Interface(connection_proxy, weblcm_python_def.NM_CONNECTION_IFACE)
 			connection_settings = connection.GetSettings()
 			if connection_settings['connection']['type'] == '802-11-wireless':
-				result['profiles'][connection_settings['connection']['uuid']] = connection_settings['connection']['id']
+				result['connections'][connection_settings['connection']['uuid']] = connection_settings['connection']['id']
 
 		return result
 

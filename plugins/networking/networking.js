@@ -1,13 +1,13 @@
 // Copyright (c) 2018, Laird Connectivity
 // Contact: ews-support@lairdtech.com
 
-function wifiAUTORUN(retry){
+function networkingAUTORUN(retry){
 	clickStatusPage(0);
 }
 
 function updateInfoText(option,retry){
 	$.ajax({
-		url: "plugins/wifi/html/info.html",
+		url: "plugins/networking/html/info.html",
 		data: {},
 		type: "GET",
 		dataType: "html",
@@ -24,7 +24,7 @@ function updateInfoText(option,retry){
 		}
 		if (retry < 5){
 			retry++;
-			$("#wifi_status").removeClass("active");
+			$("#networking_status").removeClass("active");
 			clickStatusPage(retry);
 		} else {
 			consoleLog("Retry max attempt reached");
@@ -34,31 +34,31 @@ function updateInfoText(option,retry){
 
 function CARDSTATEtoString(CARDSTATE){
 	switch(CARDSTATE) {
-		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_UNKNOWN:
+		case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_UNKNOWN:
 			return "Unknown";
-		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_UNMANAGED:
+		case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_UNMANAGED:
 			return "Unmanaged";
-		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_UNAVAILABLE:
+		case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_UNAVAILABLE:
 			return "Unavailable";
-		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_DISCONNECTED:
+		case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_DISCONNECTED:
 			return "Disconnected";
-		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_PREPARE:
+		case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_PREPARE:
 			return "Preparing";
-		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_CONFIG:
+		case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_CONFIG:
 			return "Connecting";
-		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_NEED_AUTH:
+		case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_NEED_AUTH:
 			return "Need Auth";
-		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_IP_CONFIG:
+		case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_IP_CONFIG:
 			return "Requesting IP";
-		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_IP_CHECK:
+		case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_IP_CHECK:
 			return "IP Check";
-		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_SECONDARIES:
+		case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_SECONDARIES:
 			return "Secondaries";
-		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_ACTIVATED:
+		case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_ACTIVATED:
 			return "Activated";
-		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_DEACTIVATING:
+		case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_DEACTIVATING:
 			return "Deactivating";
-		case defines.PLUGINS.wifi.NMDeviceState.NM_DEVICE_STATE_FAILED:
+		case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_FAILED:
 			return "Failed";
 		default:
 			return "Unknown State";
@@ -68,11 +68,11 @@ function CARDSTATEtoString(CARDSTATE){
 function onChangePowersave(){
 	var powerSave = parseInt(document.getElementById("powerSave").value);
 	switch (powerSave){
-		case defines.PLUGINS.wifi.POWERSAVE.POWERSAVE_OFF:
-		case defines.PLUGINS.wifi.POWERSAVE.POWERSAVE_MAX:
+		case defines.PLUGINS.networking.POWERSAVE.POWERSAVE_OFF:
+		case defines.PLUGINS.networking.POWERSAVE.POWERSAVE_MAX:
 			$("#pspDelayDisplay").addClass("hidden");
 			break;
-		case defines.PLUGINS.wifi.POWERSAVE.POWERSAVE_FAST:
+		case defines.PLUGINS.networking.POWERSAVE.POWERSAVE_FAST:
 			$("#pspDelayDisplay").removeClass("hidden");
 			break;
 		default:
@@ -166,7 +166,7 @@ function onChangeSecurity(){
 }
 
 function updateStatus(){
-	var getStatusJSON = $.getJSON( "wifi_status", function( data ) {
+	var getStatusJSON = $.getJSON( "networking_status", function( data ) {
 		consoleLog(data)
 		if (data.SESSION == defines.SDCERR.SDCERR_FAIL){
 			$("#loggout").addClass("hidden");
@@ -270,13 +270,13 @@ function clickStatusPage(retry) {
 		consoleLog("Status already active");
 	} else {
 		$("li").removeClass("active");
-		$("#wifi_main_menu>ul>li.active").removeClass("active");
-		$("#wifi_status").addClass("active");
+		$("#networking_main_menu>ul>li.active").removeClass("active");
+		$("#networking_status").addClass("active");
 		clearReturnData();
-		$("#helpText").html("This page shows the current state of WiFi");
+		$("#helpText").html("This page shows the current state of networking");
 		$(".infoText").addClass("hidden");
 		$.ajax({
-			url: "plugins/wifi/html/status.html",
+			url: "plugins/networking/html/status.html",
 			data: {},
 			type: "GET",
 			dataType: "html",
@@ -293,7 +293,7 @@ function clickStatusPage(retry) {
 			}
 			if (retry < 5){
 				retry++;
-				$("#wifi_status").removeClass("active");
+				$("#networking_status").removeClass("active");
 				clickStatusPage(retry);
 			} else {
 				consoleLog("Retry max attempt reached");
@@ -307,7 +307,7 @@ function checkUUID(uuid) {
 	return regexUUID.test(uuid);
 }
 
-function checkProfileValues(){
+function checkConnectionValues(){
 	var result = true;
 	pspDelay = document.getElementById("pspDelay");
 	keymgmt = document.getElementById("key-mgmt");
@@ -349,15 +349,15 @@ function checkProfileValues(){
 	return result;
 }
 
-function clearProfileInts(){
+function clearConnectionInts(){
 	$("#pspDelayDisplay").removeClass("has-error");
 }
 
-function submitProfile(retry){
-	profileName_Value = document.getElementById("profileName").value;
-	var profileName_Array = [];
-	for (var i = 0, len = profileName_Value.length; i < len; i++) {
-		profileName_Array[i] = profileName_Value.charCodeAt(i);
+function submitConnection(retry){
+	connectionName_Value = document.getElementById("connectionName").value;
+	var connectionName_Array = [];
+	for (var i = 0, len = connectionName_Value.length; i < len; i++) {
+		connectionName_Array[i] = connectionName_Value.charCodeAt(i);
 	}
 	SSID_Value = document.getElementById("SSID").value;
 	var CharCode_Array = [];
@@ -369,8 +369,8 @@ function submitProfile(retry){
 	if (txPower_value.toLowerCase() == "auto" || txPower <= 0){
 		txPower = 0;
 		document.getElementById("txPower").value = "Auto";
-	} else if (txPower > defines.PLUGINS.wifi.MAX_TX_POWER.MAX_MW) {
-		if (defines.PLUGINS.wifi.MAX_TX_POWER.MAX_MW != 0){
+	} else if (txPower > defines.PLUGINS.networking.MAX_TX_POWER.MAX_MW) {
+		if (defines.PLUGINS.networking.MAX_TX_POWER.MAX_MW != 0){
 			CustomErrMsg("TX Power is out of range");
 			return;
 		}
@@ -380,8 +380,8 @@ function submitProfile(retry){
 	for (var i = 0, len = PSK_Value.length; i < len; i++) {
 		PSK_Array[i] = PSK_Value.charCodeAt(i);
 	}
-	var profileData = {
-		profileName: profileName_Array,
+	var connectionData = {
+		connectionName: connectionName_Array,
 		SSID: CharCode_Array,
 		clientName: document.getElementById("clientName").value,
 		txPower: txPower,
@@ -405,15 +405,15 @@ function submitProfile(retry){
 		PACFilename: document.getElementById("PACFilename").value,
 		PACPassword: document.getElementById("PACPassword").value,
 	}
-	consoleLog(profileData);
-	if (!checkProfileValues()){
+	consoleLog(connectionData);
+	if (!checkConnectionValues()){
 		CustomErrMsg("Invalid Value");
 		return;
 	}
 	$.ajax({
-		url: "plugins/wifi/php/setProfile.php",
+		url: "plugins/networking/php/setConnection.php",
 		type: "POST",
-		data: JSON.stringify(profileData),
+		data: JSON.stringify(connectionData),
 		contentType: "application/json",
 	})
 	.done(function( msg ) {
@@ -421,14 +421,14 @@ function submitProfile(retry){
 		SDCERRtoString(msg.SDCERR);
 		$("#submitButton").addClass("disabled");
 		if (msg.SDCERR == defines.SDCERR.SDCERR_SUCCESS){
-			clearProfileInts();
+			clearConnectionInts();
 		}
 	})
 	.fail(function() {
-		consoleLog("Failed to get profile data, retrying");
+		consoleLog("Failed to get connection data, retrying");
 		if (retry < 5){
 			retry++;
-			submitProfile(retry);
+			submitConnection(retry);
 		} else {
 			consoleLog("Retry max attempt reached");
 		}
@@ -442,7 +442,7 @@ function cleanup_output(value){
 	return value;
 }
 
-function updateGetProfilePage(uuid,retry){
+function updateGetConnectionPage(uuid,retry){
 	var data = {
 			UUID: uuid,
 		}
@@ -594,22 +594,22 @@ function updateGetProfilePage(uuid,retry){
 		onChangeSecurity();
 	})
 	.fail(function() {
-		consoleLog("Failed to get profile data, retrying");
+		consoleLog("Failed to get connection data, retrying");
 		if (retry < 5){
 			retry++;
-			updateGetProfilePage(profileName,retry);
+			updateGetConnectionPage(connectionName,retry);
 		} else {
 			consoleLog("Retry max attempt reached");
 		}
 	});
 }
 
-function selectedProfile(uuid,retry){
+function selectedConnection(uuid,retry){
 	if(!uuid){
-		var uuid = document.getElementById("profileSelect").value;
+		var uuid = document.getElementById("connectionSelect").value;
 	}
 	$.ajax({
-		url: "plugins/wifi/html/addProfile.html",
+		url: "plugins/networking/html/addConnection.html",
 		data: {},
 		type: "GET",
 		dataType: "html",
@@ -620,32 +620,32 @@ function selectedProfile(uuid,retry){
 			}
 			$('#main_section').html(data);
 			clearReturnData();
-			$("#helpText").html("Adjust profile settings.");
+			$("#helpText").html("Adjust connection settings.");
 			$(".infoText").addClass("hidden");
 		},
 		error: function (xhr, status) {
-			consoleLog("Error, couldn't get addProfile.html");
+			consoleLog("Error, couldn't get addConnection.html");
 		},
 	})
 	.done(function( msg ) {
-		updateGetProfilePage(uuid,0);
+		updateGetConnectionPage(uuid,0);
 	})
 	.fail(function() {
-		consoleLog("Failed to get get Profile, retrying");
+		consoleLog("Failed to get get Connection, retrying");
 		if (retry < 5){
 			retry++;
-			selectedProfile(uuid,retry);
+			selectedConnection(uuid,retry);
 		} else {
 			consoleLog("Retry max attempt reached");
 		}
 	});
 }
 
-function enableAutoProfileSubmit(){
-	$("#applyAutoProfile").removeClass("disabled");
+function enableAutoConnectionSubmit(){
+	$("#applyAutoConnection").removeClass("disabled");
 }
 
-function updateSelectProfilePage(retry){
+function updateConnectionsPage(retry){
 	$.ajax({
 		url: "connections",
 		type: "GET",
@@ -657,42 +657,42 @@ function updateSelectProfilePage(retry){
 			expiredSession();
 			return;
 		}
-		var x = document.getElementById("profileSelect");
+		var x = document.getElementById("connectionSelect");
 		x.size = String(msg.NumConfigs);
 		var i = 0;
-		for (var UUID in msg.profiles) {
-			var friendly_connection_name = msg.profiles[UUID] + "(" + UUID + ")"
+		for (var UUID in msg.connections) {
+			var friendly_connection_name = msg.connections[UUID] + "(" + UUID + ")"
 			var option = document.createElement("option");
 			option.text = friendly_connection_name;
 			option.value = UUID;
 			x.add(option);
 			if (UUID == msg.currentConfig){
 				x.selectedIndex = i;
-				option.id = "activeProfile";
+				option.id = "activeConnection";
 				var helpText = document.getElementById("helpText").innerHTML;
-				$("#helpText").html(helpText + " Profile " + friendly_connection_name + " is the active WiFi profile.");
+				$("#helpText").html(helpText + " Connection " + friendly_connection_name + " is the active networking connection.");
 			}
 			i++;
 		}
 	})
 	.fail(function() {
-		consoleLog("Failed to get profiles, retrying");
+		consoleLog("Failed to get connections, retrying");
 		if (retry < 5){
 			retry++;
-			updateSelectProfilePage(retry);
+			updateConnectionsPage(retry);
 		} else {
 			consoleLog("Retry max attempt reached");
 		}
 	});
 }
 
-function activateProfile(retry){
-	var current_connection = document.getElementById("activeProfile");
-	var connection_to_activate = document.getElementById("profileSelect");
+function activateConnection(retry){
+	var current_connection = document.getElementById("activeConnection");
+	var connection_to_activate = document.getElementById("connectionSelect");
 	var data = {
 			UUID: connection_to_activate.value,
 	}
-	consoleLog("Activating profile " + connection_to_activate.value);
+	consoleLog("Activating connection " + connection_to_activate.value);
 	$.ajax({
 		url: "activate_connection",
 		type: "POST",
@@ -721,41 +721,41 @@ function activateProfile(retry){
 			}catch(err){
 				consoleLog("No current connection: " + err);
 			}
-			connection_to_activate[connection_to_activate.selectedIndex].setAttribute("id", "activeProfile");
-			$("#helpText").html("These are the current WiFi profiles. Profile " + connection_to_activate[connection_to_activate.selectedIndex].text + " is the active profile.");
+			connection_to_activate[connection_to_activate.selectedIndex].setAttribute("id", "activeConnection");
+			$("#helpText").html("These are the current networking connections. Connection " + connection_to_activate[connection_to_activate.selectedIndex].text + " is the active connection.");
 		}
 	})
 	.fail(function() {
-		consoleLog("Failed to activate profile, retrying");
+		consoleLog("Failed to activate connection, retrying");
 		if (retry < 5){
 			retry++;
-			activateProfile(retry);
+			activateConnection(retry);
 		} else {
 			consoleLog("Retry max attempt reached");
 		}
 	});
 }
 
-function renameProfile(retry){
-	var profileSelect = document.getElementById("profileSelect");
-	var selectedProfile = profileSelect.options[profileSelect.selectedIndex].text;
-	var selectedProfile_Array = [];
-	for (var i = 0, len = selectedProfile.length; i < len; i++) {
-		selectedProfile_Array[i] = selectedProfile.charCodeAt(i);
+function renameConnection(retry){
+	var connectionSelect = document.getElementById("connectionSelect");
+	var selectedConnection = connectionSelect.options[connectionSelect.selectedIndex].text;
+	var selectedConnection_Array = [];
+	for (var i = 0, len = selectedConnection.length; i < len; i++) {
+		selectedConnection_Array[i] = selectedConnection.charCodeAt(i);
 	}
-	var	newProfileName_Value = document.getElementById("newProfileName").value.trim();
-	var newProfileName_Array = [];
-	for (var i = 0, len = newProfileName_Value.length; i < len; i++) {
-		newProfileName_Array[i] = newProfileName_Value.charCodeAt(i);
+	var	newConnectionName_Value = document.getElementById("newConnectionName").value.trim();
+	var newConnectionName_Array = [];
+	for (var i = 0, len = newConnectionName_Value.length; i < len; i++) {
+		newConnectionName_Array[i] = newConnectionName_Value.charCodeAt(i);
 	}
-	var profileName = {
-			currentName: selectedProfile_Array,
-			newName: newProfileName_Array,
+	var connectionName = {
+			currentName: selectedConnection_Array,
+			newName: newConnectionName_Array,
 	}
 	$.ajax({
-		url: "plugins/wifi/php/renameProfile.php",
+		url: "plugins/networking/php/renameConnection.php",
 		type: "POST",
-		data: JSON.stringify(profileName),
+		data: JSON.stringify(connectionName),
 		contentType: "application/json",
 		success: function (data) {
 			if (intervalId){
@@ -764,7 +764,7 @@ function renameProfile(retry){
 			}
 		},
 		error: function (xhr, status) {
-			consoleLog("Error, couldn't get renameProfile.php");
+			consoleLog("Error, couldn't get renameConnection.php");
 		},
 	})
 	.done(function( msg ) {
@@ -775,40 +775,40 @@ function renameProfile(retry){
 		}
 		SDCERRtoString(msg.SDCERR);
 		if (document.getElementById("returnDataNav").innerHTML == "Success"){
-			var currentActiveProfile = document.getElementById("activeProfile").value;
-			for(var i = 0; i < profileSelect.options.length; i++) {
-				if (selectedProfile == profileSelect.options[i].text){
-					profileSelect.options[i].text = newProfileName_Value;
-					if (currentActiveProfile == selectedProfile){
-						$("#helpText").html("These are the current WiFi profiles. Profile " + newProfileName_Value + " is the active profile.");
+			var currentActiveConnection = document.getElementById("activeConnection").value;
+			for(var i = 0; i < connectionSelect.options.length; i++) {
+				if (selectedConnection == connectionSelect.options[i].text){
+					connectionSelect.options[i].text = newConnectionName_Value;
+					if (currentActiveConnection == selectedConnection){
+						$("#helpText").html("These are the current networking connections. Connection " + newConnectionName_Value + " is the active connection.");
 					}
 				}
 			}
-			$("#newProfileNameDisplay").addClass("hidden");
+			$("#newConnectionNameDisplay").addClass("hidden");
 		}
 	})
 	.fail(function() {
-		consoleLog("Failed to rename profile, retrying");
+		consoleLog("Failed to rename connection, retrying");
 		if (retry < 5){
 			retry++;
-			renameProfile(retry);
+			renameConnection(retry);
 		} else {
 			consoleLog("Retry max attempt reached");
 		}
 	});
 }
 
-function showRenameProfile(){
-	$("#newProfileNameDisplay").removeClass("hidden");
+function showRenameConnection(){
+	$("#newConnectionNameDisplay").removeClass("hidden");
 }
 
-function removeProfile(){
-	var profileSelect = document.getElementById("profileSelect");
-	var activeProfile = document.getElementById("activeProfile");
+function removeConnection(){
+	var connectionSelect = document.getElementById("connectionSelect");
+	var activeConnection = document.getElementById("activeConnection");
 	var connection_to_remove = {
-		UUID: profileSelect.value
+		UUID: connectionSelect.value
 	}
-	if (profileSelect.value != activeProfile.value){
+	if (connectionSelect.value != activeConnection.value){
 		$.ajax({
 			url: "remove_connection",
 			type: "POST",
@@ -822,44 +822,44 @@ function removeProfile(){
 			}
 			SDCERRtoString(msg.SDCERR);
 			if (document.getElementById("returnDataNav").innerHTML == "Success"){
-				for(var i = 0; i < profileSelect.options.length; i++) {
-					if (profileSelect.value == profileSelect.options[i].value){
-						profileSelect.options.remove(i);
-						profileSelect.size = profileSelect.size - 1;
+				for(var i = 0; i < connectionSelect.options.length; i++) {
+					if (connectionSelect.value == connectionSelect.options[i].value){
+						connectionSelect.options.remove(i);
+						connectionSelect.size = connectionSelect.size - 1;
 					}
 				}
-				profileSelect.selectedIndex = activeProfile.index;
+				connectionSelect.selectedIndex = activeConnection.index;
 			}
 		});
 	} else {
-		CustomErrMsg("Can't delete active profile");
+		CustomErrMsg("Can't delete active connection");
 	}
 };
 
-function submitAutoProfile(retry){
-	var rows,index,profile,value;
-	var autoProfileList = [];
-	var autoProfileValues = [];
-	rows = document.getElementById("autoProfileTable").rows;
+function submitAutoConnection(retry){
+	var rows,index,connection,value;
+	var autoConnectionList = [];
+	var autoConnectionValues = [];
+	rows = document.getElementById("autoConnectionTable").rows;
 	for (index = 1; index < rows.length; index++){
-		profile = rows[index].cells[0].innerHTML;
-		var profileSelect_Array = [];
-		for (var i = 0, len = profile.length; i < len; i++) {
-			profileSelect_Array[i] = profile.charCodeAt(i);
+		connection = rows[index].cells[0].innerHTML;
+		var connectionSelect_Array = [];
+		for (var i = 0, len = connection.length; i < len; i++) {
+			connectionSelect_Array[i] = connection.charCodeAt(i);
 		}
 		value = rows[index].cells[1].children[0].checked;
-		autoProfileList[index] = profileSelect_Array;
-		autoProfileValues[index] = value;
+		autoConnectionList[index] = connectionSelect_Array;
+		autoConnectionValues[index] = value;
 	}
-	var autoProfile = {
-		profileList: autoProfileList,
-		profileValues: autoProfileValues,
+	var autoConnection = {
+		connectionList: autoConnectionList,
+		connectionValues: autoConnectionValues,
 	}
-	consoleLog(autoProfile);
+	consoleLog(autoConnection);
 	$.ajax({
-		url: "plugins/wifi/php/setAutoProfileList.php",
+		url: "plugins/networking/php/setAutoConnectionList.php",
 		type: "POST",
-		data: JSON.stringify(autoProfile),
+		data: JSON.stringify(autoConnection),
 		contentType: "application/json",
 	})
 	.done(function( msg ) {
@@ -869,13 +869,13 @@ function submitAutoProfile(retry){
 			return;
 		}
 		SDCERRtoString(msg.SDCERR);
-		$("#applyAutoProfile").addClass("disabled");
+		$("#applyAutoConnection").addClass("disabled");
 	});
 }
 
-function clickProfileEditPage(retry) {
+function clickConnectionEditPage(retry) {
 	$.ajax({
-		url: "plugins/wifi/html/selectProfile.html",
+		url: "plugins/networking/html/connections.html",
 		data: {},
 		type: "GET",
 		dataType: "html",
@@ -885,27 +885,27 @@ function clickProfileEditPage(retry) {
 				intervalId = 0;
 			}
 			$("li").removeClass("active");
-			$("#wifi_main_menu>ul>li.active").removeClass("active");
-			$("#wifi_edit").addClass("active");
+			$("#networking_main_menu>ul>li.active").removeClass("active");
+			$("#networking_edit").addClass("active");
 			$('#main_section').html(data);
 			clearReturnData();
-			$("#helpText").html("These are the current WiFi profiles.");
+			$("#helpText").html("These are the current networking connections.");
 			$(".infoText").addClass("hidden");
-			setTimeout(updateSelectProfilePage(retry),1000);
+			setTimeout(updateConnectionsPage(retry),1000);
 		},
 	})
 	.fail(function() {
-		consoleLog("Error, couldn't get selectProfile.html.. retrying");
+		consoleLog("Error, couldn't get connections.html.. retrying");
 		if (retry < 5){
 			retry++;
-			clickProfileEditPage(retry);
+			clickConnectionEditPage(retry);
 		} else {
 			consoleLog("Retry max attempt reached");
 		}
 	});
 }
 
-function getAddProfileList(retry){
+function getAddConnectionList(retry){
 	$.ajax({
 		url: "connections",
 		type: "GET",
@@ -919,19 +919,19 @@ function getAddProfileList(retry){
 		}
 	})
 	.fail(function() {
-		consoleLog("Failed to get number of profiles, retrying");
+		consoleLog("Failed to get number of connections, retrying");
 		if (retry < 5){
 			retry++;
-			getAddProfileList(retry);
+			getAddConnectionList(retry);
 		} else {
 			consoleLog("Retry max attempt reached");
 		}
 	});
 }
 
-function clickAddProfilePage(retry) {
+function clickAddConnectionPage(retry) {
 	$.ajax({
-		url: "plugins/wifi/html/addProfile.html",
+		url: "plugins/networking/html/addConnection.html",
 		data: {},
 		type: "GET",
 		dataType: "html",
@@ -942,17 +942,17 @@ function clickAddProfilePage(retry) {
 			}
 			$('#main_section').html(data);
 			clearReturnData();
-			var profile = {
+			var connection = {
 				client_cert:"",
 				private_key:"",
 				ca_cert:"",
 				pac_file:"",
 			}
-			getCerts(profile,0);
+			getCerts(connection,0);
 			$("li").removeClass("active");
-			$("#wifi_main_menu>ul>li.active").removeClass("active");
-			$("#wifi_Add").addClass("active");
-			$("#helpText").html("Enter the name of the profile you would like to add.");
+			$("#networking_main_menu>ul>li.active").removeClass("active");
+			$("#networking_Add").addClass("active");
+			$("#helpText").html("Enter the name of the connection you would like to add.");
 			$(".infoText").addClass("hidden");
 		},
 	})
@@ -963,17 +963,17 @@ function clickAddProfilePage(retry) {
 		}
 	})
 	.fail(function() {
-		consoleLog("Error, couldn't get addProfile.html.. retrying");
+		consoleLog("Error, couldn't get addConnection.html.. retrying");
 		if (retry < 5){
 			retry++;
-			clickAddProfilePage(retry);
+			clickAddConnectionPage(retry);
 		} else {
 			consoleLog("Retry max attempt reached");
 		}
 	});
 }
 
-function updateAddProfile(){
+function updateAddConnection(){
 	if ($('#advancedOptions').attr('aria-expanded') == "false"){
 		document.getElementById("advancedOptions").innerHTML = "Hide advanced options";
 	} else {
@@ -981,7 +981,7 @@ function updateAddProfile(){
 	}
 }
 
-function addProfile(){
+function addConnection(){
 	id = document.getElementById("id").value.trim();
 	var id_array = [];
 	for (var i = 0, len = id.length; i < len; i++) {
@@ -1037,7 +1037,7 @@ function addProfile(){
 			pacfile: document.getElementById("pac-file").value,
 		}
 		consoleLog(new_connection);
-		if (!checkProfileValues()){
+		if (!checkConnectionValues()){
 			CustomErrMsg("Invalid Value");
 			return;
 		}
@@ -1056,67 +1056,67 @@ function addProfile(){
 			}
 			SDCERRtoString(msg.SDCERR);
 			if (msg.SDCERR == defines.SDCERR.SDCERR_SUCCESS){
-				clearProfileInts();
+				clearConnectionInts();
 			}
 		});
 	} else {
-		CustomErrMsg("Profile name can't be empty");
+		CustomErrMsg("Connection name can't be empty");
 		consoleLog("Name is null");
 	}
 };
 
 function regDomainToString(regDomain){
 	switch(regDomain) {
-		case defines.PLUGINS.wifi.REG_DOMAIN.REG_FCC:
+		case defines.PLUGINS.networking.REG_DOMAIN.REG_FCC:
 			return "FCC";
-		case defines.PLUGINS.wifi.REG_DOMAIN.REG_ETSI:
+		case defines.PLUGINS.networking.REG_DOMAIN.REG_ETSI:
 			return "ETSI";
-		case defines.PLUGINS.wifi.REG_DOMAIN.REG_TELEC:
+		case defines.PLUGINS.networking.REG_DOMAIN.REG_TELEC:
 			return "TELEC";
-		case defines.PLUGINS.wifi.REG_DOMAIN.REG_WW:
+		case defines.PLUGINS.networking.REG_DOMAIN.REG_WW:
 			return "WW";
-		case defines.PLUGINS.wifi.REG_DOMAIN.REG_KCC:
+		case defines.PLUGINS.networking.REG_DOMAIN.REG_KCC:
 			return "KCC";
-		case defines.PLUGINS.wifi.REG_DOMAIN.REG_CA:
+		case defines.PLUGINS.networking.REG_DOMAIN.REG_CA:
 			return "CA";
-		case defines.PLUGINS.wifi.REG_DOMAIN.REG_FR:
+		case defines.PLUGINS.networking.REG_DOMAIN.REG_FR:
 			return "FR";
-		case defines.PLUGINS.wifi.REG_DOMAIN.REG_GB:
+		case defines.PLUGINS.networking.REG_DOMAIN.REG_GB:
 			return "GB";
-		case defines.PLUGINS.wifi.REG_DOMAIN.REG_AU:
+		case defines.PLUGINS.networking.REG_DOMAIN.REG_AU:
 			return "AU";
-		case defines.PLUGINS.wifi.REG_DOMAIN.REG_NZ:
+		case defines.PLUGINS.networking.REG_DOMAIN.REG_NZ:
 			return "NZ";
-		case defines.PLUGINS.wifi.REG_DOMAIN.REG_CN:
+		case defines.PLUGINS.networking.REG_DOMAIN.REG_CN:
 			return "CN";
-		case defines.PLUGINS.wifi.REG_DOMAIN.REG_BR:
+		case defines.PLUGINS.networking.REG_DOMAIN.REG_BR:
 			return "BR";
-		case defines.PLUGINS.wifi.REG_DOMAIN.REG_RU:
+		case defines.PLUGINS.networking.REG_DOMAIN.REG_RU:
 			return "RU";
 		default:
 			return "Unknown Regulatory Domain";
 	}
 }
 
-function scanToProfile(){
-	profileName_Value = document.getElementById("profileNameHidden").value;
-	var profileName_Array = [];
-	for (var i = 0, len = profileName_Value.length; i < len; i++) {
-		profileName_Array[i] = profileName_Value.charCodeAt(i);
+function scanToConnection(){
+	connectionName_Value = document.getElementById("connectionNameHidden").value;
+	var connectionName_Array = [];
+	for (var i = 0, len = connectionName_Value.length; i < len; i++) {
+		connectionName_Array[i] = connectionName_Value.charCodeAt(i);
 	}
-	selectedProfile(profileName_Array,0);
+	selectedConnection(connectionName_Array,0);
 	$("li").removeClass("active");
-	$("#wifi_main_menu>ul>li.active").removeClass("active");
+	$("#networking_main_menu>ul>li.active").removeClass("active");
 	$("#submenuEdit").addClass("active");
 
 }
 
-function addScanProfile(retry){
-	id = document.getElementById("profileName").value.trim();
+function addScanConnection(retry){
+	id = document.getElementById("connectionName").value.trim();
 	if (id == ""){
-		$("#profileNameDisplay").addClass("has-error");
-		$("#profileName").popover({content:'Please enter profile name',placement:'bottom'});
-		$("#profileName").popover('show')
+		$("#connectionNameDisplay").addClass("has-error");
+		$("#connectionName").popover({content:'Please enter connection name',placement:'bottom'});
+		$("#connectionName").popover('show')
 		return;
 	}
 
@@ -1151,9 +1151,9 @@ function addScanProfile(retry){
 		}
 		SDCERRtoString(msg.SDCERR);
 		if (document.getElementById("returnDataNav").innerHTML == "Success"){
-			document.getElementById("goToProfile").textContent = "Edit Profile " + id;
-			$("#goToProfileDisplay").removeClass("hidden");
-			document.getElementById("profileNameHidden").value = id;
+			document.getElementById("goToConnection").textContent = "Edit Connection " + id;
+			$("#goToConnectionDisplay").removeClass("hidden");
+			document.getElementById("connectionNameHidden").value = id;
 			document.getElementById("addTable").reset();
 		}
 	})
@@ -1188,7 +1188,7 @@ function drop(ev){
 	document.getElementById("newSSID").value = ev.dataTransfer.getData("ssid");
 	document.getElementById("security").value = ev.dataTransfer.getData("security");
 	document.getElementById("security").setAttribute("keymgmt",ev.dataTransfer.getData("keymgmt"));
-	$("#profileNameDisplay").removeClass("has-error");
+	$("#connectionNameDisplay").removeClass("has-error");
 	$("#addScanDisplay").removeClass("hidden");
 }
 
@@ -1233,7 +1233,7 @@ function getScan(retry){
 					document.getElementById("newSSID").value = this.cells[0].innerText;
 					document.getElementById("security").value = this.cells[4].innerHTML;
 					document.getElementById("security").setAttribute("keymgmt",this.getAttribute("keymgmt"));
-					$("#profileNameDisplay").removeClass("has-error");
+					$("#connectionNameDisplay").removeClass("has-error");
 					$("#addScanDisplay").removeClass("hidden");
 				};
 			}
@@ -1246,7 +1246,7 @@ function getScan(retry){
 		}
 	})
 	.fail(function() {
-		consoleLog("Error, couldn't get WiFi scan.. retrying");
+		consoleLog("Error, couldn't get networking scan.. retrying");
 		if (retry < 5){
 			retry++;
 			getScan(retry);
@@ -1258,7 +1258,7 @@ function getScan(retry){
 
 function clickScanPage(retry){
 	$.ajax({
-		url: "plugins/wifi/html/scan.html",
+		url: "plugins/networking/html/scan.html",
 		data: {},
 		type: "GET",
 		dataType: "html",
@@ -1270,7 +1270,7 @@ function clickScanPage(retry){
 			$('#main_section').html(data);
 			clearReturnData();
 			$("li").removeClass("active");
-			$("#wifi_main_menu>ul>li.active").removeClass("active");
+			$("#networking_main_menu>ul>li.active").removeClass("active");
 			$("#wifi_scan").addClass("active");
 			$("#helpText").html("Scan for wireless networks");
 			$(".infoText").addClass("hidden");
@@ -1302,7 +1302,7 @@ function uploadCert(retry){
 		var form_data = new FormData();
 		form_data.append('file', file_data);
 		$.ajax({
-			url: 'plugins/wifi/php/upload.php', // point to server-side PHP script
+			url: 'plugins/networking/php/upload.php', // point to server-side PHP script
 			cache: false,
 			contentType: false,
 			processData: false,
@@ -1317,7 +1317,7 @@ function uploadCert(retry){
 				$("#submitCertButton").addClass("disabled");
 				$("#certFail").addClass("hidden");
 				$("#certSuccess").removeClass("hidden");
-				var profile = {
+				var connection = {
 					userCert:"",
 					CACert:"",
 					PACFileName:"",
@@ -1325,7 +1325,7 @@ function uploadCert(retry){
 				var certs = {
 					0:file_data.name,
 				};
-				generateCertList(profile,certs);
+				generateCertList(connection,certs);
 			} else {
 				SDCERRtoString(data.SDCERR);
 				$("#certSuccess").addClass("hidden");
@@ -1354,7 +1354,7 @@ function strip_cert_file_text(cert){
 	return "";
 }
 
-function generateCertList(profile,certs){
+function generateCertList(connection,certs){
 	var client_cert_id = document.getElementById("client-cert");
 	var private_key_id = document.getElementById("private-key");
 	var ca_cert_id = document.getElementById("ca-cert");
@@ -1387,25 +1387,25 @@ function generateCertList(profile,certs){
 		// Add unique certs
 		if (!exists("client_cert",certs[key])){
 			client_cert_id.add(option_client_cert);
-			if(option_client_cert.text === profile.client_cert) {
+			if(option_client_cert.text === connection.client_cert) {
 				client_cert_id.selectedIndex = index;
 			}
 		}
 		if (!exists("private_key",certs[key])){
 			private_key_id.add(option_private_key);
-			if(option_private_key.text === profile.private_key) {
+			if(option_private_key.text === connection.private_key) {
 				private_key_id.selectedIndex = index;
 			}
 		}
 		if (!exists("ca_cert",certs[key])){
 			ca_cert_id.add(option_ca_cert);
-			if(option_ca_cert.text === profile.ca_cert) {
+			if(option_ca_cert.text === connection.ca_cert) {
 				ca_cert_id.selectedIndex = index;
 			}
 		}
 		if (!exists("pac_file",certs[key])){
 			pac_file_id.add(option_pac_file);
-			if(option_pac_file.text === profile.pac_file) {
+			if(option_pac_file.text === connection.pac_file) {
 				pac_file_id.selectedIndex = index;
 			}
 		}
@@ -1413,7 +1413,7 @@ function generateCertList(profile,certs){
 	}
 }
 
-function getCerts(profile,retry){
+function getCerts(connection,retry){
 	$.ajax({
 		url: "get_certificates",
 		type: "GET",
@@ -1424,13 +1424,13 @@ function getCerts(profile,retry){
 			clearInterval(intervalId);
 			intervalId = 0;
 		}
-		generateCertList(profile,msg.certs);
+		generateCertList(connection,msg.certs);
 	})
 	.fail(function() {
 		consoleLog("Error, couldn't get getCerts.php.. retrying");
 		if (retry < 5){
 			retry++;
-			getCerts(profile,retry);
+			getCerts(connection,retry);
 		} else {
 			consoleLog("Retry max attempt reached");
 		}
@@ -1470,7 +1470,7 @@ function getVersion(retry){
 
 function clickVersionPage(retry){
 	$.ajax({
-		url: "plugins/wifi/html/version.html",
+		url: "plugins/networking/html/version.html",
 		data: {},
 		type: "GET",
 		dataType: "html",
@@ -1482,8 +1482,8 @@ function clickVersionPage(retry){
 			$('#main_section').html(data);
 			clearReturnData();
 			$("li").removeClass("active");
-			$("#wifi_main_menu>ul>li.active").removeClass("active");
-			$("#wifi_version").addClass("active");
+			$("#networking_main_menu>ul>li.active").removeClass("active");
+			$("#networking_version").addClass("active");
 			$("#helpText").html("System version information");
 			$(".infoText").addClass("hidden");
 		},
