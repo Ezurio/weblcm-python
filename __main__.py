@@ -5,6 +5,7 @@ import uuid
 import hashlib
 import weblcm_python_def
 import weblcm_python_func
+from swupdate import SWUpdate
 
 config = configparser.ConfigParser()
 config.read(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR + 'weblcm-python.ini')
@@ -214,6 +215,15 @@ if __name__ == '__main__':
 		webapp.download_log = weblcm_python_func.Download_Log()
 		webapp.set_logging = weblcm_python_func.Set_Logging()
 		webapp.get_logging = weblcm_python_func.Get_Logging()
+
+	if check_dict_value('swupdate',config['PLUGINS']):
+		PLUGINS['list']['swupdate'] = True
+		swu = SWUpdate();
+		webapp.update_firmware = swu.update_firmware
+		webapp.update_firmware_start = swu.update_firmware_start
+		webapp.update_firmware_end = swu.update_firmware_end
+		webapp.get_progress_state = swu.get_progress_state
+		webapp.update_bootenv = swu.update_bootenv
 
 	webapp.definitions = Definitions()
 	webapp.login = Login()
