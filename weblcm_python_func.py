@@ -4,6 +4,7 @@ import subprocess
 import os
 import uuid
 import time
+import sys
 from systemd import journal
 import weblcm_python_def
 
@@ -28,6 +29,9 @@ def merge_secrets(proxy, config, setting_name):
 	except Exception as e:
 		pass
 
+class Networking_Data():
+	show_unmanaged = False
+
 @cherrypy.expose
 class Networking_Status(object):
 	@cherrypy.tools.accept(media='application/json')
@@ -35,63 +39,205 @@ class Networking_Status(object):
 	def GET(self):
 		result = {
 			'SDCERR': 1,
-			'strength':0,
-			'channel':0,
+			'devices':0,
 		}
 		try:
 			bus = dbus.SystemBus()
 			proxy = bus.get_object(weblcm_python_def.NM_IFACE, weblcm_python_def.NM_OBJ)
 			manager = dbus.Interface(proxy, weblcm_python_def.NM_IFACE)
+			devices = manager.GetDevices()
+			interface = {}
+			for d in devices:
+				#Get device object
+				dev_proxy = bus.get_object(weblcm_python_def.NM_IFACE, d)
+				prop_iface = dbus.Interface(dev_proxy, weblcm_python_def.DBUS_PROP_IFACE)
+				#Get org.freedesktop.NetworkManager.Device properties
+				interface_name = str(prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "Interface"))
 
-			wifi_device = manager.GetDeviceByIpIface(weblcm_python_def.WIFI_DEVICE_NAME)
-			dev_proxy = bus.get_object(weblcm_python_def.NM_IFACE, wifi_device)
-			prop_iface = dbus.Interface(dev_proxy, weblcm_python_def.DBUS_PROP_IFACE)
+				#org.freedesktop.NetworkManager.Device string properties
+				interface_status = {}
+				interface_status['autoconnect'] = str(prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "Autoconnect"))
+				state = prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "State")
 
-			result['cardState'] = prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "State")
-			if result['cardState'] > weblcm_python_def.NM_DBUS_API_TYPES['NMDeviceState']['NM_DEVICE_STATE_UNAVAILABLE']:
-				result['SDCERR'] = 0
+				#Dont add unmanaged devices
+				if(not Networking_Data.show_unmanaged and state == 10):
+					continue;
 
-			wifi_iface = dbus.Interface(dev_proxy, weblcm_python_def.NM_WIRELESS_IFACE)
-			wifi_prop_iface = dbus.Interface(dev_proxy, weblcm_python_def.DBUS_PROP_IFACE)
-			result['client_MAC'] = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "PermHwAddress")
+				interface[interface_name] = {}
+				result['devices'] = result['devices'] + 1
 
-			active_connection = prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "ActiveConnection")
-			active_connection_proxy = bus.get_object(weblcm_python_def.NM_IFACE, active_connection)
-			active_connection_prop_iface = dbus.Interface(active_connection_proxy, weblcm_python_def.DBUS_PROP_IFACE)
-			try:
-				result['configName'] = active_connection_prop_iface.Get(weblcm_python_def.NM_CONNECTION_ACTIVE_IFACE, "Id")
-			except Exception as e:
-				print(e)
-				return result
+				interface_status['state'] = int(state)
+				interface_status['mtu'] = str(prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "Mtu"))
+				device_type = prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "DeviceType")
+				interface_status['devicetype'] = int(device_type)
 
-			ipv4_config_object = prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "Ip4Config")
-			ipv4_config_proxy = bus.get_object(weblcm_python_def.NM_IFACE, ipv4_config_object)
-			ipv4_config_iface = dbus.Interface(ipv4_config_proxy, weblcm_python_def.DBUS_PROP_IFACE)
-			ipv4_config_addresses = ipv4_config_iface.Get(weblcm_python_def.NM_IP4_IFACE, "AddressData")
-			result['client_IP'] = ipv4_config_addresses[0]['address']
 
-			ipv6_config_object = prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "Ip6Config")
-			ipv6_config_proxy = bus.get_object(weblcm_python_def.NM_IFACE, ipv6_config_object)
-			ipv6_config_iface = dbus.Interface(ipv6_config_proxy, weblcm_python_def.DBUS_PROP_IFACE)
-			result['IPv6'] = ipv6_config_iface.Get(weblcm_python_def.NM_IP6_IFACE, "AddressData")
+				if state == 100:
+					connection_active = {}
+					connection_active_object = prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "ActiveConnection")
+					connection_active_proxy = bus.get_object(weblcm_python_def.NM_IFACE, connection_active_object)
+					connection_active_prop_iface = dbus.Interface(connection_active_proxy, weblcm_python_def.DBUS_PROP_IFACE)
+					connection_active['id'] = connection_active_prop_iface.Get(weblcm_python_def.NM_CONNECTION_ACTIVE_IFACE, "Id")
+					connection_active['uuid'] = connection_active_prop_iface.Get(weblcm_python_def.NM_CONNECTION_ACTIVE_IFACE, "Uuid")
 
-			wireless_mode = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "Mode")
-			# Due to some fluctuation in Bitrate identifier lets account for the change
-			try:
-				result['bitRate'] = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "Bitrate")
-			except:
-				result['bitRate'] = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "BitRate")
+					interface[interface_name]['connection_active'] = connection_active
 
-			wireless_active_access_point = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "ActiveAccessPoint")
-			ap_proxy = bus.get_object(weblcm_python_def.NM_IFACE, wireless_active_access_point)
-			ap_prop_iface = dbus.Interface(ap_proxy, weblcm_python_def.DBUS_PROP_IFACE)
-			result['ssid'] = ap_prop_iface.Get(weblcm_python_def.NM_ACCESSPOINT_IFACE, "Ssid")
-			result['AP_MAC'] = ap_prop_iface.Get(weblcm_python_def.NM_ACCESSPOINT_IFACE, "HwAddress")
-			result['strength'] = int(ap_prop_iface.Get(weblcm_python_def.NM_ACCESSPOINT_IFACE, "Strength"))
-			result['channel'] = ap_prop_iface.Get(weblcm_python_def.NM_ACCESSPOINT_IFACE, "Frequency")
+					#IPv4 device address information
+					Ip4Config = {}
+					ipv4_config_object = prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "Ip4Config")
+					ipv4_config_proxy = bus.get_object(weblcm_python_def.NM_IFACE, ipv4_config_object)
+					ipv4_config_iface = dbus.Interface(ipv4_config_proxy, weblcm_python_def.DBUS_PROP_IFACE)
+					ipv4_config_addresses = ipv4_config_iface.Get(weblcm_python_def.NM_IP4_IFACE, "AddressData")
+					ipv4_config_routes= ipv4_config_iface.Get(weblcm_python_def.NM_IP4_IFACE, "RouteData")
+					ipv4_config_gateway = ipv4_config_iface.Get(weblcm_python_def.NM_IP4_IFACE, "Gateway")
+					ipv4_config_domains = ipv4_config_iface.Get(weblcm_python_def.NM_IP4_IFACE, "Domains")
+
+					i = 0
+					addresses = {}
+					while i < len(ipv4_config_addresses):
+						addresses[i] = str(ipv4_config_addresses[i]['address']) + "/" + str(ipv4_config_addresses[0]['prefix'])
+						i += 1
+					Ip4Config['address'] = addresses
+
+					routes = {}
+					i = 0
+					while i < len(ipv4_config_routes):
+						routes[i] = str(ipv4_config_routes[i]['dest']) + "/" + str(ipv4_config_routes[0]['prefix']) + " metric " + str(ipv4_config_routes[0]['metric'])
+						i += 1
+					Ip4Config['routes'] = routes
+
+					Ip4Config['gateway'] = str(ipv4_config_gateway)
+
+					i = 0
+					domains = {}
+					while i < len(ipv4_config_domains):
+						domains[i] = str(ipv4_config_domains[i])
+						i += 1
+					Ip4Config['domains'] = domains
+
+					interface[interface_name]['ip4config'] = Ip4Config
+
+					#IPv4 lease/config information
+					Dhcp4Config = {}
+					ipv4_dhcp_object = prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "Dhcp4Config")
+					ipv4_dhcp_proxy = bus.get_object(weblcm_python_def.NM_IFACE, ipv4_dhcp_object)
+					ipv4_dhcp_iface = dbus.Interface(ipv4_dhcp_proxy, weblcm_python_def.DBUS_PROP_IFACE)
+					ipv4_dhcp_options = ipv4_dhcp_iface.Get(weblcm_python_def.NM_DHCP4_IFACE, "Options")
+
+					for item in ipv4_dhcp_options:
+						Dhcp4Config[str(item)] = str(ipv4_dhcp_options[item])
+					interface[interface_name]['dhcp4config'] = Dhcp4Config
+
+					#IPv6 device address information
+					Ip6Config = {}
+					ipv6_config_object = prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "Ip6Config")
+					ipv6_config_proxy = bus.get_object(weblcm_python_def.NM_IFACE, ipv6_config_object)
+					ipv6_config_iface = dbus.Interface(ipv6_config_proxy, weblcm_python_def.DBUS_PROP_IFACE)
+					ipv6_config_addresses = ipv6_config_iface.Get(weblcm_python_def.NM_IP6_IFACE, "AddressData")
+					ipv6_config_routes= ipv6_config_iface.Get(weblcm_python_def.NM_IP6_IFACE, "RouteData")
+					ipv6_config_gateway = ipv6_config_iface.Get(weblcm_python_def.NM_IP6_IFACE, "Gateway")
+					ipv6_config_domains = ipv6_config_iface.Get(weblcm_python_def.NM_IP6_IFACE, "Domains")
+
+					i = 0
+					addresses = {}
+					while i < len(ipv6_config_addresses):
+						addresses[i] = str(ipv6_config_addresses[i]['address']) + "/" + str(ipv6_config_addresses[0]['prefix'])
+						i += 1
+					Ip6Config['address'] = addresses
+
+					i = 0
+					routes = {}
+					while i < len(ipv6_config_routes):
+						routes[i] =  str(ipv6_config_routes[i]['dest']) + "/" + str(ipv6_config_routes[0]['prefix']) + " metric " + str(ipv6_config_routes[0]['metric'])
+						i += 1
+					Ip6Config['routes'] = routes
+
+					Ip6Config['gateway'] = str(ipv6_config_gateway)
+
+					i = 0
+					domains = {}
+					while i < len(ipv6_config_domains):
+						domains[i] = str(ipv6_config_domains[i])
+						i += 1
+					Ip6Config['domains'] = domains
+
+					interface[interface_name]['ip6config'] = Ip6Config
+
+					#IPv6 lease/config information
+					Dhcp6Config = {}
+					ipv6_dhcp_object = prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "Dhcp6Config")
+					#Check if path is valid, only valid if ipv6.method is dhcp
+					if ipv6_dhcp_object != "/":
+						ipv6_dhcp_proxy = bus.get_object(weblcm_python_def.NM_IFACE, ipv6_dhcp_object)
+						ipv6_dhcp_iface = dbus.Interface(ipv6_dhcp_proxy, weblcm_python_def.DBUS_PROP_IFACE)
+						ipv6_dhcp_options = ipv6_dhcp_iface.Get(weblcm_python_def.NM_DHCP6_IFACE, "Options")
+
+						#print("\tDHCPv6 Config Info:")
+						for item in ipv6_dhcp_options:
+							Dhcp6Config[str(item)] = str(ipv6_dhcp_options[item])
+						interface[interface_name]['dhcp6config'] = Dhcp6Config
+
+				#Get wired specific items
+				if device_type == 1:
+					wired = {}
+					wired_iface = dbus.Interface(dev_proxy, weblcm_python_def.NM_WIRED_IFACE)
+					wired_prop_iface = dbus.Interface(dev_proxy, weblcm_python_def.DBUS_PROP_IFACE)
+					wired_hwaddress = wired_prop_iface.Get(weblcm_python_def.NM_WIRED_IFACE, "HwAddress")
+					wired_permhwaddress = wired_prop_iface.Get(weblcm_python_def.NM_WIRED_IFACE, "PermHwAddress")
+					wired_speed = wired_prop_iface.Get(weblcm_python_def.NM_WIRED_IFACE, "Speed")
+					wired_carrier = wired_prop_iface.Get(weblcm_python_def.NM_WIRED_IFACE, "Carrier")
+					wired['hwaddress'] = str(wired_hwaddress)
+					wired['permhwaddress'] = str(wired_permhwaddress)
+					wired['speed'] = int(wired_speed)
+					wired['carrier'] = int(wired_carrier)
+					interface[interface_name]['wired'] = wired
+
+				#Get Wifi specific items
+				if device_type == 2:
+					wireless = {}
+					# Get a proxy for the wifi interface
+					wifi_iface = dbus.Interface(dev_proxy, weblcm_python_def.NM_WIRELESS_IFACE)
+					wifi_prop_iface = dbus.Interface(dev_proxy, weblcm_python_def.DBUS_PROP_IFACE)
+					wireless_hwaddress = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "HwAddress")
+					wireless_permhwaddress = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "PermHwAddress")
+					wireless_mode = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "Mode")
+					# Due to some fluctuation in Bitrate identifier lets account for the change
+					try:
+						wireless_bitrate = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "Bitrate")
+					except:
+						wireless_bitrate = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "BitRate")
+					wireless['bitrate'] = wireless_bitrate
+					wireless['hwaddress'] = str(wireless_hwaddress)
+					wireless['permhwaddress'] = str(wireless_permhwaddress)
+					wireless['mode'] = int(wireless_mode)
+					wireless['bitrate'] = int(wireless_bitrate)/1000
+					interface[interface_name]['wireless'] = wireless
+
+				if (device_type == 2 and state == 100):
+					# Get access point info
+					ActiveAccessPoint = {}
+					active_ap = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "ActiveAccessPoint")
+					ap_proxy = bus.get_object(weblcm_python_def.NM_IFACE, active_ap)
+					ap_prop_iface = dbus.Interface(ap_proxy, weblcm_python_def.DBUS_PROP_IFACE)
+					ssid = ap_prop_iface.Get(weblcm_python_def.NM_ACCESSPOINT_IFACE, "Ssid")
+					bssid = ap_prop_iface.Get(weblcm_python_def.NM_ACCESSPOINT_IFACE, "HwAddress")
+					strength = ap_prop_iface.Get(weblcm_python_def.NM_ACCESSPOINT_IFACE, "Strength")
+					maxbitrate = ap_prop_iface.Get(weblcm_python_def.NM_ACCESSPOINT_IFACE, "MaxBitrate")
+					freq = ap_prop_iface.Get(weblcm_python_def.NM_ACCESSPOINT_IFACE, "Frequency")
+					ActiveAccessPoint['ssid'] = ''.join([str(v) for v in ssid])
+					ActiveAccessPoint['bssid'] = str(bssid)
+					ActiveAccessPoint['strength'] = int(strength)
+					ActiveAccessPoint['maxbitrate'] = int(maxbitrate)/1000
+					ActiveAccessPoint['frequency'] = int(freq)
+					interface[interface_name]['activeaccesspoint'] = ActiveAccessPoint
+
+				interface[interface_name]['status'] = interface_status
+				result['status'] = interface
 
 		except Exception as e:
-			print(e)
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+			print(exc_type, fname, exc_tb.tb_lineno)
 
 		return result
 
@@ -119,11 +265,11 @@ class Connections(object):
 				result['SDCERR'] = 0
 
 			#TODO - Handle case where no active connection exists.
-			active_connection = prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "ActiveConnection")
-			active_connection_proxy = bus.get_object(weblcm_python_def.NM_IFACE, active_connection)
-			active_connection_prop_iface = dbus.Interface(active_connection_proxy, weblcm_python_def.DBUS_PROP_IFACE)
+			connection_active = prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "ActiveConnection")
+			connection_active_proxy = bus.get_object(weblcm_python_def.NM_IFACE, connection_active)
+			connection_active_prop_iface = dbus.Interface(connection_active_proxy, weblcm_python_def.DBUS_PROP_IFACE)
 			try:
-				result['currentConfig'] = active_connection_prop_iface.Get(weblcm_python_def.NM_CONNECTION_ACTIVE_IFACE, "Uuid")
+				result['currentConfig'] = connection_active_prop_iface.Get(weblcm_python_def.NM_CONNECTION_ACTIVE_IFACE, "Uuid")
 			except Exception as e:
 				print(e)
 
@@ -164,7 +310,7 @@ class Activate_Connection(object):
 			nm_proxy = bus.get_object(weblcm_python_def.NM_IFACE, weblcm_python_def.NM_OBJ)
 			nm_manager = dbus.Interface(nm_proxy, weblcm_python_def.NM_IFACE)
 			wifi_device = nm_manager.GetDeviceByIpIface(weblcm_python_def.WIFI_DEVICE_NAME)
-			active_connection = nm_manager.ActivateConnection(conection_to_activate,wifi_device,"/")
+			connection_active = nm_manager.ActivateConnection(conection_to_activate,wifi_device,"/")
 			result['SDCERR'] = 0
 
 		except Exception as e:

@@ -1,6 +1,10 @@
 import dbus
 import socket, struct
 
+result = {
+	'SDCERR': 1,
+}
+
 # Standard DBUS Properties
 DBUS_PROP_IFACE =		'org.freedesktop.DBus.Properties'
 NM_OBJ =				'/org/freedesktop/NetworkManager'
@@ -21,35 +25,36 @@ proxy = bus.get_object(NM_IFACE, NM_OBJ)
 #Use standard DBUS Property on NetworkManager to
 #Get NM version
 manager_iface = dbus.Interface(proxy, DBUS_PROP_IFACE)
-print('Network Manager Version:' + str(manager_iface.Get(NM_IFACE, "Version")))
 
 #For org.freedesktop.NetworkManager
 manager = dbus.Interface(proxy, NM_IFACE)
 #Call a NM_IFACE's method
 devices = manager.GetDevices()
+interface = {}
 for d in devices:
 	#Get device object
 	dev_proxy = bus.get_object(NM_IFACE, d)
 	prop_iface = dbus.Interface(dev_proxy, DBUS_PROP_IFACE)
 	#Get org.freedesktop.NetworkManager.Device properties
-	print('Interface Name: ' + str(prop_iface.Get(NM_DEVICE_IFACE, "Interface")))
-	print('\tAutoconnect:')
-	print('\t\t' + str(prop_iface.Get(NM_DEVICE_IFACE, "Autoconnect")))
-	print('\tState:')
-	print('\t\t' + str(prop_iface.Get(NM_DEVICE_IFACE, "State")))
-	print('\tMtu:')
-	print('\t\t' + str(prop_iface.Get(NM_DEVICE_IFACE, "Mtu")))
+	interface_name = str(prop_iface.Get(NM_DEVICE_IFACE, "Interface"))
 
-	device_type = prop_iface.Get(NM_DEVICE_IFACE, "DeviceType")
-	print('\tDeviceType:')
-	print('\t\t' + str(device_type))
+	interface[interface_name] = {}
+
+	#org.freedesktop.NetworkManager.Device string propertys
+	interface_status = {}
+	interface_status['autoconnect'] = str(prop_iface.Get(NM_DEVICE_IFACE, "Autoconnect"))
 	state = prop_iface.Get(NM_DEVICE_IFACE, "State")
-	print('\tState:')
-	print('\t\t' + str(state))
+	interface_status['state'] = int(state)
+	interface_status['mtu'] = str(prop_iface.Get(NM_DEVICE_IFACE, "Mtu"))
+	device_type = prop_iface.Get(NM_DEVICE_IFACE, "DeviceType")
+	interface_status['devicetype'] = int(device_type)
+
+
 
 	# if NM_DEVICE_STATE_ACTIVATED get ipv4 address information
 	if state == 100:
 		#IPv4 device address information
+		Ip4Config = {}
 		ipv4_config_object = prop_iface.Get(NM_DEVICE_IFACE, "Ip4Config")
 		ipv4_config_proxy = bus.get_object(NM_IFACE, ipv4_config_object)
 		ipv4_config_iface = dbus.Interface(ipv4_config_proxy, DBUS_PROP_IFACE)
@@ -57,37 +62,45 @@ for d in devices:
 		ipv4_config_routes= ipv4_config_iface.Get(NM_IP4_IFACE, "RouteData")
 		ipv4_config_gateway = ipv4_config_iface.Get(NM_IP4_IFACE, "Gateway")
 		ipv4_config_domains = ipv4_config_iface.Get(NM_IP4_IFACE, "Domains")
-		print("\tIPv4 Info:")
-		print("\t\tAdresses:")
+
 		i = 0
+		addresses = {}
 		while i < len(ipv4_config_addresses):
-			print("\t\t\t" + str(ipv4_config_addresses[i]['address']) + "/" + str(ipv4_config_addresses[0]['prefix']))
+			addresses[i] = str(ipv4_config_addresses[i]['address']) + "/" + str(ipv4_config_addresses[0]['prefix'])
 			i += 1
-		print("\t\tRoutes:")
+		Ip4Config['address'] = addresses
+
+		routes = {}
 		i = 0
 		while i < len(ipv4_config_routes):
-			print("\t\t\t" + str(ipv4_config_routes[i]['dest']) + "/" + str(ipv4_config_routes[0]['prefix']) + " metric " + str(ipv4_config_routes[0]['metric']))
+			routes[i] = str(ipv4_config_routes[i]['dest']) + "/" + str(ipv4_config_routes[0]['prefix']) + " metric " + str(ipv4_config_routes[0]['metric'])
 			i += 1
-		print("\t\tGateway:")
-		print("\t\t\t" + str(ipv4_config_gateway))
-		print("\t\tDomains:")
+		Ip4Config['routes'] = routes
+
+		Ip4Config['gateway'] = str(ipv4_config_gateway)
+
 		i = 0
+		domains = {}
 		while i < len(ipv4_config_domains):
-			print("\t\t\t" + str(ipv4_config_domains[i]))
+			domains[i] = str(ipv4_config_domains[i])
 			i += 1
+		Ip4Config['domains'] = domains
+
+		interface[interface_name]['ip4config'] = Ip4Config
 
 		#IPv4 lease/config information
+		Dhcp4Config = {}
 		ipv4_dhcp_object = prop_iface.Get(NM_DEVICE_IFACE, "Dhcp4Config")
 		ipv4_dhcp_proxy = bus.get_object(NM_IFACE, ipv4_dhcp_object)
 		ipv4_dhcp_iface = dbus.Interface(ipv4_dhcp_proxy, DBUS_PROP_IFACE)
 		ipv4_dhcp_options = ipv4_dhcp_iface.Get(NM_DHCP4_IFACE, "Options")
 
-		print("\tDHCPv4 Config Info:")
 		for item in ipv4_dhcp_options:
-			print("\t\t" + str(item))
-			print("\t\t\t" + str(ipv4_dhcp_options[item]))
+			Dhcp4Config[str(item)] = str(ipv4_dhcp_options[item])
+		interface[interface_name]['dhcp4config'] = Dhcp4Config
 
 		#IPv6 device address information
+		Ip6Config = {}
 		ipv6_config_object = prop_iface.Get(NM_DEVICE_IFACE, "Ip6Config")
 		ipv6_config_proxy = bus.get_object(NM_IFACE, ipv6_config_object)
 		ipv6_config_iface = dbus.Interface(ipv6_config_proxy, DBUS_PROP_IFACE)
@@ -95,76 +108,76 @@ for d in devices:
 		ipv6_config_routes= ipv6_config_iface.Get(NM_IP6_IFACE, "RouteData")
 		ipv6_config_gateway = ipv6_config_iface.Get(NM_IP6_IFACE, "Gateway")
 		ipv6_config_domains = ipv6_config_iface.Get(NM_IP6_IFACE, "Domains")
-		print("\tIPv6 Info:")
-		print("\t\tAdresses:")
+
 		i = 0
+		addresses = {}
 		while i < len(ipv6_config_addresses):
-			print("\t\t\t" + str(ipv6_config_addresses[i]['address']) + "/" + str(ipv6_config_addresses[0]['prefix']))
+			addresses[i] = str(ipv6_config_addresses[i]['address']) + "/" + str(ipv6_config_addresses[0]['prefix'])
 			i += 1
-		print("\t\tRoutes:")
+		Ip6Config['address'] = addresses
+
 		i = 0
+		routes = {}
 		while i < len(ipv6_config_routes):
-			print("\t\t\t" + str(ipv6_config_routes[i]['dest']) + "/" + str(ipv6_config_routes[0]['prefix']) + " metric " + str(ipv6_config_routes[0]['metric']))
+			routes[i] =  str(ipv6_config_routes[i]['dest']) + "/" + str(ipv6_config_routes[0]['prefix']) + " metric " + str(ipv6_config_routes[0]['metric'])
 			i += 1
-		print("\t\tGateway:")
-		print("\t\t\t" + str(ipv6_config_gateway))
-		print("\t\tDomains:")
+		Ip6Config['routes'] = routes
+
+		Ip6Config['gateway'] = str(ipv6_config_gateway)
+
 		i = 0
+		domains = {}
 		while i < len(ipv6_config_domains):
-			print("\t\t\t" + str(ipv6_config_domains[i]))
+			domains[i] = str(ipv6_config_domains[i])
 			i += 1
+		Ip4Config['domains'] = domains
 
 		#IPv6 lease/config information
+		Dhcp6Config = {}
 		ipv6_dhcp_object = prop_iface.Get(NM_DEVICE_IFACE, "Dhcp6Config")
-		#Check if path is valid
+		# #Check if path is valid
 		if ipv6_dhcp_object != "/":
 			ipv6_dhcp_proxy = bus.get_object(NM_IFACE, ipv6_dhcp_object)
 			ipv6_dhcp_iface = dbus.Interface(ipv6_dhcp_proxy, DBUS_PROP_IFACE)
 			ipv6_dhcp_options = ipv6_dhcp_iface.Get(NM_DHCP6_IFACE, "Options")
-
-			print("\tDHCPv6 Config Info:")
+		
 			for item in ipv6_dhcp_options:
-				print("\t\t" + str(item))
-				print("\t\t\t" + str(ipv6_dhcp_options[item]))
+				Dhcp6Config[str(item)] = str(ipv6_dhcp_options[item])
+			interface[interface_name]['dhcp6config'] = Dhcp6Config
 
 	#Get wired specific items
 	if device_type == 1:
+		wired = {}
 		wired_iface = dbus.Interface(dev_proxy, NM_WIRED_IFACE)
 		wired_prop_iface = dbus.Interface(dev_proxy, DBUS_PROP_IFACE)
 		wired_hwaddress = wired_prop_iface.Get(NM_WIRED_IFACE, "HwAddress")
 		wired_permhwaddress = wired_prop_iface.Get(NM_WIRED_IFACE, "PermHwAddress")
 		wired_speed = wired_prop_iface.Get(NM_WIRED_IFACE, "Speed")
 		wired_carrier = wired_prop_iface.Get(NM_WIRED_IFACE, "Carrier")
-		print('\tHardware Address:')
-		print('\t\t' + wired_hwaddress)
-		print('\tPermanent Hardware Address:')
-		print('\t\t' + wired_permhwaddress)
-		print('\tSpeed:')
-		print('\t\t' + str(int(wired_speed)))
-		print('\tCarrier:')
-		print('\t\t' + str(wired_speed))
+		wired['hwaddress'] = str(wired_hwaddress)
+		wired['permhwaddress'] = str(wired_permhwaddress)
+		wired['speed'] = int(wired_speed)
+		wired['carrier'] = int(wired_carrier)
+		interface[interface_name]['wired'] = wired
 
 	#Get Wifi specific items
 	if device_type == 2:
+		wireless = {}
 		# Get a proxy for the wifi interface
 		wifi_iface = dbus.Interface(dev_proxy, NM_WIRELESS_IFACE)
 		wifi_prop_iface = dbus.Interface(dev_proxy, DBUS_PROP_IFACE)
-		# Get the associated AP's object path
-		wireless_active_access_point = wifi_prop_iface.Get(NM_WIRELESS_IFACE, "ActiveAccessPoint")
 		wireless_hwaddress = wifi_prop_iface.Get(NM_WIRELESS_IFACE, "HwAddress")
 		wireless_permhwaddress = wifi_prop_iface.Get(NM_WIRELESS_IFACE, "PermHwAddress")
 		wireless_mode = wifi_prop_iface.Get(NM_WIRELESS_IFACE, "Mode")
-		# Bitrate identifier will change in next major NM release to "Bitrate"
-		wireless_bitrate = wifi_prop_iface.Get(NM_WIRELESS_IFACE, "BitRate")
-		print('\tHardware Address:')
-		print('\t\t' + wireless_hwaddress)
-		print('\tPermanent Hardware Address:')
-		print('\t\t' + wireless_permhwaddress)
-		print('\tMode:')
-		print('\t\t' + str(int(wireless_mode)))
-		print('\tBitrate:')
-		print('\t\t' + str(wireless_bitrate/1000))
+		wireless_bitrate = wifi_prop_iface.Get(NM_WIRELESS_IFACE, "Bitrate")
+		wireless['bitrate'] = wireless_bitrate
+		wireless['hwaddress'] = str(wireless_hwaddress)
+		wireless['permhwaddress'] = str(wireless_permhwaddress)
+		wireless['mode'] = int(wireless_mode)
+		wireless['bitrate'] = int(wireless_bitrate)/1000
+		interface[interface_name]['wireless'] = wireless
 		# Get all APs the card can see
+		ActiveAccessPoint = {}
 		active_ap = wifi_prop_iface.Get(NM_WIRELESS_IFACE, "ActiveAccessPoint")
 		ap_proxy = bus.get_object(NM_IFACE, active_ap)
 		ap_prop_iface = dbus.Interface(ap_proxy, DBUS_PROP_IFACE)
@@ -173,14 +186,17 @@ for d in devices:
 		strength = ap_prop_iface.Get(NM_ACCESSPOINT_IFACE, "Strength")
 		maxbitrate = ap_prop_iface.Get(NM_ACCESSPOINT_IFACE, "MaxBitrate")
 		freq = ap_prop_iface.Get(NM_ACCESSPOINT_IFACE, "Frequency")
-		print('\tSSID:')
-		print("\t\t%s" % ''.join([str(v) for v in ssid]))
-		print('\tBSSID:')
-		print('\t\t' + bssid)
-		print('\tStrength:')
-		print('\t\t' + str(int(strength)))
-		print('\tMax bit rate:')
-		print('\t\t' + str(maxbitrate/1000))
-		print('\tFrequency:')
-		print('\t\t' + str(freq))
+		ActiveAccessPoint['ssid'] = ''.join([str(v) for v in ssid])
+		ActiveAccessPoint['bssid'] = str(bssid)
+		ActiveAccessPoint['strength'] = int(strength)
+		ActiveAccessPoint['maxbitrate'] = int(maxbitrate)/1000
+		ActiveAccessPoint['frequency'] = int(freq)
+		interface[interface_name]['activeaccesspoint'] = ActiveAccessPoint
+
+	interface[interface_name]['status'] = interface_status
+	result['status'] = interface
+
+# print(result)
+for item in result['status']:
+	print(result['status'][item])
 	print()
