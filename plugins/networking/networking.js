@@ -65,6 +65,75 @@ function CARDSTATEtoString(CARDSTATE){
 	}
 }
 
+function DeviceTypetoString(NMDeviceType){
+	switch(NMDeviceType) {
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_UNKNOWN:
+			return "Unknown";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_ETHERNET:
+			return "Ethernet";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_WIFI:
+			return "WiFi";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_UNUSED1:
+			return "Unused 1";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_UNUSED2:
+			return "Unused 2";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_BT:
+			return "Bluetooth";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_OLPC_MESH:
+			return "OLPC Mesh";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_WIMAX:
+			return "WiMAX";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_MODEM:
+			return "Modem";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_INFINIBAND:
+			return "Infiniband";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_BOND:
+			return "Bond";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_VLAN:
+			return "VLAN";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_ADSL:
+			return "ADSL";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_BRIDGE:
+			return "Bridge";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_GENERIC:
+			return "Generic";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_TEAM:
+			return "Team";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_TUN:
+			return "Tunnel";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_IP_TUNNEL:
+			return "IP Tunnel";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_MACVLAN:
+			return "MAC VLAN";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_VXLAN:
+			return "VXLAN";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_VETH:
+			return "Virtual Ethernet";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_MACSEC:
+			return "MACSEC";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_DUMMY:
+			return "Dummy";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_PPP:
+			return "PPP";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_OVS_INTERFACE:
+			return "OVS Interface";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_OVS_PORT:
+			return "OVS Port";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_OVS_BRIDGE:
+			return "OVS Bridge";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_WPAN:
+			return "WPAN";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_6LOWPAN:
+			return "6LOWPAN";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_WIREGUARD:
+			return "Wire Guard";
+		case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_WIFI_P2P:
+			return "WiFi P2P";
+		default:
+			return "Unknown State";
+	}
+}
+
 function onChangePowersave(){
 	var powerSave = parseInt(document.getElementById("powerSave").value);
 	switch (powerSave){
@@ -166,89 +235,151 @@ function onChangeSecurity(){
 }
 
 function updateStatus(){
+	id_string = "#"
+	panel_heading_id_string = "panel_heading_";
+	panel_button_id_string = "panel_button_";
+	panel_collapse_id_string = "panel_collapse_";
 	var getStatusJSON = $.getJSON( "networking_status", function( data ) {
-		consoleLog(data)
-		if (data.SESSION == defines.SDCERR.SDCERR_FAIL){
-			$("#loggout").addClass("hidden");
-			$("#loggin").removeClass("hidden");
-			$(".locked").addClass("hidden");
-		}
-		$("#updateProgressDisplay").addClass("hidden");
-		if (data.SDCERR == defines.SDCERR.SDCERR_NO_HARDWARE || data.SDCERR == defines.SDCERR.SDCERR_FAIL){
-			$("#status-success").addClass("hidden");
-			$("#status-hardware").removeClass("hidden");
-		} else {
-			$("#status-success").removeClass("hidden");
-			$("#status-hardware").addClass("hidden");
-			var strength = data.strength.toString().concat("%");
-			var SSID_Array = [];
+		consoleLog(data);
+		var old_interfaces = [];
+		var old_panels = document.getElementsByClassName("panel-group");
 
-			if (data.ssid != null){
-				for(var i = 0; i < data.ssid.length; i++) {
-					SSID_Array.push(String.fromCharCode(data.ssid[i]));
-				}
-				$('#ssid').html(SSID_Array.join(''));
+		// Hide interface panels if they no larger available.
+		for (var i = 0; i < old_panels.length; i++) {
+			old_interfaces.push(old_panels[i].id);
+			if (typeof data.status[old_panels[i].id] == 'undefined') {
+				$(id_string.concat(old_panels[i].id)).addClass("hidden");
 			}
+		}
 
-			$('#cardState').html(CARDSTATEtoString(data.cardState));
-			$('#configName').html(data.configName);
-			$('#channel').html(data.channel);
-			$('#strength').html(strength);
-			$('#clientName').html(data.clientName);
-			$('#client_MAC').html(data.client_MAC);
-			$('#client_IP').html(data.client_IP);
-			$('#APName').html(data.APName);
-			$('#AP_MAC').html(data.AP_MAC);
-			$('#AP_IP').html(data.AP_IP);
+		for (interface in data.status){
+			var interface_panel = document.getElementById(interface);
+			// Add new panels if they dont exist
+			if(!interface_panel){
+				$('#root_interface').clone().attr('id', interface).appendTo('#panel_parent');
+			}
+			$("#updateProgressDisplay").addClass("hidden");
+			$(id_string.concat(interface)).removeClass("hidden");
+			panel_heading = document.getElementById(interface).childNodes[1].childNodes[1];
+			panel_heading.id = panel_heading_id_string.concat(interface);
 
-			try {
-				var IPv6 = document.getElementById("IPv6");
-				while (IPv6.hasChildNodes()) {
-					IPv6.removeChild(IPv6.lastChild);
-				}
-				if (data.IPv6 != null){
-					if (data.IPv6.length > 0){
-						for (var i = 0; i < data.IPv6.length; i++) {
-							var divAddress = document.createElement("div");
-							divAddress.className = "col-xs-6 col-sm-6 placeholder text-left";
-							var divStrong = document.createElement("strong");
-							var strongText = document.createTextNode("IPv6: ");
-							var divSpan = document.createElement("span");
-							var spanText = document.createTextNode(data.IPv6[i].address);
-							divAddress.appendChild(divStrong);
-							divStrong.appendChild(strongText);
-							divAddress.appendChild(divSpan);
-							divSpan.appendChild(spanText);
-							IPv6.appendChild(divAddress);
+			panel_button = document.getElementById(panel_heading.id).childNodes[1].childNodes[1].childNodes[1];
+			panel_button.id = panel_button_id_string.concat(interface);
+			panel_button.href = id_string.concat(panel_collapse_id_string,interface);
+			panel_button.innerText = interface;
+			panel_collapse = document.getElementById(interface).childNodes[1].childNodes[3];
+			panel_collapse.id = panel_collapse_id_string.concat(interface);
+			panel_collapse_body = panel_collapse.childNodes[1];
+			$(id_string.concat(panel_button.id)).attr("aria-controls", panel_collapse_id_string.concat(interface));
+			// Device Type
+			document.getElementById(interface).getElementsByClassName("devicetype")[0].innerText = DeviceTypetoString(data.status[interface].status.devicetype);
+			// State
+			document.getElementById(interface).getElementsByClassName("state")[0].innerText = CARDSTATEtoString(data.status[interface].status.state);
+			// Active Connection
+			if (data.status[interface].connection_active){
+				$(document.getElementById(interface).getElementsByClassName("connection_active")[0]).removeClass("hidden");
+				// ID
+				document.getElementById(interface).getElementsByClassName("id")[0].childNodes[2].innerText = data.status[interface].connection_active.id;
+				// UUID
+				document.getElementById(interface).getElementsByClassName("uuid")[0].childNodes[2].innerText = data.status[interface].connection_active.uuid;
+			} else {
+				$(document.getElementById(interface).getElementsByClassName("connection_active")[0]).addClass("hidden");
+			}
+			// IPv4
+			if (data.status[interface].ip4config){
+				$(document.getElementById(interface).getElementsByClassName("ip4config")[0]).removeClass("hidden");
+				// IPv4 Address
+				document.getElementById(interface).getElementsByClassName("ipv4_address")[0].childNodes[2].innerText = data.status[interface].ip4config.address[0];
+				// IPv4 Gateway
+				document.getElementById(interface).getElementsByClassName("ipv4_gateway")[0].childNodes[2].innerText = data.status[interface].ip4config.gateway;
+			} else {
+				$(document.getElementById(interface).getElementsByClassName("ip4config")[0]).addClass("hidden");
+			}
+			// IPv6
+			if (data.status[interface].ip6config){
+				// Add entries and Display IPv6 addresses
+				var total_addresses = Object.keys(data.status[interface].ip6config.address).length;
+				var interface_ipv6 = interface.concat("_ipv6");
+				$(document.getElementById(interface).getElementsByClassName("ip6config")[0]).attr('id', interface_ipv6)
+				for (var i = 0; i < total_addresses; i++) {
+					var interface_ipv6_address = interface.concat("_ipv6_").concat(i.toString());
+					if(document.getElementById(interface_ipv6_address) == null){
+						if (i == 0){
+							$('#root_ipv6_address').clone().attr('id', interface_ipv6_address).insertAfter('#'.concat(interface_ipv6, ' #root_ipv6_address'));
+						} else {
+							$('#root_ipv6_address').clone().attr('id', interface_ipv6_address).insertAfter('#'.concat(interface_ipv6, ' #',interface_ipv6, '_', (i - 1).toString()));
 						}
+						$(document.getElementById(interface_ipv6_address)).removeClass("hidden");
 					}
+					$(document.getElementById(interface_ipv6_address))[0].childNodes[2].innerText = data.status[interface].ip6config.address[i];
 				}
-			}
-			catch(err){
-				consoleLog(err);
-			}
+				// Remove unneeded entries
+				var total_displayed = document.getElementById(interface).getElementsByClassName("ipv6_address").length;
+				for (var i = (total_displayed - 1); i > total_addresses; i--) {
+					consoleLog(i);
+					$(document.getElementById(interface).getElementsByClassName("ipv6_address")[i]).remove();
+				}
 
-			$('#bitRate').html(data.bitRate);
-			$('#txPower').html(data.txPower);
-			$('#beaconPeriod').html(data.beaconPeriod);
-			$('#DTIM').html(data.DTIM);
-
-			$("#progressbar").removeClass("progress-bar-danger progress-bar-warning progress-bar-success");
-			if (data.strength == 0){ //Not connected
-				$("#progressbar").addClass("progress-bar-danger");
-				$("#progressbar").css('width',strength);
-			} else if (data.strength < 30){ //red
-				$("#progressbar").addClass("progress-bar-danger");
-				$("#progressbar").css('width',strength);
-			} else if (data.strength < 50){ //yellow
-				$("#progressbar").addClass("progress-bar-warning");
-				$("#progressbar").css('width',strength);
-			} else { //green
-				$("#progressbar").addClass("progress-bar-success");
-				$("#progressbar").css('width',strength);
+				$(document.getElementById(interface).getElementsByClassName("ip6config")[0]).removeClass("hidden");
+				// IPv6 Gateway
+				document.getElementById(interface).getElementsByClassName("ipv6_gateway")[0].childNodes[2].innerText = data.status[interface].ip6config.gateway;
+			} else {
+				$(document.getElementById(interface).getElementsByClassName("ip6config")[0]).addClass("hidden");
 			}
-			document.getElementById("progressbar").innerHTML = strength;
+			// Active Access Point
+			if (data.status[interface].activeaccesspoint){
+				$(document.getElementById(interface).getElementsByClassName("activeaccesspoint")[0]).removeClass("hidden");
+				// SSID
+				document.getElementById(interface).getElementsByClassName("ssid")[0].childNodes[2].innerText = data.status[interface].activeaccesspoint.ssid;
+				// BSSID
+				document.getElementById(interface).getElementsByClassName("bssid")[0].childNodes[2].innerText = data.status[interface].activeaccesspoint.bssid;
+				// Frequency
+				document.getElementById(interface).getElementsByClassName("frequency")[0].childNodes[2].innerText = data.status[interface].activeaccesspoint.frequency;
+				// Signal Strength
+				document.getElementById(interface).getElementsByClassName("strength")[0].childNodes[2].innerText = data.status[interface].activeaccesspoint.strength;
+				// Progress Bar
+				$(document.getElementById(interface).getElementsByClassName("progress_parent")[0]).removeClass("hidden");
+				progress_bar = $(document.getElementById(interface).getElementsByClassName("progress-bar")[0]);
+				progress_bar.removeClass("progress-bar-danger progress-bar-warning progress-bar-success hidden");
+				if (data.status[interface].activeaccesspoint.strength == 0){ //Not connected
+					progress_bar.addClass("progress-bar-danger");
+					progress_bar.css('width',data.status[interface].activeaccesspoint.strength.toString().concat("%"));
+				} else if (data.status[interface].activeaccesspoint.strength < 30){ //red
+					progress_bar.addClass("progress-bar-danger");
+					progress_bar.css('width',data.status[interface].activeaccesspoint.strength.toString().concat("%"));
+				} else if (data.status[interface].activeaccesspoint.strength < 50){ //yellow
+					progress_bar.addClass("progress-bar-warning");
+					progress_bar.css('width',data.status[interface].activeaccesspoint.strength.toString().concat("%"));
+				} else { //green
+					progress_bar.addClass("progress-bar-success");
+					progress_bar.css('width',data.status[interface].activeaccesspoint.strength.toString().concat("%"));
+				}
+				progress_bar.innerHTML = data.status[interface].activeaccesspoint.strength;
+			} else {
+				$(document.getElementById(interface).getElementsByClassName("activeaccesspoint")[0]).addClass("hidden");
+			}
+			// Wireless
+			if (data.status[interface].wireless){
+				$(document.getElementById(interface).getElementsByClassName("wireless")[0]).removeClass("hidden");
+				// HW Address
+				document.getElementById(interface).getElementsByClassName("wireless_hwaddress")[0].childNodes[2].innerText = data.status[interface].wireless.hwaddress;
+				// Bit Rate
+				document.getElementById(interface).getElementsByClassName("bitrate")[0].childNodes[2].innerText = data.status[interface].wireless.bitrate;
+			} else {
+				$(document.getElementById(interface).getElementsByClassName("wireless")[0]).addClass("hidden");
+			}
+			// Wired
+			if (data.status[interface].wired){
+				$(document.getElementById(interface).getElementsByClassName("wired")[0]).removeClass("hidden");
+				// HW Address
+				document.getElementById(interface).getElementsByClassName("wired_hwaddress")[0].childNodes[2].innerText = data.status[interface].wired.hwaddress;
+				// Speed
+				document.getElementById(interface).getElementsByClassName("speed")[0].childNodes[2].innerText = data.status[interface].wired.speed;
+			} else {
+				$(document.getElementById(interface).getElementsByClassName("wired")[0]).addClass("hidden");
+			}
 		}
+		return;
 	})
 	.fail(function(data) {
 		consoleLog(data);
@@ -259,7 +390,7 @@ function updateStatus(){
 
 function setIntervalUpdate(functionName){
 	if (!intervalId){
-		intervalId = setInterval(functionName, 1000);
+		intervalId = setInterval(functionName, 2000);
 	} else {
 		consoleLog("Interval already set");
 	}

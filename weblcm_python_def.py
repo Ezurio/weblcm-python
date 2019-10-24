@@ -106,6 +106,9 @@ NM_CONNECTION_IFACE =			'org.freedesktop.NetworkManager.Settings.Connection'
 NM_CONNECTION_ACTIVE_IFACE =	'org.freedesktop.NetworkManager.Connection.Active'
 NM_IP4_IFACE =					'org.freedesktop.NetworkManager.IP4Config'
 NM_IP6_IFACE =					'org.freedesktop.NetworkManager.IP6Config'
+NM_DHCP4_IFACE =				'org.freedesktop.NetworkManager.DHCP4Config'
+NM_DHCP6_IFACE =				'org.freedesktop.NetworkManager.DHCP6Config'
+NM_WIRED_IFACE =				'org.freedesktop.NetworkManager.Device.Wired'
 NM_WIRELESS_IFACE =				'org.freedesktop.NetworkManager.Device.Wireless'
 NM_ACCESSPOINT_IFACE =			'org.freedesktop.NetworkManager.AccessPoint'
 
@@ -133,20 +136,20 @@ NM_DBUS_API_TYPES = {
 	},
 	'NMDeviceType':{
 		'NM_DEVICE_TYPE_UNKNOWN':		0,
-		'NM_DEVICE_TYPE_GENERIC':		1,
-		'NM_DEVICE_TYPE_ETHERNET':		2,
-		'NM_DEVICE_TYPE_WIFI':			3,
-		'NM_DEVICE_TYPE_UNUSED1':		4,
-		'NM_DEVICE_TYPE_UNUSED2':		5,
-		'NM_DEVICE_TYPE_BT':			6,
-		'NM_DEVICE_TYPE_OLPC_MESH':		7,
-		'NM_DEVICE_TYPE_WIMAX':			8,
-		'NM_DEVICE_TYPE_MODEM':			9,
-		'NM_DEVICE_TYPE_INFINIBAND':	10,
-		'NM_DEVICE_TYPE_BOND':			11,
-		'NM_DEVICE_TYPE_VLAN':			12,
-		'NM_DEVICE_TYPE_ADSL':			13,
-		'NM_DEVICE_TYPE_BRIDGE':		14,
+		'NM_DEVICE_TYPE_ETHERNET':		1,
+		'NM_DEVICE_TYPE_WIFI':			2,
+		'NM_DEVICE_TYPE_UNUSED1':		3,
+		'NM_DEVICE_TYPE_UNUSED2':		4,
+		'NM_DEVICE_TYPE_BT':			5,
+		'NM_DEVICE_TYPE_OLPC_MESH':		6,
+		'NM_DEVICE_TYPE_WIMAX':			7,
+		'NM_DEVICE_TYPE_MODEM':			8,
+		'NM_DEVICE_TYPE_INFINIBAND':	9,
+		'NM_DEVICE_TYPE_BOND':			10,
+		'NM_DEVICE_TYPE_VLAN':			11,
+		'NM_DEVICE_TYPE_ADSL':			12,
+		'NM_DEVICE_TYPE_BRIDGE':		13,
+		'NM_DEVICE_TYPE_GENERIC':		14,
 		'NM_DEVICE_TYPE_TEAM':			15,
 		'NM_DEVICE_TYPE_TUN':			16,
 		'NM_DEVICE_TYPE_IP_TUNNEL':		17,
@@ -159,6 +162,10 @@ NM_DBUS_API_TYPES = {
 		'NM_DEVICE_TYPE_OVS_INTERFACE':	24,
 		'NM_DEVICE_TYPE_OVS_PORT':		25,
 		'NM_DEVICE_TYPE_OVS_BRIDGE':	26,
+		'NM_DEVICE_TYPE_WPAN':			27,
+		'NM_DEVICE_TYPE_6LOWPAN':		28,
+		'NM_DEVICE_TYPE_WIREGUARD':		29,
+		'NM_DEVICE_TYPE_WIFI_P2P':		30,
 	},
 	'NMDeviceCapabilities':{
 		'NM_DEVICE_CAP_NONE':			0x00000000,

@@ -195,6 +195,8 @@ if __name__ == '__main__':
 	if check_dict_value('networking',config['PLUGINS']):
 		PLUGINS['list']['networking'] = True
 		PLUGINS['networking'] = weblcm_python_def.NM_DBUS_API_TYPES
+		# Pass in ini setting
+		weblcm_python_func.Networking_Data.show_unmanaged = check_dict_value('show_unmanaged',config['CORE'])
 		cherrypy_conf.update(weblcm_python_def.NETWORKING_CONF)
 		webapp.networking_status = weblcm_python_func.Networking_Status()
 		webapp.connections = weblcm_python_func.Connections()
