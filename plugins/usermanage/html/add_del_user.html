@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<!--
+  Copyright (c) 2019, Laird
+  Contact: ews-support@lairdtech.com
+-->
+<html>
+	<form class="col-xs-12 col-sm-12 placeholder">
+		<div class="form-group">
+			<h3>User List</h3>
+			<div id="user_list_div"></div>
+		</div>
+		<h3>Add New User</h3>
+		<div class="form-group">
+			<label for="usrname" class="pull-left">Username:</label>
+			<input type="text" class="form-control" id="add_username" name="add_username" required>
+		</div>
+		<div class="form-group">
+			<label for="password" class="pull-left">Password:</label>
+			<input type="password" class="form-control" id="add_password" name="add_password" required>
+		</div>
+		<div class="form-group pull-left">
+			<input type="button" onclick="addUser()" class="btn btn-primary" value="Submit" id="bt_add_user">
+		</div>
+	</form>
+</html>

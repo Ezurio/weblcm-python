@@ -6,11 +6,11 @@ import hashlib
 import weblcm_python_def
 import weblcm_python_func
 from swupdate import SWUpdate
+from users import UserManage, LoginManage
 
 config = configparser.ConfigParser()
 config.read(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR + 'weblcm-python.ini')
 
-passwords = configparser.ConfigParser()
 
 PLUGINS = {
 	'list':{},
@@ -27,108 +27,16 @@ def check_dict_value(value, dictionary):
 	else:
 		return False
 
-def rename_users_section(cp, section_from, section_to):
-	items = cp.items(section_from)
-	cp.add_section(section_to)
-	for item in items:
-		cp.set(section_to, item[0], item[1])
-		cp.remove_section(section_from)
-
-def update_users_username(update, current_username, new_username):
-	result = 1
-	if update:
-		if current_username in passwords:
-			rename_users_section(passwords,current_username,new_username)
-			if new_username in passwords:
-				cherrypy.session['USER'] = new_username
-				result = 0
-	else:
-		result = 0
-
-	return result
-
-def update_users_password(update, current_password, new_password):
-	result = 1
-	username = cherrypy.session['USER']
-	if update:
-		attempted_password = hashlib.sha256(passwords[username]['salt'].encode() + current_password.encode()).hexdigest()
-		if attempted_password == passwords[username]['password']:
-			salt = uuid.uuid4().hex
-			passwords[username]['salt'] = salt
-			passwords[username]['password'] = hashlib.sha256(salt.encode() + new_password.encode()).hexdigest()
-			result = 0
-	else:
-		result = 0
-
-	return result
-
 class Root(object):
 	@cherrypy.expose
 	def index(self):
 		weblcm_python_func.check_session()
 		return open(weblcm_python_def.WEBLCM_PYTHON_DOC_ROOT + 'webLCM.html')
 
-@cherrypy.expose
-class Login(object):
-
-	@cherrypy.tools.accept(media='application/json')
-	@cherrypy.tools.json_in()
-	@cherrypy.tools.json_out()
-	def POST(self):
-		result = {
-			'SDCERR': 1,
-		}
-		post_data = cherrypy.request.json
-		passwords.read(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini')
-		if post_data['username'] in passwords and post_data['password']:
-			attempted_password = hashlib.sha256(passwords[post_data['username']]['salt'].encode() + post_data['password'].encode()).hexdigest()
-			if attempted_password == passwords[post_data['username']]['password']:
-				cherrypy.session['SESSION'] = 0
-				cherrypy.session['USER'] = post_data['username']
-				result['SDCERR'] = 0
-
-		return result
-
-@cherrypy.expose
-class Logout(object):
-
+	@cherrypy.expose
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()
-	def GET(self):
-		result = {
-			'SDCERR': 0,
-		}
-		cherrypy.session['SESSION'] = 1
-		cherrypy.lib.sessions.expire()
-		return result
-
-@cherrypy.expose
-class Update_Users(object):
-
-	@cherrypy.tools.accept(media='application/json')
-	@cherrypy.tools.json_in()
-	@cherrypy.tools.json_out()
-	def POST(self):
-		result = {
-			'SDCERR': 1,
-		}
-		post_data = cherrypy.request.json
-		passwords.read(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini')
-		if ( not update_users_password(post_data['updatePassWord'], post_data['currentPassWord'], post_data['newPassWord']) and
-			not update_users_username(post_data['updateUserName'],post_data['currentUserName'],post_data['newUserName'])):
-			with open(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini', 'w') as configfile:
-				passwords.write(configfile)
-			result['SDCERR'] = 0
-
-
-		return result
-
-@cherrypy.expose
-class Definitions(object):
-
-	@cherrypy.tools.accept(media='application/json')
-	@cherrypy.tools.json_out()
-	def GET(self):
+	def definitions(self):
 		result = {
 				'SDCERR': {
 					'SDCERR_SUCCESS': 0, 'SDCERR_FAIL': 1
@@ -155,26 +63,6 @@ if __name__ == '__main__':
 			'tools.sessions.on': True,
 			'tools.staticdir.root': weblcm_python_def.WEBLCM_PYTHON_DOC_ROOT,
 			'tools.sessions.timeout': int(check_dict_value('session_timeout',config['CORE'])),
-		},
-		'/definitions': {
-			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-			'tools.response_headers.on': True,
-			'tools.response_headers.headers': [('Content-Type', 'application/json')],
-		},
-		'/login': {
-			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-			'tools.response_headers.on': True,
-			'tools.response_headers.headers': [('Content-Type', 'application/json')],
-		},
-		'/logout': {
-			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-			'tools.response_headers.on': True,
-			'tools.response_headers.headers': [('Content-Type', 'application/json')],
-		},
-		'/update_app_users': {
-			'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
-			'tools.response_headers.on': True,
-			'tools.response_headers.headers': [('Content-Type', 'application/json')],
 		},
 		'/assets': {
 			'tools.staticdir.on': True,
@@ -218,6 +106,7 @@ if __name__ == '__main__':
 		webapp.set_logging = weblcm_python_func.Set_Logging()
 		webapp.get_logging = weblcm_python_func.Get_Logging()
 
+
 	if check_dict_value('swupdate',config['PLUGINS']):
 		PLUGINS['list']['swupdate'] = True
 		swu = SWUpdate();
@@ -227,9 +116,16 @@ if __name__ == '__main__':
 		webapp.get_progress_state = swu.get_progress_state
 		webapp.update_bootenv = swu.update_bootenv
 
-	webapp.definitions = Definitions()
-	webapp.login = Login()
-	webapp.logout = Logout()
-	webapp.update_users = Update_Users()
+	login = LoginManage()
+	webapp.login = login.login
+	webapp.logout = login.logout
+
+	if check_dict_value('usermanage',config['PLUGINS']):
+		PLUGINS['list']['usermanage'] = True
+		um = UserManage()
+		webapp.add_user = um.add_user
+		webapp.get_user_list = um.get_user_list
+		webapp.update_user = um.update_user
+		webapp.delete_user = um.delete_user
 
 	cherrypy.quickstart(webapp, "/", cherrypy_conf)

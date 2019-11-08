@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  Copyright (c) 2017, Laird
+  Copyright (c) 2019, Laird
   Contact: ews-support@lairdtech.com
 -->
 
@@ -17,52 +17,6 @@
 					<span id="disableNotify" class="hidden">Desktop notifications can only be disabled via the browser.</span>
 				</div>
 			</div>
-			<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-				<hr style="border-width: 5px;"/>
-			</div>
-			<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-				<div class="col-xs-12 col-sm-5">
-					<h3 style="display:inline">Change Username   </h3><input type="checkbox" id="userName" onclick="onclickSetUserPass(userName,currentUserName,newUserName,checkUserName)">
-					<div style="margin-top:10px"  class="col-xs-12">
-						<div class="form-group">
-							<label class="control-label">Current Username</label>
-							<input type="text" id="currentUserName" class="form-control" disabled>
-						</div>
-						<br>
-						<div class="form-group">
-							<label class="control-label">New Username</label>
-							<input type="text" id="newUserName" class="form-control" disabled>
-						</div>
-						<br>
-						<div class="form-group">
-							<label class="control-label">Confirm New Username</label>
-							<input type="text" onclick="onChangeSubmit(0)" oninput="onChangeSubmit(0)" id="checkUserName" class="form-control" disabled>
-						</div>
-						<br>
-					</div>
-				</div>
-				<div class="col-xs-12 col-sm-5 pull-right">
-					<h3 style="display:inline">Change Password  </h3><input type="checkbox" id="passWord" onclick="onclickSetUserPass(passWord,currentPassWord,newPassWord,checkPassWord)">
-					<div style="margin-top:10px"  class="col-xs-12">
-						<div class="form-group">
-							<label class="control-label">Current Password</label>
-							<input type="password" id="currentPassWord" class="form-control" disabled>
-						</div>
-						<br>
-						<div class="form-group">
-							<label class="control-label">New Password</label>
-							<input type="password" id="newPassWord" class="form-control" maxlength="20" disabled>
-						</div>
-						<br>
-						<div class="form-group">
-							<label class="control-label">Confirm New Password</label>
-							<input type="password" onclick="onChangeSubmit(0)" oninput="onChangeSubmit(0)" id="checkPassWord" class="form-control" maxlength="20" disabled>
-						</div>
-						<br>
-					</div>
-				</div>
-			</div>
 		</form>
 	</div>
-	<a id="submitButton" onclick="submitSetUserPass(0)" class="btn btn-primary disabled" role="button">Submit</a>
 </html>
