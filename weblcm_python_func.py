@@ -576,7 +576,7 @@ class Wifi_Scan(object):
 			wireless_hwaddress = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "HwAddress")
 			wireless_permhwaddress = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "PermHwAddress")
 			wireless_mode = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "Mode")
-			wireless_bitrate = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "BitRate")
+			wireless_bitrate = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "Bitrate")
 			wireless_lastscan = wifi_prop_iface.Get(weblcm_python_def.NM_WIRELESS_IFACE, "LastScan")
 			print('Last scan:' + str(wireless_lastscan))
 			scan_diff_in_seconds = ((time.clock_gettime(time.CLOCK_MONOTONIC) * 1000) - wireless_lastscan) / 1000
