@@ -9,38 +9,34 @@
 		<div class="form-group">
 			<label class="pull-left" for="fw_select">Select Firmware: </label>
 			<input type="file" class="form-control" id="fw_name" accept=".swu">
-			<button onclick="updateFirmware()" id="bt_firmware_update" style="float:right">Update</button>
+			<button onclick="updateFirmware()" id="bt_firmware_update" class="btn btn-primary" style="float:right">Update</button>
 		</div>
 		<br><br>
 		<div class="Progress">
 			<label for="fw_update_status" id=fw_update_status>Update Status: </label><br><br>
 			<label id="total_progress_bar_text"><span class="Progress-label">0/0 </span></label>
-			<progress max="100" value="0" class="Progress-main" id="total_progress_bar">
-				<div class="Progress-bar" role="presentation">
-					<span class="Progress-value" style="width: 80%;"> </span>
-				</div>
-			</progress>
+			<div class="progress-bar" role="progressbar"></div>
+				<progress id="total_progress_bar" max="100" value="0"></progress>
+			</div>
 			<br><br>
 			<label id="cur_progress_bar_text"><span class="Progress-label">Image </span></label>
-			<progress max="100" value="0" class="Progress-main" id="cur_progress_bar">
-				<div class="Progress-bar" role="presentation">
-					<span class="Progress-value" style="width: 80%;"> </span>
-				</div>
-			</progress>
+			<div class="progress-bar" role="progressbar"></div>
+				<progress id="cur_progress_bar" max="100" value="0"></progress>
+			</div>
 		</div>
 		<br><br>
 
 		<div class="form-group">
 			<label class="pull-left">Boot Env: </label><br>
 			<label class="pull-left" for="boot_env_bootside_select">boot side:
-				<select id="boot_env_bootside_select">
+				<select id="boot_env_bootside_select" class="form-control">
 					<option value="unknown">unknown</option>
 					<option value="a">a</option>
 					<option value="b">b</option>
 				</select>
 			</label>
 			<br>
-			<button onclick="updateBootenv()" id="bt_boot_env_update"style="float:right">Update</button>
+			<button onclick="updateBootenv()" id="bt_boot_env_update" class="btn btn-primary" style="float:right">Update</button>
 		</div>
 	</form>
 </html>

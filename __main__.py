@@ -58,11 +58,18 @@ if __name__ == '__main__':
 		'global': {
 			'server.socket_host': check_dict_value('socket_host',config['CORE']),
 			'server.socket_port': int(check_dict_value('socket_port',config['CORE'])),
+			'log.screen': False,
+			'engine.autoreload.on': False,
+			'checker.on': False,
+			'tools.log_headers.on': False,
+			'request.show_tracebacks': False,
+			'request.show_mismatched_params': False,
 		},
 		'/': {
 			'tools.sessions.on': True,
 			'tools.staticdir.root': weblcm_python_def.WEBLCM_PYTHON_DOC_ROOT,
 			'tools.sessions.timeout': int(check_dict_value('session_timeout',config['CORE'])),
+			'log.screen': False,
 		},
 		'/assets': {
 			'tools.staticdir.on': True,
