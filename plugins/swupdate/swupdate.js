@@ -1,5 +1,5 @@
 // Copyright (c) 2019, Laird
-// Contact: ews-support@lairdtech.com
+// Contact: support@lairdconnect.com
 
 function swupdateAUTORUN(retry) {
 	return;
