@@ -1,5 +1,5 @@
 // Copyright (c) 2019, Laird
-// Contact: CS-Support@lairdtech.com
+// Contact: support@lairdconnect.com
 
 function loggingAUTORUN(retry){
 	return;
