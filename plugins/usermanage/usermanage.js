@@ -168,10 +168,6 @@ function clickAddOrDelUser(retry)
 		dataType: "html",
 	})
 	.done(function(data){
-		if (intervalId){
-			clearInterval(intervalId);
-			intervalId = 0;
-		}
 		$('#main_section').html(data);
 		clearReturnData();
 		$("li").removeClass("active");
@@ -201,10 +197,6 @@ function clickUpdatePassword(retry)
 		type: "GET",
 		dataType: "html",
 		success: function (data) {
-			if (intervalId){
-				clearInterval(intervalId);
-				intervalId = 0;
-			}
 			$('#main_section').html(data);
 			clearReturnData();
 			$("li").removeClass("active");

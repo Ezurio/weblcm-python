@@ -43,10 +43,6 @@ function requestLog(retry){
 		contentType: "application/json",
 	})
 	.done(function(msg) {
-		if (intervalId){
-			clearInterval(intervalId);
-			intervalId = 0;
-		}
 		if (msg.SESSION == defines.SDCERR.SDCERR_FAIL){
 			expiredSession();
 			return;
@@ -105,10 +101,6 @@ function generateLog(log,retry){
 		contentType: "application/json",
 	})
 	.done(function(msg) {
-		if (intervalId){
-			clearInterval(intervalId);
-			intervalId = 0;
-		}
 		if (msg.SESSION == defines.SDCERR.SDCERR_FAIL){
 			expiredSession();
 			return;
@@ -136,10 +128,6 @@ function getLogging(retry){
 		contentType: "application/json",
 	})
 	.done(function(msg) {
-		if (intervalId){
-			clearInterval(intervalId);
-			intervalId = 0;
-		}
 		consoleLog(msg);
 		if (msg.SESSION == defines.SDCERR.SDCERR_FAIL){
 			expiredSession();
@@ -167,10 +155,6 @@ function clickLoggingPage(retry){
 		type: "GET",
 		dataType: "html",
 		success: function (data) {
-			if (intervalId){
-				clearInterval(intervalId);
-				intervalId = 0;
-			}
 			$('#main_section').html(data);
 			clearReturnData();
 			$("#networking_main_menu>ul>li.active").removeClass("active");
