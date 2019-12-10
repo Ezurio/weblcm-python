@@ -18,10 +18,6 @@ function updateInfoText(option,retry){
 	})
 	.fail(function() {
 		consoleLog("Error, couldn't get info.html.. retrying");
-		if (intervalId){
-			clearInterval(intervalId);
-			intervalId = 0;
-		}
 		if (retry < 5){
 			retry++;
 			$("#networking_status").removeClass("active");
@@ -240,197 +236,186 @@ function updateStatus(){
 	panel_button_id_string = "panel_button_";
 	panel_collapse_id_string = "panel_collapse_";
 	var getStatusJSON = $.getJSON( "networking_status", function( data ) {
-		consoleLog(data);
 		var old_interfaces = [];
 		var old_panels = document.getElementsByClassName("panel-group");
+		try{
+			// Hide interface panels if they no larger available.
+			for (var i = 0; i < old_panels.length; i++) {
+				old_interfaces.push(old_panels[i].id);
+				if (typeof data.status[old_panels[i].id] == 'undefined') {
+					$(id_string.concat(old_panels[i].id)).addClass("hidden");
+				}
+			}
 
-		// Hide interface panels if they no larger available.
-		for (var i = 0; i < old_panels.length; i++) {
-			old_interfaces.push(old_panels[i].id);
-			if (typeof data.status[old_panels[i].id] == 'undefined') {
-				$(id_string.concat(old_panels[i].id)).addClass("hidden");
-			}
-		}
+			for (interface in data.status){
+				var interface_panel = document.getElementById(interface);
+				// Add new panels if they dont exist
+				if(!interface_panel){
+					$('#root_interface').clone().attr('id', interface).appendTo('#panel_parent');
+				}
+				$("#updateProgressDisplay").addClass("hidden");
+				$(id_string.concat(interface)).removeClass("hidden");
+				panel_heading = document.getElementById(interface).childNodes[1].childNodes[1];
+				panel_heading.id = panel_heading_id_string.concat(interface);
 
-		for (interface in data.status){
-			var interface_panel = document.getElementById(interface);
-			// Add new panels if they dont exist
-			if(!interface_panel){
-				$('#root_interface').clone().attr('id', interface).appendTo('#panel_parent');
-			}
-			$("#updateProgressDisplay").addClass("hidden");
-			$(id_string.concat(interface)).removeClass("hidden");
-			panel_heading = document.getElementById(interface).childNodes[1].childNodes[1];
-			panel_heading.id = panel_heading_id_string.concat(interface);
-
-			panel_button = document.getElementById(panel_heading.id).childNodes[1].childNodes[1].childNodes[1];
-			panel_button.id = panel_button_id_string.concat(interface);
-			panel_button.href = id_string.concat(panel_collapse_id_string,interface);
-			panel_button.innerText = interface;
-			panel_collapse = document.getElementById(interface).childNodes[1].childNodes[3];
-			panel_collapse.id = panel_collapse_id_string.concat(interface);
-			panel_collapse_body = panel_collapse.childNodes[1];
-			$(id_string.concat(panel_button.id)).attr("aria-controls", panel_collapse_id_string.concat(interface));
-			// Device Type
-			document.getElementById(interface).getElementsByClassName("devicetype")[0].innerText = DeviceTypetoString(data.status[interface].status.devicetype);
-			// State
-			document.getElementById(interface).getElementsByClassName("state")[0].innerText = CARDSTATEtoString(data.status[interface].status.state);
-			// Active Connection
-			if (data.status[interface].connection_active){
-				$(document.getElementById(interface).getElementsByClassName("connection_active")[0]).removeClass("hidden");
-				// ID
-				document.getElementById(interface).getElementsByClassName("id")[0].childNodes[2].innerText = data.status[interface].connection_active.id;
-				// UUID
-				document.getElementById(interface).getElementsByClassName("uuid")[0].childNodes[2].innerText = data.status[interface].connection_active.uuid;
-			} else {
-				$(document.getElementById(interface).getElementsByClassName("connection_active")[0]).addClass("hidden");
-			}
-			// IPv4
-			if (data.status[interface].ip4config){
-				$(document.getElementById(interface).getElementsByClassName("ip4config")[0]).removeClass("hidden");
-				// IPv4 Address
-				document.getElementById(interface).getElementsByClassName("ipv4_address")[0].childNodes[2].innerText = data.status[interface].ip4config.address[0];
-				// IPv4 Gateway
-				document.getElementById(interface).getElementsByClassName("ipv4_gateway")[0].childNodes[2].innerText = data.status[interface].ip4config.gateway;
-			} else {
-				$(document.getElementById(interface).getElementsByClassName("ip4config")[0]).addClass("hidden");
-			}
-			// IPv6
-			if (data.status[interface].ip6config){
-				// Add entries and Display IPv6 addresses
-				var total_addresses = Object.keys(data.status[interface].ip6config.address).length;
-				var interface_ipv6 = interface.concat("_ipv6");
-				$(document.getElementById(interface).getElementsByClassName("ip6config")[0]).attr('id', interface_ipv6)
-				for (var i = 0; i < total_addresses; i++) {
-					var interface_ipv6_address = interface.concat("_ipv6_").concat(i.toString());
-					if(document.getElementById(interface_ipv6_address) == null){
-						if (i == 0){
-							$('#root_ipv6_address').clone().attr('id', interface_ipv6_address).insertAfter('#'.concat(interface_ipv6, ' #root_ipv6_address'));
-						} else {
-							$('#root_ipv6_address').clone().attr('id', interface_ipv6_address).insertAfter('#'.concat(interface_ipv6, ' #',interface_ipv6, '_', (i - 1).toString()));
+				panel_button = document.getElementById(panel_heading.id).childNodes[1].childNodes[1].childNodes[1];
+				panel_button.id = panel_button_id_string.concat(interface);
+				panel_button.href = id_string.concat(panel_collapse_id_string,interface);
+				panel_button.innerText = interface;
+				panel_collapse = document.getElementById(interface).childNodes[1].childNodes[3];
+				panel_collapse.id = panel_collapse_id_string.concat(interface);
+				panel_collapse_body = panel_collapse.childNodes[1];
+				$(id_string.concat(panel_button.id)).attr("aria-controls", panel_collapse_id_string.concat(interface));
+				// Device Type
+				document.getElementById(interface).getElementsByClassName("devicetype")[0].innerText = DeviceTypetoString(data.status[interface].status.devicetype);
+				// State
+				document.getElementById(interface).getElementsByClassName("state")[0].innerText = CARDSTATEtoString(data.status[interface].status.state);
+				// Active Connection
+				if (data.status[interface].connection_active){
+					$(document.getElementById(interface).getElementsByClassName("connection_active")[0]).removeClass("hidden");
+					// ID
+					document.getElementById(interface).getElementsByClassName("id")[0].childNodes[2].innerText = data.status[interface].connection_active.id;
+					// UUID
+					document.getElementById(interface).getElementsByClassName("uuid")[0].childNodes[2].innerText = data.status[interface].connection_active.uuid;
+				} else {
+					$(document.getElementById(interface).getElementsByClassName("connection_active")[0]).addClass("hidden");
+				}
+				// IPv4
+				if (data.status[interface].ip4config){
+					$(document.getElementById(interface).getElementsByClassName("ip4config")[0]).removeClass("hidden");
+					// IPv4 Address
+					document.getElementById(interface).getElementsByClassName("ipv4_address")[0].childNodes[2].innerText = data.status[interface].ip4config.address[0];
+					// IPv4 Gateway
+					document.getElementById(interface).getElementsByClassName("ipv4_gateway")[0].childNodes[2].innerText = data.status[interface].ip4config.gateway;
+				} else {
+					$(document.getElementById(interface).getElementsByClassName("ip4config")[0]).addClass("hidden");
+				}
+				// IPv6
+				if (data.status[interface].ip6config){
+					// Add entries and Display IPv6 addresses
+					var total_addresses = Object.keys(data.status[interface].ip6config.address).length;
+					var interface_ipv6 = interface.concat("_ipv6");
+					$(document.getElementById(interface).getElementsByClassName("ip6config")[0]).attr('id', interface_ipv6)
+						for (var i = 0; i < total_addresses; i++) {
+							var interface_ipv6_address = interface.concat("_ipv6_").concat(i.toString());
+							if(document.getElementById(interface_ipv6_address) == null){
+								if (i == 0){
+									$('#root_ipv6_address').clone().attr('id', interface_ipv6_address).insertAfter('#'.concat(interface_ipv6, ' #root_ipv6_address'));
+								} else {
+									$('#root_ipv6_address').clone().attr('id', interface_ipv6_address).insertAfter('#'.concat(interface_ipv6, ' #',interface_ipv6, '_', (i - 1).toString()));
+								}
+								$(document.getElementById(interface_ipv6_address)).removeClass("hidden");
+							}
+							$(document.getElementById(interface_ipv6_address))[0].childNodes[2].innerText = data.status[interface].ip6config.address[i];
 						}
-						$(document.getElementById(interface_ipv6_address)).removeClass("hidden");
+					// Remove unneeded entries
+					var total_displayed = document.getElementById(interface).getElementsByClassName("ipv6_address").length;
+					for (var i = (total_displayed - 1); i > total_addresses; i--) {
+						consoleLog(i);
+						$(document.getElementById(interface).getElementsByClassName("ipv6_address")[i]).remove();
 					}
-					$(document.getElementById(interface_ipv6_address))[0].childNodes[2].innerText = data.status[interface].ip6config.address[i];
-				}
-				// Remove unneeded entries
-				var total_displayed = document.getElementById(interface).getElementsByClassName("ipv6_address").length;
-				for (var i = (total_displayed - 1); i > total_addresses; i--) {
-					consoleLog(i);
-					$(document.getElementById(interface).getElementsByClassName("ipv6_address")[i]).remove();
-				}
 
-				$(document.getElementById(interface).getElementsByClassName("ip6config")[0]).removeClass("hidden");
-				// IPv6 Gateway
-				document.getElementById(interface).getElementsByClassName("ipv6_gateway")[0].childNodes[2].innerText = data.status[interface].ip6config.gateway;
-			} else {
-				$(document.getElementById(interface).getElementsByClassName("ip6config")[0]).addClass("hidden");
-			}
-			// Active Access Point
-			if (data.status[interface].activeaccesspoint){
-				$(document.getElementById(interface).getElementsByClassName("activeaccesspoint")[0]).removeClass("hidden");
-				// SSID
-				document.getElementById(interface).getElementsByClassName("ssid")[0].childNodes[2].innerText = data.status[interface].activeaccesspoint.ssid;
-				// BSSID
-				document.getElementById(interface).getElementsByClassName("bssid")[0].childNodes[2].innerText = data.status[interface].activeaccesspoint.bssid;
-				// Frequency
-				document.getElementById(interface).getElementsByClassName("frequency")[0].childNodes[2].innerText = data.status[interface].activeaccesspoint.frequency;
-				// Signal Strength
-				document.getElementById(interface).getElementsByClassName("strength")[0].childNodes[2].innerText = data.status[interface].activeaccesspoint.strength;
-				// Progress Bar
-				$(document.getElementById(interface).getElementsByClassName("progress_parent")[0]).removeClass("hidden");
-				progress_bar = $(document.getElementById(interface).getElementsByClassName("progress-bar")[0]);
-				progress_bar.removeClass("progress-bar-danger progress-bar-warning progress-bar-success hidden");
-				if (data.status[interface].activeaccesspoint.strength == 0){ //Not connected
-					progress_bar.addClass("progress-bar-danger");
-					progress_bar.css('width',data.status[interface].activeaccesspoint.strength.toString().concat("%"));
-				} else if (data.status[interface].activeaccesspoint.strength < 30){ //red
-					progress_bar.addClass("progress-bar-danger");
-					progress_bar.css('width',data.status[interface].activeaccesspoint.strength.toString().concat("%"));
-				} else if (data.status[interface].activeaccesspoint.strength < 50){ //yellow
-					progress_bar.addClass("progress-bar-warning");
-					progress_bar.css('width',data.status[interface].activeaccesspoint.strength.toString().concat("%"));
-				} else { //green
-					progress_bar.addClass("progress-bar-success");
-					progress_bar.css('width',data.status[interface].activeaccesspoint.strength.toString().concat("%"));
+					$(document.getElementById(interface).getElementsByClassName("ip6config")[0]).removeClass("hidden");
+					// IPv6 Gateway
+					document.getElementById(interface).getElementsByClassName("ipv6_gateway")[0].childNodes[2].innerText = data.status[interface].ip6config.gateway;
+				} else {
+					$(document.getElementById(interface).getElementsByClassName("ip6config")[0]).addClass("hidden");
 				}
-				progress_bar.innerHTML = data.status[interface].activeaccesspoint.strength;
-			} else {
-				$(document.getElementById(interface).getElementsByClassName("activeaccesspoint")[0]).addClass("hidden");
+				// Active Access Point
+				if (data.status[interface].activeaccesspoint){
+					$(document.getElementById(interface).getElementsByClassName("activeaccesspoint")[0]).removeClass("hidden");
+					// SSID
+					document.getElementById(interface).getElementsByClassName("ssid")[0].childNodes[2].innerText = data.status[interface].activeaccesspoint.ssid;
+					// BSSID
+					document.getElementById(interface).getElementsByClassName("bssid")[0].childNodes[2].innerText = data.status[interface].activeaccesspoint.bssid;
+					// Frequency
+					document.getElementById(interface).getElementsByClassName("frequency")[0].childNodes[2].innerText = data.status[interface].activeaccesspoint.frequency;
+					// Signal Strength
+					document.getElementById(interface).getElementsByClassName("strength")[0].childNodes[2].innerText = data.status[interface].activeaccesspoint.strength;
+					// Progress Bar
+					$(document.getElementById(interface).getElementsByClassName("progress_parent")[0]).removeClass("hidden");
+					progress_bar = $(document.getElementById(interface).getElementsByClassName("progress-bar")[0]);
+					progress_bar.removeClass("progress-bar-danger progress-bar-warning progress-bar-success hidden");
+					if (data.status[interface].activeaccesspoint.strength == 0){ //Not connected
+						progress_bar.addClass("progress-bar-danger");
+						progress_bar.css('width',data.status[interface].activeaccesspoint.strength.toString().concat("%"));
+					} else if (data.status[interface].activeaccesspoint.strength < 30){ //red
+						progress_bar.addClass("progress-bar-danger");
+						progress_bar.css('width',data.status[interface].activeaccesspoint.strength.toString().concat("%"));
+					} else if (data.status[interface].activeaccesspoint.strength < 50){ //yellow
+						progress_bar.addClass("progress-bar-warning");
+						progress_bar.css('width',data.status[interface].activeaccesspoint.strength.toString().concat("%"));
+					} else { //green
+						progress_bar.addClass("progress-bar-success");
+						progress_bar.css('width',data.status[interface].activeaccesspoint.strength.toString().concat("%"));
+					}
+					progress_bar.innerHTML = data.status[interface].activeaccesspoint.strength;
+				} else {
+					$(document.getElementById(interface).getElementsByClassName("activeaccesspoint")[0]).addClass("hidden");
+				}
+				// Wireless
+				if (data.status[interface].wireless){
+					$(document.getElementById(interface).getElementsByClassName("wireless")[0]).removeClass("hidden");
+					// HW Address
+					document.getElementById(interface).getElementsByClassName("wireless_hwaddress")[0].childNodes[2].innerText = data.status[interface].wireless.hwaddress;
+					// Bit Rate
+					document.getElementById(interface).getElementsByClassName("bitrate")[0].childNodes[2].innerText = data.status[interface].wireless.bitrate;
+				} else {
+					$(document.getElementById(interface).getElementsByClassName("wireless")[0]).addClass("hidden");
+				}
+				// Wired
+				if (data.status[interface].wired){
+					$(document.getElementById(interface).getElementsByClassName("wired")[0]).removeClass("hidden");
+					// HW Address
+					document.getElementById(interface).getElementsByClassName("wired_hwaddress")[0].childNodes[2].innerText = data.status[interface].wired.hwaddress;
+					// Speed
+					document.getElementById(interface).getElementsByClassName("speed")[0].childNodes[2].innerText = data.status[interface].wired.speed;
+				} else {
+					$(document.getElementById(interface).getElementsByClassName("wired")[0]).addClass("hidden");
+				}
 			}
-			// Wireless
-			if (data.status[interface].wireless){
-				$(document.getElementById(interface).getElementsByClassName("wireless")[0]).removeClass("hidden");
-				// HW Address
-				document.getElementById(interface).getElementsByClassName("wireless_hwaddress")[0].childNodes[2].innerText = data.status[interface].wireless.hwaddress;
-				// Bit Rate
-				document.getElementById(interface).getElementsByClassName("bitrate")[0].childNodes[2].innerText = data.status[interface].wireless.bitrate;
-			} else {
-				$(document.getElementById(interface).getElementsByClassName("wireless")[0]).addClass("hidden");
-			}
-			// Wired
-			if (data.status[interface].wired){
-				$(document.getElementById(interface).getElementsByClassName("wired")[0]).removeClass("hidden");
-				// HW Address
-				document.getElementById(interface).getElementsByClassName("wired_hwaddress")[0].childNodes[2].innerText = data.status[interface].wired.hwaddress;
-				// Speed
-				document.getElementById(interface).getElementsByClassName("speed")[0].childNodes[2].innerText = data.status[interface].wired.speed;
-			} else {
-				$(document.getElementById(interface).getElementsByClassName("wired")[0]).addClass("hidden");
-			}
+			setIntervalUpdate(updateStatus);
 		}
+		catch {}
 		return;
 	})
 	.fail(function(data) {
 		consoleLog(data);
-		consoleLog("Failed to get status.php, retrying.");
-		setIntervalUpdate(updateStatus);
+		consoleLog("Failed to get status, retrying.");
 	});
 }
 
 function setIntervalUpdate(functionName){
-	if (!intervalId){
-		intervalId = setInterval(functionName, 2000);
-	} else {
-		consoleLog("Interval already set");
-	}
+	setTimeout(functionName, 3000)
 }
 
 function clickStatusPage(retry) {
-	if (intervalId){
-		consoleLog("Status already active");
-	} else {
-		$("li").removeClass("active");
-		$("#networking_main_menu>ul>li.active").removeClass("active");
-		$("#networking_status").addClass("active");
-		clearReturnData();
-		$("#helpText").html("This page shows the current state of networking");
-		$(".infoText").addClass("hidden");
-		$.ajax({
-			url: "plugins/networking/html/status.html",
-			data: {},
-			type: "GET",
-			dataType: "html",
-		})
-		.done(function( data ) {
-			$('#main_section').html(data);
-			setIntervalUpdate(updateStatus);
-		})
-		.fail(function() {
-			consoleLog("Error, couldn't get status.html.. retrying");
-			if (intervalId){
-				clearInterval(intervalId);
-				intervalId = 0;
-			}
-			if (retry < 5){
-				retry++;
-				$("#networking_status").removeClass("active");
-				clickStatusPage(retry);
-			} else {
-				consoleLog("Retry max attempt reached");
-			}
-		});
-	}
+	$("li").removeClass("active");
+	$("#networking_main_menu>ul>li.active").removeClass("active");
+	$("#networking_status").addClass("active");
+	clearReturnData();
+	$("#helpText").html("This page shows the current state of networking");
+	$(".infoText").addClass("hidden");
+	$.ajax({
+		url: "plugins/networking/html/status.html",
+		data: {},
+		type: "GET",
+		dataType: "html",
+	})
+	.done(function( data ) {
+		$('#main_section').html(data);
+		setIntervalUpdate(updateStatus);
+	})
+	.fail(function() {
+		consoleLog("Error, couldn't get status.html.. retrying");
+		if (retry < 5){
+			retry++;
+			$("#networking_status").removeClass("active");
+			clickStatusPage(retry);
+		} else {
+			consoleLog("Retry max attempt reached");
+		}
+	});
 }
 
 function checkUUID(uuid) {
@@ -482,88 +467,6 @@ function checkConnectionValues(){
 
 function clearConnectionInts(){
 	$("#pspDelayDisplay").removeClass("has-error");
-}
-
-function submitConnection(retry){
-	connectionName_Value = document.getElementById("connectionName").value;
-	var connectionName_Array = [];
-	for (var i = 0, len = connectionName_Value.length; i < len; i++) {
-		connectionName_Array[i] = connectionName_Value.charCodeAt(i);
-	}
-	SSID_Value = document.getElementById("SSID").value;
-	var CharCode_Array = [];
-	for (var i = 0, len = SSID_Value.length; i < len; i++) {
-		CharCode_Array[i] = SSID_Value.charCodeAt(i);
-	}
-	var txPower_value = document.getElementById("txPower").value;
-	var txPower = parseInt(txPower_value);
-	if (txPower_value.toLowerCase() == "auto" || txPower <= 0){
-		txPower = 0;
-		document.getElementById("txPower").value = "Auto";
-	} else if (txPower > defines.PLUGINS.networking.MAX_TX_POWER.MAX_MW) {
-		if (defines.PLUGINS.networking.MAX_TX_POWER.MAX_MW != 0){
-			CustomErrMsg("TX Power is out of range");
-			return;
-		}
-	}
-	PSK_Value = document.getElementById("psk").value;
-	var PSK_Array = [];
-	for (var i = 0, len = PSK_Value.length; i < len; i++) {
-		PSK_Array[i] = PSK_Value.charCodeAt(i);
-	}
-	var connectionData = {
-		connectionName: connectionName_Array,
-		SSID: CharCode_Array,
-		clientName: document.getElementById("clientName").value,
-		txPower: txPower,
-		authType: parseInt(document.getElementById("authType").value),
-		eapType: parseInt(document.getElementById("eapType").value),
-		wepType: parseInt(document.getElementById("wepType").value),
-		radioMode: parseInt(document.getElementById("radioMode").value),
-		powerSave: parseInt(document.getElementById("powerSave").value),
-		pspDelay: parseInt(document.getElementById("pspDelay").value),
-		wepIndex: parseInt(document.getElementById("wepIndex").value),
-		index1: document.getElementById("index1").value,
-		index2: document.getElementById("index2").value,
-		index3: document.getElementById("index3").value,
-		index4: document.getElementById("index4").value,
-		psk: PSK_Array,
-		userName: document.getElementById("userName").value,
-		passWord: document.getElementById("passWord").value,
-		userCert: document.getElementById("userCert").value,
-		userCertPassword: document.getElementById("userCertPassword").value,
-		CACert: document.getElementById("CACert").value,
-		PACFilename: document.getElementById("PACFilename").value,
-		PACPassword: document.getElementById("PACPassword").value,
-	}
-	consoleLog(connectionData);
-	if (!checkConnectionValues()){
-		CustomErrMsg("Invalid Value");
-		return;
-	}
-	$.ajax({
-		url: "plugins/networking/php/setConnection.php",
-		type: "POST",
-		data: JSON.stringify(connectionData),
-		contentType: "application/json",
-	})
-	.done(function( msg ) {
-		consoleLog(msg);
-		SDCERRtoString(msg.SDCERR);
-		$("#submitButton").addClass("disabled");
-		if (msg.SDCERR == defines.SDCERR.SDCERR_SUCCESS){
-			clearConnectionInts();
-		}
-	})
-	.fail(function() {
-		consoleLog("Failed to get connection data, retrying");
-		if (retry < 5){
-			retry++;
-			submitConnection(retry);
-		} else {
-			consoleLog("Retry max attempt reached");
-		}
-	});
 }
 
 function cleanup_output(value){
@@ -745,10 +648,6 @@ function selectedConnection(uuid,retry){
 		type: "GET",
 		dataType: "html",
 		success: function (data) {
-			if (intervalId){
-				clearInterval(intervalId);
-				intervalId = 0;
-			}
 			$('#main_section').html(data);
 			clearReturnData();
 			$("#helpText").html("Adjust connection settings.");
@@ -830,10 +729,6 @@ function activateConnection(retry){
 		data: JSON.stringify(data),
 		contentType: "application/json",
 		success: function (data) {
-			if (intervalId){
-				clearInterval(intervalId);
-				intervalId = 0;
-			}
 		},
 		error: function (xhr, status) {
 			consoleLog("Error, couldn't get activate_connection");
@@ -861,68 +756,6 @@ function activateConnection(retry){
 		if (retry < 5){
 			retry++;
 			activateConnection(retry);
-		} else {
-			consoleLog("Retry max attempt reached");
-		}
-	});
-}
-
-function renameConnection(retry){
-	var connectionSelect = document.getElementById("connectionSelect");
-	var selectedConnection = connectionSelect.options[connectionSelect.selectedIndex].text;
-	var selectedConnection_Array = [];
-	for (var i = 0, len = selectedConnection.length; i < len; i++) {
-		selectedConnection_Array[i] = selectedConnection.charCodeAt(i);
-	}
-	var	newConnectionName_Value = document.getElementById("newConnectionName").value.trim();
-	var newConnectionName_Array = [];
-	for (var i = 0, len = newConnectionName_Value.length; i < len; i++) {
-		newConnectionName_Array[i] = newConnectionName_Value.charCodeAt(i);
-	}
-	var connectionName = {
-			currentName: selectedConnection_Array,
-			newName: newConnectionName_Array,
-	}
-	$.ajax({
-		url: "plugins/networking/php/renameConnection.php",
-		type: "POST",
-		data: JSON.stringify(connectionName),
-		contentType: "application/json",
-		success: function (data) {
-			if (intervalId){
-				clearInterval(intervalId);
-				intervalId = 0;
-			}
-		},
-		error: function (xhr, status) {
-			consoleLog("Error, couldn't get renameConnection.php");
-		},
-	})
-	.done(function( msg ) {
-		consoleLog(msg);
-		if (msg.SESSION == defines.SDCERR.SDCERR_FAIL){
-			expiredSession();
-			return;
-		}
-		SDCERRtoString(msg.SDCERR);
-		if (document.getElementById("returnDataNav").innerHTML == "Success"){
-			var currentActiveConnection = document.getElementById("activeConnection").value;
-			for(var i = 0; i < connectionSelect.options.length; i++) {
-				if (selectedConnection == connectionSelect.options[i].text){
-					connectionSelect.options[i].text = newConnectionName_Value;
-					if (currentActiveConnection == selectedConnection){
-						$("#helpText").html("These are the current networking connections. Connection " + newConnectionName_Value + " is the active connection.");
-					}
-				}
-			}
-			$("#newConnectionNameDisplay").addClass("hidden");
-		}
-	})
-	.fail(function() {
-		consoleLog("Failed to rename connection, retrying");
-		if (retry < 5){
-			retry++;
-			renameConnection(retry);
 		} else {
 			consoleLog("Retry max attempt reached");
 		}
@@ -967,43 +800,6 @@ function removeConnection(){
 	}
 };
 
-function submitAutoConnection(retry){
-	var rows,index,connection,value;
-	var autoConnectionList = [];
-	var autoConnectionValues = [];
-	rows = document.getElementById("autoConnectionTable").rows;
-	for (index = 1; index < rows.length; index++){
-		connection = rows[index].cells[0].innerHTML;
-		var connectionSelect_Array = [];
-		for (var i = 0, len = connection.length; i < len; i++) {
-			connectionSelect_Array[i] = connection.charCodeAt(i);
-		}
-		value = rows[index].cells[1].children[0].checked;
-		autoConnectionList[index] = connectionSelect_Array;
-		autoConnectionValues[index] = value;
-	}
-	var autoConnection = {
-		connectionList: autoConnectionList,
-		connectionValues: autoConnectionValues,
-	}
-	consoleLog(autoConnection);
-	$.ajax({
-		url: "plugins/networking/php/setAutoConnectionList.php",
-		type: "POST",
-		data: JSON.stringify(autoConnection),
-		contentType: "application/json",
-	})
-	.done(function( msg ) {
-		consoleLog(msg);
-		if (msg.SESSION == defines.SDCERR.SDCERR_FAIL){
-			expiredSession();
-			return;
-		}
-		SDCERRtoString(msg.SDCERR);
-		$("#applyAutoConnection").addClass("disabled");
-	});
-}
-
 function clickConnectionEditPage(retry) {
 	$.ajax({
 		url: "plugins/networking/html/connections.html",
@@ -1011,10 +807,6 @@ function clickConnectionEditPage(retry) {
 		type: "GET",
 		dataType: "html",
 		success: function (data) {
-			if (intervalId){
-				clearInterval(intervalId);
-				intervalId = 0;
-			}
 			$("li").removeClass("active");
 			$("#networking_main_menu>ul>li.active").removeClass("active");
 			$("#networking_edit").addClass("active");
@@ -1067,10 +859,6 @@ function clickAddConnectionPage(retry) {
 		type: "GET",
 		dataType: "html",
 		success: function (data) {
-			if (intervalId){
-				clearInterval(intervalId);
-				intervalId = 0;
-			}
 			$('#main_section').html(data);
 			clearReturnData();
 			var connection = {
@@ -1330,10 +1118,6 @@ function getScan(retry){
 		contentType: "application/json",
 	})
 	.done(function(msg) {
-		if (intervalId){
-			clearInterval(intervalId);
-			intervalId = 0;
-		}
 		if (msg.SESSION == defines.SDCERR.SDCERR_FAIL){
 			expiredSession();
 			return;
@@ -1394,10 +1178,6 @@ function clickScanPage(retry){
 		type: "GET",
 		dataType: "html",
 		success: function (data) {
-			if (intervalId){
-				clearInterval(intervalId);
-				intervalId = 0;
-			}
 			$('#main_section').html(data);
 			clearReturnData();
 			$("li").removeClass("active");
@@ -1425,45 +1205,6 @@ function allowCertUpload(filepath){
 	var fileName = filepath.replace(/^.*\\/, "")
 	document.getElementById("submitCertButton").innerHTML = "Upload " + fileName;
 	$("#submitCertButton").removeClass("disabled");
-}
-
-function uploadCert(retry){
-	var file_data = $('#fileToUpload').prop('files')[0];
-	if (file_data != null){
-		var form_data = new FormData();
-		form_data.append('file', file_data);
-		$.ajax({
-			url: 'plugins/networking/php/upload.php', // point to server-side PHP script
-			cache: false,
-			contentType: false,
-			processData: false,
-			data: form_data,
-			type: 'POST',
-		})
-		.done(function( data ) {
-			consoleLog(data);
-			SDCERRtoString(data.SDCERR);
-			if (data.SDCERR ==  defines.SDCERR.SDCERR_SUCCESS){
-				clearReturnData();
-				$("#submitCertButton").addClass("disabled");
-				$("#certFail").addClass("hidden");
-				$("#certSuccess").removeClass("hidden");
-				var connection = {
-					userCert:"",
-					CACert:"",
-					PACFileName:"",
-				}
-				var certs = {
-					0:file_data.name,
-				};
-				generateCertList(connection,certs);
-			} else {
-				SDCERRtoString(data.SDCERR);
-				$("#certSuccess").addClass("hidden");
-				$("#certFail").removeClass("hidden");
-			}
-		})
-	}
 }
 
 function char_code_array_to_string(code_array){
@@ -1551,14 +1292,10 @@ function getCerts(connection,retry){
 		contentType: "application/json",
 	})
 	.done(function(msg) {
-		if (intervalId){
-			clearInterval(intervalId);
-			intervalId = 0;
-		}
 		generateCertList(connection,msg.certs);
 	})
 	.fail(function() {
-		consoleLog("Error, couldn't get getCerts.php.. retrying");
+		consoleLog("Error, couldn't get certs.. retrying");
 		if (retry < 5){
 			retry++;
 			getCerts(connection,retry);
@@ -1575,10 +1312,6 @@ function getVersion(retry){
 		contentType: "application/json",
 	})
 	.done(function(msg) {
-		if (intervalId){
-			clearInterval(intervalId);
-			intervalId = 0;
-		}
 		consoleLog(msg);
 		document.getElementById("sdk").innerHTML = msg.sdk;
 		document.getElementById("chipset").innerHTML = msg.chipset;
@@ -1589,7 +1322,7 @@ function getVersion(retry){
 		document.getElementById("build").innerHTML = msg.build;
 	})
 	.fail(function() {
-		consoleLog("Error, couldn't get version.php.. retrying");
+		consoleLog("Error, couldn't get version.. retrying");
 		if (retry < 5){
 			retry++;
 			getVersion(retry);
@@ -1606,10 +1339,6 @@ function clickVersionPage(retry){
 		type: "GET",
 		dataType: "html",
 		success: function (data) {
-			if (intervalId){
-				clearInterval(intervalId);
-				intervalId = 0;
-			}
 			$('#main_section').html(data);
 			clearReturnData();
 			$("li").removeClass("active");

@@ -42,9 +42,6 @@ function update_start() {
 		document.getElementById("cur_progress_bar").value = 0;
 		document.getElementById("fw_update_status").innerHTML = "Update Status: ";
 
-		if(intervalId)
-			clearInterval(intervalId);
-		intervalId = setInterval(update_progress, 1000);
 	})
 	.fail(function() {
 		//consoleLog("Failed to start firmware upload!");
@@ -123,10 +120,6 @@ function update_progress() {
 		}
 	})
 	.fail(function(data) {
-		if(intervalId > 0){
-			clearInterval(intervalId);
-			intervalId = 0;
-		}
 		console.log("Failed to get progress state.");
 	});
 }
@@ -159,10 +152,6 @@ function clickSWUpdatePage(retry) {
 		dataType: "html",
 	})
 	.done(function(data){
-		if (intervalId){
-			clearInterval(intervalId);
-			intervalId = 0;
-		}
 		$('#main_section').html(data);
 		clearReturnData();
 		$("#networking_main_menu>ul>li.active").removeClass("active");

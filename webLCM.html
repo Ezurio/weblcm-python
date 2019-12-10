@@ -41,59 +41,37 @@
 		<!-- https://github.com/Mottie/tablesorter -->
 		<script type="text/javascript" src="assets/js/jquery.tablesorter.min.js"></script>
 		<script>
-		var intervalId;
-		var plugin_count;
-		var defines = [];
-		var main_menu_list = [];
-		var mini_menu_list = [];
+
+		var defines;
+
 		$.ajax({
 			url: "definitions",
 			type: "GET",
 			contentType: "application/json",
-			retry: 1,
-			error: function(){
-				if (this.retry < 5){
-					this.retry++;
-					$.ajax(this);
-					return;
-				}
-			},
 		})
 		.done(function( data ) {
 			defines = data;
-			var index = 0;
-			consoleLog(data);
-			for (var key in defines.PLUGINS.list) {
-				if (defines.PLUGINS.list[key] == true){
-					loadjscssfile(key, "js");
-					addPlugin(0, key, index);
-					index++;
-				}
-			}
-			plugin_count = index;
-			checkLocks();
+			weblcm_init();
 		});
 
-		function consoleLog(message){
-			if (defines.DEBUG == 1 | defines.DEBUG == 3){
-				console.log(message);
+		//TBD: HTMLs should be loaded per user
+		function weblcm_init(){
+			var index = 0;
+			plugins = ["networking", "logging", "swupdate", "usermanage"];
+			for (var i = 0; i < plugins.length; i++){
+				loadjscssfile(plugins[i], "js");
+				addPlugin(plugins[i]);
+				index++;
 			}
 		}
 
-		function checkLocks(){
-			if (defines.IGNORE_SESSION == defines.SDCERR.SDCERR_SUCCESS && defines.SESSION == defines.SDCERR.SDCERR_SUCCESS){
-				$("#loggin").addClass("hidden");
-				$(".locked").removeClass("hidden");
-			} else if (defines.SESSION == defines.SDCERR.SDCERR_SUCCESS){
-				$("#loggin").addClass("hidden");
-				$("#loggout").removeClass("hidden");
-				$(".locked").removeClass("hidden");
-			}
+		function consoleLog(message){
+			console.log(message);
 		}
 
 		function loadjscssfile(key, filetype){
 			var jsPath = "plugins/" + key + "/" + key + "." + filetype;
-			if (filetype=="js"){ //if jsPath is a external JavaScript file
+			if (filetype=="js"){
 				var fileref=document.createElement('script');
 				fileref.setAttribute("type","text/javascript");
 				fileref.setAttribute("src", jsPath);
@@ -107,34 +85,11 @@
 			}
 		}
 
-		function addPlugin(retry, key, index){
-			var pluginPath = "plugins/" + key + "/" + key + ".html";
-			$.ajax({
-				url: pluginPath,
-				data: {},
-				type: "GET",
-				dataType: "html",
-			})
-			.done(function( data ) {
-				main_menu_list[index] = $(data)[1];
-				mini_menu_list[index] = $(data)[3];
-				if (plugin_count == main_menu_list.length){
-					$("#main_menu").append(main_menu_list);
-					$("#mini_menu").append(mini_menu_list);
-					consoleLog(main_menu_list);
-					consoleLog(mini_menu_list);
-				}
-				checkLocks();
-			})
-			.fail(function() {
-				consoleLog("Error, couldn't get " + pluginPath + ".. retrying");
-				if (retry < 5){
-					retry++;
-					addPlugin(retry, key, index);
-				} else {
-					consoleLog("Retry max attempt reached");
-				}
-			});
+		function addPlugin(key){
+			var ma = document.getElementById(key+"_frame").contentDocument.getElementById(key+"_main_menu");
+			var mi = document.getElementById(key+"_frame").contentDocument.getElementById(key+"_mini_menu");
+			$("#main_menu").append(ma);
+			$("#mini_menu").append(mi);
 		}
 
 		function clearReturnData(){
@@ -190,6 +145,18 @@
 			};
 			dismissSpan.appendChild(spanX);
 			returnData.appendChild(dismissButton);
+		}
+
+		function CustomErrMsg(message){
+			if (!sendNotification("Failure", message)){
+				if (message.length >= 20){
+					$("#returnDataNav").css( "fontSize", "12px" );
+				}
+				$("[id^='return']").removeClass();
+				$("[id^='return']").addClass("alert alert-dismissible alert-danger");
+				$("[id^='return']").html(message);
+				dismissibleAlerts();
+			}
 		}
 
 		function SDCERRtoString(SDCERR){
@@ -288,18 +255,6 @@
 			dismissibleAlerts();
 		}
 
-		function CustomErrMsg(message){
-			if (!sendNotification("Failure", message)){
-				if (message.length >= 20){
-					$("#returnDataNav").css( "fontSize", "12px" );
-				}
-				$("[id^='return']").removeClass();
-				$("[id^='return']").addClass("alert alert-dismissible alert-danger");
-				$("[id^='return']").html(message);
-				dismissibleAlerts();
-			}
-		}
-
 		function enterKeyPress(e){
 			if(e.keyCode === 13){ //enter key
 				e.preventDefault();
@@ -323,24 +278,18 @@
 				contentType: "application/json",
 			})
 			.done(function( data ) {
-				consoleLog(data);
 				if (data.SDCERR == defines.SDCERR.SDCERR_SUCCESS){
 					$("#loggin").addClass("hidden");
 					$("#loggout").removeClass("hidden");
 					$(".locked").removeClass("hidden");
 					clearReturnData();
 				} else {
-					if (data.LOCKED){
-						CustomErrMsg("System is locked: " + data.TIME_LEFT + " seconds left");
-					} else {
-						CustomErrMsg("Credentials are invalid");
-					}
+					CustomErrMsg("Credentials are invalid");
 				}
 				document.getElementById("username").value = null;
 				document.getElementById("password").value = null;
 			})
 			.fail(function(data) {
-				consoleLog(data.status);
 				consoleLog("Error, couldn't get login.. retrying");
 				if (retry < 5){
 					retry++;
@@ -387,10 +336,6 @@
 				dataType: "html",
 			})
 			.done(function(data){
-				if (intervalId){
-					clearInterval(intervalId);
-					intervalId = 0;
-				}
 				$("li").removeClass("active");
 				$('#main_section').html(data);
 				clearReturnData();
@@ -420,6 +365,12 @@
 	</head>
 
 	<body>
+
+		<iframe id="networking_frame" src="plugins/networking/networking.html" style="display: none;"></iframe>
+		<iframe id="logging_frame" src="plugins/logging/logging.html" style="display: none;"></iframe>
+		<iframe id="swupdate_frame" src="plugins/swupdate/swupdate.html" style="display: none;"></iframe>
+		<iframe id="usermanage_frame" src="plugins/usermanage/usermanage.html" style="display: none;"></iframe>
+
 		<nav class="navbar navbar-inverse navbar-fixed-top">
 			<div class="container-fluid">
 				<div class="navbar-header">

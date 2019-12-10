@@ -29,9 +29,6 @@ def merge_secrets(proxy, config, setting_name):
 	except Exception as e:
 		pass
 
-class Networking_Data():
-	show_unmanaged = False
-
 @cherrypy.expose
 class Networking_Status(object):
 	@cherrypy.tools.accept(media='application/json')
@@ -60,7 +57,8 @@ class Networking_Status(object):
 				state = prop_iface.Get(weblcm_python_def.NM_DEVICE_IFACE, "State")
 
 				#Dont add unmanaged devices
-				if(not Networking_Data.show_unmanaged and state == 10):
+				show_unmanaged = cherrypy.request.app.config['weblcm']['show_unmanaged']
+				if(not show_unmanaged and state == 10):
 					continue;
 
 				interface[interface_name] = {}
