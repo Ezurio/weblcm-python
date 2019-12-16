@@ -5,16 +5,17 @@ function swupdateAUTORUN(retry) {
 	return;
 }
 
-
 var fw_start;
 var fw_reader;
 var fw_xhr;
+var fw_total_bytes = 0;
 var fw_step = 1024*128;
 
 function upload_one_chunk() {
     var file = document.querySelector('input[type=file]').files[0];
 	var blob = file.slice(fw_start, fw_start + fw_step);
-	fw_reader.onload = function(e){
+
+	fw_reader.onload = function(e) {
 		var data = fw_reader.result;
 		fw_xhr.open('POST', "/update_firmware", true);
 		fw_xhr.setRequestHeader("Content-Type", "application/octet-stream");
@@ -24,7 +25,10 @@ function upload_one_chunk() {
     fw_reader.readAsArrayBuffer(blob);
 }
 
-function update_start() {
+function updateFirmware() {
+
+	if( document.querySelector('input[type=file]').files.length == 0 )
+		return;
 
 	$.ajax({
 		url: "/update_firmware_start",
@@ -33,18 +37,55 @@ function update_start() {
 		dataType: "html",
 	})
 	.done(function() {
+		try {
 
-		$("#helpText").html("Start to update firmware.");
+			fw_start = 0;
+			fw_total_bytes = document.querySelector('input[type=file]').files[0].size;
 
-		document.getElementById("total_progress_bar_text").innerHTML = "0/0";
-		document.getElementById("total_progress_bar").value = 0;
-		document.getElementById("cur_progress_bar_text").innerHTML = "Image";
-		document.getElementById("cur_progress_bar").value = 0;
-		document.getElementById("fw_update_status").innerHTML = "Update Status: ";
+			r = Math.round(fw_start * 100/fw_total_bytes);
+			document.getElementsByClassName('progress-bar').item(0).setAttribute('aria-valuenow', r);
+			document.getElementsByClassName('progress-bar').item(0).style.width = r + "%";
+			document.getElementsByClassName('progress-bar').item(0).innerHTML = r + "%";
+			document.getElementById("fw_update_status").innerHTML = "Updating...";
 
+			fw_reader = new FileReader();
+			fw_xhr = new XMLHttpRequest();
+
+			fw_xhr.upload.onprogress = function(event) {
+				fw_start +=  event.loaded;
+				r = Math.round(fw_start * 100/fw_total_bytes);
+				document.getElementsByClassName('progress-bar').item(0).setAttribute('aria-valuenow', r);
+				document.getElementsByClassName('progress-bar').item(0).style.width = r + "%";
+				document.getElementsByClassName('progress-bar').item(0).innerHTML = r + "%";
+			};
+
+			fw_xhr.upload.onerror = function() {
+				document.getElementById("fw_update_status").innerHTML = "Update failed! Please reboot the device.";
+			};
+
+			fw_xhr.upload.onabort = function() {
+				document.getElementById("fw_update_status").innerHTML = "Update aborted! Please reboot the device.";
+			};
+
+			fw_xhr.onloadend = function() {
+				if (fw_xhr.status == 200) {
+					if(fw_start < fw_total_bytes)
+						upload_one_chunk();
+					else
+						update_end();
+				}
+				else {
+					document.getElementById("fw_update_status").innerHTML = "Server error! Please reboot the device.";
+				}
+			};
+
+			upload_one_chunk();
+		}
+		catch (error){
+			console.log(error);
+		}
 	})
 	.fail(function() {
-		//consoleLog("Failed to start firmware upload!");
 	});
 }
 
@@ -56,91 +97,9 @@ function update_end() {
 		dataType: "html",
 	})
 	.done(function() {
-		$("#helpText").html("Firmware update finished.");
+		document.getElementById("fw_update_status").innerHTML = "Update finished. Waiting for device reboot...";
 	})
 	.fail(function() {
-		//console.log("Failed to end firmware update!");
-	});
-}
-
-function updateFirmware() {
-
-	update_start();
-
-	fw_start = 0;
-
-	fw_reader = new FileReader();
-	fw_xhr = new XMLHttpRequest();
-
-	fw_xhr.upload.onprogress = function(event) {
-		//console.log(`Uploaded ${event.loaded} of ${event.total} bytes`);
-	};
-
-	fw_xhr.upload.onerror = function() {
-		console.log(`Error during the upload: ${fw_xhr.status}`);
-	};
-
-	fw_xhr.upload.onabort = function() {
-		console.log(`Abort during the upload: ${fw_xhr.status}`);
-	};
-
-	fw_xhr.onloadend = function() {
-		if (fw_xhr.status == 200) {
-			var file = document.querySelector('input[type=file]').files[0];
-			fw_start += fw_step;
-			if(fw_start < file.size)
-				upload_one_chunk();
-			else
-				update_end();
-		} else {
-			console.log("error " + this.status);
-		}
-	};
-
-	upload_one_chunk();
-}
-
-function update_progress() {
-	$.ajax({
-		url: "/get_progress_state",
-		contentType: "application/json",
-		data: {},
-		type: "GET",
-	})
-	.done(function(data) {
-		if(data.SDCERR == 1) {
-			//console.log("Update progress not started yet...")
-		}
-		else{
-			document.getElementById("total_progress_bar_text").innerHTML = data.cur_step + "/" + data.nsteps;
-			document.getElementById("total_progress_bar").value = data.cur_step * 100/data.nsteps;
-			document.getElementById("cur_progress_bar_text").innerHTML = data.cur_image;
-			document.getElementById("cur_progress_bar").value = data.cur_percent;
-			document.getElementById("fw_update_status").innerHTML = "Update Status: " + data.state;
-		}
-	})
-	.fail(function(data) {
-		console.log("Failed to get progress state.");
-	});
-}
-
-function updateBootenv(){
-
-	var bootEnv = {
-		bootside: document.getElementById("boot_env_bootside_select").value,
-	}
-
-	$.ajax({
-		url: "/update_bootenv",
-		contentType: "application/json",
-		data: JSON.stringify(bootEnv),
-		type: "POST",
-	})
-	.done(function(data) {
-		document.getElementById("boot_env_bootside_select").value = data.bootside;
-	})
-	.fail(function(data) {
-		console.log("Failed to update bootenv");
 	});
 }
 
@@ -156,17 +115,15 @@ function clickSWUpdatePage(retry) {
 		clearReturnData();
 		$("#networking_main_menu>ul>li.active").removeClass("active");
 		$("#main_menu>li.active").removeClass("active");
-		updateBootenv();
 		$(".infoText").addClass("hidden");
 		$("#helpText").html("Firmware Update");
 	})
 	.fail(function(){
-		console.log("Error, couldn't get swupdate.html.. retrying");
 		if (retry < 5){
 			retry++;
 			clickSWUpdatePage(retry);
 		} else {
-			console.log("Retry max attempt reached");
+			console.log("Error, couldn't get swupdate.html");
 		}
 	});
 }
