@@ -5,38 +5,15 @@
 -->
 
 <html>
-	<form class="col-xs-12 col-sm-12 placeholder" style="height:900px;overflow-y:auto">
-		<div class="form-group">
+	<form class="col-xs-12 col-sm-12">
+		<div class="row form-group">
 			<label class="pull-left" for="fw_select">Select Firmware: </label>
-			<input type="file" class="form-control" id="fw_name" accept=".swu">
+			<input type="file" class="form-control-file" id="fw_name" accept=".swu">
 			<button onclick="updateFirmware()" id="bt_firmware_update" class="btn btn-primary" style="float:right">Update</button>
 		</div>
-		<br><br>
+		<label for="fw_update_status" id=fw_update_status>Update Status</label>
 		<div class="Progress">
-			<label for="fw_update_status" id=fw_update_status>Update Status: </label><br><br>
-			<label id="total_progress_bar_text"><span class="Progress-label">0/0 </span></label>
-			<div class="progress-bar" role="progressbar"></div>
-				<progress id="total_progress_bar" max="100" value="0"></progress>
-			</div>
-			<br><br>
-			<label id="cur_progress_bar_text"><span class="Progress-label">Image </span></label>
-			<div class="progress-bar" role="progressbar"></div>
-				<progress id="cur_progress_bar" max="100" value="0"></progress>
-			</div>
+			<div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">0%</div>
 		</div>
-		<br><br>
-
-		<div class="form-group">
-			<label class="pull-left">Boot Env: </label><br>
-			<label class="pull-left" for="boot_env_bootside_select">boot side:
-				<select id="boot_env_bootside_select" class="form-control">
-					<option value="unknown">unknown</option>
-					<option value="a">a</option>
-					<option value="b">b</option>
-				</select>
-			</label>
-			<br>
-			<button onclick="updateBootenv()" id="bt_boot_env_update" class="btn btn-primary" style="float:right">Update</button>
-		</div>
-	</form>
+	</div>
 </html>

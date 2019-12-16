@@ -59,8 +59,6 @@ if __name__ == '__main__':
 	webapp.update_firmware = swu.update_firmware
 	webapp.update_firmware_start = swu.update_firmware_start
 	webapp.update_firmware_end = swu.update_firmware_end
-	webapp.get_progress_state = swu.get_progress_state
-	webapp.update_bootenv = swu.update_bootenv
 
 	um = UserManage()
 	webapp.add_user = um.add_user
