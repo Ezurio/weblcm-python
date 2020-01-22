@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<!--
+  Copyright (c) 2019, Laird
+  Contact: support@lairdconnect.com
+-->
+<html>
+	<div class="col-xs-12 col-sm-12">
+		<div class="panel-group" id="file-management-accordion">
+			<div class="panel panel-default" id="cert-management">
+				<div class="panel-heading">
+					<a data-toggle="collapse" data-parent="#file-management-accordion" href="#collapse-cert-management">Certificate Management</a>
+				</div>
+				<div id="collapse-cert-management" class="panel-collapse collapse in">
+					<div class="panel-body">
+						<table id="table-cert" class="table table-fixed table-striped table-bordered" style="width:100%">
+							<thead>
+								<tr>
+									<th class="col-xs-2 text-center">#</th>
+									<th class="col-xs-8 text-center">Cert</th>
+									<th class="col-xs-2 text-center"><a class="btn btn-primary" role="button" href="download_file?typ=cert&fil=">export</a></th>
+								</tr>
+							</thead>
+							<tbody>
+							</tbody>
+						</table>
+						<form method="POST" id="form-import-cert" enctype="multipart/form-data">
+							<div class="form-group">
+								<div class="input-group">
+									<label class="pull-left" for="cert-select">Select Certificate:</label>
+									<input type="hidden" name="typ" value="cert">
+									<input type="file" class="form-control-file" id="input-file-cert" name="fil" accept=".crt,.key,.pem,.pac,.bin,.tgz"/>
+									<span class="input-group-btn">
+										<button type="button" onclick="importFile('cert')" id="bt-import-cert" class="btn btn-primary">import</button>
+									</span>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+            </div>
+			<div class="panel panel-default" id="profile-management">
+				<div class="panel-heading">
+					<a data-toggle="collapse" data-parent="#file-management-accordion" href="#collapse-profile-management">Profile Management</a>
+				</div>
+				<div id="collapse-profile-management" class="panel-collapse collapse">
+					<div class="panel-body">
+						<table id="table-profile" class="table table-fixed table-striped table-bordered" style="width:100%">
+							<thead>
+								<tr>
+									<th class="col-xs-2 text-center">#</th>
+									<th class="col-xs-8 text-center">Profile</th>
+									<th class="col-xs-2 text-center"><a class="btn btn-primary" role="button" href="download_file?typ=profile&fil=">export</a></th>
+								</tr>
+							</thead>
+							<tbody>
+							</tbody>
+						</table>
+						<form method="POST" id="form-import-profile" enctype="multipart/form-data">
+							<div class="form-group">
+								<div class="input-group">
+									<label class="pull-left" for="profile-select">Select Profile:</label>
+									<input type="hidden" name="typ" value="profile">
+									<input type="file" class="form-control-file" id="input-file-profile" name="fil" accept=".nmconnection,.tgz"/>
+									<span class="input-group-btn">
+										<button type="button" onclick="importFile('profile')" id="bt-import-profile" class="btn btn-primary">import</button>
+									</span>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+            </div>
+		</div>
+	</div>
+</html>
