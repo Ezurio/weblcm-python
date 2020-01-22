@@ -8,52 +8,49 @@
 	<div class="progress" id="updateProgressDisplay">
 		<div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div>
 	</div>
-	<div id="panel_parent">
-		<div class="panel-group hidden" id="root_interface" role="tablist" aria-multiselectable="true">
-			<div class="panel panel-default">
-				<div class="panel-heading" role="tab" id="root_heading">
-					<h4 class="panel-title">
-						<div class="row">
-							<a id="panel_button" class="col-md-4" role="button" data-toggle="collapse" data-parent="#accordion" href="#root_collapse" aria-expanded="true" aria-controls="root_collapse">
-							</a>
-							<div class="col-md-4 devicetype"></div>
-							<div class="col-md-4 state"></div>
-						</div>
-					</h4>
-				</div>
-				<div id="root_collapse" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="root_heading">
-					<div class="panel-body">
-						<div class="connection_active hidden">
-							<div class="col-xs-6 col-sm-6 placeholder text-left id"><strong>ID:</strong> <span></span></div>
-							<div class="col-xs-6 col-sm-6 placeholder text-left uuid"><strong>UUID:</strong> <span></span></div>
-						</div>
-						<div class="ip4config hidden">
-							<div class="col-xs-6 col-sm-6 placeholder text-left ipv4_address"><strong>IPv4 Address:</strong> <span></span></div>
-							<div class="col-xs-6 col-sm-6 placeholder text-left ipv4_gateway"><strong>IPv4 Gateway:</strong> <span></span></div>
-						</div>
-						<div class="ip6config hidden">
-								<div class="col-xs-6 col-sm-6 placeholder text-left ipv6_address hidden" id="root_ipv6_address"><strong>IPv6 Address:</strong> <span></span></div>
-								<div class="col-xs-6 col-sm-6 placeholder text-left ipv6_gateway"><strong>IPv6 Gateway:</strong> <span></span></div>
-							</div>
-						<div class="activeaccesspoint hidden">
-							<div class="col-xs-6 col-sm-6 placeholder text-left ssid"><strong>SSID:</strong> <span></span></div>
-							<div class="col-xs-6 col-sm-6 placeholder text-left bssid"><strong>BSSID:</strong> <span></span></div>
-							<div class="col-xs-6 col-sm-6 placeholder text-left frequency"><strong>Frequency:</strong> <span></span></div>
-							<div class="col-xs-6 col-sm-6 placeholder text-left strength"><strong>Signal Strength:</strong> <span></span></div>
-						</div>
-						<div class="wireless hidden">
-							<div class="col-xs-6 col-sm-6 placeholder text-left wireless_hwaddress"><strong>MAC Address:</strong> <span></span></div>
-							<div class="col-xs-6 col-sm-6 placeholder text-left bitrate"><strong>Bit Rate:</strong> <span></span></div>
-						</div>
-						<div class="wired hidden">
-							<div class="col-xs-6 col-sm-6 placeholder text-left wired_hwaddress"><strong>MAC Address:</strong> <span></span></div>
-							<div class="col-xs-6 col-sm-6 placeholder text-left speed"><strong>Speed:</strong> <span></span></div>
-						</div>
-						<div class="col-xs-12 col-sm-12 placeholder progress_parent hidden">
-							<div class="progress" style="margin-bottom: 0px">
-								<div id="progressbar" class="progress-bar progress-bar-danger" role="progressbar" style="width:0%"></div>
-							</div>
-						</div>
+	<div class="panel-group" id="panel-group" role="tablist" aria-multiselectable="true">
+		<div class="panel panel-default hidden" id="root-interface">
+			<div class="panel-heading" role="tab">
+				<h4 class="panel-title">
+					<div class="row">
+						<a class="col-md-4 panel-button" role="button" data-toggle="collapse" data-parent="#accordion" href="#root-collapse" aria-expanded="true" aria-controls="root-collapse">
+						</a>
+						<div class="col-md-4 devicetype"></div>
+						<div class="col-md-4 state"></div>
+					</div>
+				</h4>
+			</div>
+			<div class="panel-collapse collapse in" id="root-collapse" role="tabpanel" aria-labelledby="root-heading">
+				<div class="panel-body">
+					<div class="connection-active hidden">
+						<div class="col-xs-6 col-sm-6 placeholder text-left id"><strong>ID:</strong> <span></span></div>
+						<div class="col-xs-6 col-sm-6 placeholder text-left uuid"><strong>UUID:</strong> <span></span></div>
+					</div>
+					<div class="ip4config hidden">
+						<div class="col-xs-6 col-sm-6 placeholder text-left address"><strong>IPv4 Address:</strong> <span></span></div>
+						<div class="col-xs-6 col-sm-6 placeholder text-left gateway"><strong>IPv4 Gateway:</strong> <span></span></div>
+					</div>
+					<div class="ip6config hidden">
+						<div class="col-xs-6 col-sm-6 placeholder text-left address"><strong>IPv6 Address:</strong> <span></span></div>
+						<div class="col-xs-6 col-sm-6 placeholder text-left address-2"><strong>IPv6 Address 2:</strong> <span></span></div>
+						<div class="col-xs-6 col-sm-6 placeholder text-left address-3"><strong>IPv6 Address 3:</strong> <span></span></div>
+						<div class="col-xs-6 col-sm-6 placeholder text-left gateway"><strong>IPv6 Gateway:</strong> <span></span></div>
+					</div>
+					<div class="activeaccesspoint hidden">
+						<div class="col-xs-6 col-sm-6 placeholder text-left ssid"><strong>SSID:</strong> <span></span></div>
+						<div class="col-xs-6 col-sm-6 placeholder text-left bssid"><strong>BSSID:</strong> <span></span></div>
+						<div class="col-xs-6 col-sm-6 placeholder text-left frequency"><strong>Frequency:</strong> <span></span></div>
+						<div class="col-xs-6 col-sm-6 placeholder text-left strength"><strong>Signal Strength:</strong> <span></span></div>
+						<div class="col-xs-12 col-sm-12 placeholder progress progress-bar hidden" rile="progressbar"style="width:0%"></div>
+					</div>
+					</div>
+					<div class="wireless hidden">
+						<div class="col-xs-6 col-sm-6 placeholder text-left hwaddress"><strong>MAC Address:</strong> <span></span></div>
+						<div class="col-xs-6 col-sm-6 placeholder text-left bitrate"><strong>Bit Rate:</strong> <span></span></div>
+					</div>
+					<div class="wired hidden">
+						<div class="col-xs-6 col-sm-6 placeholder text-left hwaddress"><strong>MAC Address:</strong> <span></span></div>
+						<div class="col-xs-6 col-sm-6 placeholder text-left speed"><strong>Speed:</strong> <span></span></div>
 					</div>
 				</div>
 			</div>
