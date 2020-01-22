@@ -29,17 +29,25 @@
 		<link href="assets/css/bootstrap.min.css" rel="stylesheet">
 
 		<!-- Custom styles for this template -->
+		<link href="assets/css/jquery.dataTables.min.css" rel="stylesheet">
+		<link href="assets/css/dataTables.bootstrap.min.css" rel="stylesheet">
+		<link href="assets/css/buttons.bootstrap.min.css" rel="stylesheet">
 		<link href="assets/css/dashboard.css" rel="stylesheet">
 
 		<script src="assets/js/jquery.min.js"></script>
 		<script src="assets/js/bootstrap.min.js"></script>
-		<script src="assets/js/button-adjuster.js"></script>
+		<script src="assets/js/jquery.dataTables.min.js"></script>
+		<script src="assets/js/dataTables.bootstrap.min.js"></script>
+		<script src="assets/js/dataTables.buttons.min.js"></script>
+		<script src="assets/js/buttons.bootstrap.min.js"></script>
+		<script src="assets/js/buttons.html5.min.js"></script>
+		<!--script src="assets/js/button-adjuster.js"></script>-->
 		<!-- http://jqueryui.com/download/#!version=1.11.4&themeParams=none&components=1111111111111111101111111111111111111 -->
 		<script src="assets/js/jquery-ui.min.js"></script>
 		<!-- http://touchpunch.furf.com/mit.txt -->
 		<script src="assets/js/jquery.ui.touch-punch.min.js"></script>
 		<!-- https://github.com/Mottie/tablesorter -->
-		<script type="text/javascript" src="assets/js/jquery.tablesorter.min.js"></script>
+		<!--script type="text/javascript" src="assets/js/jquery.tablesorter.min.js"></script>-->
 		<script>
 
 		var defines;
@@ -57,7 +65,7 @@
 		//TBD: HTMLs should be loaded per user
 		function weblcm_init(){
 			var index = 0;
-			plugins = ["networking", "logging", "swupdate", "usermanage"];
+			plugins = ["networking", "logging", "swupdate", "usermanage", "filemanage"];
 			for (var i = 0; i < plugins.length; i++){
 				loadjscssfile(plugins[i], "js");
 				addPlugin(plugins[i]);
@@ -78,7 +86,6 @@
 			}
 			if (typeof fileref!="undefined"){
 				document.getElementsByTagName("head")[0].appendChild(fileref);
-				consoleLog("Loaded:" + jsPath);
 				fileref.onload = function(){
 					window[key + "AUTORUN"](0);
 				}
@@ -98,7 +105,6 @@
 		}
 
 		function notificationPermission(){
-			//Ask for notification permission
 			Notification.requestPermission();
 		}
 
@@ -121,7 +127,6 @@
 			}
 			if (Notification.permission === "granted"){
 				var mobile = document.getElementById("mobileMenu");
-				//Dont show notifications on mobile
 				if (mobile.offsetParent === null){
 					var notification = new Notification(title, {
 						icon: 'assets/img/logo.png',
@@ -316,38 +321,14 @@
 				}
 				document.getElementById("username").value = null;
 				document.getElementById("password").value = null;
+
+				location.reload();
 			})
 			.fail(function() {
 				consoleLog("Error, couldn't get logout.. retrying");
 				if (retry < 5){
 					retry++;
 					logout(retry);
-				} else {
-					consoleLog("Retry max attempt reached");
-				}
-			});
-		}
-
-		function clickSettingsPage(retry) {
-			$.ajax({
-				url: "/html/settings.html",
-				data: {},
-				type: "GET",
-				dataType: "html",
-			})
-			.done(function(data){
-				$("li").removeClass("active");
-				$('#main_section').html(data);
-				clearReturnData();
-				$("#helpText").html("Password must be 8 to 20 characters, and contain at least one numeric digit, one uppercase and one lowercase letter. ");
-				$("#helpText").append("Leading and trailing whitespace will get removed.");
-				checkNotifyPermission();
-			})
-			.fail(function() {
-				consoleLog("Error, couldn't get settings.html.. retrying");
-				if (retry < 5){
-					retry++;
-					clickSettingsPage(retry);
 				} else {
 					consoleLog("Retry max attempt reached");
 				}
@@ -370,6 +351,7 @@
 		<iframe id="logging_frame" src="plugins/logging/logging.html" style="display: none;"></iframe>
 		<iframe id="swupdate_frame" src="plugins/swupdate/swupdate.html" style="display: none;"></iframe>
 		<iframe id="usermanage_frame" src="plugins/usermanage/usermanage.html" style="display: none;"></iframe>
+		<iframe id="filemanage_frame" src="plugins/filemanage/filemanage.html" style="display: none;"></iframe>
 
 		<nav class="navbar navbar-inverse navbar-fixed-top">
 			<div class="container-fluid">
@@ -400,9 +382,6 @@
 					</form>
 					<form id="loggout" class="navbar-form navbar-right hidden">
 						<div class="form-group">
-							<button type="button" onclick="clickSettingsPage(0)" class="btn btn-default" aria-label="Left Align">
-								<span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
-							</button>
 							<a type="button" onclick="logout(0)" class="btn btn-default" href="#">Log out</a>
 						</div>
 					</form>
