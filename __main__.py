@@ -3,10 +3,12 @@ import cherrypy
 import configparser
 import uuid
 import hashlib
-import weblcm_python_def
-import weblcm_python_func
-from swupdate import SWUpdate
-from users import UserManage, LoginManage
+import weblcm_def
+import weblcm_log
+import weblcm_network
+from weblcm_swupdate import SWUpdate
+from weblcm_users import UserManage, LoginManage
+from weblcm_files import FileManage
 
 PLUGINS = {
        'list':{},
@@ -24,36 +26,33 @@ class Root(object):
 			},
 			'PLUGINS': PLUGINS,
 		}
-		weblcm_python_func.check_session()
 		return result
 
-conf = os.path.join(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR, "weblcm-python.ini")
+conf = os.path.join(weblcm_def.WEBLCM_PYTHON_CONF_DIR, "weblcm-python.ini")
 
 if __name__ == '__main__':
 
 	webapp = Root()
 
-	PLUGINS['networking'] = weblcm_python_def.NM_DBUS_API_TYPES
+	PLUGINS['networking'] = weblcm_def.NM_DBUS_API_TYPES
 
 	login = LoginManage()
 	webapp.login = login.login
 	webapp.logout = login.logout
 
-	webapp.networking_status = weblcm_python_func.Networking_Status()
-	webapp.connections = weblcm_python_func.Connections()
-	webapp.activate_connection = weblcm_python_func.Activate_Connection()
-	webapp.get_certificates = weblcm_python_func.Get_Certificates()
-	webapp.add_connection = weblcm_python_func.Add_Connection()
-	webapp.remove_connection = weblcm_python_func.Remove_Connection()
-	webapp.edit_connection = weblcm_python_func.Edit_Connection()
-	webapp.wifi_scan = weblcm_python_func.Wifi_Scan()
-	webapp.version = weblcm_python_func.Version()
+	webapp.networking_status = weblcm_network.Networking_Status()
+	webapp.connections = weblcm_network.Connections()
+	webapp.activate_connection = weblcm_network.Activate_Connection()
+	webapp.add_connection = weblcm_network.Save_Connection()
+	webapp.remove_connection = weblcm_network.Remove_Connection()
+	webapp.edit_connection = weblcm_network.Edit_Connection()
+	webapp.wifi_scan = weblcm_network.Wifi_Scan()
+	webapp.get_interfaces = weblcm_network.Get_Interfaces()
+	webapp.version = weblcm_network.Version()
 
-	webapp.request_log = weblcm_python_func.Request_Log()
-	webapp.generate_log = weblcm_python_func.Generate_Log()
-	webapp.download_log = weblcm_python_func.Download_Log()
-	webapp.set_logging = weblcm_python_func.Set_Logging()
-	webapp.get_logging = weblcm_python_func.Get_Logging()
+	webapp.request_log = weblcm_log.Request_Log()
+	webapp.set_logging_level = weblcm_log.Set_Logging_Level()
+	webapp.get_logging_level = weblcm_log.Get_Logging_Level()
 
 	swu = SWUpdate();
 	webapp.update_firmware = swu.update_firmware
@@ -65,5 +64,11 @@ if __name__ == '__main__':
 	webapp.get_user_list = um.get_user_list
 	webapp.update_user = um.update_user
 	webapp.delete_user = um.delete_user
+
+	fm = FileManage()
+	webapp.upload_file = fm.upload_file
+	webapp.get_files = fm.get_files
+	webapp.download_file = fm.download_file
+	webapp.delete_file = fm.delete_file
 
 	cherrypy.quickstart(webapp, '/', config=conf)

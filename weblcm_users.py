@@ -6,7 +6,7 @@ import uuid
 import time
 import hashlib
 import configparser
-import weblcm_python_def
+import weblcm_def
 import threading
 
 passwords = configparser.ConfigParser(defaults=None)
@@ -24,16 +24,16 @@ class UserManage:
 			'SDCERR': 1,
 		}
 		post_data = cherrypy.request.json
-		username = cherrypy.session['USER']
-		current_password = post_data['current_password']
-		new_password = post_data['new_password']
+		username = cherrypy.session.get('USER')
+		current_password = post_data.get('current_password')
+		new_password = post_data.get('new_password')
 		attempted_password = hashlib.sha256(passwords[username]['salt'].encode() + current_password.encode()).hexdigest()
 		if attempted_password == passwords[username]['password'] and new_password:
 			salt = uuid.uuid4().hex
 			passwords[username]['salt'] = salt
 			passwords[username]['salt'] = salt
 			passwords[username]['password'] = hashlib.sha256(salt.encode() + new_password.encode()).hexdigest()
-			with open(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini', 'w') as configfile:
+			with open(weblcm_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini', 'w') as configfile:
 				passwords.write(configfile)
 			result['SDCERR'] = 0
 
@@ -48,18 +48,18 @@ class UserManage:
 			'SDCERR': 1,
 		}
 		post_data = cherrypy.request.json
-		session_username = cherrypy.session['USER']
+		session_username = cherrypy.session.get('USER')
 		if session_username == "root":
-			passwords.read(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini')
+			passwords.read(weblcm_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini')
 			if(len(passwords.sections()) < MAX_WEB_CLIENTS):
-				username = post_data['username']
-				password = post_data['password']
+				username = post_data.get('username')
+				password = post_data.get('password')
 				if username and password and username not in passwords:
 					passwords.add_section(username);
 					salt = uuid.uuid4().hex
 					passwords[username]['salt'] = salt
 					passwords[username]['password'] = hashlib.sha256(salt.encode() + password.encode()).hexdigest()
-					with open(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini', 'w') as configfile:
+					with open(weblcm_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini', 'w') as configfile:
 						passwords.write(configfile)
 					result['SDCERR'] = 0
 
@@ -74,24 +74,25 @@ class UserManage:
 			'SDCERR': 1,
 		}
 		post_data = cherrypy.request.json
-		username = post_data['username']
-		session_username = cherrypy.session['USER']
+		username = post_data.get('username')
+		session_username = cherrypy.session.get('USER')
 		if session_username == "root" and username != "root":
-			passwords.read(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini')
+			passwords.read(weblcm_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini')
 			if username in passwords:
 				passwords.remove_section(username)
-				with open(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini', 'w') as configfile:
+				with open(weblcm_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini', 'w') as configfile:
 					passwords.write(configfile)
 				result['SDCERR'] = 0
 
 		return result
 
 	@cherrypy.expose
+	@cherrypy.tools.json_out()
 	def get_user_list(self):
 		result = []
-		passwords.read(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini')
+		passwords.read(weblcm_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini')
 		for k in passwords:
-			result.append(k+" ")
+			result.append(k)
 
 		return result[1:]
 
@@ -105,12 +106,11 @@ class LoginManage:
 			'SDCERR': 1,
 		}
 		post_data = cherrypy.request.json
-		passwords.read(weblcm_python_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini')
-		if post_data['username'] in passwords and post_data['password']:
-			attempted_password = hashlib.sha256(passwords[post_data['username']]['salt'].encode() + post_data['password'].encode()).hexdigest()
+		passwords.read(weblcm_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini')
+		if post_data.get('username') in passwords and post_data.get('password'):
+			attempted_password = hashlib.sha256(passwords[post_data['username']]['salt'].encode() + post_data.get('password').encode()).hexdigest()
 			if attempted_password == passwords[post_data['username']]['password']:
-				cherrypy.session['SESSION'] = 0
-				cherrypy.session['USER'] = post_data['username']
+				cherrypy.session['USER'] = post_data.get('username')
 				result['SDCERR'] = 0
 
 		return result
@@ -122,7 +122,6 @@ class LoginManage:
 		result = {
 			'SDCERR': 0,
 		}
-		cherrypy.session['SESSION'] = 1
 		cherrypy.session.pop('USER', None)
 		cherrypy.lib.sessions.expire()
 		return result
