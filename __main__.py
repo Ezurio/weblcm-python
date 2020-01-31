@@ -30,6 +30,18 @@ class Root(object):
 
 conf = os.path.join(weblcm_def.WEBLCM_PYTHON_CONF_DIR, "weblcm-python.ini")
 
+"""
+	Create certificate file directory
+"""
+if not os.path.exists(weblcm_def.FILEDIR_DICT.get('cert')):
+	os.makedirs(weblcm_def.FILEDIR_DICT.get('cert'))
+
+"""
+	Change default profile directory for som60sd
+"""
+if not os.path.exists(weblcm_def.FILEDIR_DICT.get('profile')):
+	weblcm_def.FILEDIR_DICT['profile']='/etc/NetworkManager/system-connections/'
+
 if __name__ == '__main__':
 
 	webapp = Root()
