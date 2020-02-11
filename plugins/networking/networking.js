@@ -617,10 +617,10 @@ function getWifiConnection(settings){
   if(keymgmt == "wpa-eap") {
     resetEapSetting(settings['802-1x']);
     if ( $("#phase2-autheap").val() != "none"){
-      resetPhase2AuthSetting(null, "phase2-autheap", "phase2-auth");
+      resetPhase2AuthSetting(settings['802-1x'], "phase2-autheap", "phase2-auth");
     }
     else {
-      resetPhase2AuthSetting(null, "phase2-auth", "phase2-autheap");
+      resetPhase2AuthSetting(settings['802-1x'], "phase2-auth", "phase2-autheap");
     }
   }
 }
@@ -1198,14 +1198,18 @@ function getCerts(connection,retry){
     }
   }
 
+  var data = {
+    type: 'cert'
+  };
+
   $.ajax({
-    url: "/get_cert_list",
-    data: {},
-    type: "GET",
-    dataType: "json",
+    url: "/get_files",
+    type: "POST",
+    data: JSON.stringify(data),
+    contentType: "application/json",
   })
-  .done(function(data) {
-    createCertList(data);
+  .done(function(msg) {
+    createCertList(msg);
   })
   .fail(function() {
     consoleLog("Failed to get certificates.");
