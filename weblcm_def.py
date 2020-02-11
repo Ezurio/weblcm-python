@@ -15,7 +15,7 @@ LOGGING_STORAGE_PATH =			"/tmp/weblcm_python/"
 LOGGING_SYSD_JOURNAL_LOG_NAME =	"SOM60_SYSD_JOURNAL.txt"
 
 FILEDIR_DICT = {
-	'cert' : '/data/secret/ssl/',
+	'cert' : '/data/secret/weblcm-python/ssl/',
 	'profile' : '/data/secret/NetworkManager/system-connections/',
 };
 

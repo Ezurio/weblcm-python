@@ -236,17 +236,17 @@ class Save_Connection(object):
 								Add path to certificates
 							"""
 							if new_settings['802-1x'].get('ca-cert'):
-								new_settings['802-1x']['ca-cert'] = weblcm_def.CERT_DIRECTORY + new_settings['802-1x'].get('ca-cert');
+								new_settings['802-1x']['ca-cert'] = weblcm_def.FILEDIR_DICT.get('cert') + new_settings['802-1x'].get('ca-cert');
 							if new_settings['802-1x'].get('client-cert'):
-								new_settings['802-1x']['client-cert'] = weblcm_def.CERT_DIRECTORY + new_settings['802-1x'].get('client-cert')
+								new_settings['802-1x']['client-cert'] = weblcm_def.FILEDIR_DICT.get('cert') + new_settings['802-1x'].get('client-cert')
 							if new_settings['802-1x'].get('private-key'):
-								new_settings['802-1x']['private-key'] = weblcm_def.CERT_DIRECTORY + new_settings['802-1x'].get('private-key')
+								new_settings['802-1x']['private-key'] = weblcm_def.FILEDIR_DICT.get('cert') + new_settings['802-1x'].get('private-key')
 							if new_settings['802-1x'].get('phase2-ca-cert'):
-								new_settings['802-1x']['phase2-ca-cert'] = weblcm_def.CERT_DIRECTORY + new_settings['802-1x'].get('phase2-ca-cert');
+								new_settings['802-1x']['phase2-ca-cert'] = weblcm_def.FILEDIR_DICT.get('cert') + new_settings['802-1x'].get('phase2-ca-cert');
 							if new_settings['802-1x'].get('phase2-client-cert'):
-								new_settings['802-1x']['phase2-client-cert'] = weblcm_def.CERT_DIRECTORY + new_settings['802-1x'].get('phase2-client-cert');
+								new_settings['802-1x']['phase2-client-cert'] = weblcm_def.FILEDIR_DICT.get('cert') + new_settings['802-1x'].get('phase2-client-cert');
 							if new_settings['802-1x'].get('phase2-private-key'):
-								new_settings['802-1x']['phase2-private-key'] = weblcm_def.CERT_DIRECTORY + new_settings['802-1x'].get('phase2-private-key');
+								new_settings['802-1x']['phase2-private-key'] = weblcm_def.FILEDIR_DICT.get('cert') + new_settings['802-1x'].get('phase2-private-key');
 
 				connections = NetworkManager.Settings.ListConnections()
 				connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in connections])
@@ -294,7 +294,7 @@ class Edit_Connection(object):
 				Return base name only.
 			"""
 			if cert:
-				return cert[len(weblcm_def.CERT_DIRECTORY):]
+				return cert[len(weblcm_def.FILEDIR_DICT.get('cert')):]
 			return
 
 		result = {
