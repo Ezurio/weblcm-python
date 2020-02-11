@@ -1,6 +1,22 @@
 #!/bin/sh
-if  [ "$(/usr/sbin/fw_printenv -n bootside)" == b ]; then
-	/usr/bin/swupdate -e stable,main-a
+# Find our running ubiblock
+set -- $(cat /proc/cmdline)
+for x in "$@"; do
+    case "$x" in
+        ubi.block=*)
+        BLOCK=${x#*,}
+        ;;
+    esac
+done
+
+if [ -z "$BLOCK" ];
+then
+        /usr/bin/swupdate -e stable,full-a
 else
-	/usr/bin/swupdate -e stable,main-b
+        if [ "$BLOCK" == 1 ];
+        then
+                /usr/bin/swupdate -e stable,main-b
+        else
+                /usr/bin/swupdate -e stable,main-a
+        fi
 fi
