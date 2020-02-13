@@ -5,15 +5,16 @@ function loggingAUTORUN(retry){
   return;
 }
 
-function submitLogging(retry){
-  var LoggingData = {
+function submitLogLevel(retry){
+  var data = {
     suppDebugLevel: $("#supp-debug-level").val(),
     driverDebugLevel: parseInt($("#driver-debug-level").val()),
-  }
+  };
+
   $.ajax({
-    url: "set_logging_level",
+    url: "logLevel",
     type: "POST",
-    data: JSON.stringify(LoggingData),
+    data: JSON.stringify(data),
     contentType: "application/json",
   })
   .done(function( msg ) {
@@ -26,30 +27,28 @@ function submitLogging(retry){
 
 function queryLogData() {
 
-  strLevel = ["Emerg", "Alert", "Critical", "Error", "Warning", "Notice", "Info", "Debug" ];
-
-  $("#bt-query-log").prop("disabled", true);
-  $("#bt-query-log").val("Querying...");
-
-  filter = {
-    type: $("#log-type").val(),
-    priority: parseInt($("#log-level").val()),
-	from: parseInt($("#log-date-from").val()),
-  };
-
   $.ajax({
-    url: "request_log",
-    type: "POST",
-	data: JSON.stringify(filter),
+    url: "logData",
+    type: "GET",
+    data: {
+      typ: $("#log-type").val(),
+      priority: parseInt($("#log-level").val()),
+      days: parseInt($("#log-date-from").val()),
+    },
     contentType: "application/json",
   })
-  .done(function(data) {
+  .done(function(data){
+
+    strLevel = ["Emerg", "Alert", "Critical", "Error", "Warning", "Notice", "Info", "Debug" ];
+
+    $("#bt-query-log").prop("disabled", true);
+    $("#bt-query-log").val("Querying...");
 
     table = $("#table-log-data").DataTable();
-	table.clear().draw();
+    table.clear().draw();
 
     for(i=0; i<data.length; i++){
-	  table.row.add([ data[i]['time'], strLevel[data[i]['priority']], data[i]['identifier'], data[i]['message'] ]);
+      table.row.add([ data[i]['time'], strLevel[data[i]['priority']], data[i]['identifier'], data[i]['message'] ]);
     }
 
     table.draw();
@@ -62,9 +61,9 @@ function queryLogData() {
   });
 }
 
-function getLoggingLevel(retry){
+function getLogLevel(retry){
   $.ajax({
-    url: "get_logging_level",
+    url: "logLevel",
     type: "GET",
     contentType: "application/json",
   })
@@ -73,7 +72,7 @@ function getLoggingLevel(retry){
     $("#driver-debug-level").val(msg.driverDebugLevel);
   })
   .fail(function() {
-    consoleLog("Get logging failed");
+    consoleLog("Get log level failed");
   });
 }
 
@@ -116,7 +115,7 @@ function clickLoggingPage(retry){
     $("#tab-log").bind("click", function() {
       $(this).show();
       if($("#set-log").length > 0){
-        getLoggingLevel();
+        getLogLevel();
       }
     });
   })

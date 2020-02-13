@@ -21,14 +21,13 @@ function updatePassword()
   }
 
   $.ajax({
-    url: "/update_user",
+    url: "users",
     contentType: "application/json",
     data: JSON.stringify(creds),
-    type: "POST",
+    type: "PUT",
   })
   .done(function(data) {
-    if(data['SDCERR'] == 1)
-      CustomErrMsg(data['SDCERR'] == 1 ? "Password update failed" : "Password updated");
+    CustomErrMsg(data['SDCERR'] == 1 ? "Password update failed" : "Password updated");
   })
   .fail(function() {
     consoleLog("Failed to update password");
@@ -69,10 +68,9 @@ function get_user_list()
   clearReturnData();
 
   $.ajax({
-    url: "/get_user_list",
-    data: {},
+    url: "users",
     type: "GET",
-    dataType: "json",
+    contentType: "application/json",
   })
   .done(function(data) {
     create_user_list(data);
@@ -90,7 +88,7 @@ function addUser()
   }
 
   $.ajax({
-    url: "/add_user",
+    url: "users",
     contentType: "application/json",
     data: JSON.stringify(creds),
     type: "POST",
@@ -112,14 +110,10 @@ function addUser()
 
 function delUser()
 {
-  var creds = {
-    username: event.srcElement.id,
-  }
   $.ajax({
-    url: "/delete_user",
+    url: "users?username="+event.srcElement.id,
     contentType: "application/json",
-    data: JSON.stringify(creds),
-    type: "POST",
+    type: "DELETE",
   })
   .done(function(data) {
     if(data['SDCERR'] == 1){

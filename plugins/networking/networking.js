@@ -396,7 +396,7 @@ function onChangeKeymgmt(){
 
 function updateStatus(){
   panel_collapse_id_prefix = "panel-collapse-";
-  var getStatusJSON = $.getJSON( "networking_status", function( data ) {
+  var getStatusJSON = $.getJSON( "networkStatus", function( data ) {
     if($("#panel-group").length > 0){
       $("#updateProgressDisplay").addClass("hidden");
       for (interfaceName in data.status){
@@ -640,9 +640,8 @@ function updateGetConnectionPage(uuid, id, ssid, key_mgmt, retry){
     UUID: uuid,
   }
   $.ajax({
-	url: "edit_connection",
-    type: "POST",
-    data: JSON.stringify(data),
+    url: "connection?uuid="+uuid,
+    type: "GET",
     contentType: "application/json",
   })
   .done(function( msg ) {
@@ -744,8 +743,8 @@ function activateConnection(activate, retry){
     UUID: $("#connectionSelect").val(),
   }
   $.ajax({
-    url: "activate_connection",
-    type: "POST",
+    url: "connection",
+    type: "PUT",
     data: JSON.stringify(data),
     contentType: "application/json",
   })
@@ -765,13 +764,9 @@ function activateConnection(activate, retry){
 
 function removeConnection(){
 
-  var connection_to_remove = {
-    UUID: $("#connectionSelect").val()
-  }
   $.ajax({
-    url: "remove_connection",
-    type: "POST",
-    data: JSON.stringify(connection_to_remove),
+    url: "connection?uuid="+$("#connectionSelect").val(),
+    type: "DELETE",
     contentType: "application/json",
   })
   .done(function( msg ) {
@@ -1018,7 +1013,7 @@ function addConnection() {
 	  return;
 	}
 	$.ajax({
-	  url: "add_connection",
+	  url: "connection",
 	  type: "POST",
 	  data: JSON.stringify(new_connection),
 	  contentType: "application/json",
@@ -1095,7 +1090,7 @@ function drop(ev){
 
 function getScan(retry){
   $.ajax({
-    url: "wifi_scan",
+    url: "accesspoints",
     type: "GET",
     contentType: "application/json",
   })
@@ -1203,7 +1198,7 @@ function getCerts(connection,retry){
   };
 
   $.ajax({
-    url: "/get_files",
+    url: "files?typ=cert",
     type: "POST",
     data: JSON.stringify(data),
     contentType: "application/json",
@@ -1269,7 +1264,7 @@ function clickVersionPage(retry){
 
 function getNetworkInterfaces(retry){
   $.ajax({
-    url: "get_interfaces",
+    url: "networkInterfaces",
     type: "GET",
     contentType: "application/json",
   })

@@ -11,15 +11,13 @@ import threading
 
 passwords = configparser.ConfigParser(defaults=None)
 
-MAX_WEB_CLIENTS = 5
+@cherrypy.expose
+class UserManage(object):
 
-class UserManage:
-
-	@cherrypy.expose
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_in()
 	@cherrypy.tools.json_out()
-	def update_user(self):
+	def PUT(self):
 		result = {
 			'SDCERR': 1,
 		}
@@ -39,11 +37,10 @@ class UserManage:
 
 		return result
 
-	@cherrypy.expose
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_in()
 	@cherrypy.tools.json_out()
-	def add_user(self):
+	def POST(self):
 		result = {
 			'SDCERR': 1,
 		}
@@ -51,7 +48,7 @@ class UserManage:
 		session_username = cherrypy.session.get('USER')
 		if session_username == "root":
 			passwords.read(weblcm_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini')
-			if(len(passwords.sections()) < MAX_WEB_CLIENTS):
+			if(len(passwords.sections()) < cherrypy.request.app.config['weblcm']['max_web_clients']):
 				username = post_data.get('username')
 				password = post_data.get('password')
 				if username and password and username not in passwords:
@@ -65,16 +62,11 @@ class UserManage:
 
 		return result
 
-	@cherrypy.expose
-	@cherrypy.tools.accept(media='application/json')
-	@cherrypy.tools.json_in()
 	@cherrypy.tools.json_out()
-	def delete_user(self):
+	def DELETE(self, username):
 		result = {
 			'SDCERR': 1,
 		}
-		post_data = cherrypy.request.json
-		username = post_data.get('username')
 		session_username = cherrypy.session.get('USER')
 		if session_username == "root" and username != "root":
 			passwords.read(weblcm_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini')
@@ -86,9 +78,8 @@ class UserManage:
 
 		return result
 
-	@cherrypy.expose
 	@cherrypy.tools.json_out()
-	def get_user_list(self):
+	def GET(self):
 		result = []
 		passwords.read(weblcm_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini')
 		for k in passwords:
@@ -96,12 +87,13 @@ class UserManage:
 
 		return result[1:]
 
-class LoginManage:
-	@cherrypy.expose
-	@cherrypy.tools.accept(media='application/json')
+@cherrypy.expose
+class LoginManage(object):
+
 	@cherrypy.tools.json_in()
+	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()
-	def login(self):
+	def POST(self):
 		result = {
 			'SDCERR': 1,
 		}
@@ -115,10 +107,13 @@ class LoginManage:
 
 		return result
 
-	@cherrypy.expose
+@cherrypy.expose
+class LogoutManage(object):
+
+	@cherrypy.tools.json_in()
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()
-	def logout(self):
+	def GET(self):
 		result = {
 			'SDCERR': 0,
 		}

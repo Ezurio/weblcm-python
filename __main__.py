@@ -4,11 +4,11 @@ import configparser
 import uuid
 import hashlib
 import weblcm_def
-import weblcm_log
-import weblcm_network
+from weblcm_network import NetworkStatus, NetworkInterfaces, NetworkConnections, NetworkConnection, NetworkAccessPoints, Version
+from weblcm_log import LogData, LogLevel
 from weblcm_swupdate import SWUpdate
-from weblcm_users import UserManage, LoginManage
-from weblcm_files import FileManage
+from weblcm_users import UserManage, LoginManage, LogoutManage
+from weblcm_files import FileManage, TarFileManage
 
 PLUGINS = {
        'list':{},
@@ -46,39 +46,26 @@ if __name__ == '__main__':
 
 	PLUGINS['networking'] = weblcm_def.NM_DBUS_API_TYPES
 
-	login = LoginManage()
-	webapp.login = login.login
-	webapp.logout = login.logout
+	webapp.login = LoginManage()
+	webapp.logout = LogoutManage()
 
-	webapp.networking_status = weblcm_network.Networking_Status()
-	webapp.connections = weblcm_network.Connections()
-	webapp.activate_connection = weblcm_network.Activate_Connection()
-	webapp.add_connection = weblcm_network.Save_Connection()
-	webapp.remove_connection = weblcm_network.Remove_Connection()
-	webapp.edit_connection = weblcm_network.Edit_Connection()
-	webapp.wifi_scan = weblcm_network.Wifi_Scan()
-	webapp.get_interfaces = weblcm_network.Get_Interfaces()
-	webapp.version = weblcm_network.Version()
+	webapp.networkStatus = NetworkStatus()
+	webapp.connections = NetworkConnections()
+	webapp.connection = NetworkConnection()
+	webapp.accesspoints = NetworkAccessPoints()
+	webapp.networkInterfaces = NetworkInterfaces()
+	webapp.version = Version()
 
-	webapp.request_log = weblcm_log.Request_Log()
-	webapp.set_logging_level = weblcm_log.Set_Logging_Level()
-	webapp.get_logging_level = weblcm_log.Get_Logging_Level()
+	webapp.logData = LogData()
+	webapp.logLevel = LogLevel()
 
-	swu = SWUpdate();
+	webapp.users = UserManage()
+	webapp.files = FileManage()
+	webapp.tarfiles = TarFileManage()
+
+	swu = SWUpdate()
 	webapp.update_firmware = swu.update_firmware
 	webapp.update_firmware_start = swu.update_firmware_start
 	webapp.update_firmware_end = swu.update_firmware_end
-
-	um = UserManage()
-	webapp.add_user = um.add_user
-	webapp.get_user_list = um.get_user_list
-	webapp.update_user = um.update_user
-	webapp.delete_user = um.delete_user
-
-	fm = FileManage()
-	webapp.upload_file = fm.upload_file
-	webapp.get_files = fm.get_files
-	webapp.download_file = fm.download_file
-	webapp.delete_file = fm.delete_file
 
 	cherrypy.quickstart(webapp, '/', config=conf)
