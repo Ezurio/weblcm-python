@@ -8,38 +8,22 @@ import sys
 from systemd import journal
 import weblcm_def
 
-class Log_Data():
-	last_cursor = ''
-	age_of_last_cursor = 0
-	full_log = None
-	journal_entries = ''
-
 @cherrypy.expose
-class Request_Log(object):
+class LogData(object):
 
-	@cherrypy.tools.accept(media='application/json')
-	@cherrypy.tools.json_in()
+	@cherrypy.tools.accept(media='text/plain')
 	@cherrypy.tools.json_out()
-	def POST(self):
+	def GET(self, typ, priority, days):
 
 		logs = []
 
 		try:
 			reader = journal.Reader()
-
-			post_data = cherrypy.request.json
-
-			reader.log_level(post_data.get('priority'))
-			typ = post_data.get('type')
-
+			reader.log_level(int(priority))
 			if typ != "All":
-				reader.add_match(SYSLOG_IDENTIFIER=post_data.get('type'))
-
-			days = post_data.get('from', 1)
-			if days > 0:
-				reader.seek_realtime(time.time() - days * 86400)
-
-
+				reader.add_match(SYSLOG_IDENTIFIER=typ)
+			if int(days) > 0:
+				reader.seek_realtime(time.time() - int(days) * 86400)
 			for entry in reader:
 				log = {}
 				log['time'] = str(entry.get('__REALTIME_TIMESTAMP', "None"))
@@ -53,7 +37,7 @@ class Request_Log(object):
 		return logs
 
 @cherrypy.expose
-class Set_Logging_Level(object):
+class LogLevel(object):
 
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_in()
@@ -81,9 +65,6 @@ class Set_Logging_Level(object):
 
 		return result
 
-@cherrypy.expose
-class Get_Logging_Level(object):
-
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()
 	def GET(self):
@@ -95,7 +76,6 @@ class Get_Logging_Level(object):
 		proxy = bus.get_object(weblcm_def.WPA_IFACE, weblcm_def.WPA_OBJ)
 		wpas = dbus.Interface(proxy, weblcm_def.DBUS_PROP_IFACE)
 		debug_level = wpas.Get(weblcm_def.WPA_IFACE, "DebugLevel")
-
 		result['suppDebugLevel'] = debug_level
 
 		try:

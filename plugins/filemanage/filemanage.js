@@ -38,14 +38,10 @@ function createFileList(type, data){
 }
 
 function getFileList(type){
-  var data = {
-    type: type
-  };
 
   $.ajax({
-    url: "/get_files",
-    type: "POST",
-    data: JSON.stringify(data),
+    url: "files?typ="+type,
+    type: "GET",
     contentType: "application/json",
   })
   .done(function(data) {
@@ -58,16 +54,10 @@ function getFileList(type){
 
 function delFile(file, type){
 
-  var data = {
-   file: file,
-   type: type
-  };
-
   $.ajax({
-    url: "/delete_file",
+    url: "files?typ="+type+"&fil="+file,
     contentType: "application/json",
-    data: JSON.stringify(data),
-    type: "POST",
+    type: "DELETE",
   })
   .done(function(data) {
     getFileList(type);
@@ -77,7 +67,7 @@ function delFile(file, type){
   });
 }
 
-function uploadFile(form, type) {
+function uploadFile(form, file, type) {
 
   var xhr = new XMLHttpRequest();
 
@@ -93,20 +83,25 @@ function uploadFile(form, type) {
     $("#bt-import-"+type).prop("disabled", false);
   };
 
-  xhr.open('POST', "/upload_file", true);
+  var parts = file.name.split('.');
+  if(parts[parts.length - 1] == "tgz")
+    xhr.open('POST', "tarfiles", true);
+  else
+    xhr.open('POST', "files", true);
   xhr.send(form);
 }
 
 function importFile(type){
 
-  if( $("#input-file-"+type)[0].files.length == 0 )
+  var files = $("#input-file-"+type)[0].files;
+  if( files.length == 0 )
     return;
 
   var data = new FormData($("#form-import-"+type)[0]);
 
   $("#bt-import-"+type).prop("disabled", true);
 
-  uploadFile(data, type)
+  uploadFile(data, files[0], type)
 }
 
 function clickFileManagePage(retry)
