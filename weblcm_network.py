@@ -9,8 +9,7 @@ import NetworkManager
 import weblcm_def
 
 @cherrypy.expose
-class Networking_Status(object):
-	@cherrypy.tools.accept(media='application/json')
+class NetworkStatus(object):
 	@cherrypy.tools.json_out()
 	def GET(self):
 		result = {
@@ -148,8 +147,7 @@ class Networking_Status(object):
 		return result
 
 @cherrypy.expose
-class Connections(object):
-	@cherrypy.tools.accept(media='application/json')
+class NetworkConnections(object):
 	@cherrypy.tools.json_out()
 	def GET(self):
 		result = {
@@ -172,11 +170,11 @@ class Connections(object):
 		return result
 
 @cherrypy.expose
-class Activate_Connection(object):
+class NetworkConnection(object):
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_in()
 	@cherrypy.tools.json_out()
-	def POST(self):
+	def PUT(self):
 		result = {
 			'SDCERR': 1,
 		}
@@ -202,9 +200,6 @@ class Activate_Connection(object):
 			print(e)
 
 		return result
-
-@cherrypy.expose
-class Save_Connection(object):
 
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_in()
@@ -261,33 +256,23 @@ class Save_Connection(object):
 
 		return result
 
-@cherrypy.expose
-class Remove_Connection(object):
-	@cherrypy.tools.accept(media='application/json')
-	@cherrypy.tools.json_in()
 	@cherrypy.tools.json_out()
-	def POST(self):
+	def DELETE(self, uuid):
 		result = {
 			'SDCERR': 1,
 		}
 		try:
-			uuid = cherrypy.request.json['UUID']
-			if uuid:
-				connections = NetworkManager.Settings.ListConnections()
-				connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in connections])
-				connections[uuid].Delete();
-				result['SDCERR'] = 0
+			connections = NetworkManager.Settings.ListConnections()
+			connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in connections])
+			connections[uuid].Delete();
+			result['SDCERR'] = 0
 		except Exception as e:
 			print(e)
 
 		return result
 
-@cherrypy.expose
-class Edit_Connection(object):
-	@cherrypy.tools.accept(media='application/json')
-	@cherrypy.tools.json_in()
 	@cherrypy.tools.json_out()
-	def POST(self):
+	def GET(self, uuid):
 
 		def cert_to_filename(cert):
 			"""
@@ -301,28 +286,25 @@ class Edit_Connection(object):
 			'SDCERR': 1,
 		}
 		try:
-			uuid = cherrypy.request.json['UUID']
-			if uuid:
-				connections = NetworkManager.Settings.ListConnections()
-				connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in connections])
-				settings = connections[uuid].GetSettings()
-				if settings.get('802-1x'):
-					settings['802-1x']['ca-cert'] = cert_to_filename(settings['802-1x'].get('ca-cert'));
-					settings['802-1x']['client-cert'] = cert_to_filename(settings['802-1x'].get('client-cert'));
-					settings['802-1x']['private-key'] = cert_to_filename(settings['802-1x'].get('private-key'));
-					settings['802-1x']['phase2-ca-cert'] = cert_to_filename(settings['802-1x'].get('phase2-ca-cert'));
-					settings['802-1x']['phase2-client-cert'] = cert_to_filename(settings['802-1x'].get('phase2-client-cert'));
-					settings['802-1x']['phase2-private-key'] = cert_to_filename(settings['802-1x'].get('phase2-private-key'));
-				result['connection'] = settings
-				result['SDCERR'] = 0
+			connections = NetworkManager.Settings.ListConnections()
+			connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in connections])
+			settings = connections[uuid].GetSettings()
+			if settings.get('802-1x'):
+				settings['802-1x']['ca-cert'] = cert_to_filename(settings['802-1x'].get('ca-cert'));
+				settings['802-1x']['client-cert'] = cert_to_filename(settings['802-1x'].get('client-cert'));
+				settings['802-1x']['private-key'] = cert_to_filename(settings['802-1x'].get('private-key'));
+				settings['802-1x']['phase2-ca-cert'] = cert_to_filename(settings['802-1x'].get('phase2-ca-cert'));
+				settings['802-1x']['phase2-client-cert'] = cert_to_filename(settings['802-1x'].get('phase2-client-cert'));
+				settings['802-1x']['phase2-private-key'] = cert_to_filename(settings['802-1x'].get('phase2-private-key'));
+			result['connection'] = settings
+			result['SDCERR'] = 0
 		except Exception as e:
 			print(e)
 
 		return result
 
 @cherrypy.expose
-class Wifi_Scan(object):
-	@cherrypy.tools.accept(media='application/json')
+class NetworkAccessPoints(object):
 	@cherrypy.tools.json_out()
 	def GET(self):
 		result = {
@@ -384,7 +366,6 @@ class Wifi_Scan(object):
 
 @cherrypy.expose
 class Version(object):
-	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()
 	def GET(self):
 		result = {
@@ -414,8 +395,7 @@ class Version(object):
 		return result
 
 @cherrypy.expose
-class Get_Interfaces(object):
-	@cherrypy.tools.accept(media='application/json')
+class NetworkInterfaces(object):
 	@cherrypy.tools.json_out()
 	def GET(self):
 		result = {
