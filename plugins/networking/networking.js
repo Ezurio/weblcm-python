@@ -5,28 +5,6 @@ function networkingAUTORUN(retry){
   clickStatusPage(0);
 }
 
-function updateInfoText(option,retry){
-  $.ajax({
-    url: "plugins/networking/html/info.html",
-    data: {},
-    type: "GET",
-    dataType: "html",
-  })
-  .done(function( data ) {
-    $("#infoText").html(data);
-    $("#" + option + "-text").removeClass("hidden");
-  })
-  .fail(function() {
-    if (retry < 5){
-      retry++;
-      $("#networking_status").removeClass("active");
-      clickStatusPage(retry);
-    } else {
-      consoleLog("Retry max attempt reached");
-    }
-  });
-}
-
 function CARDSTATEtoString(CARDSTATE){
   switch(CARDSTATE) {
     case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_UNKNOWN:
@@ -545,8 +523,6 @@ function clickStatusPage(retry) {
     dataType: "html",
   })
   .done(function( data ) {
-    $("li").removeClass("active");
-    $("#networking_status").addClass("active");
     $("#main_section").html(data);
     clearReturnData();
     $("#helpText").html("This page shows the current state of networking");
@@ -681,8 +657,6 @@ function editConnection(uuid, id, ssid, key_mgmt, retry) {
     dataType: "html",
   })
   .done(function( data ) {
-    $("li").removeClass("active");
-    $("#networking_Add").addClass("active");
     $("#main_section").html(data);
     clearReturnData();
     $("#helpText").html("Adjust connection settings.");
@@ -783,8 +757,6 @@ function clickConnectionEditPage(retry) {
     dataType: "html",
   })
   .done( function( data ){
-    $("li").removeClass("active");
-    $("#networking_edit").addClass("active");
     clearReturnData();
     $("#main_section").html(data);
     $("#helpText").html("These are the current networking connections.");
@@ -1143,8 +1115,6 @@ function clickScanPage(retry){
     dataType: "html",
   })
   .done(function( data ) {
-    $("li").removeClass("active");
-    $("#wifi_scan").addClass("active");
     $("#main_section").html(data);
     clearReturnData();
     $("#helpText").html("Scan for wireless networks");
@@ -1244,8 +1214,6 @@ function clickVersionPage(retry){
     dataType: "html",
   })
   .done(function( data ) {
-    $("li").removeClass("active");
-    $("#networking_version").addClass("active");
     $("#main_section").html(data);
     clearReturnData();
     $("#helpText").html("System version information");

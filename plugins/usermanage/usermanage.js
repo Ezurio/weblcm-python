@@ -137,8 +137,6 @@ function clickAddOrDelUser(retry)
     dataType: "html",
   })
   .done(function(data){
-    $("li").removeClass("active");
-    $("#add_del_user").addClass("active");
     $("#main_section").html(data);
     clearReturnData();
     $("#helpText").html("Add/delete users");
@@ -164,8 +162,6 @@ function clickUpdatePassword(retry)
     dataType: "html",
   })
   .done( function(data) {
-    $("li").removeClass("active");
-    $("#update_password").addClass("active");
     $('#main_section').html(data);
     clearReturnData();
     $("#helpText").html("Update login user password.");
