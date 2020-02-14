@@ -113,8 +113,6 @@ function clickFileManagePage(retry)
     dataType: "html",
   })
   .done(function(data){
-    $("li").removeClass("active");
-    $("#filemanage_main_menu").addClass("active");
     $('#main_section').html(data);
     clearReturnData();
     $("#helpText").html("Manage profiles, certificates, etc.");

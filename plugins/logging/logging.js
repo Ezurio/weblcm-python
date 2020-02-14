@@ -85,8 +85,6 @@ function clickLoggingPage(retry){
     dataType: "html",
   })
   .done(function( data ) {
-    $("li").removeClass("active");
-    $("#logging_main_menu").addClass("active");
     $("#main_section").html(data);
     clearReturnData();
     $("#helpText").html("Logging options");
@@ -96,7 +94,9 @@ function clickLoggingPage(retry){
       ordering: false,
       responsive: true,
       bAutoWidth: false,
-      dom: "l<'pull-right'B>tip",
+	  dom: "<'row'<'pull-left'l><'pull-right'B>>" + "<'row'<'col-xs-12'tr>>" + "<'row'<'col-xs-12 col-md-5'i><'col-xs-12 col-md-7'p>>",
+      "pagingType": "full",
+      "pageLength": 25,
       buttons: [
         {
           extend: "csvHtml5",
@@ -109,6 +109,12 @@ function clickLoggingPage(retry){
             }
           }
         },
+      ],
+      columnDefs: [
+        {
+          targets: '_all',
+          className: 'dt-left'
+        }
       ]
     });
 
