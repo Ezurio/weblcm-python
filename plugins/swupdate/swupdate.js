@@ -112,8 +112,6 @@ function clickSWUpdatePage(retry) {
     dataType: "html",
   })
   .done(function(data){
-    $("li").removeClass("active");
-    $("#swupdate_main_menu").addClass("active");
     $('#main_section').html(data);
     clearReturnData();
     $(".infoText").addClass("hidden");

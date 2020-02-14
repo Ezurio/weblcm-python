@@ -5,7 +5,7 @@
 -->
 
 <html>
-	<div class="col-xs-12 col-sm-12 placeholder">
+	<div class="col-xs-12 placeholder">
 		<ul class="nav nav-tabs" id="tab-log">
 			<li><a href="#get-log" id="tab-get-log" data-toggle="tab" >Show Logs</a></li>
 			<li><a href="#set-log" id="tab-set-log" data-toggle="tab" >Set Log Level</a></li>
@@ -14,11 +14,11 @@
 			<div class="tab-pane fade in active" role="tabpanel" id="get-log">
 				<br>
 				<div class="form-group row">
-					<div class="col-sm-6">
-						<div class="col-sm-4">
+					<div class="col-xs-6">
+						<div class="col-xs-4">
 							<label class="pull-left">Log Type:</label>
 						</div>
-						<div class="col-sm-8">
+						<div class="col-xs-8">
 							<select id="log-type" class="form-control">
 								<option value="kernel" selected>Kernel</option>
 								<option value="NetworkManager">Network Manager</option>
@@ -27,11 +27,11 @@
 							</select>
 						</div>
 					</div>
-					<div class="col-sm-6">
-						<div class="col-sm-4">
+					<div class="col-xs-6">
+						<div class="col-xs-4">
 							<label class="pull-left">Log Level:</label>
 						</div>
-						<div class="col-sm-8">
+						<div class="col-xs-8">
 							<select id="log-level" class="form-control">
 								<option value=7>All</option>
 								<option value=6 selected>Info</option>
@@ -46,11 +46,11 @@
 					</div>
 				</div>
 				<div class="form-group row">
-					<div class="col-sm-6">
-						<div class="col-sm-4">
+					<div class="col-xs-6">
+						<div class="col-xs-4">
 							<label class="pull-left">Since:</label>
 						</div>
-						<div class="col-sm-8">
+						<div class="col-xs-8">
 							<select id="log-date-from" class="form-control">
 								<option value=1 selected>last day</option>
 								<option value=2>last 2 days</option>
@@ -64,14 +64,14 @@
 					</div>
 				</div>
 				<br>
-				<div class="table-responsive col-sm-12">
-					<table class="table table-striped table-bordered" style="width:100%" id="table-log-data">
+				<div class="table-responsive col-xs-12">
+					<table class="table table-striped table-bordered display compact" style="width:100%" id="table-log-data">
 						<thead>
 							<tr>
-								<th class="col-sm-3">Time</th>
-								<th class="col-sm-1">Priority</th>
-								<th class="col-sm-1">Identifier</th>
-								<th class="col-sm-7">Message</th>
+								<th class="col-xs-2">Time</th>
+								<th class="col-xs-1">Priority</th>
+								<th class="col-xs-1">Identifier</th>
+								<th class="col-xs-8">Message</th>
 							</tr>
 						</thead>
 						<tbody>
