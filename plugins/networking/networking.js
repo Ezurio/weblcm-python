@@ -506,7 +506,7 @@ function updateStatus(){
     }
   })
   .fail(function(data) {
-    consoleLog("Failed to get status, retrying.");
+    consoleLog("Failed to get status");
   });
 }
 
@@ -514,7 +514,7 @@ function setIntervalUpdate(functionName){
   setTimeout(functionName, 10000)
 }
 
-function clickStatusPage(retry) {
+function clickStatusPage() {
 
   $.ajax({
     url: "plugins/networking/html/status.html",
@@ -523,6 +523,9 @@ function clickStatusPage(retry) {
     dataType: "html",
   })
   .done(function( data ) {
+    $("li").removeClass("active");
+    $("#networking_status_main_menu").addClass("active");
+    $("#networking_status_mini_menu").addClass("active");
     $("#main_section").html(data);
     clearReturnData();
     $("#helpText").html("This page shows the current state of networking");
@@ -530,12 +533,7 @@ function clickStatusPage(retry) {
     updateStatus();
   })
   .fail(function() {
-    if (retry < 5){
-      retry++;
-      clickStatusPage(retry);
-    } else {
-      consoleLog("Retry max attempt reached");
-    }
+    consoleLog("Failed to get status.html");
   });
 }
 
@@ -611,7 +609,7 @@ function getEthernetConnection(settings) {
   $("#connection-type").change();
 }
 
-function updateGetConnectionPage(uuid, id, ssid, key_mgmt, retry){
+function updateGetConnectionPage(uuid, id, ssid, key_mgmt){
   var data = {
     UUID: uuid,
   }
@@ -645,11 +643,11 @@ function updateGetConnectionPage(uuid, id, ssid, key_mgmt, retry){
     }
   })
   .fail(function() {
-    consoleLog("Retry max attempt reached");
+    consoleLog("Failed to get connection settings");
   });
 }
 
-function editConnection(uuid, id, ssid, key_mgmt, retry) {
+function editConnection(uuid, id, ssid, key_mgmt) {
   $.ajax({
     url: "plugins/networking/html/addConnection.html",
     data: {},
@@ -657,30 +655,28 @@ function editConnection(uuid, id, ssid, key_mgmt, retry) {
     dataType: "html",
   })
   .done(function( data ) {
+    $("li").removeClass("active");
+    $("#networking_add_main_menu").addClass("active");
+    $("#networking_add_mini_menu").addClass("active");
     $("#main_section").html(data);
     clearReturnData();
     $("#helpText").html("Adjust connection settings.");
     $(".infoText").addClass("hidden");
     getNetworkInterfaces();
     getCerts();
-    updateGetConnectionPage(uuid, id, ssid, key_mgmt, 0);
+    updateGetConnectionPage(uuid, id, ssid, key_mgmt);
   })
   .fail(function() {
-    if (retry < 5){
-      retry++;
-      editConnection(uuid, id, ssid, key_mgmt, retry);
-    } else {
-      consoleLog("Retry max attempt reached");
-    }
+    consoleLog("Failed to get addConnection.html");
   });
 }
 
-function selectedConnection(uuid, retry){
+function selectedConnection(uuid){
   var uuid = $("#connectionSelect").val();
-  editConnection(uuid, null, null, null, retry);
+  editConnection(uuid, null, null, null);
 }
 
-function updateConnectionsPage(retry){
+function updateConnectionsPage(){
   $.ajax({
     url: "connections",
     type: "GET",
@@ -702,16 +698,11 @@ function updateConnectionsPage(retry){
     }
   })
   .fail(function() {
-    if (retry < 5){
-	  retry++;
-	  updateConnectionsPage(retry);
-	} else {
-	  consoleLog("Retry max attempt reached");
-    }
+	consoleLog("Failed to update get connections");
   });
 }
 
-function activateConnection(activate, retry){
+function activateConnection(activate){
   var data = {
     activate: activate,
     UUID: $("#connectionSelect").val(),
@@ -724,15 +715,10 @@ function activateConnection(activate, retry){
   })
   .done(function( msg ) {
     SDCERRtoString(msg.SDCERR);
-    updateConnectionsPage(0);
+    updateConnectionsPage();
   })
   .fail(function() {
-    if (retry < 5){
-      retry++;
-      activateConnection(retry);
-    } else {
-      consoleLog("Retry max attempt reached");
-    }
+    consoleLog("Failed to activate connection");
   });
 }
 
@@ -745,11 +731,11 @@ function removeConnection(){
   })
   .done(function( msg ) {
     SDCERRtoString(msg.SDCERR);
-    updateConnectionsPage(0);
+    updateConnectionsPage();
   });
 }
 
-function clickConnectionEditPage(retry) {
+function clickConnectionEditPage() {
   $.ajax({
     url: "plugins/networking/html/connections.html",
     data: {},
@@ -757,24 +743,22 @@ function clickConnectionEditPage(retry) {
     dataType: "html",
   })
   .done( function( data ){
+    $("li").removeClass("active");
+    $("#networking_edit_main_menu").addClass("active");
+    $("#networking_edit_mini_menu").addClass("active");
     clearReturnData();
     $("#main_section").html(data);
     $("#helpText").html("These are the current networking connections.");
     $(".infoText").addClass("hidden");
-    updateConnectionsPage(retry);
+    updateConnectionsPage();
   })
   .fail(function() {
-    if (retry < 5){
-      retry++;
-      clickConnectionEditPage(retry);
-    } else {
-      consoleLog("Retry max attempt reached");
-    }
+    consoleLog("Failed to get connections.html");
   });
 }
 
-function clickAddConnectionPage(retry) {
-  editConnection(null, null, null, "none", retry)
+function clickAddConnectionPage() {
+  editConnection(null, null, null, "none")
 }
 
 function prepareEthernetConnection() {
@@ -1031,11 +1015,11 @@ function regDomainToString(regDomain){
   }
 }
 
-function addScanConnection(retry){
+function addScanConnection(){
   id = $("#connectionName").val();
   ssid = $("#newSSID").val();
   key_mgmt = $("#security").attr("key-mgmt");
-  editConnection(null, id, ssid, key_mgmt, retry);
+  editConnection(null, id, ssid, key_mgmt);
 }
 
 function allowDrop(ev){
@@ -1060,7 +1044,7 @@ function drop(ev){
   $("#goToConnectionDisplay").removeClass("hidden");
 }
 
-function getScan(retry){
+function getScan(){
   $.ajax({
     url: "accesspoints",
     type: "GET",
@@ -1098,16 +1082,11 @@ function getScan(retry){
     }
   })
   .fail(function() {
-    if (retry < 5){
-      retry++;
-      getScan(retry);
-    } else {
-      consoleLog("Retry max attempt reached");
-    }
+    consoleLog("Failed to get AP list");
   });
 }
 
-function clickScanPage(retry){
+function clickScanPage(){
   $.ajax({
     url: "plugins/networking/html/scan.html",
     data: {},
@@ -1115,6 +1094,9 @@ function clickScanPage(retry){
     dataType: "html",
   })
   .done(function( data ) {
+    $("li").removeClass("active");
+    $("#networking_scan_main_menu").addClass("active");
+    $("#networking_scan_mini_menu").addClass("active");
     $("#main_section").html(data);
     clearReturnData();
     $("#helpText").html("Scan for wireless networks");
@@ -1122,16 +1104,11 @@ function clickScanPage(retry){
     getScan(0);
   })
   .fail(function() {
-    if (retry < 5){
-      retry++;
-      clickScanPage(retry);
-    } else {
-      consoleLog("Retry max attempt reached");
-    }
+    consoleLog("Failed to get scan.html");
   });
 }
 
-function getCerts(connection,retry){
+function getCerts(connection){
 
   function createCertList(data){
     var ca = $("#ca-cert");
@@ -1181,7 +1158,7 @@ function getCerts(connection,retry){
   });
 }
 
-function getVersion(retry){
+function getVersion(){
   $.ajax({
     url: "version",
 	type: "GET",
@@ -1197,16 +1174,11 @@ function getVersion(retry){
     $("#build").text(msg['build']);
   })
   .fail(function() {
-    if (retry < 5){
-      retry++;
-      getVersion(retry);
-    } else {
-      consoleLog("Retry max attempt reached");
-    }
+    consoleLog("Failed to get version information");
   });
 }
 
-function clickVersionPage(retry){
+function clickVersionPage(){
   $.ajax({
     url: "plugins/networking/html/version.html",
     data: {},
@@ -1214,6 +1186,9 @@ function clickVersionPage(retry){
     dataType: "html",
   })
   .done(function( data ) {
+    $("li").removeClass("active");
+    $("#networking_version_main_menu").addClass("active");
+    $("#networking_version_mini_menu").addClass("active");
     $("#main_section").html(data);
     clearReturnData();
     $("#helpText").html("System version information");
@@ -1221,16 +1196,11 @@ function clickVersionPage(retry){
     getVersion(0);
   })
   .fail(function() {
-    if (retry < 5){
-      retry++;
-      clickGlobalsPage(retry);
-    } else {
-      consoleLog("Retry max attempt reached");
-    }
+    consoleLog("Failed to get version.html");
   });
 }
 
-function getNetworkInterfaces(retry){
+function getNetworkInterfaces(){
   $.ajax({
     url: "networkInterfaces",
     type: "GET",
