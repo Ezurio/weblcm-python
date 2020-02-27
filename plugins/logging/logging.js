@@ -85,6 +85,9 @@ function clickLoggingPage(retry){
     dataType: "html",
   })
   .done(function( data ) {
+    $("li").removeClass("active");
+    $("#logging_main_menu").addClass("active");
+    $("#logging_mini_menu").addClass("active");
     $("#main_section").html(data);
     clearReturnData();
     $("#helpText").html("Logging options");
@@ -126,11 +129,6 @@ function clickLoggingPage(retry){
     });
   })
   .fail(function() {
-    if (retry < 5){
-      retry++;
-      clickLoggingPage(retry);
-    } else {
-      consoleLog("Retry max attempt reached");
-    }
+    consoleLog("Failed to get logging.html");
   });
 }

@@ -56,12 +56,15 @@ function clickAdvancedPage() {
     dataType: "html",
   })
   .done(function(data){
+    $("li").removeClass("active");
+    $("#advanced_main_menu").addClass("active");
+    $("#advanced_mini_menu").addClass("active");
     $('#main_section').html(data);
     clearReturnData();
     $(".infoText").addClass("hidden");
     $("#helpText").html("Advanced control");
   })
   .fail(function(){
-      console.log("Error, couldn't get advanced.html");
+    console.log("Error, couldn't get advanced.html");
   });
 }

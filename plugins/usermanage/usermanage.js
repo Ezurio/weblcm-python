@@ -257,6 +257,9 @@ function clickAddOrDelUser()
     dataType: "html",
   })
   .done(function(data){
+    $("li").removeClass("active");
+    $("#add_del_user_main_menu").addClass("active");
+    $("#add_del_user_mini_menu").addClass("active");
     $("#main_section").html(data);
     clearReturnData();
     $("#helpText").html("Add/delete users");
@@ -264,7 +267,7 @@ function clickAddOrDelUser()
     get_user_list();
   })
   .fail(function() {
-      consoleLog("Failed to get add_del_user.html");
+    consoleLog("Failed to get add_del_user.html");
   });
 }
 
@@ -277,12 +280,15 @@ function clickUpdatePassword(message)
     dataType: "html",
   })
   .done( function(data) {
+    $("li").removeClass("active");
+    $("#update_password_main_menu").addClass("active");
+    $("#update_password_mini_menu").addClass("active");
     $('#main_section').html(data);
     clearReturnData();
     $("#helpText").html(message);
     $(".infoText").addClass("hidden");
   })
   .fail(function() {
-      consoleLog("Failed to get update_password.html");
+    consoleLog("Failed to get update_password.html");
   });
 }
