@@ -5,10 +5,114 @@ function usermanageAUTORUN(retry) {
   return;
 }
 
+function addPasswdInputOnkeyup(prefix){
+
+  var psw = $("#"+prefix+"-password");
+
+  // Validate lowercase letters
+  var letter = $("#"+prefix+"-lower");
+  if(psw.val().match(/[a-z]/g)) {
+    letter.removeClass("text-danger");
+    letter.addClass("text-success");
+  } else {
+    letter.removeClass("text-success");
+    letter.addClass("text-danger");
+  }
+
+  // Validate uppercase letters
+  var capital = $("#"+prefix+"-upper");
+  if(psw.val().match(/[A-Z]/g)) {
+    capital.removeClass("text-danger");
+    capital.addClass("text-success");
+  } else {
+    capital.removeClass("text-success");
+    capital.addClass("text-danger");
+  }
+
+  // Validate numbers
+  var number = $("#"+prefix+"-number");
+  if(psw.val().match(/[0-9]/g)) {
+    number.removeClass("text-danger");
+    number.addClass("text-success");
+  } else {
+    number.removeClass("text-success");
+    number.addClass("text-danger");
+  }
+
+  // Validate special letters
+  var special = $("#"+prefix+"-special");
+  if(psw.val().match(/[@$!%*?&]/g)) {
+    special.removeClass("text-danger");
+    special.addClass("text-success");
+  } else {
+    special.removeClass("text-success");
+    special.addClass("text-danger");
+  }
+
+  // Validate length
+  var length = $("#"+prefix+"-length");
+  if(psw.val().length >= 8 && psw.val().length <= 64) {
+    length.removeClass("text-danger");
+    length.addClass("text-success");
+  } else {
+    length.removeClass("text-success");
+    length.addClass("text-danger");
+  }
+}
+
+function addPasswdInputOnblur(id){
+  $("#"+id).addClass("hidden");
+}
+
+function addPasswdInputOnfocus(id, prefix){
+  addPasswdInputOnkeyup(prefix);
+  $("#"+id).removeClass("hidden");
+}
+
+function validateUsername(username){
+  if (username.length < 4 || username.length > 64)
+    return "4-64 characters required for username";
+
+  inval = username.match(/\W/g);
+  if(inval != null)
+    return "Only number, lowercase, uppercase and underscore is allowed for username"
+
+  return;
+}
+
+function validatePassword(psw) {
+  if(psw.match(/[a-z]/g) == null) {
+    return "Minimally one lowercase charcter required";
+  }
+
+  if(psw.match(/[A-Z]/g) == null) {
+    return "Minimally one uppercase charcter required";
+  }
+
+  if(psw.match(/[0-9]/g) == null) {
+    return "Minimally one number is required";
+  }
+
+  if(psw.match(/[@$!%*?&]/g) == null) {
+    return "Minimally one special charcter is required";
+  }
+
+  if(psw.length < 8 || psw.length > 64) {
+    return "8-84 characters are required";
+  }
+}
+
 function updatePassword()
 {
   current_password = $("#current-password").val();
-  new_password = $("#new-password").val();
+
+  new_password = $("#upm-password").val();
+  err = validatePassword(new_password);
+  if(err){
+	CustomErrMsg(err);
+	return;
+  }
+
   confirm_password = $("#confirm-password").val();
   if (new_password !== confirm_password){
 	CustomErrMsg("Your password and confirmation password don't match");
@@ -27,7 +131,11 @@ function updatePassword()
     type: "PUT",
   })
   .done(function(data) {
-    CustomErrMsg(data['SDCERR'] == 1 ? "Password update failed" : "Password updated");
+    SDCERRtoString(data.SDCERR);
+
+    if (data.REDIRECT == 1){
+      login("root", new_password);
+	}
   })
   .fail(function() {
     consoleLog("Failed to update password");
@@ -83,8 +191,20 @@ function get_user_list()
 function addUser()
 {
   var creds = {
-    username: $("#add-username").val(),
-    password: $("#add-password").val(),
+    username: $("#ipm-username").val(),
+    password: $("#ipm-password").val(),
+  }
+
+  err = validatePassword(creds.password);
+  if(err){
+	CustomErrMsg(err);
+	return;
+  }
+
+  err = validateUsername(creds.username);
+  if(err){
+	CustomErrMsg(err);
+	return;
   }
 
   $.ajax({
@@ -98,8 +218,8 @@ function addUser()
       CustomErrMsg("Add user failed");
     }
     else{
-	  $("#add-username").val("");
-	  $("#add-password").val("");
+	  $("#ipm-username").val("");
+	  $("#ipm-password").val("");
       get_user_list();
 	}
   })
@@ -128,7 +248,7 @@ function delUser()
   });
 }
 
-function clickAddOrDelUser(retry)
+function clickAddOrDelUser()
 {
   $.ajax({
     url: "plugins/usermanage/html/add_del_user.html",
@@ -144,16 +264,11 @@ function clickAddOrDelUser(retry)
     get_user_list();
   })
   .fail(function() {
-    if (retry < 5){
-      retry++;
-      clickAddOrDelUser(retry);
-    } else {
-      consoleLog("Retry max attempt reached");
-    }
+      consoleLog("Failed to get add_del_user.html");
   });
 }
 
-function clickUpdatePassword(retry)
+function clickUpdatePassword(message)
 {
   $.ajax({
     url: "plugins/usermanage/html/update_password.html",
@@ -164,15 +279,10 @@ function clickUpdatePassword(retry)
   .done( function(data) {
     $('#main_section').html(data);
     clearReturnData();
-    $("#helpText").html("Update login user password.");
+    $("#helpText").html(message);
     $(".infoText").addClass("hidden");
   })
   .fail(function() {
-    if (retry < 5){
-      retry++;
-      clickUpdatePassword(retry);
-    } else {
-      consoleLog("Retry max attempt reached");
-    }
+      consoleLog("Failed to get update_password.html");
   });
 }

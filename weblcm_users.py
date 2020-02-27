@@ -20,6 +20,7 @@ class UserManage(object):
 	def PUT(self):
 		result = {
 			'SDCERR': 1,
+			'REDIRECT': 0,
 		}
 		post_data = cherrypy.request.json
 		username = cherrypy.session.get('USER')
@@ -33,6 +34,8 @@ class UserManage(object):
 			passwords[username]['password'] = hashlib.sha256(salt.encode() + new_password.encode()).hexdigest()
 			with open(weblcm_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini', 'w') as configfile:
 				passwords.write(configfile)
+			if current_password == "summit" and username == "root":
+				result['REDIRECT'] = 1
 			result['SDCERR'] = 0
 
 		return result
@@ -96,6 +99,7 @@ class LoginManage(object):
 	def POST(self):
 		result = {
 			'SDCERR': 1,
+			'REDIRECT': 0,
 		}
 		post_data = cherrypy.request.json
 		passwords.read(weblcm_def.WEBLCM_PYTHON_CONF_DIR + 'hash.ini')
@@ -104,6 +108,9 @@ class LoginManage(object):
 			if attempted_password == passwords[post_data['username']]['password']:
 				cherrypy.session['USER'] = post_data.get('username')
 				result['SDCERR'] = 0
+				"""Redirect to password update page"""
+				if post_data.get('password') == "summit" and post_data.get('username') == "root":
+					result['REDIRECT'] = 1
 
 		return result
 
