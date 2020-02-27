@@ -3,7 +3,7 @@ import cherrypy
 WEBLCM_PYTHON_BUILD = '0.0.0.0'
 WEBLCM_PYTHON_VERSION = '0.0.0.0'
 
-WEBLCM_PYTHON_CONF_DIR = '/etc/weblcm-python/'
+WEBLCM_PYTHON_CONF_DIR = '/data/secret/weblcm-python/'
 
 WIFI_DEVICE_NAME =				'wlan0'
 WIFI_DRIVER_DEBUG_PARAM =		'/sys/module/lrdmwl/parameters/lrd_debug'
