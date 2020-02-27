@@ -52,27 +52,6 @@
 
 		var defines;
 
-		$.ajax({
-			url: "definitions",
-			type: "GET",
-			contentType: "application/json",
-		})
-		.done(function( data ) {
-			defines = data;
-			weblcm_init();
-		});
-
-		//TBD: HTMLs should be loaded per user
-		function weblcm_init(){
-			var index = 0;
-			plugins = ["networking", "logging", "swupdate", "usermanage", "filemanage"];
-			for (var i = 0; i < plugins.length; i++){
-				loadjscssfile(plugins[i], "js");
-				addPlugin(plugins[i]);
-				index++;
-			}
-		}
-
 		function consoleLog(message){
 			console.log(message);
 		}
@@ -93,10 +72,19 @@
 		}
 
 		function addPlugin(key){
-			var ma = document.getElementById(key+"_frame").contentDocument.getElementById(key+"_main_menu");
-			var mi = document.getElementById(key+"_frame").contentDocument.getElementById(key+"_mini_menu");
-			$("#main_menu").append(ma);
-			$("#mini_menu").append(mi);
+			var main_item = $("#"+key+"_frame").contents().find("#"+key+"_main_menu")[0];
+			var mini_item = $("#"+key+"_frame").contents().find("#"+key+"_mini_menu")[0];
+			$("#main_menu").append(main_item);
+			$("#mini_menu").append(mini_item);
+		}
+
+		//TBD: HTMLs should be loaded per user
+		function weblcm_init(){
+			plugins = ["networking", "logging", "swupdate", "usermanage", "filemanage", "advanced"];
+			for (var i = 0; i < plugins.length; i++){
+				loadjscssfile(plugins[i], "js");
+				addPlugin(plugins[i]);
+			}
 		}
 
 		function clearReturnData(){
@@ -263,16 +251,23 @@
 		function enterKeyPress(e){
 			if(e.keyCode === 13){ //enter key
 				e.preventDefault();
-				login(0);
+				login();
 			}
 		}
 
-		function login(retry){
+		function login(user, passwd){
 			var creds = {
-				username: document.getElementById("username").value,
-				password: document.getElementById("password").value,
+				username: $("#username").val(),
+				password: $("#password").val(),
 			}
 
+			if (user != undefined) {
+				creds.username = user;
+			}
+
+			if (passwd != undefined) {
+				creds.password = passwd;
+			}
 			// Clear any old return code message
 			clearReturnData()
 
@@ -286,8 +281,16 @@
 				if (data.SDCERR == defines.SDCERR.SDCERR_SUCCESS){
 					$("#loggin").addClass("hidden");
 					$("#loggout").removeClass("hidden");
-					$(".locked").removeClass("hidden");
 					clearReturnData();
+					if (data.REDIRECT == 1){
+						$("#networking_main_menu").addClass("hidden");
+						$("#networking_mini_menu").addClass("hidden");
+						clickUpdatePassword("WARNING: please update the default password!");
+					}
+					else{
+						$(".locked").removeClass("hidden");
+						clickStatusPage();
+					}
 				} else {
 					CustomErrMsg("Credentials are invalid");
 				}
@@ -296,16 +299,10 @@
 			})
 			.fail(function(data) {
 				consoleLog("Error, couldn't get login.. retrying");
-				if (retry < 5){
-					retry++;
-					login(retry);
-				} else {
-					consoleLog("Retry max attempt reached");
-				}
 			});
 		}
 
-		function logout(retry){
+		function logout(){
 			$.ajax({
 				url: "logout",
 				data: {},
@@ -326,12 +323,6 @@
 			})
 			.fail(function() {
 				consoleLog("Error, couldn't get logout.. retrying");
-				if (retry < 5){
-					retry++;
-					logout(retry);
-				} else {
-					consoleLog("Retry max attempt reached");
-				}
 			});
 		}
 
@@ -341,6 +332,19 @@
 			$(".locked").addClass("hidden");
 			clickStatusPage();
 		}
+
+		$(document).ready(function() {
+			$.ajax({
+				url: "definitions",
+				type: "GET",
+				contentType: "application/json",
+			})
+			.done(function( data ) {
+				defines = data;
+				weblcm_init();
+			});
+		});
+
 		</script>
 
 	</head>
@@ -352,6 +356,7 @@
 		<iframe id="swupdate_frame" src="plugins/swupdate/swupdate.html" style="display: none;"></iframe>
 		<iframe id="usermanage_frame" src="plugins/usermanage/usermanage.html" style="display: none;"></iframe>
 		<iframe id="filemanage_frame" src="plugins/filemanage/filemanage.html" style="display: none;"></iframe>
+		<iframe id="advanced_frame" src="plugins/advanced/advanced.html" style="display: none;"></iframe>
 
 		<nav class="navbar navbar-inverse navbar-fixed-top">
 			<div class="container-fluid">
@@ -377,12 +382,12 @@
 							<input type="password" id="password" placeholder="Password" class="form-control" onkeypress="enterKeyPress(event)">
 						</div>
 						<div class="form-group">
-							<input type="button" onclick="login(0)" class="btn btn-default" href="#" value="Sign in">
+							<input type="button" onclick="login()" class="btn btn-default" href="#" value="Sign in">
 						</div>
 					</form>
 					<form id="loggout" class="navbar-form navbar-right hidden">
 						<div class="form-group">
-							<a type="button" onclick="logout(0)" class="btn btn-default" href="#">Log out</a>
+							<a type="button" onclick="logout()" class="btn btn-default" href="#">Log out</a>
 						</div>
 					</form>
 					<ul class="nav navbar-nav navbar-right visible-xs" id="mini_menu">

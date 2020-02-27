@@ -1,7 +1,6 @@
 [Unit]
 Description=SWUpdate daemon
-Wants=weblcm-python
-Before=weblcm-python
+Before=weblcm-python.service
 
 [Service]
 ExecStart=/usr/sbin/swupdate.sh
