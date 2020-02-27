@@ -104,7 +104,7 @@ function update_end() {
   });
 }
 
-function clickSWUpdatePage(retry) {
+function clickSWUpdatePage() {
   $.ajax({
     url: "plugins/swupdate/html/swupdate.html",
     data: {},
@@ -112,17 +112,15 @@ function clickSWUpdatePage(retry) {
     dataType: "html",
   })
   .done(function(data){
+    $("li").removeClass("active");
+    $("#swupdate_main_menu").addClass("active");
+    $("#swupdate_mini_menu").addClass("active");
     $('#main_section').html(data);
     clearReturnData();
     $(".infoText").addClass("hidden");
     $("#helpText").html("Firmware Update");
   })
   .fail(function(){
-    if (retry < 5){
-      retry++;
-	  clickSWUpdatePage(retry);
-    } else {
-      console.log("Error, couldn't get swupdate.html");
-    }
+    console.log("Error, couldn't get swupdate.html");
   });
 }
