@@ -351,3 +351,37 @@ NM_DBUS_API_TYPES = {
 		'NM_SETTING_WIRELESS_POWERSAVE_ENABLE':3,
 	},
 }
+
+USER_PERMISSION_TYPES = {
+	'UserPermssionTypes':[
+		"networking_status",
+		"networking_version",
+		"networking_connections",
+		"networking_edit",
+		"networking_activate",
+		"networking_ap_activate",
+		"networking_delete",
+		"networking_scan",
+		"logging",
+		"update_password",
+		"swupdate",
+		"advanced",
+		#Root permissions only
+		"add_del_user",
+	],
+	'UserPermssionAttrs':[
+		["Networking Status", "checked", "disabled"],
+		["Version", "checked", "disabled"],
+		["View Connections", "checked", "disabled"],
+		["Edit Connection","", ""],
+		["Activate Connection", "", ""],
+		["Activate AP", "", ""],
+		["Delete Connection", "", ""],
+		["Wifi Scan","", ""],
+		["Logging", "", ""],
+		["Update Password", "checked", "disabled"],
+		["Firmware Update", "", ""],
+		["Advanced", "", ""],
+		["", "", ""],
+	],
+}

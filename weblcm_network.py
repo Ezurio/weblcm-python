@@ -127,13 +127,14 @@ class NetworkStatus(object):
 					ap_data = {
 						'Ssid': dev.ActiveAccessPoint.Ssid,
 						'HwAddress': dev.ActiveAccessPoint.HwAddress,
-						'Strength': dev.ActiveAccessPoint.Strength,
+						'Strength': 100 if dev.Mode == 3 else dev.ActiveAccessPoint.Strength,
 						'Maxbitrate': dev.ActiveAccessPoint.MaxBitrate,
 						'Frequency': dev.ActiveAccessPoint.Frequency,
 						'Flags': dev.ActiveAccessPoint.Flags,
 						'Wpaflags': dev.ActiveAccessPoint.WpaFlags,
 						'Rsnflags': dev.ActiveAccessPoint.RsnFlags
 					}
+
 					interface[interface_name]['activeaccesspoint'] = ap_data
 
 				interface[interface_name]['status'] = interface_status
@@ -157,14 +158,24 @@ class NetworkConnections(object):
 
 		connections = NetworkManager.Settings.ListConnections()
 		result['length'] = len(connections)
-		for conn in connections:
-			settings = conn.GetSettings()['connection']
-			result['connections'][settings['uuid']] = [settings['id'], 0]
+		for c in connections:
+
+			connection = {}
+			all_settings = c.GetSettings()
+			settings = all_settings.get('connection')
+			connection['id'] = settings['id']
+			connection['activated'] = 0
+
+			wifi_settings = all_settings.get('802-11-wireless')
+			if wifi_settings and wifi_settings['mode'] == "ap":
+				connection['type'] = "ap"
+
+			result['connections'][settings['uuid']] = connection
 
 		devices = NetworkManager.NetworkManager.GetDevices()
 		for dev in devices:
 			if dev.ActiveConnection:
-				result['connections'][dev.ActiveConnection.Uuid][1] = 1
+				result['connections'][dev.ActiveConnection.Uuid]['activated'] = 1
 
 		result['SDCERR'] = 0
 		return result
@@ -194,8 +205,8 @@ class NetworkConnection(object):
 				for conn in NetworkManager.NetworkManager.ActiveConnections:
 					if uuid == conn.Connection.GetSettings()['connection']['uuid']:
 						NetworkManager.NetworkManager.DeactivateConnection(conn)
-						result['SDCERR'] = 0
 						break;
+				result['SDCERR'] = 0
 		except Exception as e:
 			print(e)
 
@@ -242,6 +253,9 @@ class NetworkConnection(object):
 								new_settings['802-1x']['phase2-client-cert'] = weblcm_def.FILEDIR_DICT.get('cert') + new_settings['802-1x'].get('phase2-client-cert');
 							if new_settings['802-1x'].get('phase2-private-key'):
 								new_settings['802-1x']['phase2-private-key'] = weblcm_def.FILEDIR_DICT.get('cert') + new_settings['802-1x'].get('phase2-private-key');
+
+				new_settings['ipv4'] = post_data.get('ipv4');
+				new_settings['ipv6'] = post_data.get('ipv6');
 
 				connections = NetworkManager.Settings.ListConnections()
 				connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in connections])

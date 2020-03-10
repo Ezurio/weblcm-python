@@ -4,19 +4,25 @@
   Contact: support@lairdconnect.com
 -->
 <html>
-	<form class="col-xs-12 col-sm-12 placeholder">
+	<form class="col-xs-12">
+		<h4>User List</h4>
 		<table id="table-user" class="table">
 			<thead>
 				<tr>
-					<th class="col-xs-2 text-center">#</th>
-					<th class="col-xs-6 text-center">username</th>
-					<th class="col-xs-4 text-center"></th>
+					<th class="col-xs-3 text-center"></th>
+					<th class="col-xs-3 text-center"></th>
+					<th class="col-xs-3 text-center"></th>
+					<th class="col-xs-3 text-center"></th>
 				</tr>
 			</thead>
 			<tbody>
 			</tbody>
 		</table>
-		<h3>Add New User</h3>
+		<br>
+		<h4>User Permission</h4>
+		<div id="checkbox-group-user-permission" class="form-group">
+		</div>
+		<br>
 		<div class="form-group">
 			<label for="usrname" class="pull-left">Username:</label>
 			<input type="text" class="form-control" id="ipm-username" name="add-username"  pattern=".{4,64}" title="4 to 32 characters, contain only lowercase, uppercase, number and underscore" placeholder="username"  required>
@@ -26,9 +32,10 @@
 			<input type="password" class="form-control" id="ipm-password" name="add-password" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,64}$" title="8-64 characters, at least one uppercase letter, one lowercase letter, one number and one special character(@$!%*?&)" placeholder="password" onblur="addPasswdInputOnblur('input-password-message')" onfocus="addPasswdInputOnfocus('input-password-message', 'ipm')" onkeyup="addPasswdInputOnkeyup('ipm')" required>
 		</div>
 		<div class="form-group pull-left">
-			<input type="button" onclick="addUser()" class="btn btn-primary" value="Submit" id="bt-add-user">
+			<input type="button" onclick="addUser()" class="btn btn-primary" value="Add User" id="bt-add-user">
 		</div>
 	</form>
+	<br>
 	<div id="input-password-message" class="hidden text-left">
 		<p><b>Password must contain the following:</b></p>
 		<p id="ipm-lower" class="text-danger">A <b>lowercase</b> letter</p>
