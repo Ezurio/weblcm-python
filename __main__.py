@@ -53,10 +53,11 @@ def force_tls():
 cherrypy.request.hooks.attach('on_start_resource', force_tls)
 
 def setup_http_server():
-    httpServer = cherrypy._cpserver.Server()
-    httpServer.socket_host = "0.0.0.0"
-    httpServer.socket_port = 80
-    httpServer.subscribe()
+	httpServer = cherrypy._cpserver.Server()
+	httpServer.socket_host = "0.0.0.0"
+	httpServer.socket_port = 80
+	httpServer.thread_pool = 0
+	httpServer.subscribe()
 
 if __name__ == '__main__':
 
