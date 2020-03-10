@@ -17,6 +17,7 @@ LOGGING_SYSD_JOURNAL_LOG_NAME =	"SOM60_SYSD_JOURNAL.txt"
 FILEDIR_DICT = {
 	'cert' : '/data/secret/weblcm-python/ssl/',
 	'profile' : '/data/secret/NetworkManager/system-connections/',
+	'config' : '/data/secret/',
 };
 
 FILEFMT_DICT = {

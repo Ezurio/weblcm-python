@@ -6,7 +6,7 @@ import time
 import cherrypy
 from cherrypy.lib import static
 import weblcm_def
-import tarfile
+import subprocess
 
 def save_file(typ, fil):
 	f = os.path.normpath(os.path.join(weblcm_def.FILEDIR_DICT.get(typ), fil.filename))
@@ -17,7 +17,7 @@ def save_file(typ, fil):
 				break
 			out.write(data)
 		out.close();
-	return
+	return f
 
 @cherrypy.expose
 class FileManage(object):
@@ -57,40 +57,58 @@ class FileManage(object):
 		return files
 
 @cherrypy.expose
-class TarFileManage(object):
+class ArchiveFilesManage(object):
 	"""
-		Manage tared certificate/profile files.
+		Manage archive files.
 	"""
-	def POST(self, typ, fil):
+	def POST(self, fil, typ, passwd):
 
-		def extract_tarfile(output_filename, target_dir):
-			with tarfile.open(output_filename, "r:gz") as tar:
-				tar.extractall(target_dir)
-				tar.close()
+		res = 1
 
-		for name in os.listdir(weblcm_def.FILEDIR_DICT.get(typ)):
-			os.remove(weblcm_def.FILEDIR_DICT.get(typ) + name);
+		f = save_file(typ, fil)
+		if os.path.exists(f):
+			p = subprocess.Popen([
+				'/usr/sbin/weblcm_file_import_export.sh', "config", "unzip",
+				f, weblcm_def.FILEDIR_DICT.get(typ), passwd
+			])
+			res = p.wait()
+			os.unlink(f)
+		if res:
+			raise cherrypy.HTTPError(500)
 
-		save_file(typ, fil)
+	def GET(self, typ, passwd):
 
-		f = os.path.normpath(os.path.join(weblcm_def.FILEDIR_DICT.get(typ), fil.filename))
-		extract_tarfile(f, weblcm_def.FILEDIR_DICT.get(typ))
-		os.unlink(f)
-		return;
-
-	def GET(self, typ):
-
-		def make_tarfile(output_filename, source_dir):
-			with tarfile.open(output_filename, "w:gz") as tar:
-				for name in os.listdir(source_dir):
-					tar.add(source_dir+name, arcname=os.path.basename(name))
-				tar.close()
-
-		fil = typ +".tgz"
-		f = os.path.normpath(os.path.join("/tmp/", fil))
+		fil = typ + ".zip"
+		f = "/tmp/" + fil
 		if os.path.exists(f):
 			os.remove(f)
-		make_tarfile(f, weblcm_def.FILEDIR_DICT.get(typ))
+
+		if typ == "config":
+			p = subprocess.Popen([
+				'/usr/sbin/weblcm_file_import_export.sh', "config", "zip",
+				weblcm_def.FILEDIR_DICT.get(typ), f, passwd
+			])
+		elif typ == "log":
+			p = subprocess.Popen([
+				'/usr/sbin/weblcm_file_import_export.sh', "log", "zip",
+				cherrypy.request.app.config['weblcm']['log_data_dir'], f, passwd
+			])
+		else:
+			p = subprocess.Popen([
+				'/usr/sbin/weblcm_file_import_export.sh', "debug", "zip",
+				' '.join([cherrypy.request.app.config['weblcm']['log_data_dir'], weblcm_def.FILEDIR_DICT.get('config')]),
+				f, cherrypy.request.app.config['weblcm']['cert_for_file_encryption']
+			])
+		p.wait()
 
 		if os.path.exists(f):
 			return static.serve_file(f, 'application/x-download', 'attachment', fil)
+
+		raise cherrypy.HTTPError(500)
+
+	def DELETE(self, typ):
+
+		fil = typ + ".zip"
+		f = "/tmp/" + fil
+		if os.path.exists(f):
+			os.remove(f)
