@@ -53,6 +53,13 @@
 							<label class="pull-left" for="ssid">SSID:</label>
 							<input type="text" class="form-control" id="ssid" maxlength="32">
 						</div>
+						<div class="form-group" id="radio-mode-display">
+							<label class="pull-left" for="radio-mode">Radio Mode:</label>
+							<select class="form-control" id="radio-mode" onchange="onChangeRadioMode()">
+								<option value="infrastructure" selected>Infrastructure</option>
+								<option value="ap">AP</option>
+							</select>
+						</div>
 						<div class="form-group">
 							<label class="pull-left" for="client-name">Client Name:</label>
 							<input type="text" class="form-control" id="client-name" maxlength="16">
@@ -62,11 +69,30 @@
 							<input type="text" class="form-control" id="tx-power" value="Auto">
 						</div>
 						<div class="form-group">
-							<label class="pull-left" for="band">Radio Band:</label>
-							<select class="form-control" id="band">
+							<label class="pull-left" for="radio-band">Radio Band:</label>
+							<select class="form-control" id="radio-band">
 								<option value="default">Default</option>
 								<option value="a">A</option>
 								<option value="bg">BG</option>
+							</select>
+						</div>
+						<div class="form-group hidden" id="radio-channel-display">
+							<label class="pull-left" for="radio-channel">Radio Channel:</label>
+							<input type="text" class="form-control" id="radio-channel" value="">
+						</div>
+						<div class="form-group" id="frequency-list-display">
+							<label class="pull-left" for="frequency-list">Frequency List:</label>
+							<input type="text" class="form-control" id="frequency-list" value="">
+						</div>
+						<div class="form-group" id="radio-bgscan-display">
+							<label class="pull-left" for="radio-bgscan">Scan Policy:</label>
+							<input type="text" class="form-control" id="radio-bgscan" value="" placeholder="laird:<t1>:<threshold-in-dbm>:<t2> Scan t1 seconds below threahold and t2 seconds above">
+						</div>
+						<div class="form-group">
+							<label class="pull-left" for="frequency-dfs">Enable DFS:</label>
+							<select class="form-control" id="frequency-dfs">
+								<option value=0>No</option>
+								<option value=1 selected>Yes</option>
 							</select>
 						</div>
 						<div class="form-group">

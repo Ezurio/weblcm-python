@@ -63,6 +63,7 @@ if __name__ == '__main__':
 	webapp = Root()
 
 	PLUGINS['networking'] = weblcm_def.NM_DBUS_API_TYPES
+	PLUGINS['usermanage'] = weblcm_def.USER_PERMISSION_TYPES
 
 	webapp.login = LoginManage()
 	webapp.logout = LogoutManage()

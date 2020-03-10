@@ -51,6 +51,8 @@
 		<script>
 
 		var defines;
+		var currUserPermission;
+		var currUser;
 
 		function consoleLog(message){
 			console.log(message);
@@ -285,14 +287,29 @@
 				if (data.SDCERR == defines.SDCERR.SDCERR_SUCCESS){
 					$("#loggin").addClass("hidden");
 					$("#loggout").removeClass("hidden");
+
 					clearReturnData();
+
+					currUser = creds.username;
+					currUserPermission = data.PERMISSION;
+
 					if (data.REDIRECT == 1){
 						$("#networking_main_menu").addClass("hidden");
 						$("#networking_mini_menu").addClass("hidden");
 						clickUpdatePassword("WARNING: please update the default password!");
 					}
 					else{
-						$(".locked").removeClass("hidden");
+						const MENU_ID_TYPE_OFFSET = 10; //"_main_menu"
+						$(".locked").each(function() {
+							let id = $(this).attr('id');
+							if (-1 !== currUserPermission.indexOf(id.slice(0, id.length - MENU_ID_TYPE_OFFSET))){
+								$(this).removeClass("hidden");
+							}
+						});
+						$("#networking_main_menu").removeClass("hidden");
+						$("#networking_mini_menu").removeClass("hidden");
+						$("#usermanage_main_menu").removeClass("hidden");
+						$("#usermanage_mini_menu").removeClass("hidden");
 						clickStatusPage();
 					}
 				} else {

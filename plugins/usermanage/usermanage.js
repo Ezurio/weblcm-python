@@ -5,7 +5,7 @@ function usermanageAUTORUN(retry) {
   return;
 }
 
-function addPasswdInputOnkeyup(prefix){
+function addPasswdInputOnkeyup(prefix) {
 
   var psw = $("#"+prefix+"-password");
 
@@ -102,8 +102,7 @@ function validatePassword(psw) {
   }
 }
 
-function updatePassword()
-{
+function updatePassword() {
   current_password = $("#current-password").val();
 
   new_password = $("#upm-password").val();
@@ -120,6 +119,7 @@ function updatePassword()
   }
 
   var creds = {
+    username: currUser,
     current_password: current_password,
     new_password: new_password,
   }
@@ -143,36 +143,43 @@ function updatePassword()
 }
 
 
-function create_user_list(data) {
+function createUserList(users) {
 
   var tbody = $("#table-user > tbody");
 
   tbody.empty()
 
-  for(i=0; i<data.length; i++)
-  {
-	row = '<tr>';
+  for (var name in users) {
+    row = '<tr permission="'+ users[name] + '">';
 
-	row += '<td>';
-	row += i.toString();
-	row += '</td>';
+    row += '<td>';
+    row += name;
+    row += '</td>';
 
-	row += '<td>';
-	row += data[i];
-	row += '</td>';
+    row += '<td>';
+    row += '<input type="button" class="btn btn-primary role="button" id="bt-load-permission-' + name + '" value="load perm" onclick="loadPermission()">';
+    row += '</td>';
 
-	row += '<td>';
-	row += '<input type="button" id=' + data[i] + ' name=' + data[i] + ' value="delete" class="btn btn-primary" role="button" onclick="delUser()">';
-	row += '</td>';
+    row += '<td>';
+    row += '<input type="button" class="btn btn-primary role="button" id="bt-update-permission-' + name + '" value="update perm" onclick="updatePermission()">';
+    row += '</td>';
 
-	row += '</tr>';
+    row += '<td>';
+    row += '<input type="button" id="bt-del-user-' + name + '" value="delete user" class="btn btn-primary" role="button" onclick="delUser()">';
+    row += '</td>';
 
-	tbody.append(row)
+    row += '</tr>';
+
+    tbody.append(row);
   }
+
+  $("#table-user tbody").on("click", "tr td:first-child", function(e){
+    row = $(this).closest('tr');
+    row.addClass('info').siblings().removeClass('info');
+  });
 }
 
-function get_user_list()
-{
+function get_user_list() {
   clearReturnData();
 
   $.ajax({
@@ -181,18 +188,52 @@ function get_user_list()
     contentType: "application/json",
   })
   .done(function(data) {
-    create_user_list(data);
+    createUserList(data);
+    clearPerm();
   })
   .fail(function() {
     consoleLog("Failed to get user list");
   });
 }
 
-function addUser()
-{
+function clearPerm() {
+
+  $("[id^=user-permission-]:checked").not(":disabled").each(function() {
+    $(this).prop('checked', false);
+  });
+
+}
+
+function setPerm(perm){
+
+  clearPerm();
+
+  let arr = perm.split(" ");
+  arr.forEach(function (item, index) {
+    $("#user-permission-"+item).prop('checked', true);
+  });
+}
+
+
+function getPerm() {
+  var perm = "";
+
+  $("[id^=user-permission-]").each(function() {
+    if ($(this).is(":checked")){
+      perm = $(this).attr("name").concat(" ", perm);
+    }
+  });
+
+  return perm;
+}
+
+function addUser() {
+  var perm = getPerm();
+
   var creds = {
     username: $("#ipm-username").val(),
     password: $("#ipm-password").val(),
+    permission: perm,
   }
 
   err = validatePassword(creds.password);
@@ -228,10 +269,60 @@ function addUser()
   });
 }
 
-function delUser()
-{
+function loadPermission(){
+  var id = event.srcElement.id;
+  var row = $("#"+id).closest('tr');
+  var perm = row.attr("permission");
+  setPerm(perm);
+  row.addClass('info').siblings().removeClass('info');
+}
+
+function updatePermission(){
+  var id = event.srcElement.id;
+  var row = $("#"+id).closest('tr');
+
+  if(!row.hasClass("info"))
+  {
+    CustomMsg("Please select user first by clicking user name", true);
+    return;
+  }
+
+  var perm = getPerm();
+  var creds = {
+    username: id.slice(21),
+    permission: perm,
+  };
+
   $.ajax({
-    url: "users?username="+event.srcElement.id,
+    url: "users",
+    contentType: "application/json",
+    data: JSON.stringify(creds),
+    type: "PUT",
+  })
+  .done(function(data) {
+    SDCERRtoString(data.SDCERR);
+    if(data['SDCERR'] == 0){
+      row.attr("permission", perm);
+      setPerm(perm);
+    }
+  })
+  .fail(function() {
+    consoleLog("Failed to update user permission");
+  });
+}
+
+function delUser(){
+  var id = event.srcElement.id;
+  var row = $("#"+id).closest('tr');
+
+  if(!row.hasClass("info"))
+  {
+    CustomMsg("Please select user first by clicking user name", true);
+    return;
+  }
+
+  $.ajax({
+    url: "users?username=" + id.slice(12),
     contentType: "application/json",
     type: "DELETE",
   })
@@ -248,8 +339,40 @@ function delUser()
   });
 }
 
-function clickAddOrDelUser()
-{
+function createPermissionsTable(){
+
+  var types = defines.PLUGINS.usermanage.UserPermssionTypes;
+  var attrs = defines.PLUGINS.usermanage.UserPermssionAttrs;
+  var j = 0;
+
+  for (var i=0; i<types.length; i++){
+    if (j == 0){
+      row = '<div class="row ">'
+    }
+    ++j;
+
+    row += '<div class="col-xs-4">';
+    if(attrs[i][0].length){
+      row += '<label class="pull-left">';
+      row += '<input type="checkbox" id="user-permission-' + types[i] + '" name="' + types[i] + '" ' + attrs[i][1] + " " + attrs[i][2] + '>';
+      row += attrs[i][0] + '</label>';
+    }
+    row += '</div>';
+
+    if (j == 3){
+      row += '</div>';
+      $("#checkbox-group-user-permission").append(row);
+      j = 0;
+    }
+  }
+
+  if (j != 0 && j != 3){
+    row += '</div>';
+    $("#checkbox-group-user-permission").append(row);
+  }
+}
+
+function clickAddOrDelUser(){
   $.ajax({
     url: "plugins/usermanage/html/add_del_user.html",
     data: {},
@@ -264,6 +387,7 @@ function clickAddOrDelUser()
     clearReturnData();
     $("#helpText").html("Add/delete users");
     $(".infoText").addClass("hidden");
+    createPermissionsTable();
     get_user_list();
   })
   .fail(function() {
@@ -271,8 +395,7 @@ function clickAddOrDelUser()
   });
 }
 
-function clickUpdatePassword(message)
-{
+function clickUpdatePassword(message){
   $.ajax({
     url: "plugins/usermanage/html/update_password.html",
     data: {},
