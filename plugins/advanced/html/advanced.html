@@ -6,10 +6,50 @@
 
 <html>
 	<div class="col-xs-12">
-		<div class="btn-group-vertical pull-left">
-			<button type="button" id="bt-factory-reset" class="btn btn-warning" onclick="factoryReset()">Factory Reset</button>
+		<form method="POST" id="form-import-config" enctype="multipart/form-data">
+			<div class="input-group">
+				<input type="hidden" name="typ" value="config">
+				<span class="input-group-addon">Select config archive:</span>
+				<input type="file" class="form-control-file" id="input-file-config" name="fil" accept=".zip"/>
+			</div>
+			<div class="input-group">
+				<input type="password" class="form-control" id="config-decrypt-passwd" name="passwd" placeholder="Please input decryption password">
+				<span class="input-group-btn">
+					<button type="button" onclick="importArchive('config')" id="bt-import-config" class="btn-block btn btn-primary">import network configuration</button>
+				</span>
+			</div>
+		</form>
+		<br>
+		<form>
+			<div class="input-group">
+				<input type="password" class="form-control" id="config-encrypt-passwd" placeholder="Please input encryption password">
+				<span class="input-group-btn">
+					<button type="button" onclick="exportArchive('config')" id="bt-export-config" class="btn btn-primary">export network configuration</button>
+				</span>
+			</div>
 			<br>
-			<button type="button" id="bt-reboot" class="btn btn-warning" onclick="reboot(true)">Reboot</button>
-		</div>
+			<div class="input-group">
+				<input type="password" class="form-control" id="log-encrypt-passwd" placeholder="Please input encryption password">
+				<span class="input-group-btn">
+					<button type="button" onclick="exportArchive('log')" id="bt-export-log" class="btn btn-primary">export system log</button>
+				</span>
+			</div>
+			<br>
+			<div class="input-group">
+				<span class="input-group-btn">
+					<button type="button" onclick="exportArchive('debug')" id="bt-export-debug" class="btn btn-primary pull-right">export debug data</button>
+				</span>
+			</div>
+			<br>
+			<div class="btn-group btn-group-justified" role="group" aria-label="...">
+				<div class="btn-group" role="group">
+					<button type="button" id="bt-reboot" class="btn btn-warning" onclick="reboot(true)">Reboot</button>
+				</div>
+				<div class="btn-group" role="group">
+					<button type="button" id="bt-factory-reset" class="btn btn-danger" onclick="factoryReset()">Factory Reset</button>
+				</div>
+			</div>
+			<a class="btn btn-primary hidden" id="archor-link-export-archive" role="button" href="#"></a>
+		</form>
 	</div>
 </html>

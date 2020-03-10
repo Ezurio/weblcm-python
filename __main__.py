@@ -8,7 +8,7 @@ from weblcm_network import NetworkStatus, NetworkInterfaces, NetworkConnections,
 from weblcm_log import LogData, LogLevel
 from weblcm_swupdate import SWUpdate
 from weblcm_users import UserManage, LoginManage, LogoutManage
-from weblcm_files import FileManage, TarFileManage
+from weblcm_files import FileManage, ArchiveFilesManage
 from weblcm_advanced import Reboot, FactoryReset
 
 PLUGINS = {
@@ -33,6 +33,7 @@ if not os.path.exists(weblcm_def.FILEDIR_DICT.get('profile')):
 	"""Change default directories for som60sd"""
 	weblcm_def.FILEDIR_DICT['profile']='/etc/NetworkManager/system-connections/'
 	weblcm_def.FILEDIR_DICT['cert']='/etc/weblcm-python/ssl/'
+	weblcm_def.FILEDIR_DICT['config']='/etc/'
 
 if not os.path.exists(weblcm_def.WEBLCM_PYTHON_CONF_DIR):
 	weblcm_def.WEBLCM_PYTHON_CONF_DIR = '/etc/weblcm-python/'
@@ -78,7 +79,7 @@ if __name__ == '__main__':
 
 	webapp.users = UserManage()
 	webapp.files = FileManage()
-	webapp.tarfiles = TarFileManage()
+	webapp.archiveFiles = ArchiveFilesManage()
 
 	swu = SWUpdate()
 	webapp.update_firmware = swu.update_firmware
