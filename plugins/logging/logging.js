@@ -27,6 +27,9 @@ function submitLogLevel(retry){
 
 function queryLogData() {
 
+  $("#bt-query-log").prop("disabled", true);
+  $("#bt-query-log").val("Querying...");
+
   $.ajax({
     url: "logData",
     type: "GET",
@@ -41,9 +44,6 @@ function queryLogData() {
 
     strLevel = ["Emerg", "Alert", "Critical", "Error", "Warning", "Notice", "Info", "Debug" ];
 
-    $("#bt-query-log").prop("disabled", true);
-    $("#bt-query-log").val("Querying...");
-
     table = $("#table-log-data").DataTable();
     table.clear().draw();
 
@@ -57,6 +57,8 @@ function queryLogData() {
     $("#bt-query-log").val("Query");
   })
   .fail(function() {
+    $("#bt-query-log").prop("disabled", false);
+    $("#bt-query-log").val("Query");
     consoleLog("Request log failed");
   });
 }
@@ -97,22 +99,9 @@ function clickLoggingPage(retry){
       ordering: false,
       responsive: true,
       bAutoWidth: false,
-	  dom: "<'row'<'pull-left'l><'pull-right'B>>" + "<'row'<'col-xs-12'tr>>" + "<'row'<'col-xs-12 col-md-5'i><'col-xs-12 col-md-7'p>>",
+	  dom: '<l<t>ip>',
       "pagingType": "full",
       "pageLength": 25,
-      buttons: [
-        {
-          extend: "csvHtml5",
-          filename: "log",
-          text: "Download",
-          className: "btn btn-primary",
-          exportOptions: {
-            modifier: {
-              search: "none"
-            }
-          }
-        },
-      ],
       columnDefs: [
         {
           targets: '_all',

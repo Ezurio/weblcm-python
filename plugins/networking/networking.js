@@ -251,7 +251,7 @@ function resetPhase2AuthSetting(wxs, method, disabled) {
   $("#"+disabled).val(parseSettingData(wxs, disabled, "none"));
 
   var auth = $("#"+method).val();
-  if (auth.includes("tls")) {
+  if (-1 !== auth.indexOf("tls")) {
     $("#phase2-ca-cert-display").removeClass("hidden");
     $("#phase2-ca-cert").val(parseSettingData(wxs, "phase2-ca-cert", ""));
     $("#phase2-client-cert-display").removeClass("hidden");
@@ -299,7 +299,7 @@ function resetEapSetting(wxs){
     $("#pac-file-password-display").removeClass("hidden");
     $("#phase1-fast-provisioning-display").removeClass("hidden");
     $("#phase1-fast-provisioning").val(parseSettingData(wxs, "phase1-fast-provisioning", "0"));
-  } else if (eap.includes("tls")) {
+  } else if (-1 !== eap.indexOf("tls")) {
     $("#ca-cert-display").removeClass("hidden");
     $("#ca-cert").val(parseSettingData(wxs, "ca-cert", ""));
     $("#client-cert-display").removeClass("hidden");
@@ -309,7 +309,7 @@ function resetEapSetting(wxs){
     $("#private-key-password-display").removeClass("hidden");
     $("#tls-disable-time-checks-display").removeClass("hidden");
     $("#tls-disable-time-checks").val(parseSettingData(wxs, "tls-disable-time-checks", "1"));
-  } else if (eap.includes("ttls")) {
+  } else if (-1 !== eap.indexOf("ttls")) {
     $("#ca-cert-display").removeClass("hidden");
     $("#ca-cert").val(parseSettingData(wxs, "ca-cert", ""));
     $("#client-cert-display").removeClass("hidden");
@@ -371,6 +371,12 @@ function resetWirelessSecuritySettings(wss, wxs){
 function onChangeKeymgmt(){
   resetWirelessSecuritySettings();
 }
+
+var statusUpdateTimerId;
+function setIntervalUpdate(functionName){
+  statusUpdateTimerId = setTimeout(functionName, 10000)
+}
+
 
 function updateStatus(){
   panel_collapse_id_prefix = "panel-collapse-";
@@ -506,12 +512,9 @@ function updateStatus(){
     }
   })
   .fail(function(data) {
+    clearTimeout(statusUpdateTimerId);
     consoleLog("Failed to get status");
   });
-}
-
-function setIntervalUpdate(functionName){
-  setTimeout(functionName, 10000)
 }
 
 function clickStatusPage() {
@@ -530,6 +533,7 @@ function clickStatusPage() {
     clearReturnData();
     $("#helpText").html("This page shows the current state of networking");
     $(".infoText").addClass("hidden");
+    clearTimeout(statusUpdateTimerId);
     updateStatus();
   })
   .fail(function() {
@@ -570,7 +574,13 @@ function getWifiConnection(settings){
     $("#tx-power").val(txpower.toString());
   }
 
-  $("#band").val(parseSettingData(settings['802-11-wireless'], "band", "default"));
+  $("#radio-band").val(parseSettingData(settings['802-11-wireless'], "band", "default"));
+  $("#radio-channel").val(parseSettingData(settings['802-11-wireless'], "channel", ""));
+  $("#radio-bgscan").val(parseSettingData(settings['802-11-wireless'], "bgscan", ""));
+  $("#frequency-list").val(parseSettingData(settings['802-11-wireless'], "frequency-list", ""));
+  $("#frequency-dfs").val(parseSettingData(settings['802-11-wireless'], "frequency-dfs", 1));
+  $("#radio-mode").val(parseSettingData(settings['802-11-wireless'], "mode", "infrastructure"));
+  $("#radio-mode").change();
   $("#powersave").val(parseSettingData(settings['802-11-wireless'], "powersave", "0"));
 
   keymgmt = parseSettingData(settings['802-11-wireless-security'], "key-mgmt", "undefined");
@@ -656,24 +666,38 @@ function editConnection(uuid, id, ssid, key_mgmt) {
   })
   .done(function( data ) {
     $("li").removeClass("active");
-    $("#networking_add_main_menu").addClass("active");
-    $("#networking_add_mini_menu").addClass("active");
+    $("#networking_edit_main_menu").addClass("active");
+    $("#networking_edit_mini_menu").addClass("active");
     $("#main_section").html(data);
     clearReturnData();
     $("#helpText").html("Adjust connection settings.");
     $(".infoText").addClass("hidden");
-    getNetworkInterfaces();
-    getCerts();
-    updateGetConnectionPage(uuid, id, ssid, key_mgmt);
+
+    if(-1 == currUserPermission.indexOf("networking_ap_activate"))
+      $("#radio-mode-display").addClass("hidden");
+
+    $.when(getNetworkInterfaces(), getCerts()).done( function() {
+      updateGetConnectionPage(uuid, id, ssid, key_mgmt);
+    });
   })
   .fail(function() {
     consoleLog("Failed to get addConnection.html");
   });
 }
 
-function selectedConnection(uuid){
+function selectedConnection(){
   var uuid = $("#connectionSelect").val();
   editConnection(uuid, null, null, null);
+}
+
+function onChangeConnections(){
+  var activated = $("#connectionSelect option:selected").attr("activated");
+  if(activated == 1){
+    $("#bt-connection-activate").attr("value", "Deactivate");
+  }
+  else {
+    $("#bt-connection-activate").attr("value", "Activate");
+  }
 }
 
 function updateConnectionsPage(){
@@ -687,14 +711,14 @@ function updateConnectionsPage(){
       var sel = $("#connectionSelect");
       sel.empty();
       for (var UUID in msg.connections) {
-        var activated = msg.connections[UUID][1] == 1 ? ", activated" : ""
-        var name = msg.connections[UUID][0] + "(" + UUID + ")" + activated
-        var option = $("<option/>", {
-                     value: UUID,
-                     text:  name
-                   });
+        if ((msg.connections[UUID]["type"] == "ap") && (-1 == currUserPermission.indexOf("networking_ap_activate")))
+          continue;
+        var activated = msg.connections[UUID]["activated"];
+        var name = msg.connections[UUID]["id"] + "(" + UUID + ")";
+        var option = "<option value=" + UUID + " activated=" + activated + ">" + name + "</option>";
         sel.append(option);
       }
+      onChangeConnections();
     }
   })
   .fail(function() {
@@ -702,9 +726,9 @@ function updateConnectionsPage(){
   });
 }
 
-function activateConnection(activate){
+function activateConnection(){
   var data = {
-    activate: activate,
+    activate: $("#connectionSelect option:selected").attr("activated") != 1,
     UUID: $("#connectionSelect").val(),
   }
   $.ajax({
@@ -735,7 +759,7 @@ function removeConnection(){
   });
 }
 
-function clickConnectionEditPage() {
+function clickConnectionsPage() {
   $.ajax({
     url: "plugins/networking/html/connections.html",
     data: {},
@@ -744,20 +768,34 @@ function clickConnectionEditPage() {
   })
   .done( function( data ){
     $("li").removeClass("active");
-    $("#networking_edit_main_menu").addClass("active");
-    $("#networking_edit_mini_menu").addClass("active");
+    $("#networking_connections_main_menu").addClass("active");
+    $("#networking_connections_mini_menu").addClass("active");
+
     clearReturnData();
+
     $("#main_section").html(data);
     $("#helpText").html("These are the current networking connections.");
     $(".infoText").addClass("hidden");
+
     updateConnectionsPage();
+
+    if ((-1 !== currUserPermission.indexOf("networking_activate")) || (-1 !== currUserPermission.indexOf("networking_ap_activate"))){
+      $("#bt-connection-activate").prop("disabled", false);
+    }
+    if (-1 !== currUserPermission.indexOf("networking_edit")){
+      $("#bt-connection-edit").prop("disabled", false);
+    }
+    if (-1 !== currUserPermission.indexOf("networking_delete")){
+      $("#bt-connection-delete").prop("disabled", false);
+    }
+
   })
   .fail(function() {
     consoleLog("Failed to get connections.html");
   });
 }
 
-function clickAddConnectionPage() {
+function clickEditConnectionPage() {
   editConnection(null, null, null, "none")
 }
 
@@ -780,6 +818,8 @@ function prepareWirelessConnection() {
   ws = {};
   wss = {};
   wxs = {}
+  ipv4 = {};
+  ipv6 = {};
   settings = {};
 
   con['uuid'] = $("#connection-uuid").val();
@@ -787,22 +827,43 @@ function prepareWirelessConnection() {
   con['type'] = "802-11-wireless";
   con['interface-name'] = $("#interface-name").val();
 
-  v = $("#ssid").val();
-  ws['ssid'] = v;
+  v = $("#ssid").val().trim();
   if(!v)
     return settings;
+  ws['ssid'] = v;
 
-  v = $("#client-name").val();
+  v = $("#radio-mode").val();
+  ws['mode'] = v;
+  if(v == "ap"){
+    ipv4['method'] = "shared";
+  }
+
+  v = $("#client-name").val().trim();
   if(v)
     ws['client-name'] = v;
 
-  v = parseInt($("tx-power").val()) || 0;
+  v = parseInt($("#tx-power").val().trim()) || 0;
   if(v)
     ws['tx-power'] = v;
 
-  v = $("#band").val();
+  v = $("#radio-band").val();
   if(v != "default")
     ws['band'] = v;
+
+  v = $("#radio-channel").val().trim();
+  if(v)
+    ws['channel'] = parseInt(v);
+
+  v = $("#radio-bgscan").val().trim();
+  if(v)
+    ws['bgscan'] = v;
+
+  v = $("#frequency-list").val().trim();
+  if(v)
+    ws['frequency-list'] = v;
+
+  v = $("#frequency-dfs").val();
+  ws['frequency-dfs'] = parseInt(v);
 
   v = parseInt($("#powersave").val()) || 0;
   if(v)
@@ -941,6 +1002,8 @@ function prepareWirelessConnection() {
   settings['802-11-wireless'] = ws;
   settings['802-11-wireless-security'] = wss;
   settings['802-1x'] = wxs;
+  settings['ipv4'] = ipv4;
+  settings['ipv6'] = ipv6;
   return settings;
 }
 
@@ -1101,6 +1164,10 @@ function clickScanPage(){
     clearReturnData();
     $("#helpText").html("Scan for wireless networks");
     $(".infoText").addClass("hidden");
+
+    if (-1 !== currUserPermission.indexOf("networking_edit")){
+      $("#form-addWifiConnection").removeClass("hidden");
+    }
     getScan(0);
   })
   .fail(function() {
@@ -1221,4 +1288,22 @@ function getNetworkInterfaces(){
   .fail(function() {
     consoleLog("Failed to get interfaces");
   });
+}
+
+function onChangeRadioMode(){
+
+  var mode = $("#radio-mode").val();
+
+  switch(mode){
+    case "infrastructure":
+      $("#frequency-list-display").removeClass("hidden");
+      $("#radio-channel-display").addClass("hidden");
+      break;
+    case "ap":
+      $("#frequency-list-display").addClass("hidden");
+      $("#radio-channel-display").removeClass("hidden");
+      break;
+    default:
+      break;
+  }
 }
