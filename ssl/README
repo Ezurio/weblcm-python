@@ -21,3 +21,13 @@ domain name needs to be added to /etc/hosts (c:\windows\system32\drivers\etc\hos
 Example: add following items to /etc/hosts and access device by https://test.summit.com and https://som60.summit.com
 192.168.1.28 test.summit.com
 192.168.1.28 som60.summit.com
+
+
+=====Secure file transfer===============
+Reuse ca.key and ca.crt generated for https
+
+1. Encryption
+openssl smime -encrypt -aes256 -in test -binary -outform DER -out test.enc ca.crt
+
+2. Decryption
+openssl smime -decrypt -in test.enc -inform DER -inkey ca.key -out test

@@ -965,7 +965,7 @@ function addConnection() {
 		break;
 	}
 	if (!new_connection){
-	  CustomErrMsg("Invalid Settings");
+	  CustomMsg("Invalid Settings", true);
 	  return;
 	}
 	$.ajax({
@@ -978,7 +978,7 @@ function addConnection() {
 	  SDCERRtoString(msg.SDCERR);
 	});
   } else {
-	CustomErrMsg("Connection name can't be empty");
+	CustomMsg("Connection name can't be empty", true);
   }
 }
 
@@ -1146,8 +1146,7 @@ function getCerts(connection){
 
   $.ajax({
     url: "files?typ=cert",
-    type: "POST",
-    data: JSON.stringify(data),
+    type: "GET",
     contentType: "application/json",
   })
   .done(function(msg) {

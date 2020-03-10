@@ -80,7 +80,7 @@
 
 		//TBD: HTMLs should be loaded per user
 		function weblcm_init(){
-			plugins = ["networking", "logging", "swupdate", "usermanage", "filemanage", "advanced"];
+			plugins = ["networking", "logging", "swupdate", "usermanage", "advanced"];
 			for (var i = 0; i < plugins.length; i++){
 				loadjscssfile(plugins[i], "js");
 				addPlugin(plugins[i]);
@@ -140,13 +140,17 @@
 			returnData.appendChild(dismissButton);
 		}
 
-		function CustomErrMsg(message){
-			if (!sendNotification("Failure", message)){
+		function CustomMsg(message, err){
+				nMsg = err ? "Failure" : "Success";
+			if (!sendNotification(nMsg, message)){
 				if (message.length >= 20){
 					$("#returnDataNav").css( "fontSize", "12px" );
 				}
 				$("[id^='return']").removeClass();
-				$("[id^='return']").addClass("alert alert-dismissible alert-danger");
+				if(err)
+					$("[id^='return']").addClass("alert alert-dismissible alert-danger");
+				else
+					$("[id^='return']").addClass("alert alert-dismissible alert-success");
 				$("[id^='return']").html(message);
 				dismissibleAlerts();
 			}
@@ -292,7 +296,7 @@
 						clickStatusPage();
 					}
 				} else {
-					CustomErrMsg("Credentials are invalid");
+					CustomMsg("Credentials are invalid", true);
 				}
 				document.getElementById("username").value = null;
 				document.getElementById("password").value = null;
@@ -355,7 +359,6 @@
 		<iframe id="logging_frame" src="plugins/logging/logging.html" style="display: none;"></iframe>
 		<iframe id="swupdate_frame" src="plugins/swupdate/swupdate.html" style="display: none;"></iframe>
 		<iframe id="usermanage_frame" src="plugins/usermanage/usermanage.html" style="display: none;"></iframe>
-		<iframe id="filemanage_frame" src="plugins/filemanage/filemanage.html" style="display: none;"></iframe>
 		<iframe id="advanced_frame" src="plugins/advanced/advanced.html" style="display: none;"></iframe>
 
 		<nav class="navbar navbar-inverse navbar-fixed-top">

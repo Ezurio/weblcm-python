@@ -109,13 +109,13 @@ function updatePassword()
   new_password = $("#upm-password").val();
   err = validatePassword(new_password);
   if(err){
-	CustomErrMsg(err);
+	CustomMsg(err, true);
 	return;
   }
 
   confirm_password = $("#confirm-password").val();
   if (new_password !== confirm_password){
-	CustomErrMsg("Your password and confirmation password don't match");
+	CustomMsg("Your password and confirmation password don't match", true);
 	return;
   }
 
@@ -197,13 +197,13 @@ function addUser()
 
   err = validatePassword(creds.password);
   if(err){
-	CustomErrMsg(err);
+	CustomMsg(err, true);
 	return;
   }
 
   err = validateUsername(creds.username);
   if(err){
-	CustomErrMsg(err);
+	CustomMsg(err, true);
 	return;
   }
 
@@ -215,7 +215,7 @@ function addUser()
   })
   .done(function(data) {
     if(data['SDCERR'] == 1){
-      CustomErrMsg("Add user failed");
+      CustomMsg("Add user failed", true);
     }
     else{
 	  $("#ipm-username").val("");
@@ -237,7 +237,7 @@ function delUser()
   })
   .done(function(data) {
     if(data['SDCERR'] == 1){
-      CustomErrMsg("Delete user failed");
+      CustomMsg("Delete user failed", true);
     }
     else{
       get_user_list();
