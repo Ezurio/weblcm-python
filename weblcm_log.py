@@ -12,32 +12,39 @@ import weblcm_def
 class LogData(object):
 
 	@cherrypy.tools.accept(media='text/plain')
-	@cherrypy.tools.json_out()
+	@cherrypy.config(**{'response.stream': True})
 	def GET(self, typ, priority, days):
 
-		logs = []
+		cherrypy.response.headers['Content-Type'] = 'text/plain'
 
-		try:
-			reader = journal.Reader()
-			reader.log_level(int(priority))
-			if typ != "All":
-				reader.add_match(SYSLOG_IDENTIFIER=typ)
-			if int(days) > 0:
-				reader.seek_realtime(time.time() - int(days) * 86400)
+		reader = journal.Reader()
+		reader.log_level(int(priority))
+		if typ != "All":
+			reader.add_match(SYSLOG_IDENTIFIER=typ)
+		if int(days) > 0:
+			reader.seek_realtime(time.time() - int(days) * 86400)
+
+
+		def streaming():
+			logs = []
 			for entry in reader:
-				log = {}
-				log['time'] = str(entry.get('__REALTIME_TIMESTAMP', "None"))
-				log['priority'] = entry.get('PRIORITY', 7)
-				log['identifier'] = entry.get('SYSLOG_IDENTIFIER', "Unknown")
-				log['message'] = entry.get('MESSAGE', "None")
-				logs.append(log)
+				logs.append(str(entry.get('__REALTIME_TIMESTAMP', "Undefined")))
+				logs.append(str(entry.get('PRIORITY', 7)))
+				logs.append(entry.get('SYSLOG_IDENTIFIER', "Undefined"))
+				logs.append(entry.get('MESSAGE', "Undefined"))
+				if len(logs) == cherrypy.request.app.config['weblcm']['log_data_streaming_size']:
+					yield (":#:".join(logs) + ":#:")
+					logs.clear()
+			if len(logs) > 0:
+				yield ":#:".join(logs)
+				logs.clear()
+			reader.close()
 
-		except Exception as e:
-			print(e)
-		return logs
+
+		return streaming()
 
 @cherrypy.expose
-class LogLevel(object):
+class LogSetting(object):
 
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_in()

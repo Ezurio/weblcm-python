@@ -294,7 +294,6 @@ class NetworkConnection(object):
 			"""
 			if cert:
 				return cert[len(weblcm_def.FILEDIR_DICT.get('cert')):]
-			return
 
 		result = {
 			'SDCERR': 1,
@@ -326,33 +325,30 @@ class NetworkAccessPoints(object):
 			'accesspoints': {},
 		}
 		try:
-			try:
-				for dev in NetworkManager.Device.all():
-					if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
-						options = []
-						dev.RequestScan(options)
-			except Exception as e:
-				print(e)
+			for dev in NetworkManager.Device.all():
+				if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
+					options = []
+					dev.RequestScan(options)
 
 			i = 0;
 			for ap in NetworkManager.AccessPoint.all():
 				security_string = ""
 				keymgmt = 'none'
-				if ((ap.Flags & weblcm_def.NM_DBUS_API_TYPES['NM80211ApFlags']['NM_802_11_AP_FLAGS_PRIVACY']) and (ap.WpaFlags == weblcm_def.NM_DBUS_API_TYPES['NM80211ApSecurityFlags']['NM_802_11_AP_SEC_NONE']) and (ap.RsnFlags == weblcm_def.NM_DBUS_API_TYPES['NM80211ApSecurityFlags']['NM_802_11_AP_SEC_NONE'])):
+				if ((ap.Flags & NetworkManager.NM_802_11_AP_FLAGS_PRIVACY) and (ap.WpaFlags == NetworkManager.NM_802_11_AP_SEC_NONE) and (ap.RsnFlags == NetworkManager.NM_802_11_AP_SEC_NONE)):
 					security_string = security_string + 'WEP '
 					keymgmt = 'static'
 
-				if (ap.WpaFlags != weblcm_def.NM_DBUS_API_TYPES['NM80211ApSecurityFlags']['NM_802_11_AP_SEC_NONE']):
+				if (ap.WpaFlags != NetworkManager.NM_802_11_AP_SEC_NONE):
 					security_string = security_string + 'WPA1 '
 
-				if (ap.RsnFlags != weblcm_def.NM_DBUS_API_TYPES['NM80211ApSecurityFlags']['NM_802_11_AP_SEC_NONE']):
+				if (ap.RsnFlags != NetworkManager.NM_802_11_AP_SEC_NONE):
 					security_string = security_string + 'WPA2 '
 
-				if ((ap.WpaFlags & weblcm_def.NM_DBUS_API_TYPES['NM80211ApSecurityFlags']['NM_802_11_AP_SEC_KEY_MGMT_802_1X']) or (ap.RsnFlags & weblcm_def.NM_DBUS_API_TYPES['NM80211ApSecurityFlags']['NM_802_11_AP_SEC_KEY_MGMT_802_1X'])):
+				if ((ap.WpaFlags & NetworkManager.NM_802_11_AP_SEC_KEY_MGMT_802_1X) or (ap.RsnFlags & NetworkManager.NM_802_11_AP_SEC_KEY_MGMT_802_1X)):
 					security_string = security_string + '802.1X '
 					keymgmt = 'wpa-eap'
 
-				if ((ap.WpaFlags & weblcm_def.NM_DBUS_API_TYPES['NM80211ApSecurityFlags']['NM_802_11_AP_SEC_KEY_MGMT_PSK']) or (ap.RsnFlags & weblcm_def.NM_DBUS_API_TYPES['NM80211ApSecurityFlags']['NM_802_11_AP_SEC_KEY_MGMT_PSK'])):
+				if ((ap.WpaFlags & NetworkManager.NM_802_11_AP_SEC_KEY_MGMT_PSK) or (ap.RsnFlags & NetworkManager.NM_802_11_AP_SEC_KEY_MGMT_PSK)):
 					security_string = security_string + 'PSK'
 					keymgmt = 'wpa-psk'
 
