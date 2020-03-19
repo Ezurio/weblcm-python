@@ -5,14 +5,14 @@ function loggingAUTORUN(retry){
   return;
 }
 
-function submitLogLevel(retry){
+function submitlogSetting(retry){
   var data = {
     suppDebugLevel: $("#supp-debug-level").val(),
     driverDebugLevel: parseInt($("#driver-debug-level").val()),
   };
 
   $.ajax({
-    url: "logLevel",
+    url: "logSetting",
     type: "POST",
     data: JSON.stringify(data),
     contentType: "application/json",
@@ -31,24 +31,19 @@ function queryLogData() {
   $("#bt-query-log").val("Querying...");
 
   $.ajax({
-    url: "logData",
+    url: "logData?typ=" + $("#log-type").val() + "&priority=" + parseInt($("#log-level").val()) + "&days=" + parseInt($("#log-date-from").val()),
     type: "GET",
-    data: {
-      typ: $("#log-type").val(),
-      priority: parseInt($("#log-level").val()),
-      days: parseInt($("#log-date-from").val()),
-    },
-    contentType: "application/json",
   })
-  .done(function(data){
+  .done(function(msg){
 
     strLevel = ["Emerg", "Alert", "Critical", "Error", "Warning", "Notice", "Info", "Debug" ];
 
     table = $("#table-log-data").DataTable();
     table.clear().draw();
 
-    for(i=0; i<data.length; i++){
-      table.row.add([ data[i]['time'], strLevel[data[i]['priority']], data[i]['identifier'], data[i]['message'] ]);
+    data = msg.split(':#:');
+    for(i=0; i<data.length-4; i+=4){
+      table.row.add([ data[i], strLevel[data[i+1]], data[i+2], data[i+3] ]);
     }
 
     table.draw();
@@ -63,9 +58,9 @@ function queryLogData() {
   });
 }
 
-function getLogLevel(retry){
+function getlogSetting(retry){
   $.ajax({
-    url: "logLevel",
+    url: "logSetting",
     type: "GET",
     contentType: "application/json",
   })
@@ -113,7 +108,7 @@ function clickLoggingPage(retry){
     $("#tab-log").bind("click", function() {
       $(this).show();
       if($("#set-log").length > 0){
-        getLogLevel();
+        getlogSetting();
       }
     });
   })
