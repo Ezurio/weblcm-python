@@ -5,15 +5,12 @@ import uuid
 import hashlib
 import weblcm_def
 from weblcm_network import NetworkStatus, NetworkInterfaces, NetworkConnections, NetworkConnection, NetworkAccessPoints, Version
-from weblcm_log import LogData, LogLevel
+from weblcm_log import LogData, LogSetting
 from weblcm_swupdate import SWUpdate
 from weblcm_users import UserManage, LoginManage, LogoutManage
 from weblcm_files import FileManage, ArchiveFilesManage
 from weblcm_advanced import Reboot, FactoryReset
 
-PLUGINS = {
-       'list':{},
-}
 
 class Root(object):
 
@@ -21,50 +18,49 @@ class Root(object):
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()
 	def definitions(self):
-		result = {
+
+		return {
 			'SDCERR': {
-				'SDCERR_SUCCESS': 0, 'SDCERR_FAIL': 1
+				'SDCERR_SUCCESS': 0,
+				'SDCERR_FAIL': 1
 			},
-			'PLUGINS': PLUGINS,
+			'PLUGINS': {
+				'usermanage': weblcm_def.USER_PERMISSION_TYPES
+			},
 		}
-		return result
-
-if not os.path.exists(weblcm_def.FILEDIR_DICT.get('profile')):
-	"""Change default directories for som60sd"""
-	weblcm_def.FILEDIR_DICT['profile']='/etc/NetworkManager/system-connections/'
-	weblcm_def.FILEDIR_DICT['cert']='/etc/weblcm-python/ssl/'
-	weblcm_def.FILEDIR_DICT['config']='/etc/'
-
-if not os.path.exists(weblcm_def.WEBLCM_PYTHON_CONF_DIR):
-	weblcm_def.WEBLCM_PYTHON_CONF_DIR = '/etc/weblcm-python/'
-
-conf = os.path.join(weblcm_def.WEBLCM_PYTHON_CONF_DIR, "weblcm-python.ini")
-
-"""create cert directory for certs"""
-if not os.path.exists(weblcm_def.FILEDIR_DICT.get('cert')):
-	os.makedirs(weblcm_def.FILEDIR_DICT.get('cert'), 0o666)
 
 
 """Redirect http to https"""
 def force_tls():
+
 	if cherrypy.request.scheme == "http":
 		raise cherrypy.HTTPRedirect(cherrypy.url().replace("http:", "https:"), status=301)
 
-cherrypy.request.hooks.attach('on_start_resource', force_tls)
-
 def setup_http_server():
+
 	httpServer = cherrypy._cpserver.Server()
 	httpServer.socket_host = "0.0.0.0"
 	httpServer.socket_port = 80
 	httpServer.thread_pool = 0
 	httpServer.subscribe()
 
+	cherrypy.request.hooks.attach('on_start_resource', force_tls)
+
 if __name__ == '__main__':
 
-	webapp = Root()
+	"""Change default directories for som60sd"""
+	if not os.path.exists(weblcm_def.FILEDIR_DICT.get('profile')):
+		weblcm_def.FILEDIR_DICT['profile']='/etc/NetworkManager/system-connections/'
+		weblcm_def.FILEDIR_DICT['cert']='/etc/weblcm-python/ssl/'
+		weblcm_def.FILEDIR_DICT['config']='/etc/'
 
-	PLUGINS['networking'] = weblcm_def.NM_DBUS_API_TYPES
-	PLUGINS['usermanage'] = weblcm_def.USER_PERMISSION_TYPES
+	if not os.path.exists(weblcm_def.WEBLCM_PYTHON_CONF_DIR):
+		weblcm_def.WEBLCM_PYTHON_CONF_DIR = '/etc/weblcm-python/'
+
+	if not os.path.exists(weblcm_def.WIFI_DRIVER_DEBUG_PARAM):
+		weblcm_def.WIFI_DRIVER_DEBUG_PARAM = "/sys/module/ath6kl_core/parameters/debug_mask"
+
+	webapp = Root()
 
 	webapp.login = LoginManage()
 	webapp.logout = LogoutManage()
@@ -77,7 +73,7 @@ if __name__ == '__main__':
 	webapp.version = Version()
 
 	webapp.logData = LogData()
-	webapp.logLevel = LogLevel()
+	webapp.logSetting = LogSetting()
 
 	webapp.users = UserManage()
 	webapp.files = FileManage()
@@ -93,13 +89,15 @@ if __name__ == '__main__':
 
 	setup_http_server()
 
+	conf = os.path.join('{0}{1}'.format(weblcm_def.WEBLCM_PYTHON_CONF_DIR, "weblcm-python.ini"))
+
 	#Server config
 	cherrypy.config.update({
 			'server.socket_host': '0.0.0.0',
 			'server.socket_port': 443,
 			'server.ssl_module': 'builtin',
-			'server.ssl_certificate': weblcm_def.WEBLCM_PYTHON_CONF_DIR + 'ssl/server.crt',
-			'server.ssl_private_key': weblcm_def.WEBLCM_PYTHON_CONF_DIR + 'ssl/server.key',
+			'server.ssl_certificate': '{0}{1}'.format(weblcm_def.WEBLCM_PYTHON_CONF_DIR, 'ssl/server.crt'),
+			'server.ssl_private_key': '{0}{1}'.format(weblcm_def.WEBLCM_PYTHON_CONF_DIR, 'ssl/server.key'),
 		})
 
 	cherrypy.quickstart(webapp, '/', config=conf)

@@ -5,102 +5,152 @@ function networkingAUTORUN(retry){
   clickStatusPage(0);
 }
 
-function CARDSTATEtoString(CARDSTATE){
+const NMDeviceState = {
+  NM_DEVICE_STATE_UNKNOWN:		0,
+  NM_DEVICE_STATE_UNMANAGED:	10,
+  NM_DEVICE_STATE_UNAVAILABLE:	20,
+  NM_DEVICE_STATE_DISCONNECTED:	30,
+  NM_DEVICE_STATE_PREPARE:		40,
+  NM_DEVICE_STATE_CONFIG:		50,
+  NM_DEVICE_STATE_NEED_AUTH:	60,
+  NM_DEVICE_STATE_IP_CONFIG:	70,
+  NM_DEVICE_STATE_IP_CHECK:		80,
+  NM_DEVICE_STATE_SECONDARIES:	90,
+  NM_DEVICE_STATE_ACTIVATED:	100,
+  NM_DEVICE_STATE_DEACTIVATING:	110,
+  NM_DEVICE_STATE_FAILED:		120,
+};
+
+function CARDSTATEtoString(CARDSTATE) {
   switch(CARDSTATE) {
-    case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_UNKNOWN:
+    case NMDeviceState.NM_DEVICE_STATE_UNKNOWN:
       return "Unknown";
-    case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_UNMANAGED:
+    case NMDeviceState.NM_DEVICE_STATE_UNMANAGED:
       return "Unmanaged";
-    case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_UNAVAILABLE:
+    case NMDeviceState.NM_DEVICE_STATE_UNAVAILABLE:
       return "Unavailable";
-    case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_DISCONNECTED:
+    case NMDeviceState.NM_DEVICE_STATE_DISCONNECTED:
       return "Disconnected";
-    case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_PREPARE:
+    case NMDeviceState.NM_DEVICE_STATE_PREPARE:
       return "Preparing";
-    case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_CONFIG:
+    case NMDeviceState.NM_DEVICE_STATE_CONFIG:
       return "Connecting";
-    case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_NEED_AUTH:
+    case NMDeviceState.NM_DEVICE_STATE_NEED_AUTH:
       return "Need Auth";
-    case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_IP_CONFIG:
+    case NMDeviceState.NM_DEVICE_STATE_IP_CONFIG:
       return "Requesting IP";
-    case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_IP_CHECK:
+    case NMDeviceState.NM_DEVICE_STATE_IP_CHECK:
       return "IP Check";
-    case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_SECONDARIES:
+    case NMDeviceState.NM_DEVICE_STATE_SECONDARIES:
       return "Secondaries";
-    case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_ACTIVATED:
+    case NMDeviceState.NM_DEVICE_STATE_ACTIVATED:
       return "Activated";
-    case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_DEACTIVATING:
+    case NMDeviceState.NM_DEVICE_STATE_DEACTIVATING:
       return "Deactivating";
-    case defines.PLUGINS.networking.NMDeviceState.NM_DEVICE_STATE_FAILED:
+    case NMDeviceState.NM_DEVICE_STATE_FAILED:
       return "Failed";
     default:
       return "Unknown State";
   }
 }
 
-function DeviceTypetoString(NMDeviceType){
+const NMDeviceType = {
+  NM_DEVICE_TYPE_UNKNOWN:		0,
+  NM_DEVICE_TYPE_ETHERNET:		1,
+  NM_DEVICE_TYPE_WIFI:			2,
+  NM_DEVICE_TYPE_UNUSED1:		3,
+  NM_DEVICE_TYPE_UNUSED2:		4,
+  NM_DEVICE_TYPE_BT:			5,
+  NM_DEVICE_TYPE_OLPC_MESH:		6,
+  NM_DEVICE_TYPE_WIMAX:			7,
+  NM_DEVICE_TYPE_MODEM:			8,
+  NM_DEVICE_TYPE_INFINIBAND:	9,
+  NM_DEVICE_TYPE_BOND:			10,
+  NM_DEVICE_TYPE_VLAN:			11,
+  NM_DEVICE_TYPE_ADSL:			12,
+  NM_DEVICE_TYPE_BRIDGE:		13,
+  NM_DEVICE_TYPE_GENERIC:		14,
+  NM_DEVICE_TYPE_TEAM:			15,
+  NM_DEVICE_TYPE_TUN:			16,
+  NM_DEVICE_TYPE_IP_TUNNEL:		17,
+  NM_DEVICE_TYPE_MACVLAN:		18,
+  NM_DEVICE_TYPE_VXLAN:			19,
+  NM_DEVICE_TYPE_VETH:			20,
+  NM_DEVICE_TYPE_MACSEC:		21,
+  NM_DEVICE_TYPE_DUMMY:			22,
+  NM_DEVICE_TYPE_PPP:			23,
+  NM_DEVICE_TYPE_OVS_INTERFACE:	24,
+  NM_DEVICE_TYPE_OVS_PORT:		25,
+  NM_DEVICE_TYPE_OVS_BRIDGE:	26,
+  NM_DEVICE_TYPE_WPAN:			27,
+  NM_DEVICE_TYPE_6LOWPAN:		28,
+  NM_DEVICE_TYPE_WIREGUARD:		29,
+  NM_DEVICE_TYPE_WIFI_P2P:		30,
+};
+
+function DeviceTypetoString(NMDeviceType) {
   switch(NMDeviceType) {
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_UNKNOWN:
+    case NMDeviceType.NM_DEVICE_TYPE_UNKNOWN:
       return "Unknown";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_ETHERNET:
+    case NMDeviceType.NM_DEVICE_TYPE_ETHERNET:
       return "Ethernet";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_WIFI:
+    case NMDeviceType.NM_DEVICE_TYPE_WIFI:
       return "WiFi";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_UNUSED1:
+    case NMDeviceType.NM_DEVICE_TYPE_UNUSED1:
       return "Unused 1";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_UNUSED2:
+    case NMDeviceType.NM_DEVICE_TYPE_UNUSED2:
       return "Unused 2";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_BT:
+    case NMDeviceType.NM_DEVICE_TYPE_BT:
       return "Bluetooth";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_OLPC_MESH:
+    case NMDeviceType.NM_DEVICE_TYPE_OLPC_MESH:
       return "OLPC Mesh";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_WIMAX:
+    case NMDeviceType.NM_DEVICE_TYPE_WIMAX:
       return "WiMAX";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_MODEM:
+    case NMDeviceType.NM_DEVICE_TYPE_MODEM:
       return "Modem";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_INFINIBAND:
+    case NMDeviceType.NM_DEVICE_TYPE_INFINIBAND:
       return "Infiniband";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_BOND:
+    case NMDeviceType.NM_DEVICE_TYPE_BOND:
       return "Bond";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_VLAN:
+    case NMDeviceType.NM_DEVICE_TYPE_VLAN:
       return "VLAN";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_ADSL:
+    case NMDeviceType.NM_DEVICE_TYPE_ADSL:
       return "ADSL";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_BRIDGE:
+    case NMDeviceType.NM_DEVICE_TYPE_BRIDGE:
       return "Bridge";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_GENERIC:
+    case NMDeviceType.NM_DEVICE_TYPE_GENERIC:
       return "Generic";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_TEAM:
+    case NMDeviceType.NM_DEVICE_TYPE_TEAM:
       return "Team";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_TUN:
+    case NMDeviceType.NM_DEVICE_TYPE_TUN:
       return "Tunnel";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_IP_TUNNEL:
+    case NMDeviceType.NM_DEVICE_TYPE_IP_TUNNEL:
       return "IP Tunnel";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_MACVLAN:
+    case NMDeviceType.NM_DEVICE_TYPE_MACVLAN:
       return "MAC VLAN";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_VXLAN:
+    case NMDeviceType.NM_DEVICE_TYPE_VXLAN:
       return "VXLAN";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_VETH:
+    case NMDeviceType.NM_DEVICE_TYPE_VETH:
       return "Virtual Ethernet";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_MACSEC:
+    case NMDeviceType.NM_DEVICE_TYPE_MACSEC:
       return "MACSEC";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_DUMMY:
+    case NMDeviceType.NM_DEVICE_TYPE_DUMMY:
       return "Dummy";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_PPP:
+    case NMDeviceType.NM_DEVICE_TYPE_PPP:
       return "PPP";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_OVS_INTERFACE:
+    case NMDeviceType.NM_DEVICE_TYPE_OVS_INTERFACE:
       return "OVS Interface";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_OVS_PORT:
+    case NMDeviceType.NM_DEVICE_TYPE_OVS_PORT:
       return "OVS Port";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_OVS_BRIDGE:
+    case NMDeviceType.NM_DEVICE_TYPE_OVS_BRIDGE:
       return "OVS Bridge";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_WPAN:
+    case NMDeviceType.NM_DEVICE_TYPE_WPAN:
       return "WPAN";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_6LOWPAN:
+    case NMDeviceType.NM_DEVICE_TYPE_6LOWPAN:
       return "6LOWPAN";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_WIREGUARD:
+    case NMDeviceType.NM_DEVICE_TYPE_WIREGUARD:
       return "Wire Guard";
-    case defines.PLUGINS.networking.NMDeviceType.NM_DEVICE_TYPE_WIFI_P2P:
+    case NMDeviceType.NM_DEVICE_TYPE_WIFI_P2P:
       return "WiFi P2P";
     default:
       return "Unknown State";
@@ -1042,39 +1092,6 @@ function addConnection() {
 	});
   } else {
 	CustomMsg("Connection name can't be empty", true);
-  }
-}
-
-function regDomainToString(regDomain){
-  switch(regDomain) {
-	case defines.PLUGINS.networking.REG_DOMAIN.REG_FCC:
-	  return "FCC";
-	case defines.PLUGINS.networking.REG_DOMAIN.REG_ETSI:
-	  return "ETSI";
-	case defines.PLUGINS.networking.REG_DOMAIN.REG_TELEC:
-	  return "TELEC";
-	case defines.PLUGINS.networking.REG_DOMAIN.REG_WW:
-	  return "WW";
-	case defines.PLUGINS.networking.REG_DOMAIN.REG_KCC:
-	  return "KCC";
-	case defines.PLUGINS.networking.REG_DOMAIN.REG_CA:
-	  return "CA";
-	case defines.PLUGINS.networking.REG_DOMAIN.REG_FR:
-	  return "FR";
-	case defines.PLUGINS.networking.REG_DOMAIN.REG_GB:
-	  return "GB";
-	case defines.PLUGINS.networking.REG_DOMAIN.REG_AU:
-	  return "AU";
-	case defines.PLUGINS.networking.REG_DOMAIN.REG_NZ:
-	  return "NZ";
-	case defines.PLUGINS.networking.REG_DOMAIN.REG_CN:
-	  return "CN";
-	case defines.PLUGINS.networking.REG_DOMAIN.REG_BR:
-	  return "BR";
-	case defines.PLUGINS.networking.REG_DOMAIN.REG_RU:
-	  return "RU";
-	default:
-	  return "Unknown Regulatory Domain";
   }
 }
 
