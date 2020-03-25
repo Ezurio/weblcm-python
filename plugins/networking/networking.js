@@ -21,8 +21,8 @@ const NMDeviceState = {
   NM_DEVICE_STATE_FAILED:		120,
 };
 
-function CARDSTATEtoString(CARDSTATE) {
-  switch(CARDSTATE) {
+function CARDSTATEtoString(state) {
+  switch(state) {
     case NMDeviceState.NM_DEVICE_STATE_UNKNOWN:
       return "Unknown";
     case NMDeviceState.NM_DEVICE_STATE_UNMANAGED:
@@ -88,8 +88,8 @@ const NMDeviceType = {
   NM_DEVICE_TYPE_WIFI_P2P:		30,
 };
 
-function DeviceTypetoString(NMDeviceType) {
-  switch(NMDeviceType) {
+function DeviceTypetoString(type) {
+  switch(type) {
     case NMDeviceType.NM_DEVICE_TYPE_UNKNOWN:
       return "Unknown";
     case NMDeviceType.NM_DEVICE_TYPE_ETHERNET:
@@ -153,7 +153,7 @@ function DeviceTypetoString(NMDeviceType) {
     case NMDeviceType.NM_DEVICE_TYPE_WIFI_P2P:
       return "WiFi P2P";
     default:
-      return "Unknown State";
+      return "Unknown Type";
   }
 }
 
@@ -508,7 +508,7 @@ function updateStatus(){
           // SSID
           activeaccesspoint.children(".ssid").text("SSID: " + data.status[interfaceName].activeaccesspoint.Ssid);
           // BSSID
-          activeaccesspoint.children(".bssid").text("BSSID:" + data.status[interfaceName].activeaccesspoint.Bssid);
+          activeaccesspoint.children(".bssid").text("BSSID:" + data.status[interfaceName].activeaccesspoint.HwAddress);
           // Frequency
           activeaccesspoint.children(".frequency").text("Frequency: " + data.status[interfaceName].activeaccesspoint.Frequency);
           // Signal Strength
