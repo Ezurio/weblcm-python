@@ -4,7 +4,8 @@ import configparser
 import uuid
 import hashlib
 import weblcm_def
-from weblcm_network import NetworkStatus, NetworkInterfaces, NetworkConnections, NetworkConnection, NetworkAccessPoints, Version
+from weblcm_network_status import NetworkStatus
+from weblcm_network import NetworkInterfaces, NetworkConnections, NetworkConnection, NetworkAccessPoints, Version
 from weblcm_log import LogData, LogSetting
 from weblcm_swupdate import SWUpdate
 from weblcm_users import UserManage, LoginManage, LogoutManage
