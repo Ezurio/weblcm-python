@@ -86,11 +86,12 @@ function clickLoggingPage(retry){
     $("#logging_main_menu").addClass("active");
     $("#logging_mini_menu").addClass("active");
     $("#main_section").html(data);
+	  setLanguage("main_section");
     clearReturnData();
-    $("#helpText").html("Logging options");
     $(".infoText").addClass("hidden");
 
     var table = $("#table-log-data").DataTable({
+      "language": i18nData["dtLang"],
       ordering: false,
       responsive: true,
       bAutoWidth: false,

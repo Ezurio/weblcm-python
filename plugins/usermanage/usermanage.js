@@ -98,7 +98,7 @@ function validatePassword(psw) {
   }
 
   if(psw.length < 8 || psw.length > 64) {
-    return "8-84 characters are required";
+    return "8-64 characters are required";
   }
 }
 
@@ -114,7 +114,7 @@ function updatePassword() {
 
   confirm_password = $("#confirm-password").val();
   if (new_password !== confirm_password){
-	CustomMsg("Your password and confirmation password don't match", true);
+	CustomMsg("Password and confirmation password do not match", true);
 	return;
   }
 
@@ -157,15 +157,15 @@ function createUserList(users) {
     row += '</td>';
 
     row += '<td>';
-    row += '<input type="button" class="btn btn-primary role="button" id="bt-load-permission-' + name + '" value="load perm" onclick="loadPermission()">';
+    row += '<input type="button" class="btn btn-primary" role="button" id="bt-load-permission-' + name + '" value="' + i18nData['load perm'] + '" onclick="loadPermission()">';
     row += '</td>';
 
     row += '<td>';
-    row += '<input type="button" class="btn btn-primary role="button" id="bt-update-permission-' + name + '" value="update perm" onclick="updatePermission()">';
+    row += '<input type="button" class="btn btn-primary" role="button" id="bt-update-permission-' + name + '" value="' + i18nData['update perm'] + '" onclick="updatePermission()">';
     row += '</td>';
 
     row += '<td>';
-    row += '<input type="button" id="bt-del-user-' + name + '" value="delete user" class="btn btn-primary" role="button" onclick="delUser()">';
+    row += '<input type="button" class="btn btn-primary" role="button" id="bt-del-user-' + name + '" value="' + i18nData['delete user'] + '" onclick="delUser()">';
     row += '</td>';
 
     row += '</tr>';
@@ -355,7 +355,7 @@ function createPermissionsTable(){
     if(attrs[i][0].length){
       row += '<label class="pull-left">';
       row += '<input type="checkbox" id="user-permission-' + types[i] + '" name="' + types[i] + '" ' + attrs[i][1] + " " + attrs[i][2] + '>';
-      row += attrs[i][0] + '</label>';
+      row += i18nData[attrs[i][0]] + '</label>';
     }
     row += '</div>';
 
@@ -384,8 +384,8 @@ function clickAddOrDelUser(){
     $("#add_del_user_main_menu").addClass("active");
     $("#add_del_user_mini_menu").addClass("active");
     $("#main_section").html(data);
+    setLanguage("main_section");
     clearReturnData();
-    $("#helpText").html("Add/delete users");
     $(".infoText").addClass("hidden");
     createPermissionsTable();
     get_user_list();
@@ -395,7 +395,7 @@ function clickAddOrDelUser(){
   });
 }
 
-function clickUpdatePassword(message){
+function clickUpdatePassword(){
   $.ajax({
     url: "plugins/usermanage/html/update_password.html",
     data: {},
@@ -407,8 +407,8 @@ function clickUpdatePassword(message){
     $("#update_password_main_menu").addClass("active");
     $("#update_password_mini_menu").addClass("active");
     $('#main_section').html(data);
+    setLanguage("main_section");
     clearReturnData();
-    $("#helpText").html(message);
     $(".infoText").addClass("hidden");
   })
   .fail(function() {

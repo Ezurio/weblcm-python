@@ -7,20 +7,20 @@
 <html>
 	<form class="col-xs-12 col-sm-12 placeholder">
 		<div class="panel panel-default" id="">
-			<div class="panel-heading">Connection List</div>
+			<div class="panel-heading i18n" name="Connection list" >Connection List</div>
 			<div class="panel-body">
 				<select class="form-control" id="connectionSelect" onchange="onChangeConnections()">
 				</select>
 				<br>
 				<div class="btn-group btn-group-justified" role="group" aria-label="...">
 					<div class="btn-group" role="group">
-						<input onclick="activateConnection()" type="button" class="btn btn-primary" id="bt-connection-activate" value="Activate" disabled="disabled">
+						<input onclick="activateConnection()" type="button" class="btn btn-primary i18n" name="Activate-connection" id="bt-connection-activate" value="Activate" disabled="disabled">
 					</div>
 					<div class="btn-group" role="group">
-						<input onclick="selectedConnection()" type="button" class="btn btn-primary" id="bt-connection-edit" value="Edit" disabled="disabled">
+						<input onclick="selectedConnection()" type="button" class="btn btn-primary i18n" name="Edit-connection" id="bt-connection-edit" value="Edit" disabled="disabled">
 					</div>
 					<div class="btn-group" role="group">
-						<input onclick="removeConnection()" type="button" class="btn btn-warning" id="bt-connection-delete" value="Delete" disabled="disabled">
+						<input onclick="removeConnection()" type="button" class="btn btn-warning i18n" name="Delete-connection" id="bt-connection-delete" value="Delete" disabled="disabled">
 					</div>
 				</div>
 				<br>

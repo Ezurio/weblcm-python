@@ -11,21 +11,21 @@
 		</div>
 		<div class="hidden" id="scanTableDisplay">
 			<form class="hidden" id="form-addWifiConnection" ondrop="drop(event)" ondragover="allowDrop(event)">
-				<h4>Click or drag a scan item here to add as connection.</h4>
+				<h4 class="i18n" name="Click or drag a scan item here to add as connection">Click or drag a scan item here to add as connection.</h4>
 				<div class="form-group col-lg-4 col-sm-4" id="connectionNameDisplay">
-					<label class="sr-only" for="connectionName">Connection Name:</label>
-					<input type="text" class="form-control input-sm" id="connectionName" placeholder="Enter Connection Name" maxlength="32">
+					<label class="sr-only i18n" for="connectionName" name="Connection Name">Connection Name:</label>
+					<input type="text" class="form-control input-sm i18n" id="connectionName" name="Enter Connection Name" placeholder="Enter Connection Name" maxlength="32">
 				</div>
 				<div class="form-group col-lg-4 col-sm-4">
 					<label class="sr-only" for="newSSID">SSID:</label>
 					<input type="text" class="form-control input-sm" id="newSSID" placeholder="SSID" readonly>
 				</div>
 				<div class="form-group col-lg-4 col-sm-4">
-					<label class="sr-only" for="security">Security:</label>
-					<input type="text" class="form-control input-sm" id="security" placeholder="Security" readonly>
+					<label class="sr-only i18n" name="Security" for="security">Security:</label>
+					<input type="text" class="form-control input-sm i18n" name="security" id="Security" placeholder="Security" readonly>
 				</div>
 				<div class="form-group hidden" id="goToConnectionDisplay">
-					<a id="goToConnection" onclick="addScanConnection()" class="btn btn-primary" role="button">Add connection </a>
+					<a id="goToConnection" onclick="addScanConnection()" class="btn btn-primary i18n" name="Add connection" role="button">Add connection </a>
 				</div>
 			</form>
 			<br>
@@ -35,7 +35,7 @@
 						<tr>
 							<th style="text-align:center">SSID</th>
 							<th style="text-align:center">BSSID</th>
-							<th style="text-align:center">Channel</th>
+							<th style="text-align:center" class="i18n" name="Channel">Channel</th>
 							<th style="text-align:center">RSSI</th>
 							<th style="text-align:center">Security</th>
 						</tr>
@@ -53,7 +53,7 @@
 			</div>
 		</div>
 		<div id="status-hardware" class="hidden">
-				<div class="alert alert-danger" role="alert">No hardware detected</div>
+				<div class="alert alert-danger i18n" name="No hardware detected" role="alert">No hardware detected</div>
 		</div>
 	</div>
 </html>
