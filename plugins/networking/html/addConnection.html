@@ -9,18 +9,18 @@
 		<div class="form-group">
 			<div class="form-group">
 				<label class="pull-left" for="connection-uuid">UUID:</label>
-				<input type="text" class="form-control" id="connection-uuid" placeholder="Randomly generated when connection is added" readonly>
+				<input type="text" class="form-control i18n" id="connection-uuid" name="Randomly generated when connection is added" placeholder="Randomly generated when connection is added" readonly>
 			</div>
 			<div class="form-group">
-				<label class="pull-left" for="connection-id">Connection Name:</label>
+				<label class="pull-left i18n" for="connection-id" name="Connection Name" >Connection Name:</label>
 				<input type="text" class="form-control" id="connection-id" maxlength="32">
 			</div>
 			<div class="form-group">
-				<label class="pull-left" for="interface-name">Interface:</label>
+				<label class="pull-left i18n" name="Interface" for="interface-name">Interface:</label>
 				<select class="form-control" id="interface-name"></select>
 			</div>
 			<div class="form-group">
-				<label class="pull-left" for="connection-type">Type:</label>
+				<label class="pull-left i18n" name="Type" for="connection-type">Type:</label>
 				<select class="form-control" id="connection-type" onchange="onChangeConnectionType()">
 					<option value="802-3-ethernet">Ethernet</option>
 					<option value="802-11-wireless" selected>Wireless</option>
@@ -36,7 +36,7 @@
 		<div class="panel-group" id="connection-settings-accordion">
 			<div class="panel panel-default hidden" id="connection-wired-settings">
 				<div class="panel-heading">
-					<a data-toggle="collapse" data-parent="#connection-settings-accordion" href="#collapse-wired-settings">Ethernet Settings</a>
+					<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Ethernet Settings" href="#collapse-wired-settings">Ethernet Settings</a>
 				</div>
 				<div id="collapse-wired-settings" class="panel-collapse collapse in">
 					<div class="panel-body">
@@ -45,7 +45,7 @@
             </div>
 			<div class="panel panel-default" id="connection-wifi-settings">
 				<div class="panel-heading">
-					<a data-toggle="collapse" data-parent="#connection-settings-accordion" href="#collapse-wifi-settings">Wireless Settings</a>
+					<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Wireless Settings" href="#collapse-wifi-settings">Wireless Settings</a>
 				</div>
 				<div id="collapse-wifi-settings" class="panel-collapse collapse in">
 					<div class="panel-body">
@@ -54,22 +54,22 @@
 							<input type="text" class="form-control" id="ssid" maxlength="32">
 						</div>
 						<div class="form-group" id="radio-mode-display">
-							<label class="pull-left" for="radio-mode">Radio Mode:</label>
+							<label class="pull-left i18n" for="radio-mode" name="Radio Mode" >Radio Mode:</label>
 							<select class="form-control" id="radio-mode" onchange="onChangeRadioMode()">
-								<option value="infrastructure" selected>Infrastructure</option>
-								<option value="ap">AP</option>
+								<option class="i18n" name="Infrastructure" value="infrastructure" selected>Infrastructure</option>
+								<option class="i18n" name="Accesspoint" value="ap">AP</option>
 							</select>
 						</div>
 						<div class="form-group">
-							<label class="pull-left" for="client-name">Client Name:</label>
+							<label class="pull-left i18n" name="Client Name" for="client-name">Client Name:</label>
 							<input type="text" class="form-control" id="client-name" maxlength="16">
 						</div>
 						<div class="form-group">
-							<label class="pull-left" for="tx-power">TX Power:</label>
+							<label class="pull-left i18n" name="TX Power" for="tx-power">TX Power:</label>
 							<input type="text" class="form-control" id="tx-power" value="Auto">
 						</div>
 						<div class="form-group">
-							<label class="pull-left" for="radio-band">Radio Band:</label>
+							<label class="pull-left i18n" name="Radio Band" for="radio-band">Radio Band:</label>
 							<select class="form-control" id="radio-band">
 								<option value="default">Default</option>
 								<option value="a">A</option>
@@ -77,41 +77,41 @@
 							</select>
 						</div>
 						<div class="form-group hidden" id="radio-channel-display">
-							<label class="pull-left" for="radio-channel">Radio Channel:</label>
+							<label class="pull-left i18n" name="Channel" for="radio-channel">Radio Channel:</label>
 							<input type="text" class="form-control" id="radio-channel" value="">
 						</div>
 						<div class="form-group" id="frequency-list-display">
-							<label class="pull-left" for="frequency-list">Frequency List:</label>
+							<label class="pull-left i18n" name="Frequency List" for="frequency-list">Frequency List:</label>
 							<input type="text" class="form-control" id="frequency-list" value="">
 						</div>
 						<div class="form-group" id="radio-bgscan-display">
-							<label class="pull-left" for="radio-bgscan">Scan Policy:</label>
+							<label class="pull-left i18n" name="Scan Policy" for="radio-bgscan">Scan Policy:</label>
 							<input type="text" class="form-control" id="radio-bgscan" value="" placeholder="laird:<t1>:<threshold-in-dbm>:<t2> Scan t1 seconds below threahold and t2 seconds above">
 						</div>
 						<div class="form-group">
-							<label class="pull-left" for="frequency-dfs">Enable DFS:</label>
+							<label class="pull-left i18n" name="Enable DFS" for="frequency-dfs">Enable DFS:</label>
 							<select class="form-control" id="frequency-dfs">
-								<option value=0>No</option>
-								<option value=1 selected>Yes</option>
+								<option class="i18n" name="No" value=0>No</option>
+								<option class="i18n" name="Yes" value=1 selected>Yes</option>
 							</select>
 						</div>
 						<div class="form-group">
-							<label class="pull-left" for="powersave">Power Save:</label>
+							<label class="pull-left i18n" name="Power Save" for="powersave">Power Save:</label>
 							<select class="form-control" id="powersave">
-								<option value="0" selected>Default</option>
-								<option value="1">Ignore</option>
-								<option value="2">Disable</option>
-								<option value="3">Enable</option>
+								<option class="i18n" name="Default" value="0" selected>Default</option>
+								<option class="i18n" name="Ignore" value="1">Ignore</option>
+								<option class="i18n" name="Disable" value="2">Disable</option>
+								<option class="i18n" name="Enable" value="3">Enable</option>
 							</select>
 						</div>
 						<div class="form-group">
-							<label class="pull-left" for="key-mgmt">WEP Type:</label>
+							<label class="pull-left i18n" name="WEP Type" for="key-mgmt">WEP Type:</label>
 							<select class="form-control" id="key-mgmt" onchange="onChangeKeymgmt()">
-								<option value="none" selected>None</option>
-								<option value="static">Static WEP</option>
-								<option value="ieee8021x">Dynamic WEP</option>
-								<option value="wpa-psk">infrastructure WPA-PSK</option>
-								<option value="wpa-eap">WPA-Enterprise</option>
+								<option class="i18n" name="None" value="none" selected>None</option>
+								<option class="i18n" name="Static WEP" value="static">Static WEP</option>
+								<option class="i18n" name="Dynamic WEP" value="ieee8021x">Dynamic WEP</option>
+								<option class="i18n" name="Infrastructure WPA-PSK" value="wpa-psk">Infrastructure WPA-PSK</option>
+								<option class="i18n" name="WPA-Enterprise" value="wpa-eap">WPA-Enterprise</option>
 							</select>
 						</div>
 						<div class="form-group hidden" id="auth-alg-display">
@@ -123,7 +123,7 @@
 							</select>
 						</div>
 						<div class="form-group hidden" id="wep-tx-keyidx-display">
-							<label class="pull-left" for="wep-tx-keyidx">WEP Key Index:</label>
+							<label class="pull-left i18n" name="WEP Key Index" for="wep-tx-keyidx">WEP Key Index:</label>
 							<select class="form-control" id="wep-tx-keyidx">
 								<option value="0" selected>0</option>
 								<option value="1">1</option>
@@ -132,29 +132,29 @@
 							</select>
 						</div>
 						<div class="form-group hidden" id="wep-key-display">
-							<label class="pull-left" for="wep-key0">Index 0:</label>
+							<label class="pull-left i18n" name="Index 0" for="wep-key0">Index 0:</label>
 							<input type="text" class="form-control" id="wep-key0">
-							<label class="pull-left" for="wep-key1">Index 1:</label>
+							<label class="pull-left i18n" name="Index 1"  for="wep-key1">Index 1:</label>
 							<input type="text" class="form-control" id="wep-key1">
-							<label class="pull-left" for="wep-key2">Index 2:</label>
+							<label class="pull-left i18n" name="Index 2"  for="wep-key2">Index 2:</label>
 							<input type="text" class="form-control" id="wep-key2">
-							<label class="pull-left" for="wep-key3">Index 3:</label>
+							<label class="pull-left i18n" name="Index 3" for="wep-key3">Index 3:</label>
 							<input type="text" class="form-control" id="wep-key3">
 						</div>
 						<div class="form-group hidden" id="psk-display">
-							<label class="pull-left" for="psk">PreShared Key:</label>
+							<label class="pull-left i18n" name="PreShared Key" for="psk">PreShared Key:</label>
 							<input type="text" class="form-control" id="psk">
 						</div>
 						<div class="form-group hidden" id="leap-username-display">
-							<label class="pull-left" for="leap-username">LEAP Username:</label>
+							<label class="pull-left i18n" name="LEAP Username" for="leap-username">LEAP Username:</label>
 							<input type="text" class="form-control" id="leap-username">
 						</div>
 						<div class="form-group hidden" id="leap-password-display">
-							<label class="pull-left" for="leap-password">LEAP Password:</label>
+							<label class="pull-left i18n" name="LEAP Password" for="leap-password">LEAP Password:</label>
 							<input type="password" class="form-control" id="leap-password">
 						</div>
 						<div class="form-group hidden" id="eap-method-display">
-							<label class="pull-left" for="eap-method">EAP Method:</label>
+							<label class="pull-left i18n" name="EAP Method" for="eap-method">EAP Method:</label>
 							<select class="form-control" id="eap-method" onchange="onChangeEap()">
 								<option value="leap">LEAP</option>
 								<option value="md5">MD5</option>
@@ -166,71 +166,71 @@
 							</select>
 						</div>
 						<div class="form-group hidden" id="eap-auth-timeout-display">
-							<label class="pull-left" for="eap-auth-timeout">EAP Auth Timeout:</label>
+							<label class="pull-left i18n" name="EAP Auth Timeout" for="eap-auth-timeout">EAP Auth Timeout:</label>
 							<input type="text" class="form-control" id="eap-auth-timeout" value="0">
 						</div>
 						<div class="form-group hidden" id="eap-identity-display">
-							<label class="pull-left" for="eap-identity">Identity:</label>
+							<label class="pull-left i18n" name="Identity" for="eap-identity">Identity:</label>
 							<input type="text" class="form-control" id="eap-identity">
 						</div>
 						<div class="form-group hidden" id="eap-anonymous-identity-display">
-							<label class="pull-left" for="eap-anonymous-identity">Anonymous Identity:</label>
+							<label class="pull-left i18n" name="Anonymous Identity" for="eap-anonymous-identity">Anonymous Identity:</label>
 							<input type="text" class="form-control" id="eap-anonymous-identity">
 						</div>
 						<div class="form-group hidden" id="eap-password-display">
-							<label class="pull-left" for="eap-password">Password:</label>
+							<label class="pull-left i18n" name="Password" for="eap-password">Password:</label>
 							<input type="password" class="form-control" id="eap-password">
 						</div>
 						<div class="form-group hidden" id="pac-file-display">
-							<label class="pull-left" for="pac-file">PAC Filename:</label>
+							<label class="pull-left i18n" name="PAC Filename" for="pac-file">PAC Filename:</label>
 							<select class="form-control" id="pac-file">
 							</select>
 						</div>
 						<div class="form-group hidden" id="pac-file-password-display">
-							<label class="pull-left" for="pac-file-password">PAC File Password:</label>
+							<label class="pull-left i18n" name="PAC File Password" for="pac-file-password">PAC File Password:</label>
 							<input type="password" class="form-control" id="pac-file-password">
 						</div>
 						<div class="form-group hidden" id="phase1-fast-provisioning-display">
-							<label class="pull-left" for="phase1-fast-provisioning">Fast Provisioning:</label>
+							<label class="pull-left i18n" name="Fast Provisioning" for="phase1-fast-provisioning">Fast Provisioning:</label>
 							<select class="form-control" id="phase1-fast-provisioning">
-								<option value="0" selected>Disable</option>
-								<option value="1">Allow Unauthenticated Provisioning</option>
-								<option value="2">Allow Authenticated Provisioning</option>
-								<option value="3">Both</option>
+								<option class="i18n" name="Disable" value="0" selected>Disable</option>
+								<option class="Allow Unauthenticated Provisioning" name="Disable" value="1">Allow Unauthenticated Provisioning</option>
+								<option class="i18n" name="Allow Authenticated Provisioning" value="2">Allow Authenticated Provisioning</option>
+								<option class="i18n" name="Both" value="3">Both</option>
 							</select>
 						</div>
 						<div class="form-group hidden" id="ca-cert-display">
-							<label class="pull-left" for="ca-cert">CA Cert:</label>
+							<label class="pull-left i18n" name="CA Cert" for="ca-cert">CA Cert:</label>
 							<select class="form-control" id="ca-cert">
 								<option value="" selected>None</option>
 							</select>
 						</div>
 						<div class="form-group hidden" id="ca-cert-password-display">
-							<label class="pull-left" for="ca-cert-password">CA Cert Password:</label>
+							<label class="pull-left i18n" name="CA Cert Password" for="ca-cert-password">CA Cert Password:</label>
 							<input type="password" class="form-control" id="ca-cert-password">
 						</div>
 						<div class="form-group hidden" id="client-cert-display">
-							<label class="pull-left" for="client-cert">Client Cert:</label>
+							<label class="pull-left i18n" name="Client Cert" for="client-cert">Client Cert:</label>
 							<select class="form-control" id="client-cert">
 								<option value="" selected>None</option>
 							</select>
 						</div>
 						<div class="form-group hidden" id="client-cert-password-display">
-							<label class="pull-left" for="client-cert-password">Client Cert Password:</label>
+							<label class="pull-left i18n" name="Client Cert Password" for="client-cert-password">Client Cert Password:</label>
 							<input type="password" class="form-control" id="client-cert-password">
 						</div>
 						<div class="form-group hidden" id="private-key-display">
-							<label class="pull-left" for="private-key">Private Cert:</label>
+							<label class="pull-left i18n" name="Private Cert" for="private-key">Private Cert:</label>
 							<select class="form-control" id="private-key">
 								<option value="" selected>None</option>
 							</select>
 						</div>
 						<div class="form-group hidden" id="private-key-password-display">
-							<label class="pull-left" for="private-key-password">Private Key Password:</label>
+							<label class="pull-left i18n" name="Private Key Password" for="private-key-password">Private Key Password:</label>
 							<input type="password" class="form-control" id="private-key-password">
 						</div>
 						<div class="form-group hidden" id="phase2-auth-display">
-							<label class="pull-left" for="phase2-auth">Phase 2 non-EAP METHOD:</label>
+							<label class="pull-left i18n" name="Phase 2 non-EAP METHOD" for="phase2-auth">Phase 2 non-EAP METHOD:</label>
 							<select class="form-control" multiple id="phase2-auth" onchange="onChangePhase2NoneEap()">
 								<option value="none" selected>None</option>
 								<option value="pap">PAP</option>
@@ -244,7 +244,7 @@
 							</select>
                         </div>
 						<div class="form-group hidden" id="phase2-autheap-display">
-							<label class="pull-left" for="phase2-autheap">Phase 2 EAP METHOD:</label>
+							<label class="pull-left i18n" name="Phase 2 EAP METHOD" for="phase2-autheap">Phase 2 EAP METHOD:</label>
 							<select class="form-control" multiple id="phase2-autheap" onchange="onChangePhase2Eap()">
 								<option value="none" selected>None</option>
 								<option value="mschapv2">MSCHAPv2</option>
@@ -255,37 +255,37 @@
 							</select>
                         </div>
 						<div class="form-group hidden" id="phase2-ca-cert-display">
-							<label class="pull-left" for="phase2-ca-cert">CA Cert:</label>
+							<label class="pull-left i18n" name="CA Cert" for="phase2-ca-cert">CA Cert:</label>
 							<select class="form-control" id="phase2-ca-cert">
 								<option value="" selected>None</option>
 							</select>
 						</div>
 						<div class="form-group hidden" id="phase2-ca-cert-password-display">
-							<label class="pull-left" for="phase2-ca-cert-password">CA Cert Password:</label>
+							<label class="pull-left i18n" name="CA Cert Password" for="phase2-ca-cert-password">CA Cert Password:</label>
 							<input type="password" class="phase2-form-control" id="phase2-ca-cert-password">
 						</div>
 						<div class="form-group hidden" id="phase2-client-cert-display">
-							<label class="pull-left" for="phase2-client-cert">Client Cert:</label>
+							<label class="pull-left i18n" name="Client Cert" for="phase2-client-cert">Client Cert:</label>
 							<select class="form-control" id="phase2-client-cert">
 								<option value="" selected>None</option>
 							</select>
 						</div>
 						<div class="form-group hidden" id="phase2-client-cert-password-display">
-							<label class="pull-left" for="phase2-client-cert-password">Client Cert Password:</label>
+							<label class="pull-left i18n" name="Client Cert Password" for="phase2-client-cert-password">Client Cert Password:</label>
 							<input type="password" class="form-control" id="phase2-client-cert-password">
 						</div>
 						<div class="form-group hidden" id="phase2-private-key-display">
-							<label class="pull-left" for="phase2-private-key">Private Cert:</label>
+							<label class="pull-left i18n" name="Private Cert" for="phase2-private-key">Private Cert:</label>
 							<select class="form-control" id="phase2-private-key">
 								<option value="" selected>None</option>
 							</select>
 						</div>
 						<div class="form-group hidden" id="phase2-private-key-password-display">
-							<label class="pull-left" for="phase2-private-key-password">Private Key Password:</label>
+							<label class="pull-left i18n" name="Private Key Password" for="phase2-private-key-password">Private Key Password:</label>
 							<input type="password" class="form-control" id="phase2-private-key-password">
 						</div>
 						<div class="form-group hidden" id="tls-disable-time-checks-display">
-							<label class="pull-left" for="tls-disable-time-checks">Disable TLS Time Check</label>
+							<label class="pull-left i18n" name="Disable TLS Time Check" for="tls-disable-time-checks">Disable TLS Time Check</label>
 							<select class="form-control" id="tls-disable-time-checks">
 								<option value="0">No</option>
 								<option value="1" selected>Yes</option>
@@ -296,7 +296,7 @@
             </div>
 			<div class="panel panel-default hidden" id="connection-modem-settings">
 				<div class="panel-heading">
-					<a data-toggle="collapse" data-parent="#connection-settings-accordion" href="#collapse-modem-settings">Modem Settings</a>
+					<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Modem Settings" href="#collapse-modem-settings">Modem Settings</a>
                 </div>
 				<div id="collapse-modem-settings" class="panel-collapse collapse in">
 					<div class="panel-body">
@@ -305,7 +305,7 @@
 			</div>
 			<div class="panel panel-default hidden" id="connection-ppp-settings">
 				<div class="panel-heading">
-					<a data-toggle="collapse" data-parent="#connection-settings-accordion" href="#collapse-ppp-settings">PPP Settings</a>
+					<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="PPP Settings" href="#collapse-ppp-settings">PPP Settings</a>
 				</div>
 				<div id="collapse-ppp-settings" class="panel-collapse collapse in">
 					<div class="panel-body">
@@ -314,7 +314,7 @@
             </div>
 			<div class="panel panel-default hidden" id="connection-bluetooth-settings">
 				<div class="panel-heading">
-					<a data-toggle="collapse" data-parent="#connection-settings-accordion" href="#collapse-bluetooth-settings">Bluetooth Settings</a>
+					<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Bluetooth Settings" href="#collapse-bluetooth-settings">Bluetooth Settings</a>
 				</div>
 				<div id="collapse-bluetooth-settings" class="panel-collapse collapse in">
 					<div class="panel-body">
@@ -323,7 +323,7 @@
             </div>
 			<div class="panel panel-default hidden" id="connection-bridge-settings">
 				<div class="panel-heading">
-					<a data-toggle="collapse" data-parent="#connection-settings-accordion" href="#collapse-bridge-settings">Bridge Settings</a>
+					<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Bridge Settings" href="#collapse-bridge-settings">Bridge Settings</a>
                 </div>
 				<div id="collapse-bridge-settings" class="panel-collapse collapse in">
 					<div class="panel-body">
@@ -332,7 +332,7 @@
             </div>
 			<div class="panel panel-default hidden" id="connection-wifi-p2p-settings">
 				<div class="panel-heading">
-					<a data-toggle="collapse" data-parent="#connection-settings-accordion" href="#collapse-wifi-p2p-settings">WIFI-P2P Settings</a>
+					<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="WIFI-P2P Settings" href="#collapse-wifi-p2p-settings">WIFI-P2P Settings</a>
 				</div>
 				<div id="collapse-wifi-p2p-settings" class="panel-collapse collapse in">
 					<div class="panel-body">

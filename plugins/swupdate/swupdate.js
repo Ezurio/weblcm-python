@@ -116,9 +116,9 @@ function clickSWUpdatePage() {
     $("#swupdate_main_menu").addClass("active");
     $("#swupdate_mini_menu").addClass("active");
     $('#main_section').html(data);
+    setLanguage("main_section");
     clearReturnData();
     $(".infoText").addClass("hidden");
-    $("#helpText").html("Firmware Update");
   })
   .fail(function(){
     console.log("Error, couldn't get swupdate.html");

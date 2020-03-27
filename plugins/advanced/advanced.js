@@ -8,7 +8,7 @@ function advancedAUTORUN(retry) {
 function reboot(show) {
 
   if(show){
-    var r = confirm("Are you sure you want to reboot system?");
+    var r = confirm(i18nData['Are you sure you want to reboot system?']);
     if (r == false)
       return;
   }
@@ -30,7 +30,7 @@ function reboot(show) {
 }
 
 function factoryReset(){
-  var r = confirm("Are you sure you want to do factory reset?");
+  var r = confirm(i18nData['Are you sure you want to do factory reset?']);
   if (r == false)
     return;
 
@@ -56,9 +56,9 @@ function doUpload(form, type) {
     if(xhr.readyState === XMLHttpRequest.DONE) {
       var status = xhr.status;
       if (status === 0 || (200 <= status && status < 400)) {
-        CustomMsg("Success", false);
+        CustomMsg(i18nData['Success'], false);
       } else {
-        CustomMsg("Failure", true);
+        CustomMsg(i18nData['Failure'], true);
       }
       $("#bt-import-"+type).prop("disabled", false);
     }
@@ -75,13 +75,13 @@ function importArchive(type){
   var files = $("#input-file-"+type)[0].files;
   if( files.length == 0 )
   {
-    CustomMsg("Please select the config archive first", true);
+    CustomMsg(i18nData['Please select the config archive first'], true);
     return;
   }
 
   var passwd = $("#"+type+"-decrypt-passwd").val();
   if (passwd.length < 8 || passwd.length > 64){
-    CustomMsg("8-64 characters are required for decryption", true);
+    CustomMsg(i18nData['8-64 characters are required'], true);
     return;
   }
 
@@ -110,7 +110,7 @@ function doDownload(url, type) {
 
   xhr.onreadystatechange = function() {
     if(xhr.readyState == XMLHttpRequest.LOADING){
-        CustomMsg("Downloading...", false);
+        CustomMsg(i18nData['Downloading...'], false);
     }
     else if(xhr.readyState === XMLHttpRequest.DONE) {
       if (xhr.status === 0 || (200 <= xhr.status && xhr.status < 400)) {
@@ -127,17 +127,17 @@ function doDownload(url, type) {
         }
       }
       else {
-        CustomMsg("Failure", true);
+        CustomMsg(i18nData['Failure'], true);
       }
 
-      CustomMsg("Downloaded", false);
+      CustomMsg(i18nData['Downloaded'], false);
       $("#bt-export-"+type).prop("disabled", false);
 
       doDelete(type);
     }
   }
 
-  CustomMsg("Download start", false);
+  CustomMsg(i18nData['Download start'], false);
   $("#bt-export-"+type).prop("disabled", true);
 
   xhr.open('GET', url, true);
@@ -154,7 +154,7 @@ function exportArchive(type) {
   if (type != "debug") {
     passwd = $("#"+type+"-encrypt-passwd").val();
     if (passwd.length < 8 || passwd.length > 64){
-      CustomMsg("8-64 characters are required for encryption", true);
+      CustomMsg(i18nData['8-64 characters are required'], true);
       return;
     }
   }
@@ -174,10 +174,10 @@ function clickAdvancedPage() {
     $("li").removeClass("active");
     $("#advanced_main_menu").addClass("active");
     $("#advanced_mini_menu").addClass("active");
-    $('#main_section').html(data);
+    $("#main_section").html(data);
+	  setLanguage("main_section");
     clearReturnData();
     $(".infoText").addClass("hidden");
-    $("#helpText").html("Advanced control");
   })
   .fail(function(){
     console.log("Error, couldn't get advanced.html");

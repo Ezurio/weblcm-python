@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  Copyright (c) 2017, Laird
+  Copyright (c) 2017-2020, Laird
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
   copyright notice and this permission notice appear in all copies.
@@ -41,16 +41,14 @@
 		<script src="assets/js/dataTables.buttons.min.js"></script>
 		<script src="assets/js/buttons.bootstrap.min.js"></script>
 		<script src="assets/js/buttons.html5.min.js"></script>
-		<!--script src="assets/js/button-adjuster.js"></script>-->
-		<!-- http://jqueryui.com/download/#!version=1.11.4&themeParams=none&components=1111111111111111101111111111111111111 -->
 		<script src="assets/js/jquery-ui.min.js"></script>
-		<!-- http://touchpunch.furf.com/mit.txt -->
 		<script src="assets/js/jquery.ui.touch-punch.min.js"></script>
-		<!-- https://github.com/Mottie/tablesorter -->
-		<!--script type="text/javascript" src="assets/js/jquery.tablesorter.min.js"></script>-->
+		<script src="assets/js/jquery.i18n.properties.min.js"></script>
+
 		<script>
 
 		var defines;
+		var i18nData;
 		var currUserPermission;
 		var currUser;
 
@@ -82,11 +80,22 @@
 
 		//TBD: HTMLs should be loaded per user
 		function weblcm_init(){
-			plugins = ["networking", "logging", "swupdate", "usermanage", "advanced"];
-			for (var i = 0; i < plugins.length; i++){
+			let i, lang;
+			let plugins = ["networking", "logging", "swupdate", "usermanage", "advanced"];
+
+			for (i = 0; i < plugins.length; i++){
 				loadjscssfile(plugins[i], "js");
 				addPlugin(plugins[i]);
 			}
+
+			lang = window.navigator.userLanguage || window.navigator.language;
+			if(lang == "zh" || lang == "zh-CN"){
+				$("#language").val("zh-CN");
+			}
+			else {
+				$("#language").val("en");
+			}
+			$("#language").change()
 		}
 
 		function clearReturnData(){
@@ -143,8 +152,8 @@
 		}
 
 		function CustomMsg(message, err){
-				nMsg = err ? "Failure" : "Success";
-			if (!sendNotification(nMsg, message)){
+				nMsg = err ? "Failure":"Success";
+			if (!sendNotification(nMsg, i18nData[message])){
 				if (message.length >= 20){
 					$("#returnDataNav").css( "fontSize", "12px" );
 				}
@@ -153,7 +162,7 @@
 					$("[id^='return']").addClass("alert alert-dismissible alert-danger");
 				else
 					$("[id^='return']").addClass("alert alert-dismissible alert-success");
-				$("[id^='return']").html(message);
+				$("[id^='return']").html(i18nData[message]);
 				dismissibleAlerts();
 			}
 		}
@@ -164,19 +173,19 @@
 				case defines.SDCERR.SDCERR_SUCCESS:
 					if (!sendNotification("Success", "")){
 						$("[id^='return']").addClass("alert alert-dismissible alert-success");
-						$("[id^='return']").html("Success");
+						$("[id^='return']").html(i18nData['Success']);
 					}
 					break;
 				case defines.SDCERR.SDCERR_FAIL:
 					if (!sendNotification("Failure", "")){
 						$("[id^='return']").addClass("alert alert-dismissible alert-danger");
-						$("[id^='return']").html("Failure");
+						$("[id^='return']").html(i18nData['Failure']);
 					}
 					break;
 				default:
 					if (!sendNotification("Unknown Data", "")){
 						$("[id^='return']").addClass("alert alert-dismissible alert-danger");
-						$("[id^='return']").html("Unknown Data");
+						$("[id^='return']").html(i18nData['Unknown Data']);
 					}
 			}
 			dismissibleAlerts();
@@ -224,7 +233,7 @@
 					if (data.REDIRECT == 1){
 						$("#networking_main_menu").addClass("hidden");
 						$("#networking_mini_menu").addClass("hidden");
-						clickUpdatePassword("WARNING: please update the default password!");
+						clickUpdatePassword();
 					}
 					else{
 						const MENU_ID_TYPE_OFFSET = 10; //"_main_menu"
@@ -294,6 +303,41 @@
 			});
 		});
 
+		function setLanguage (id) {
+			$("#" + id + " .i18n").each(function () {
+				value = $(this).attr('name')
+				if(this.tagName.toLowerCase() === 'input') {
+					if( $(this).attr("placeholder")) {
+						$(this).attr("placeholder", i18nData[value]);
+					}
+					if($(this).attr("value")){
+						$(this).attr("value",i18nData[value]);
+					}
+				} else if (this.tagName.toLowerCase() === 'option'){
+					if($(this).text()){
+						$(this).text(i18nData[value]);
+					}
+				} else {
+					$(this).html(i18nData[value]);
+				}
+			});
+		}
+
+		function onChangeLanguageType(){
+			lang = $("#language").val()
+			$.ajax({
+				url:'assets/i18n/'+lang+'.json',
+				dataType:'json',
+				success:function (data) {
+					i18nData = data
+					setLanguage("main_menu");
+					setLanguage("navbar");
+					setLanguage("main_section");
+					setLanguage("helpSection");
+				}
+			});
+		}
+
 		</script>
 
 	</head>
@@ -324,18 +368,24 @@
 				<div id="navbar" class="navbar-collapse collapse">
 					<form id="loggin" class="navbar-form navbar-right">
 						<div class="form-group">
-							<input type="text" id="username" placeholder="Username" class="form-control">
+							<input type="text" id="username" name="Username" placeholder="Username" class="form-control i18n">
 						</div>
 						<div class="form-group">
-							<input type="password" id="password" placeholder="Password" class="form-control" onkeypress="enterKeyPress(event)">
+							<input type="password" id="password" name="Password" placeholder="Password" class="form-control i18n" onkeypress="enterKeyPress(event)">
 						</div>
 						<div class="form-group">
-							<input type="button" onclick="login()" class="btn btn-default" href="#" value="Sign in">
+							<input type="button" onclick="login()" class="btn btn-default i18n" href="#" name="Sign in" value="Sign in">
+						</div>
+						<div class="form-group">
+							<select class="form-control" id="language" onchange="onChangeLanguageType()">
+								<option value="en" default>English</option>
+								<option value="zh-CN">中文简体</option>
+							</select>
 						</div>
 					</form>
 					<form id="loggout" class="navbar-form navbar-right hidden">
 						<div class="form-group">
-							<a type="button" onclick="logout()" class="btn btn-default" href="#">Log out</a>
+							<a type="button" onclick="logout()" class="btn btn-default i18n" name= "Log out" href="#">Log out</a>
 						</div>
 					</form>
 					<ul class="nav navbar-nav navbar-right visible-xs" id="mini_menu">
@@ -358,8 +408,8 @@
 						<div id="helpSection" class="hidden-xs hidden-sm col-md-3 col-lg-3 placeholder">
 							<div id="returnDataHelp" class="" role="alert"></div>
 							<img src="assets/img/logo.png" width="320" height="87" class="img-responsive" alt="Responsive image" style="border-radius: 0%" ondragstart="return false;">
-							<h4>Need help?</h4>
-							<span id="helpText" class="text-muted">This page shows the current state of networking</span>
+							<h4 class="i18n" name="Need help">Need help?</h4>
+
 							<br>
 							<span id="infoText" class="text-muted"></span>
 						</div>

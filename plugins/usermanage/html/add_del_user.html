@@ -5,7 +5,7 @@
 -->
 <html>
 	<form class="col-xs-12">
-		<h4>User List</h4>
+		<h4 class="i18n" name="User List">User List</h4>
 		<table id="table-user" class="table">
 			<thead>
 				<tr>
@@ -19,29 +19,29 @@
 			</tbody>
 		</table>
 		<br>
-		<h4>User Permission</h4>
+		<h4 class="i18n" name="User Permission">User Permission</h4>
 		<div id="checkbox-group-user-permission" class="form-group">
 		</div>
 		<br>
 		<div class="form-group">
-			<label for="usrname" class="pull-left">Username:</label>
-			<input type="text" class="form-control" id="ipm-username" name="add-username"  pattern=".{4,64}" title="4 to 32 characters, contain only lowercase, uppercase, number and underscore" placeholder="username"  required>
+			<label for="usrname" class="pull-left i18n" name="Username">Username:</label>
+			<input type="text" class="form-control i18n" id="ipm-username" name="Username"  placeholder="Username">
 		</div>
 		<div class="form-group">
-			<label for="password" class="pull-left">Password:</label>
-			<input type="password" class="form-control" id="ipm-password" name="add-password" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,64}$" title="8-64 characters, at least one uppercase letter, one lowercase letter, one number and one special character(@$!%*?&)" placeholder="password" onblur="addPasswdInputOnblur('input-password-message')" onfocus="addPasswdInputOnfocus('input-password-message', 'ipm')" onkeyup="addPasswdInputOnkeyup('ipm')" required>
+			<label for="password" class="pull-left i18n" name="Password">Password:</label>
+			<input type="password" class="form-control i18n" id="ipm-password" name="Password" placeholder="Password" onblur="addPasswdInputOnblur('input-password-message')" onfocus="addPasswdInputOnfocus('input-password-message', 'ipm')" onkeyup="addPasswdInputOnkeyup('ipm')">
 		</div>
 		<div class="form-group pull-left">
-			<input type="button" onclick="addUser()" class="btn btn-primary" value="Add User" id="bt-add-user">
+			<input type="button" onclick="addUser()" class="btn btn-primary i18n" name="Add User" value="Add User" id="bt-add-user">
 		</div>
 	</form>
 	<br>
 	<div id="input-password-message" class="hidden text-left">
-		<p><b>Password must contain the following:</b></p>
-		<p id="ipm-lower" class="text-danger">A <b>lowercase</b> letter</p>
-		<p id="ipm-upper" class="text-danger">A <b>capital (uppercase)</b> letter</p>
-		<p id="ipm-number" class="text-danger">A <b>number</b></p>
-		<p id="ipm-special" class="text-danger">A <b>speical character</b></p>
-		<p id="ipm-length" class="text-danger"><b>8-64 characters</b></p>
+		<p class="i18n" name="Password must contain the following" ><b>Password must contain the following:</b></p>
+		<p id="ipm-lower" class="text-danger i18n" name="A lowercase character">A lowercase character</p>
+		<p id="ipm-upper" class="text-danger i18n" name="An uppercase character" >A uppercase character</p>
+		<p id="ipm-number" class="text-danger i18n" name="A number">A number</p>
+		<p id="ipm-special" class="text-danger i18n" name="A speical character">A speical character</p>
+		<p id="ipm-length" class="text-danger i18n" name="8-64 characters">8-64 characters</p>
 	</div>
 </html>
