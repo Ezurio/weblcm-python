@@ -24,33 +24,33 @@ const NMDeviceState = {
 function CARDSTATEtoString(state) {
   switch(state) {
     case NMDeviceState.NM_DEVICE_STATE_UNKNOWN:
-      return "Unknown";
+      return i18nData['Unknown'];
     case NMDeviceState.NM_DEVICE_STATE_UNMANAGED:
-      return "Unmanaged";
+      return i18nData['Unmanaged'];
     case NMDeviceState.NM_DEVICE_STATE_UNAVAILABLE:
-      return "Unavailable";
+      return i18nData['Unavailable'];
     case NMDeviceState.NM_DEVICE_STATE_DISCONNECTED:
-      return "Disconnected";
+      return i18nData['Disconnected'];
     case NMDeviceState.NM_DEVICE_STATE_PREPARE:
-      return "Preparing";
+      return i18nData['Preparing'];
     case NMDeviceState.NM_DEVICE_STATE_CONFIG:
-      return "Connecting";
+      return i18nData['Connecting'];
     case NMDeviceState.NM_DEVICE_STATE_NEED_AUTH:
-      return "Need Auth";
+      return i18nData['Need Auth'];
     case NMDeviceState.NM_DEVICE_STATE_IP_CONFIG:
-      return "Requesting IP";
+      return i18nData['Requesting IP'];
     case NMDeviceState.NM_DEVICE_STATE_IP_CHECK:
-      return "IP Check";
+      return i18nData['IP Check'];
     case NMDeviceState.NM_DEVICE_STATE_SECONDARIES:
-      return "Secondaries";
+      return i18nData['Secondaries'];
     case NMDeviceState.NM_DEVICE_STATE_ACTIVATED:
-      return "Activated";
+      return i18nData['Activated'];
     case NMDeviceState.NM_DEVICE_STATE_DEACTIVATING:
-      return "Deactivating";
+      return i18nData['Deactivating'];
     case NMDeviceState.NM_DEVICE_STATE_FAILED:
-      return "Failed";
+      return i18nData['Failed'];
     default:
-      return "Unknown State";
+      return i18nData['Unknown State'];
   }
 }
 
@@ -470,9 +470,9 @@ function updateStatus(){
         if (data.status[interfaceName].ip4config){
           ipv4.removeClass("hidden");
           // IPv4 Address
-          ipv4.children(".address").text("IPv4 Address: " + data.status[interfaceName].ip4config.Addresses[0]);
+          ipv4.children(".address").text(i18nData['IPv4 Address'] + ": " + data.status[interfaceName].ip4config.Addresses[0]);
           // IPv4 Gateway
-          ipv4.children(".gateway").text("IPv4 Gateway: " + data.status[interfaceName].ip4config.Gateway);
+          ipv4.children(".gateway").text(i18nData['IPv4 Gateway'] + ": " + data.status[interfaceName].ip4config.Gateway);
         } else {
           ipv4.addClass("hidden");
         }
@@ -483,20 +483,20 @@ function updateStatus(){
         // Add entries and Display IPv6 addresses
         if (data.status[interfaceName].ip6config.Addresses){
           if (data.status[interfaceName].ip6config.Addresses[0])
-            ipv6.children(".address").text("IPv6 Address: " + data.status[interfaceName].ip6config.Addresses[0]);
+            ipv6.children(".address").text(i18nData['IPv6 Address'] + ": " + data.status[interfaceName].ip6config.Addresses[0]);
           else
-            ipv6.children(".address").text("IPv6 Address:");
+            ipv6.children(".address").text(i18nData['IPv6 Address'] + ":");
           if (data.status[interfaceName].ip6config.Addresses[1])
-            ipv6.children(".address-2").text("IPv6 Address 2: " + data.status[interfaceName].ip6config.Addresses[1]);
+            ipv6.children(".address-2").text(i18nData['IPv6 Address'] + " 2: "  + data.status[interfaceName].ip6config.Addresses[1]);
           else
-            ipv6.children(".address-2").text("IPv6 Address 2:");
+            ipv6.children(".address-2").text(i18nData['IPv6 Address'] + " 2:");
           if (data.status[interfaceName].ip6config.Addresses[2])
-            ipv6.children(".address-3").text("IPv6 Address 3: " + data.status[interfaceName].ip6config.Addresses[2]);
+            ipv6.children(".address-3").text(i18nData['IPv6 Address'] + " 3: " + data.status[interfaceName].ip6config.Addresses[2]);
           else
-            ipv6.children(".address-3").text("IPv6 Address 3:");
+            ipv6.children(".address-3").text(i18nData['IPv6 Address'] + " 3:" );
         }
         // IPv6 Gateway
-        panel_collapse.children(".gateway").text("IPv6 Gateway: " + data.status[interfaceName].ip6config.Gateway);
+        panel_collapse.children(".gateway").text(i18nData['IPv6 Gateway'] + data.status[interfaceName].ip6config.Gateway);
         } else {
           ipv6.addClass("hidden");
         }
@@ -510,9 +510,9 @@ function updateStatus(){
           // BSSID
           activeaccesspoint.children(".bssid").text("BSSID:" + data.status[interfaceName].activeaccesspoint.HwAddress);
           // Frequency
-          activeaccesspoint.children(".frequency").text("Frequency: " + data.status[interfaceName].activeaccesspoint.Frequency);
+          activeaccesspoint.children(".frequency").text(i18nData['Frequency'] + ": " + data.status[interfaceName].activeaccesspoint.Frequency);
           // Signal Strength
-          activeaccesspoint.children(".strength").text("Signal Strength: " + data.status[interfaceName].activeaccesspoint.Strength);
+          activeaccesspoint.children(".strength").text(i18nData['Signal Strength'] + ": " + data.status[interfaceName].activeaccesspoint.Strength);
           // Progress Bar
           progress_bar = activeaccesspoint.children(".progress-bar");
           progress_bar.removeClass("hidden");
@@ -539,9 +539,9 @@ function updateStatus(){
         if (data.status[interfaceName].wireless){
           wireless.removeClass("hidden");
           // HW Address
-          wireless.children(".hwaddress").text("MAC Address: " + data.status[interfaceName].wireless.HwAddress);
+          wireless.children(".hwaddress").text(i18nData['MAC Address'] + ": " + data.status[interfaceName].wireless.HwAddress);
           // Bit Rate
-          wireless.children(".bitrate").text("Bit Rate: " + data.status[interfaceName].wireless.Bitrate);
+          wireless.children(".bitrate").text(i18nData['Bit Rate'] + ": " + data.status[interfaceName].wireless.Bitrate);
         } else {
           wireless.addClass("hidden");
         }
@@ -551,9 +551,9 @@ function updateStatus(){
         if (data.status[interfaceName].wired){
           wired.removeClass("hidden");
           // HW Address
-          wired.children(".hwaddress").text("MAC Address: " + data.status[interfaceName].wired.HwAddress);
+          wired.children(".hwaddress").text(i18nData['MAC Address'] + ": " + data.status[interfaceName].wired.HwAddress);
           // Speed
-          wired.children(".speed").text("Speed: " + data.status[interfaceName].wired.Speed);
+          wired.children(".speed").text(i18nData['Speed'] + ": "  + data.status[interfaceName].wired.Speed);
         } else {
           wired.addClass("hidden");
         }
@@ -580,8 +580,8 @@ function clickStatusPage() {
     $("#networking_status_main_menu").addClass("active");
     $("#networking_status_mini_menu").addClass("active");
     $("#main_section").html(data);
+    setLanguage("main_section");
     clearReturnData();
-    $("#helpText").html("This page shows the current state of networking");
     $(".infoText").addClass("hidden");
     clearTimeout(statusUpdateTimerId);
     updateStatus();
@@ -719,6 +719,7 @@ function editConnection(uuid, id, ssid, key_mgmt) {
     $("#networking_edit_main_menu").addClass("active");
     $("#networking_edit_mini_menu").addClass("active");
     $("#main_section").html(data);
+    setLanguage("main_section");
     clearReturnData();
     $("#helpText").html("Adjust connection settings.");
     $(".infoText").addClass("hidden");
@@ -743,10 +744,10 @@ function selectedConnection(){
 function onChangeConnections(){
   var activated = $("#connectionSelect option:selected").attr("activated");
   if(activated == 1){
-    $("#bt-connection-activate").attr("value", "Deactivate");
+    $("#bt-connection-activate").attr("value", i18nData['Deactivate-connection']);
   }
   else {
-    $("#bt-connection-activate").attr("value", "Activate");
+    $("#bt-connection-activate").attr("value", i18nData['Activate-connection']);
   }
 }
 
@@ -820,11 +821,9 @@ function clickConnectionsPage() {
     $("li").removeClass("active");
     $("#networking_connections_main_menu").addClass("active");
     $("#networking_connections_mini_menu").addClass("active");
-
-    clearReturnData();
-
     $("#main_section").html(data);
-    $("#helpText").html("These are the current networking connections.");
+    setLanguage("main_section");
+    clearReturnData();
     $(".infoText").addClass("hidden");
 
     updateConnectionsPage();
@@ -1078,7 +1077,7 @@ function addConnection() {
 		break;
 	}
 	if (!new_connection){
-	  CustomMsg("Invalid Settings", true);
+	  CustomMsg(i18nData['Invalid Settings'], true);
 	  return;
 	}
 	$.ajax({
@@ -1091,7 +1090,7 @@ function addConnection() {
 	  SDCERRtoString(msg.SDCERR);
 	});
   } else {
-	CustomMsg("Connection name can't be empty", true);
+	CustomMsg(i18nData['Connection name can not be empty'], true);
   }
 }
 
@@ -1178,6 +1177,7 @@ function clickScanPage(){
     $("#networking_scan_main_menu").addClass("active");
     $("#networking_scan_mini_menu").addClass("active");
     $("#main_section").html(data);
+    setLanguage("main_section");
     clearReturnData();
     $("#helpText").html("Scan for wireless networks");
     $(".infoText").addClass("hidden");
@@ -1273,8 +1273,8 @@ function clickVersionPage(){
     $("#networking_version_main_menu").addClass("active");
     $("#networking_version_mini_menu").addClass("active");
     $("#main_section").html(data);
+    setLanguage("main_section");
     clearReturnData();
-    $("#helpText").html("System version information");
     $(".infoText").addClass("hidden");
     getVersion(0);
   })
