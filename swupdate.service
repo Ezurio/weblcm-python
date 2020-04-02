@@ -4,6 +4,7 @@ Before=weblcm-python.service
 
 [Service]
 ExecStart=/usr/sbin/swupdate.sh
+KeyringMode=inherit
 
 [Install]
 WantedBy=multi-user.target
