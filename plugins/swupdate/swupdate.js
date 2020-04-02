@@ -1,6 +1,3 @@
-// Copyright (c) 2019, Laird
-// Contact: support@lairdconnect.com
-
 function swupdateAUTORUN(retry) {
   return;
 }
@@ -30,13 +27,24 @@ function updateFirmware() {
   if( $("#fw-name")[0].files.length == 0 )
     return;
 
+  $("#bt-firmware-update").prop("disabled", true);
+  $("#fw-update-status").text(i18nData['Checking...']);
+
   $.ajax({
     url: "/update_firmware_start",
-    data: {},
     type: "GET",
-    dataType: "html",
+    contentType: "application/json",
   })
-  .done(function() {
+  .done(function(msg) {
+
+    if(msg.SDCERR){
+      $("#bt-firmware-update").prop("disabled", false);
+      if (msg.message in i18nData)
+        $("#fw-update-status").text(i18nData[msg.message]);
+      else
+        $("#fw-update-status").text(msg.message);
+      return;
+    }
 
     fw_start = 0;
     fw_total_bytes = $("#fw-name")[0].files[0].size;
@@ -45,7 +53,7 @@ function updateFirmware() {
     $(".progress-bar").attr("aria-valuenow", r);
     $(".progress-bar").attr("style", "width: "+ r + "%");
     $(".progress-bar").text(r + "%");
-    $("#fw-update-status").text("Updating...");
+    $("#fw-update-status").text(i18nData['Updating...']);
 
     fw_reader = new FileReader();
     fw_xhr = new XMLHttpRequest();
@@ -60,12 +68,12 @@ function updateFirmware() {
 
     fw_xhr.upload.onerror = function() {
       $("#bt-firmware-update").prop("disabled", false);
-      $("#fw-update-status").text("Update failed! Please reboot the device.");
+      $("#fw-update-status").text(i18nData['Update failed!']);
     };
 
     fw_xhr.upload.onabort = function() {
       $("#bt-firmware-update").prop("disabled", false);
-      $("#fw-update-status").text("Update aborted! Please reboot the device.");
+      $("#fw-update-status").text(i18nData['Update aborted!']);
     };
 
     fw_xhr.onloadend = function() {
@@ -77,14 +85,14 @@ function updateFirmware() {
       }
       else {
         $("#bt-firmware-update").prop("disabled", false);
-        $("#fw-update-status").text("Update failed! Please reboot the device.");
+        $("#fw-update-status").text(i18nData['Update failed!']);
       }
     };
 
     upload_one_chunk();
-    $("#bt-firmware-update").prop("disabled", true);
   })
-  .fail(function() {
+  .fail(function(xhr){
+    $("#bt-firmware-update").prop("disabled", false);
   });
 }
 
@@ -97,7 +105,7 @@ function update_end() {
     dataType: "html",
   })
   .done(function() {
-    $("#fw-update-status").text("Update finished. Please reboot device!");
+    $("#fw-update-status").text(i18nData['Update finished. Please reboot device!']);
     $("#bt-firmware-update").prop("disabled", false);
   })
   .fail(function() {

@@ -1,6 +1,5 @@
 import cherrypy
 import dbus
-import subprocess
 import os
 import uuid
 import time

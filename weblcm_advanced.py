@@ -1,10 +1,11 @@
 import cherrypy
-import subprocess
+from subprocess import Popen, PIPE
 
 @cherrypy.expose
 class Reboot(object):
 	def PUT(self):
-		subprocess.Popen(['systemctl', 'reboot'])
+		p = Popen(['systemctl', 'reboot'])
+		p.wait()
 		return
 
 @cherrypy.expose
@@ -15,6 +16,6 @@ class FactoryReset(object):
 		result = {
 			'SDCERR': 1,
 		}
-		p = subprocess.Popen(['/usr/sbin/do_factory_reset.sh', 'reset'])
+		p = Popen(['/usr/sbin/do_factory_reset.sh', 'reset'])
 		result['SDCERR'] = p.wait()
 		return result

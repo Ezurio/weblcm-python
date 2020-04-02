@@ -246,5 +246,15 @@
     "Please select user first by clicking user name": "Please select user first by clicking user name",
     "Delete user failed": "Delete user failed",
     "Invalid ipv4 Settings": "Invalid ipv4 Settings",
-    "Invalid ipv6 Settings": "Invalid ipv6 Settings"
+    "Invalid ipv6 Settings": "Invalid ipv6 Settings",
+
+    "Checking...": "Checking...",
+    "Updating...": "Updating...",
+    "Update failed!": "Update failed!",
+    "Update aborted!": "Update aborted!",
+    "Update finished. Please reboot device!": "Update finished. Please reboot device!",
+    "An Error happened during update checking": "An Error happened during update checking",
+    "Update checking timeout": "Update checking timeout",
+    "Device is busy": "Device is busy"
+
 }

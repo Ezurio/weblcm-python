@@ -244,5 +244,14 @@
     "Please select user first by clicking user name": "请先点击用户名以选择用户",
     "Delete user failed": "删除用户失败",
     "Invalid ipv4 Settings": "ipv4设置不正确",
-    "Invalid ipv6 Settings": "ipv6设置不正确"
+    "Invalid ipv6 Settings": "ipv6设置不正确",
+
+    "Checking...": "检查中...",
+    "Updating...": "更新中...",
+    "Update failed!": "更新失败",
+    "Update aborted!": "更新中止",
+    "Update finished. Please reboot device!": "更新成功，请重启设备",
+    "An Error happened during update checking": "更新检查出错",
+    "Update checking timeout": "更新检查超时",
+    "Device is busy": "设备忙"
 }
