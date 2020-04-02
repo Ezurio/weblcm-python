@@ -200,6 +200,16 @@
     "Power Save": "Power Save",
     "WEP Type": "WEP Type",
 
+    "Method": "Method",
+    "Addresses": "Addresses",
+    "Gateway": "Gateway",
+    "Manual": "Manual",
+    "Auto": "Auto",
+    "Link-Local": "Link-Local",
+    "DHCP": "DHCP",
+    "Shared": "Shared",
+    "dns": "dns",
+
     "Unknown": "Unknown",
     "Unmanaged": "Unmanaged",
     "Unavailable": "Unavailable",
@@ -234,8 +244,7 @@
     "Minimally one special charcter is required": "Minimally one special charcter is required",
     "Add user failed": "Add user failed",
     "Please select user first by clicking user name": "Please select user first by clicking user name",
-    "Delete user failed": "Delete user failed"
-
-
-
+    "Delete user failed": "Delete user failed",
+    "Invalid ipv4 Settings": "Invalid ipv4 Settings",
+    "Invalid ipv6 Settings": "Invalid ipv6 Settings"
 }

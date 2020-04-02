@@ -669,6 +669,42 @@ function getEthernetConnection(settings) {
   $("#connection-type").change();
 }
 
+function getIpv4Settings(settings){
+
+  let ipv4 = [];
+  let addresses=[];
+
+  $("#ipv4-method").val(parseSettingData(settings['ipv4'], "method", "auto"));
+  $.when($("#ipv4-method").change()).done( function() {
+    addresses = parseSettingData(settings['ipv4'], "address-data", "");
+    for(let i=0; i<addresses.length; i++){
+      ipv4.push(addresses[i].address + '/' + addresses[i].prefix.toString());
+    }
+    $("#ipv4-addresses").val(ipv4.join(','));
+
+    $("#ipv4-gateway").val(parseSettingData(settings['ipv4'], "gateway", ""));
+    $("#ipv4-dns").val(parseSettingData(settings['ipv4'], "dns", ""));
+  });
+}
+
+function getIpv6Settings(settings){
+
+  let ipv6 = [];
+  let addresses = [];
+
+  $("#ipv6-method").val(parseSettingData(settings['ipv6'], "method", "auto"));
+  $.when($("#ipv6-method").change()).done( function() {
+    addresses = parseSettingData(settings['ipv6'], "address-data", "");
+    for(let i=0; i<addresses.length; i++){
+      ipv6.push(addresses[i].address + '/' + addresses[i].prefix.toString());
+    }
+    $("#ipv6-addresses").val(ipv6.join(','));
+
+    $("#ipv6-gateway").val(parseSettingData(settings['ipv6'], "gateway", ""));
+    $("#ipv6-dns").val(parseSettingData(settings['ipv6'], "dns", ""));
+  });
+}
+
 function updateGetConnectionPage(uuid, id, ssid, key_mgmt){
   var data = {
     UUID: uuid,
@@ -696,6 +732,8 @@ function updateGetConnectionPage(uuid, id, ssid, key_mgmt){
           default:
             break;
         }
+        getIpv4Settings(msg.connection);
+        getIpv6Settings(msg.connection);
       }
       else{
         newWifiConnection(uuid, id, ssid, key_mgmt);
@@ -721,7 +759,6 @@ function editConnection(uuid, id, ssid, key_mgmt) {
     $("#main_section").html(data);
     setLanguage("main_section");
     clearReturnData();
-    $("#helpText").html("Adjust connection settings.");
     $(".infoText").addClass("hidden");
 
     if(-1 == currUserPermission.indexOf("networking_ap_activate"))
@@ -773,7 +810,7 @@ function updateConnectionsPage(){
     }
   })
   .fail(function() {
-	consoleLog("Failed to update get connections");
+    consoleLog("Failed to get connections");
   });
 }
 
@@ -867,8 +904,6 @@ function prepareWirelessConnection() {
   ws = {};
   wss = {};
   wxs = {}
-  ipv4 = {};
-  ipv6 = {};
   settings = {};
 
   con['uuid'] = $("#connection-uuid").val();
@@ -883,9 +918,6 @@ function prepareWirelessConnection() {
 
   v = $("#radio-mode").val();
   ws['mode'] = v;
-  if(v == "ap"){
-    ipv4['method'] = "shared";
-  }
 
   v = $("#client-name").val().trim();
   if(v)
@@ -1051,46 +1083,155 @@ function prepareWirelessConnection() {
   settings['802-11-wireless'] = ws;
   settings['802-11-wireless-security'] = wss;
   settings['802-1x'] = wxs;
-  settings['ipv4'] = ipv4;
-  settings['ipv6'] = ipv6;
   return settings;
+}
+
+function prepareIPv4Addresses(){
+  let result = {
+    'error': true,
+    'ipv4':{}
+  };
+
+  var ipFormat = /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  var prefixFormat = /^(3[0-2]|[0-2]?[0-9])$/;
+
+  result.ipv4['method'] = $("#ipv4-method").val();
+
+  result.ipv4['address-data'] = [];
+  if($("#ipv4-addresses").val()){
+    let ips = $("#ipv4-addresses").val().split(',');
+    for(let i=0; i<ips.length; i++){
+      let data = ips[i].split('\/');
+      if(data.length != 2)
+        return result;
+      if(!data[0].match(ipFormat))
+        return result;
+      if(!data[1].match(prefixFormat))
+        return result;
+      result.ipv4['address-data'].push({'address':data[0], 'prefix':data[1]});
+    }
+  }
+
+  if ($("#ipv4-gateway").val()){
+    if(!$("#ipv4-gateway").val().match(ipFormat))
+      return result;
+    result.ipv4['gateway'] = $("#ipv4-gateway").val();
+  }
+
+  result.ipv4['dns'] = [];
+  if($("#ipv4-dns").val()){
+    let ips = $("#ipv4-dns").val().split(',');
+    for(let i=0; i<ips.length; i++){
+      if(!ips[i].match(ipFormat))
+        return result;
+      result.ipv4['dns'].push(ips[i]);
+    }
+  }
+
+  result.error = false;
+  return result;
+}
+
+function prepareIPv6Addresses(){
+  let result = {
+    'error': true,
+    'ipv6':{}
+  };
+
+  var ipFormat = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+  var prefixFormat = /^(1[01][0-9]|12[0-8]|[0-9]?[0-9])$/;
+
+  result.ipv6['method'] = $("#ipv6-method").val();
+
+  if(result.ipv6['method'] == "manual" && $("#ipv6-addresses").val()=="")
+    return result;
+
+  result.ipv6['address-data'] = [];
+  if($("#ipv6-addresses").val()){
+    let ips = $("#ipv6-addresses").val().split(',');
+    for(let i=0; i<ips.length; i++){
+      let data = ips[0].split('\/');
+      if(data.length != 2)
+        return result;
+      if(!data[0].match(ipFormat))
+        return result;
+      if(!data[1].match(prefixFormat))
+        return result;
+      result.ipv6['address-data'].push({'address':data[0], 'prefix':data[1]});
+    }
+  }
+
+  if ($("#ipv6-gateway").val()){
+    if(!$("#ipv6-gateway").val().match(ipFormat))
+      return result;
+    result.ipv6['gateway'] = $("#ipv6-gateway").val();
+  }
+
+  result.ipv6['dns'] = [];
+  if($("#ipv6-dns").val()){
+    let ips = $("#ipv6-dns").val().split(',');
+    for(let i=0; i<ips.length; i++){
+      if(ips[i].match(ipFormat))
+        return result;
+      result.ipv6['dns'].push(ips[i]);
+    }
+  }
+
+  result.error = false;
+  return result;
 }
 
 function addConnection() {
 
-  id = $("#connection-id").val();
+  let id = $("#connection-id").val();
   if (id != ""){
-	var ctype = $("#connection-type").val();
-	switch(ctype){
-	  case "802-3-ethernet":
-		new_connection = prepareEthernetConnection();
-		break;
-	  case "802-11-wireless":
-		new_connection = prepareWirelessConnection();
-		break;
-	  case "ppp":
-	  case "modem":
-	  case "bluetooth":
-	  case "wifi-p2p":
-	  case "bridge":
-	  default:
-		break;
-	}
-	if (!new_connection){
-	  CustomMsg(i18nData['Invalid Settings'], true);
-	  return;
-	}
-	$.ajax({
-	  url: "connection",
-	  type: "POST",
-	  data: JSON.stringify(new_connection),
-	  contentType: "application/json",
-	})
-	.done(function( msg ) {
-	  SDCERRtoString(msg.SDCERR);
-	});
+    let ctype = $("#connection-type").val();
+    switch(ctype){
+      case "802-3-ethernet":
+        new_connection = prepareEthernetConnection();
+        break;
+      case "802-11-wireless":
+        new_connection = prepareWirelessConnection();
+        break;
+      case "ppp":
+      case "modem":
+      case "bluetooth":
+      case "wifi-p2p":
+      case "bridge":
+      default:
+        break;
+    }
+
+    if (!new_connection){
+      CustomMsg(i18nData['Invalid Settings'], true);
+      return;
+    }
+
+    let result = prepareIPv4Addresses();
+    if(result.error){
+      CustomMsg(i18nData['Invalid ipv4 Settings'], true);
+      return;
+    }
+    new_connection['ipv4'] = result.ipv4;
+
+    result = prepareIPv6Addresses();
+    if(result.error){
+      CustomMsg(i18nData['Invalid ipv6 Settings'], true);
+      return;
+    }
+    new_connection['ipv6'] = result.ipv6;
+
+    $.ajax({
+      url: "connection",
+      type: "POST",
+      data: JSON.stringify(new_connection),
+      contentType: "application/json",
+    })
+    .done(function(msg) {
+      SDCERRtoString(msg.SDCERR);
+    });
   } else {
-	CustomMsg(i18nData['Connection name can not be empty'], true);
+    CustomMsg(i18nData['Connection name can not be empty'], true);
   }
 }
 
@@ -1321,6 +1462,75 @@ function onChangeRadioMode(){
       $("#radio-channel-display").removeClass("hidden");
       break;
     default:
+      break;
+  }
+}
+
+function onChangeIpv6Method(){
+  var mode = $("#radio-mode").val();
+
+  switch(mode){
+    case "infrastructure":
+      $("#frequency-list-display").removeClass("hidden");
+      $("#radio-channel-display").addClass("hidden");
+      $("#frequency-dfs").removeClass("hidden");
+      break;
+    case "ap":
+      $("#frequency-list-display").addClass("hidden");
+      $("#radio-channel-display").removeClass("hidden");
+      $("#frequency-dfs").addClass("hidden");
+      break;
+    default:
+      break;
+  }
+}
+
+function onChangeIpv4Method(){
+  let method = $("#ipv4-method").val();
+  switch(method){
+    case "disabled":
+    case "manual":
+    case "shared":
+      $("#ipv4-addresses").attr('readonly', false);
+      $("#ipv4-gateway").attr('readonly', false);
+      $("#ipv4-dns").attr('readonly', false);
+      break;
+
+    case "auto":
+    case "link-local":
+    default:
+      $("#ipv4-addresses").val('');
+      $("#ipv4-gateway").val('');
+      $("#ipv4-dns").val('');
+      $("#ipv4-addresses").attr('readonly', true);
+      $("#ipv4-gateway").attr('readonly', true);
+      $("#ipv4-dns").attr('readonly', true);
+      break;
+  }
+}
+
+
+function onChangeIpv6Method(){
+  let method = $("#ipv6-method").val();
+  switch(method){
+    case "manual":
+    case "shared":
+    case "disabled":
+      $("#ipv6-addresses").attr('readonly', false);
+      $("#ipv6-gateway").attr('readonly', false);
+      $("#ipv6-dns").attr('readonly', false);
+      break;
+    case "auto":
+    case "dhcp":
+    case "ignore":
+    case "link-local":
+    default:
+      $("#ipv6-addresses").val('');
+      $("#ipv6-gateway").val('');
+      $("#ipv6-dns").val('');
+      $("#ipv6-addresses").attr('readonly', true);
+      $("#ipv6-gateway").attr('readonly', true);
+      $("#ipv6-dns").attr('readonly', true);
       break;
   }
 }
