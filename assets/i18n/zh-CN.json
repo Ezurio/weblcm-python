@@ -199,6 +199,16 @@
     "Power Save": "低功耗模式",
     "WEP Type": "WEP认证类型",
 
+    "Method": "方法",
+    "Addresses": "地址",
+    "Gateway": "网关",
+    "Manual": "手动",
+    "Auto": "自动",
+    "Link-Local": "本地连接",
+    "DHCP": "DHCP",
+    "Shared": "共享",
+    "dns": "域名服务器",
+
     "Unknown": "未知",
     "Unmanaged": "未管理",
     "Unavailable": "不可获取",
@@ -232,5 +242,7 @@
     "Minimally one special charcter is required": "至少需要一个特殊字符",
     "Add user failed": "创建新用户失败",
     "Please select user first by clicking user name": "请先点击用户名以选择用户",
-    "Delete user failed": "删除用户失败"
+    "Delete user failed": "删除用户失败",
+    "Invalid ipv4 Settings": "ipv4设置不正确",
+    "Invalid ipv6 Settings": "ipv6设置不正确"
 }
