@@ -28,7 +28,7 @@ class NetworkConnections(object):
 			connection['activated'] = 0
 
 			wifi_settings = all_settings.get('802-11-wireless')
-			if wifi_settings and wifi_settings['mode'] == "ap":
+			if wifi_settings and wifi_settings.get('mode') == "ap":
 				connection['type'] = "ap"
 
 			result['connections'][settings['uuid']] = connection
@@ -275,7 +275,8 @@ class NetworkInterfaces(object):
 		try:
 			interfaces = []
 			for dev in NetworkManager.NetworkManager.GetDevices():
-				interfaces.append(dev.Interface + " ")
+				if(dev.State != NetworkManager.NM_DEVICE_STATE_UNMANAGED):
+					interfaces.append(dev.Interface + " ")
 			result['SDCERR'] = 0
 			result['interfaces'] = interfaces
 		except Exception as e:

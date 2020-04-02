@@ -1,8 +1,4 @@
 <!DOCTYPE html>
-<!--
-  Copyright (c) 2017, Laird
-  Contact: support@lairdconnect.com
--->
 
 <html>
 	<form class="col-xs-12 col-sm-12 placeholder" style="height:900px;overflow-y:auto">
@@ -31,6 +27,72 @@
 					<option value="bridge">Bridge</option>
 				</select>
 			</div>
+		</div>
+		<div class="panel-group" id="ipaddress-settings-accordion">
+			<div class="panel panel-default" id="ipv4-settings">
+				<div class="panel-heading">
+					<a data-toggle="collapse" data-parent="#ipaddress-settings-accordion" class="i18n" name="IPv4 Settings" href="#ipv4-settings">IPv4 Settings</a>
+				</div>
+				<div id="ipv4-settings" class="panel-collapse collapse in">
+					<div class="panel-body">
+						<div class="form-group">
+							<label class="pull-left i18n" name="Method" for="ipv4-method">Method:</label>
+							<select class="form-control" id="ipv4-method" onchange="onChangeIpv4Method()">
+								<option class="i18n" name="Auto" value="auto" selected>Auto</option>
+								<option class="i18n" name="Manual" value="manual">Manual</option>
+								<option class="i18n" name="Shared" value="shared">Shared</option>
+								<option class="i18n" name="Link-Local" value="link-local">Link-Local</option>
+								<option class="i18n" name="Disable" value="disabled">Disable</option>
+							</select>
+						</div>
+						<div class="form-group" id="ipv4-addresses-display">
+							<label class="pull-left i18n" name="Addresses" for="ipv4-addresses">Addresses:</label>
+							<input type="text" class="form-control" id="ipv4-addresses" readonly>
+						</div>
+						<div class="form-group" id="ipv4-gateway-display">
+							<label class="pull-left i18n" name="Gateway" for="ipv4-gateway">Gateway:</label>
+							<input type="text" class="form-control" id="ipv4-gateway" readonly>
+						</div>
+						<div class="form-group" id="ipv4-dns-display">
+							<label class="pull-left i18n" name="dns" for="ipv4-dns">dns:</label>
+							<input type="text" class="form-control" id="ipv4-dns" readonly>
+						</div>
+					</div>
+				</div>
+            </div>
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<a data-toggle="collapse" data-parent="#ipaddress-settings-accordion" class="i18n" name="IPv6 Settings" href="#ipv6-settings">IPv6 Settings</a>
+				</div>
+				<div id="ipv6-settings" class="panel-collapse collapse in">
+					<div class="panel-body">
+						<div class="form-group">
+							<label class="pull-left i18n" name="Method" for="ipv6-method">Method:</label>
+							<select class="form-control" id="ipv6-method" onchange="onChangeIpv6Method()">
+								<option class="i18n" name="Auto" value="auto" selected>Auto</option>
+								<option class="i18n" name="Manual" value="manual">Manual</option>
+								<option class="i18n" name="DHCP" value="dhcp">DHCP</option>
+								<option class="i18n" name="Shared" value="shared">Shared</option>
+								<option class="i18n" name="Ignore" value="ignore">Ignore</option>
+								<option class="i18n" name="Link-Local" value="link-local">Link-Local</option>
+								<option class="i18n" name="Disable" value="disabled">Disable</option>
+							</select>
+						</div>
+						<div class="form-group" id="ipv6-addresses-display">
+							<label class="pull-left i18n" name="Addresses" for="ipv6-addresses">Addresses:</label>
+							<input type="text" class="form-control" id="ipv6-addresses" placeholder="0000:0000:0000:0000:0000:0000:0000:0000" readonly>
+						</div>
+						<div class="form-group" id="ipv6-gateway-display">
+							<label class="pull-left i18n" name="Gateway" for="ipv6-gateway">Gateway:</label>
+							<input type="text" class="form-control" id="ipv6-gateway" placeholder="0000:0000:0000:0000:0000:0000:0000:0000" readonly>
+						</div>
+						<div class="form-group" id="ipv6-dns-display">
+							<label class="pull-left i18n" name="dns" for="ipv6-dns">dns:</label>
+							<input type="text" class="form-control" id="ipv6-dns" placeholder="0000:0000:0000:0000:0000:0000:0000:0000" readonly>
+						</div>
+					</div>
+				</div>
+            </div>
 		</div>
 
 		<div class="panel-group" id="connection-settings-accordion">
