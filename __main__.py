@@ -80,10 +80,7 @@ if __name__ == '__main__':
 	webapp.files = FileManage()
 	webapp.archiveFiles = ArchiveFilesManage()
 
-	swu = SWUpdate()
-	webapp.update_firmware = swu.update_firmware
-	webapp.update_firmware_start = swu.update_firmware_start
-	webapp.update_firmware_end = swu.update_firmware_end
+	webapp.firmware = SWUpdate()
 
 	webapp.reboot = Reboot()
 	webapp.factoryReset = FactoryReset()

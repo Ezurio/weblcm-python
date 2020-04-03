@@ -14,7 +14,7 @@ function upload_one_chunk() {
 
   fw_reader.onload = function(e) {
     var data = fw_reader.result;
-    fw_xhr.open('POST', "/update_firmware", true);
+    fw_xhr.open('PUT', "firmware", true);
     fw_xhr.setRequestHeader("Content-Type", "application/octet-stream");
     fw_xhr.send(data);
   }
@@ -31,18 +31,18 @@ function updateFirmware() {
   $("#fw-update-status").text(i18nData['Checking...']);
 
   $.ajax({
-    url: "/update_firmware_start",
-    type: "GET",
-    contentType: "application/json",
+    url: "firmware",
+    type: "POST",
+    dataType: "json",
   })
   .done(function(msg) {
 
     if(msg.SDCERR){
-      $("#bt-firmware-update").prop("disabled", false);
       if (msg.message in i18nData)
         $("#fw-update-status").text(i18nData[msg.message]);
       else
         $("#fw-update-status").text(msg.message);
+      $("#bt-firmware-update").prop("disabled", false);
       return;
     }
 
@@ -67,13 +67,11 @@ function updateFirmware() {
     };
 
     fw_xhr.upload.onerror = function() {
-      $("#bt-firmware-update").prop("disabled", false);
-      $("#fw-update-status").text(i18nData['Update failed!']);
+      update_end(i18nData['Update failed!']);
     };
 
     fw_xhr.upload.onabort = function() {
-      $("#bt-firmware-update").prop("disabled", false);
-      $("#fw-update-status").text(i18nData['Update aborted!']);
+      update_end(i18nData['Update aborted!']);
     };
 
     fw_xhr.onloadend = function() {
@@ -81,11 +79,10 @@ function updateFirmware() {
         if(fw_start < fw_total_bytes)
           upload_one_chunk();
         else
-          update_end();
+          update_end(i18nData['Update finished. Please reboot device!']);
       }
       else {
-        $("#bt-firmware-update").prop("disabled", false);
-        $("#fw-update-status").text(i18nData['Update failed!']);
+        update_end(i18nData['Update failed!']);
       }
     };
 
@@ -96,16 +93,14 @@ function updateFirmware() {
   });
 }
 
-function update_end() {
+function update_end(msg) {
 
   $.ajax({
-    url: "/update_firmware_end",
-    data: {},
-    type: "GET",
-    dataType: "html",
+    url: "firmware",
+    type: "DELETE",
   })
   .done(function() {
-    $("#fw-update-status").text(i18nData['Update finished. Please reboot device!']);
+    $("#fw-update-status").text(msg);
     $("#bt-firmware-update").prop("disabled", false);
   })
   .fail(function() {
@@ -115,7 +110,6 @@ function update_end() {
 function clickSWUpdatePage() {
   $.ajax({
     url: "plugins/swupdate/html/swupdate.html",
-    data: {},
     type: "GET",
     dataType: "html",
   })
