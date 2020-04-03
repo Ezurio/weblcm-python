@@ -10,7 +10,7 @@ from subprocess import Popen, PIPE, TimeoutExpired
 def octet_stream_in(force=True, debug=False):
 	request = cherrypy.serving.request
 	def octet_stream_processor(entity):
-		'''Read application/octet-stream data into request.json.'''
+		#Read application/octet-stream data into request.json.
 		if not entity.headers.get("Content-Length", ""):
 			raise cherrypy.HTTPError(411)
 		try:
@@ -26,29 +26,32 @@ def octet_stream_in(force=True, debug=False):
 			415, 'Expected an application/octet-stream content type')
 	request.body.processors['application/octet-stream'] = octet_stream_processor
 
+@cherrypy.expose
 class SWUpdate:
 
 	_isUpdating = False
 	_lock = threading.Lock()
+	cherrypy.tools.octet_stream_in = cherrypy.Tool('before_request_body', octet_stream_in)
 
-	def __init__(self):
-		cherrypy.tools.octet_stream_in = cherrypy.Tool('before_request_body', octet_stream_in)
-
-	@cherrypy.expose
 	@cherrypy.config(**{'tools.octet_stream_in.on': True})
-	def update_firmware(self):
+	def PUT(self):
 		pass
 
-	@cherrypy.expose
 	@cherrypy.tools.json_out()
-	def update_firmware_start(self):
+	def POST(self):
+		result = {
+			'SDCERR': 1,
+			'message': "Device is busy"
+		}
 
 		dryrun = 0
 
-		result = {
-			'SDCERR': 1,
-			'message': "",
-		}
+		SWUpdate._lock.acquire()
+		if SWUpdate._isUpdating:
+			SWUpdate._lock.release()
+			return result
+		SWUpdate._isUpdating = True
+		SWUpdate._lock.release()
 
 		try:
 			proc = Popen("/usr/sbin/weblcm_update_checking.sh", stdout=PIPE, stderr=PIPE)
@@ -58,27 +61,22 @@ class SWUpdate:
 				result['message'] = errs.decode("utf-8")
 				result['SDCERR'] = proc.returncode
 			else:
-				self._lock.acquire()
-				isupdating = self._isUpdating
-				self._isUpdating = True
-				self._lock.release()
-
-				if isupdating == False:
-					swclient.prepare_fw_update(dryrun)
+				if swclient.prepare_fw_update(dryrun) > 0:
 					result['SDCERR'] = 0
-				else:
-					result['message'] = "Device is busy"
 
 		except TimeoutExpired:
 			proc.kill()
 			outs, errs = proc.communicate()
 			result['message'] = "Update checking timeout"
-		except Exception as inst:
-			result['message'] = "An Error happened during update checking"
+		except Exception as e:
+			result['message'] = "{}".format(e)
+
+		if result['SDCERR']:
+			SWUpdate._isUpdating = False
 
 		return result
 
-	@cherrypy.expose
-	def update_firmware_end(self):
+	def DELETE(self):
 		swclient.end_fw_update()
-		self._isUpdating = False
+		SWUpdate._isUpdating = False
+		return
