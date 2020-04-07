@@ -1,8 +1,5 @@
-import os, os.path
+import os
 import cherrypy
-import configparser
-import uuid
-import hashlib
 import weblcm_def
 from weblcm_network_status import NetworkStatus
 from weblcm_network import NetworkInterfaces, NetworkConnections, NetworkConnection, NetworkAccessPoints, Version
@@ -49,18 +46,6 @@ def setup_http_server():
 
 if __name__ == '__main__':
 
-	"""Change default directories for som60sd"""
-	if not os.path.exists(weblcm_def.FILEDIR_DICT.get('profile')):
-		weblcm_def.FILEDIR_DICT['profile']='/etc/NetworkManager/system-connections/'
-		weblcm_def.FILEDIR_DICT['cert']='/etc/weblcm-python/ssl/'
-		weblcm_def.FILEDIR_DICT['config']='/etc/'
-
-	if not os.path.exists(weblcm_def.WEBLCM_PYTHON_CONF_DIR):
-		weblcm_def.WEBLCM_PYTHON_CONF_DIR = '/etc/weblcm-python/'
-
-	if not os.path.exists(weblcm_def.WIFI_DRIVER_DEBUG_PARAM):
-		weblcm_def.WIFI_DRIVER_DEBUG_PARAM = "/sys/module/ath6kl_core/parameters/debug_mask"
-
 	webapp = Root()
 
 	webapp.login = LoginManage()
@@ -87,15 +72,10 @@ if __name__ == '__main__':
 
 	setup_http_server()
 
-	conf = os.path.join('{0}{1}'.format(weblcm_def.WEBLCM_PYTHON_CONF_DIR, "weblcm-python.ini"))
-
 	#Server config
 	cherrypy.config.update({
-			'server.socket_host': '0.0.0.0',
-			'server.socket_port': 443,
-			'server.ssl_module': 'builtin',
-			'server.ssl_certificate': '{0}{1}'.format(weblcm_def.WEBLCM_PYTHON_CONF_DIR, 'ssl/server.crt'),
-			'server.ssl_private_key': '{0}{1}'.format(weblcm_def.WEBLCM_PYTHON_CONF_DIR, 'ssl/server.key'),
+			'server.ssl_certificate': '{0}{1}'.format(weblcm_def.FILEDIR_DICT.get('cert'), 'server.crt'),
+			'server.ssl_private_key': '{0}{1}'.format(weblcm_def.FILEDIR_DICT.get('cert'), 'server.key'),
 		})
 
-	cherrypy.quickstart(webapp, '/', config=conf)
+	cherrypy.quickstart(webapp, '/', config=weblcm_def.WEBLCM_PYTHON_SERVER_CONF_FILE)

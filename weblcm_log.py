@@ -23,7 +23,6 @@ class LogData(object):
 		if int(days) > 0:
 			reader.seek_realtime(time.time() - int(days) * 86400)
 
-
 		def streaming():
 			logs = []
 			for entry in reader:
@@ -31,14 +30,13 @@ class LogData(object):
 				logs.append(str(entry.get('PRIORITY', 7)))
 				logs.append(entry.get('SYSLOG_IDENTIFIER', "Undefined"))
 				logs.append(entry.get('MESSAGE', "Undefined"))
-				if len(logs) == cherrypy.request.app.config['weblcm']['log_data_streaming_size']:
+				if len(logs) == cherrypy.request.app.config['weblcm'].get('log_data_streaming_size', 100):
 					yield (":#:".join(logs) + ":#:")
 					logs.clear()
 			if len(logs) > 0:
 				yield ":#:".join(logs)
 				logs.clear()
 			reader.close()
-
 
 		return streaming()
 
