@@ -1,28 +1,31 @@
-import cherrypy
+import os
 
 WEBLCM_PYTHON_BUILD = '0.0.0.0'
 WEBLCM_PYTHON_VERSION = '0.0.0.0'
 
-WEBLCM_PYTHON_CONF_DIR = '/data/secret/weblcm-python/'
+WEBLCM_PYTHON_CONF_DIR = '/data/secret/'
+WEBLCM_PYTHON_USER_CONF_FILE = '/data/secret/weblcm-python/users.ini'
+WEBLCM_PYTHON_SERVER_CONF_FILE = '/data/secret/weblcm-python/weblcm-python.ini'
 
-WIFI_DEVICE_NAME =				'wlan0'
-WIFI_DRIVER_DEBUG_PARAM =		'/sys/module/lrdmwl/parameters/lrd_debug'
+WIFI_DRIVER_DEBUG_PARAM = '/sys/module/lrdmwl/parameters/lrd_debug'
+"""Change to ath6kl driver for wb50n"""
+if not os.path.exists(WIFI_DRIVER_DEBUG_PARAM):
+	WIFI_DRIVER_DEBUG_PARAM = "/sys/module/ath6kl_core/parameters/debug_mask"
 
 FILEDIR_DICT = {
-	'cert' : '/data/secret/weblcm-python/ssl/',
-	'profile' : '/data/secret/NetworkManager/system-connections/',
-	'config' : '/data/secret/',
-};
+	'cert': '{0}{1}'.format(WEBLCM_PYTHON_CONF_DIR, 'weblcm-python/ssl/'),
+	'profile': '{0}{1}'.format(WEBLCM_PYTHON_CONF_DIR, 'NetworkManager/system-connections/'),
+	'config': WEBLCM_PYTHON_CONF_DIR,
+}
 
 FILEFMT_DICT = {
 	'cert' : ('.crt', '.key', '.pem', '.pac', '.bin'),
 	'profile' : ('.nmconnection'),
-};
+}
 
-DBUS_PROP_IFACE =				'org.freedesktop.DBus.Properties'
-
-WPA_OBJ =						'/fi/w1/wpa_supplicant1'
-WPA_IFACE =						'fi.w1.wpa_supplicant1'
+DBUS_PROP_IFACE = 'org.freedesktop.DBus.Properties'
+WPA_OBJ = '/fi/w1/wpa_supplicant1'
+WPA_IFACE =	'fi.w1.wpa_supplicant1'
 
 USER_PERMISSION_TYPES = {
 	'UserPermssionTypes':[
