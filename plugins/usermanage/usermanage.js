@@ -134,7 +134,7 @@ function updatePassword() {
     SDCERRtoString(data.SDCERR);
 
     if (data.REDIRECT == 1){
-      login("root", new_password);
+      login(currUser, new_password);
 	}
   })
   .fail(function() {

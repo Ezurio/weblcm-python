@@ -36,7 +36,7 @@ class FileManage(object):
 		}
 
 		f = os.path.normpath(os.path.join(weblcm_def.FILEDIR_DICT.get(typ), fil))
-		if os.path.exists(f):
+		if os.path.isfile(f):
 			os.remove(f)
 			result['SDCERR'] = 0;
 		return result
@@ -61,28 +61,27 @@ class ArchiveFilesManage(object):
 	"""
 		Manage archive files.
 	"""
-	def POST(self, fil, typ, passwd):
+	def POST(self, typ, fil, Password):
 
 		res = 1
 
 		f = save_file(typ, fil)
-		if os.path.exists(f):
+
+		if os.path.isfile(f):
 			p = subprocess.Popen([
 				'/usr/sbin/weblcm_file_import_export.sh', "config", "unzip",
-				f, weblcm_def.FILEDIR_DICT.get(typ), passwd
+				f, weblcm_def.FILEDIR_DICT.get(typ), Password
 			])
 			res = p.wait()
 			os.unlink(f)
+
 		if res:
-			raise cherrypy.HTTPError(500)
+			raise cherrypy.HTTPError()
 
 	def GET(self, typ, passwd):
 
-		fil = typ + ".zip"
-		f = "/tmp/" + fil
-		if os.path.exists(f):
-			os.remove(f)
-
+		fil = '{0}{1}'.format(typ, ".zip")
+		f = '{0}{1}'.format("/tmp/", fil)
 		if typ == "config":
 			p = subprocess.Popen([
 				'/usr/sbin/weblcm_file_import_export.sh', "config", "zip",
@@ -91,24 +90,24 @@ class ArchiveFilesManage(object):
 		elif typ == "log":
 			p = subprocess.Popen([
 				'/usr/sbin/weblcm_file_import_export.sh', "log", "zip",
-				cherrypy.request.app.config['weblcm']['log_data_dir'], f, passwd
+				cherrypy.request.app.config['weblcm'].get('log_data_dir', "/run/log/journal/"), f, passwd
 			])
 		else:
 			p = subprocess.Popen([
 				'/usr/sbin/weblcm_file_import_export.sh', "debug", "zip",
-				' '.join([cherrypy.request.app.config['weblcm']['log_data_dir'], weblcm_def.FILEDIR_DICT.get('config')]),
-				f, cherrypy.request.app.config['weblcm']['cert_for_file_encryption']
+				' '.join([cherrypy.request.app.config['weblcm'].get('log_data_dir', "/run/log/journal/"), weblcm_def.FILEDIR_DICT.get('config')]),
+				f, cherrypy.request.app.config['weblcm'].get('cert_for_file_encryption', "/etc/weblcm-python/ssl/ca.crt")
 			])
 		p.wait()
 
-		if os.path.exists(f):
+		if os.path.isfile(f):
 			return static.serve_file(f, 'application/x-download', 'attachment', fil)
 
-		raise cherrypy.HTTPError(500)
+		raise cherrypy.HTTPError()
 
 	def DELETE(self, typ):
 
-		fil = typ + ".zip"
-		f = "/tmp/" + fil
-		if os.path.exists(f):
+		fil = '{0}{1}'.format(typ, ".zip")
+		f = '{0}{1}'.format("/tmp/", fil)
+		if os.path.isfile(f):
 			os.remove(f)
