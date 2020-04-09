@@ -56,9 +56,9 @@ function doUpload(form, type) {
     if(xhr.readyState === XMLHttpRequest.DONE) {
       var status = xhr.status;
       if (status === 0 || (200 <= status && status < 400)) {
-        CustomMsg(i18nData['Success'], false);
+        CustomMsg("Success", false);
       } else {
-        CustomMsg(i18nData['Failure'], true);
+        CustomMsg("Failure", true);
       }
       $("#bt-import-"+type).prop("disabled", false);
     }
@@ -75,13 +75,13 @@ function importArchive(type){
   var files = $("#input-file-"+type)[0].files;
   if( files.length == 0 )
   {
-    CustomMsg(i18nData['Please select the config archive first'], true);
+    CustomMsg("Please select the config archive first", true);
     return;
   }
 
   var passwd = $("#"+type+"-decrypt-passwd").val();
   if (passwd.length < 8 || passwd.length > 64){
-    CustomMsg(i18nData['8-64 characters are required'], true);
+    CustomMsg("8-64 characters are required", true);
     return;
   }
 
@@ -110,7 +110,7 @@ function doDownload(url, type) {
 
   xhr.onreadystatechange = function() {
     if(xhr.readyState == XMLHttpRequest.LOADING){
-        CustomMsg(i18nData['Downloading...'], false);
+        CustomMsg("Downloading...", false);
     }
     else if(xhr.readyState === XMLHttpRequest.DONE) {
       if (xhr.status === 0 || (200 <= xhr.status && xhr.status < 400)) {
@@ -127,17 +127,17 @@ function doDownload(url, type) {
         }
       }
       else {
-        CustomMsg(i18nData['Failure'], true);
+        CustomMsg("Failure", true);
       }
 
-      CustomMsg(i18nData['Downloaded'], false);
+      CustomMsg("Downloaded", false);
       $("#bt-export-"+type).prop("disabled", false);
 
       doDelete(type);
     }
   }
 
-  CustomMsg(i18nData['Download start'], false);
+  CustomMsg("Download start", false);
   $("#bt-export-"+type).prop("disabled", true);
 
   xhr.open('GET', url, true);
@@ -154,7 +154,7 @@ function exportArchive(type) {
   if (type != "debug") {
     passwd = $("#"+type+"-encrypt-passwd").val();
     if (passwd.length < 8 || passwd.length > 64){
-      CustomMsg(i18nData['8-64 characters are required'], true);
+      CustomMsg("8-64 characters are required", true);
       return;
     }
   }
