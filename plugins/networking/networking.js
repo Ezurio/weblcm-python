@@ -591,19 +591,29 @@ function clickStatusPage() {
   });
 }
 
-function newWifiConnection(uuid, id, ssid, key_mgmt) {
+function newConnection(id, ssid, key_mgmt) {
 
-  $("#connection-uuid").val(uuid);
+  $("#connection-uuid").val("");
   $("#connection-id").val(id);
-  $("#ssid").val(ssid);
 
-  $("#key-mgmt").val(key_mgmt);
-  $("#key-mgmt").change();
+  $("#interface-name option:first").attr('selected','selected');
+  $("#connection-type option:first").attr('selected','selected');
 
-  $("#connection-type").val("802-11-wireless");
+  if(ssid){
+    $("#interface-name option").each(function(){
+      if($(this).val().includes("wlan")){
+        $(this).attr('selected', 'selected');
+        $("#connection-type").val("802-11-wireless");
+        $("#ssid").val(ssid);
+        $("#key-mgmt").val(key_mgmt);
+        $("#key-mgmt").change();
+        return false
+      }
+    });
+  }
+
   $("#connection-type").change();
 }
-
 function getWifiConnection(settings){
 
   $("#connection-uuid").val(parseSettingData(settings['connection'], "uuid", ""));
@@ -706,9 +716,11 @@ function getIpv6Settings(settings){
 }
 
 function updateGetConnectionPage(uuid, id, ssid, key_mgmt){
-  var data = {
-    UUID: uuid,
+  if(uuid == null){
+    newConnection(id, ssid, key_mgmt);
+    return;
   }
+
   $.ajax({
     url: "connection?uuid="+uuid,
     type: "GET",
@@ -734,9 +746,6 @@ function updateGetConnectionPage(uuid, id, ssid, key_mgmt){
         }
         getIpv4Settings(msg.connection);
         getIpv6Settings(msg.connection);
-      }
-      else{
-        newWifiConnection(uuid, id, ssid, key_mgmt);
       }
     }
   })
@@ -1203,20 +1212,20 @@ function addConnection() {
     }
 
     if (!new_connection){
-      CustomMsg(i18nData['Invalid Settings'], true);
+      CustomMsg("Invalid Settings", true);
       return;
     }
 
     let result = prepareIPv4Addresses();
     if(result.error){
-      CustomMsg(i18nData['Invalid ipv4 Settings'], true);
+      CustomMsg("Invalid ipv4 Settings", true);
       return;
     }
     new_connection['ipv4'] = result.ipv4;
 
     result = prepareIPv6Addresses();
     if(result.error){
-      CustomMsg(i18nData['Invalid ipv6 Settings'], true);
+      CustomMsg("Invalid ipv6 Settings", true);
       return;
     }
     new_connection['ipv6'] = result.ipv6;
@@ -1231,7 +1240,7 @@ function addConnection() {
       SDCERRtoString(msg.SDCERR);
     });
   } else {
-    CustomMsg(i18nData['Connection name can not be empty'], true);
+    CustomMsg("Connection name can not be empty", true);
   }
 }
 
@@ -1365,11 +1374,7 @@ function getCerts(connection){
     }
   }
 
-  var data = {
-    type: 'cert'
-  };
-
-  $.ajax({
+  return $.ajax({
     url: "files?typ=cert",
     type: "GET",
     contentType: "application/json",
@@ -1425,7 +1430,7 @@ function clickVersionPage(){
 }
 
 function getNetworkInterfaces(){
-  $.ajax({
+  return $.ajax({
     url: "networkInterfaces",
     type: "GET",
     contentType: "application/json",
@@ -1435,11 +1440,28 @@ function getNetworkInterfaces(){
       return;
     interfaces = data.interfaces;
     if($("#interface-name").length > 0){
-      var sel = $("#interface-name");
+      let sel = $("#interface-name");
       sel.empty();
       for (iface in interfaces){
-        var option = "<option value=" + interfaces[iface] + ">" + interfaces[iface] + "</option>";
+        let option = "<option value=" + interfaces[iface] + ">" + interfaces[iface] + "</option>";
         sel.append(option);
+      }
+
+      sel = $("#connection-type");
+      sel.empty();
+      for (iface in interfaces){
+        if ((interfaces[iface].indexOf("eth") >= 0) || (interfaces[iface].indexOf("usb") >= 0)){
+          let option = '<option value="802-3-ethernet">Ethernet</option>';
+          sel.append(option);
+          break;
+        }
+      }
+      for (iface in interfaces){
+        if (interfaces[iface].includes("wlan")){
+          let option = '<option value="802-11-wireless">Wireless</option>';
+          sel.append(option);
+          break;
+        }
       }
     }
   })

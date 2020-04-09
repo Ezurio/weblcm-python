@@ -8,6 +8,21 @@ import subprocess
 import NetworkManager
 import weblcm_def
 
+def filter_connection_types(dev):
+
+	#Don't return connections with unmanaged interfaces
+	if dev.State == NetworkManager.NM_DEVICE_STATE_UNMANAGED:
+		return False
+
+	#Don't return connections with type disabled in the configure file
+	if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_ETHERNET:
+		return cherrypy.request.app.config['weblcm'].get('enable_connection_wired', True)
+	if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
+		return cherrypy.request.app.config['weblcm'].get('enable_connection_wifi', True)
+
+	return True
+
+
 @cherrypy.expose
 class NetworkConnections(object):
 	@cherrypy.tools.json_out()
@@ -17,27 +32,31 @@ class NetworkConnections(object):
 			'connections': {},
 		}
 
-		connections = NetworkManager.Settings.ListConnections()
-		result['length'] = len(connections)
-		for c in connections:
-
-			connection = {}
-			all_settings = c.GetSettings()
-			settings = all_settings.get('connection')
-			connection['id'] = settings['id']
-			connection['activated'] = 0
-
-			wifi_settings = all_settings.get('802-11-wireless')
-			if wifi_settings and wifi_settings.get('mode') == "ap":
-				connection['type'] = "ap"
-
-			result['connections'][settings['uuid']] = connection
-
 		devices = NetworkManager.NetworkManager.GetDevices()
 		for dev in devices:
+
+			if filter_connection_types(dev) == False:
+				continue;
+
+			connections = dev.AvailableConnections
+			for c in connections:
+				s_all = c.GetSettings();
+				s_con = s_all.get('connection')
+
+				t = {}
+				t['id'] = s_con.get('id')
+				t['activated'] = 0
+
+				s_wifi = s_all.get('802-11-wireless')
+				if s_wifi and s_wifi.get('mode') == "ap":
+					t['type'] = "ap"
+
+				result['connections'][s_con['uuid']] = t
+
 			if dev.ActiveConnection:
 				result['connections'][dev.ActiveConnection.Uuid]['activated'] = 1
 
+		result['length'] = len(result['connections'])
 		result['SDCERR'] = 0
 		return result
 
@@ -275,10 +294,12 @@ class NetworkInterfaces(object):
 		try:
 			interfaces = []
 			for dev in NetworkManager.NetworkManager.GetDevices():
-				if(dev.State != NetworkManager.NM_DEVICE_STATE_UNMANAGED):
+				if filter_connection_types(dev):
 					interfaces.append(dev.Interface + " ")
+
 			result['SDCERR'] = 0
 			result['interfaces'] = interfaces
 		except Exception as e:
 			print(e)
+
 		return result
