@@ -152,8 +152,8 @@
 		}
 
 		function CustomMsg(message, err){
-				nMsg = err ? "Failure":"Success";
-			if (!sendNotification(nMsg, i18nData[message])){
+			nMsg = err ? "Failure":"Success";
+			if (!sendNotification(nMsg, i18nData[message] ? i18nData[message] : message)){
 				if (message.length >= 20){
 					$("#returnDataNav").css( "fontSize", "12px" );
 				}
