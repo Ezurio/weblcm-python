@@ -1,402 +1,570 @@
-<!DOCTYPE html>
 
-<html>
-	<form class="col-xs-12 col-sm-12 placeholder" style="height:900px;overflow-y:auto">
-		<div class="form-group">
-			<div class="form-group">
-				<label class="pull-left" for="connection-uuid">UUID:</label>
-				<input type="text" class="form-control i18n" id="connection-uuid" name="Randomly generated when connection is added" placeholder="Randomly generated when connection is added" readonly>
+<form>
+	<div class="accordion mt-3" id="basic-settings-accordion">
+		<div class="card bg-light">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#basic-settings-accordion" class="i18n" name="IPv4 Settings" href="#basic-settings">Basic Settings</a>
 			</div>
-			<div class="form-group">
-				<label class="pull-left i18n" for="connection-id" name="Connection Name" >Connection Name:</label>
-				<input type="text" class="form-control" id="connection-id" maxlength="32">
-			</div>
-			<div class="form-group">
-				<label class="pull-left i18n" name="Interface" for="interface-name">Interface:</label>
-				<select class="form-control" id="interface-name"></select>
-			</div>
-			<div class="form-group">
-				<label class="pull-left i18n" name="Type" for="connection-type">Type:</label>
-				<select class="form-control" id="connection-type" onchange="onChangeConnectionType()">
-				</select>
+			<div id="basic-settings" class="collapse show">
+				<div class="card-body">
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="UUID">
+							<span class="input-group-text">UUID</span>
+						</div>
+						<input type="text" class="form-control i18n" id="connection-uuid" name="Randomly generated when connection is added" placeholder="Randomly generated when connection is added" readonly>
+					</div>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Connection Name">
+							<span class="input-group-text">Connection Name</span>
+						</div>
+						<input type="text" class="form-control" id="connection-id" maxlength="32">
+					</div>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Interface">
+							<span class="input-group-text">Interface</span>
+						</div>
+						<select class="form-control" id="interface-name"></select>
+					</div>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Type">
+							<span class="input-group-text">Type</span>
+						</div>
+						<select class="form-control" id="connection-type" onchange="onChangeConnectionType()"></select>
+					</div>
+				</div>
 			</div>
 		</div>
-		<div class="panel-group" id="ipaddress-settings-accordion">
-			<div class="panel panel-default" id="ipv4-settings">
-				<div class="panel-heading">
-					<a data-toggle="collapse" data-parent="#ipaddress-settings-accordion" class="i18n" name="IPv4 Settings" href="#ipv4-settings">IPv4 Settings</a>
-				</div>
-				<div id="ipv4-settings" class="panel-collapse collapse in">
-					<div class="panel-body">
-						<div class="form-group">
-							<label class="pull-left i18n" name="Method" for="ipv4-method">Method:</label>
-							<select class="form-control" id="ipv4-method" onchange="onChangeIpv4Method()">
-								<option class="i18n" name="Auto" value="auto" selected>Auto</option>
-								<option class="i18n" name="Manual" value="manual">Manual</option>
-								<option class="i18n" name="Shared" value="shared">Shared</option>
-								<option class="i18n" name="Link-Local" value="link-local">Link-Local</option>
-								<option class="i18n" name="Disable" value="disabled">Disable</option>
-							</select>
+	</div>
+	<div class="accordion mt-3" id="ipv4-settings-accordion">
+		<div class="card bg-light">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#ipv4-settings-accordion" class="i18n" name="IPv4 Settings" href="#ipv4-settings">IPv4 Settings</a>
+			</div>
+			<div id="ipv4-settings" class="collapse in">
+				<div class="card-body">
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Method">
+							<span class="input-group-text">Method</span>
 						</div>
-						<div class="form-group" id="ipv4-addresses-display">
-							<label class="pull-left i18n" name="Addresses" for="ipv4-addresses">Addresses:</label>
-							<input type="text" class="form-control" id="ipv4-addresses" readonly>
+						<select class="form-control" id="ipv4-method" onchange="onChangeIpv4Method()">
+							<option class="i18n" name="Auto" value="auto" selected>Auto</option>
+							<option class="i18n" name="Manual" value="manual">Manual</option>
+							<option class="i18n" name="Shared" value="shared">Shared</option>
+							<option class="i18n" name="Link-Local" value="link-local">Link-Local</option>
+							<option class="i18n" name="Disable" value="disabled">Disable</option>
+						</select>
+					</div>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Addresses">
+							<span class="input-group-text">Addresses</span>
 						</div>
-						<div class="form-group" id="ipv4-gateway-display">
-							<label class="pull-left i18n" name="Gateway" for="ipv4-gateway">Gateway:</label>
-							<input type="text" class="form-control" id="ipv4-gateway" readonly>
+						<input type="text" class="form-control" id="ipv4-addresses" readonly>
+					</div>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Gateway">
+							<span class="input-group-text">Gateway</span>
 						</div>
-						<div class="form-group" id="ipv4-dns-display">
-							<label class="pull-left i18n" name="dns" for="ipv4-dns">dns:</label>
-							<input type="text" class="form-control" id="ipv4-dns" readonly>
+						<input type="text" class="form-control" id="ipv4-gateway" readonly>
+					</div>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="dns">
+							<span class="input-group-text">dns</span>
 						</div>
+						<input type="text" class="form-control" id="ipv4-dns" readonly>
 					</div>
 				</div>
-            </div>
-			<div class="panel panel-default">
-				<div class="panel-heading">
-					<a data-toggle="collapse" data-parent="#ipaddress-settings-accordion" class="i18n" name="IPv6 Settings" href="#ipv6-settings">IPv6 Settings</a>
-				</div>
-				<div id="ipv6-settings" class="panel-collapse collapse in">
-					<div class="panel-body">
-						<div class="form-group">
-							<label class="pull-left i18n" name="Method" for="ipv6-method">Method:</label>
-							<select class="form-control" id="ipv6-method" onchange="onChangeIpv6Method()">
-								<option class="i18n" name="Auto" value="auto" selected>Auto</option>
-								<option class="i18n" name="Manual" value="manual">Manual</option>
-								<option class="i18n" name="DHCP" value="dhcp">DHCP</option>
-								<option class="i18n" name="Shared" value="shared">Shared</option>
-								<option class="i18n" name="Ignore" value="ignore">Ignore</option>
-								<option class="i18n" name="Link-Local" value="link-local">Link-Local</option>
-								<option class="i18n" name="Disable" value="disabled">Disable</option>
-							</select>
-						</div>
-						<div class="form-group" id="ipv6-addresses-display">
-							<label class="pull-left i18n" name="Addresses" for="ipv6-addresses">Addresses:</label>
-							<input type="text" class="form-control" id="ipv6-addresses" placeholder="0000:0000:0000:0000:0000:0000:0000:0000" readonly>
-						</div>
-						<div class="form-group" id="ipv6-gateway-display">
-							<label class="pull-left i18n" name="Gateway" for="ipv6-gateway">Gateway:</label>
-							<input type="text" class="form-control" id="ipv6-gateway" placeholder="0000:0000:0000:0000:0000:0000:0000:0000" readonly>
-						</div>
-						<div class="form-group" id="ipv6-dns-display">
-							<label class="pull-left i18n" name="dns" for="ipv6-dns">dns:</label>
-							<input type="text" class="form-control" id="ipv6-dns" placeholder="0000:0000:0000:0000:0000:0000:0000:0000" readonly>
-						</div>
-					</div>
-				</div>
-            </div>
+			</div>
 		</div>
-
-		<div class="panel-group" id="connection-settings-accordion">
-			<div class="panel panel-default hidden" id="connection-wired-settings">
-				<div class="panel-heading">
-					<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Ethernet Settings" href="#collapse-wired-settings">Ethernet Settings</a>
-				</div>
-				<div id="collapse-wired-settings" class="panel-collapse collapse in">
-					<div class="panel-body">
+	</div>
+	<div class="accordion mt-3" id="ipv6-settings-accordion">
+		<div class="card bg-light">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#ipv6-settings-accordion" class="i18n" name="IPv6 Settings" href="#ipv6-settings">IPv6 Settings</a>
+			</div>
+			<div id="ipv6-settings" class="collapse in">
+				<div class="card-body">
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Method">
+							<span class="input-group-text">Method</span>
+						</div>
+						<select class="form-control" id="ipv6-method" onchange="onChangeIpv6Method()">
+							<option class="i18n" name="Auto" value="auto" selected>Auto</option>
+							<option class="i18n" name="Manual" value="manual">Manual</option>
+							<option class="i18n" name="DHCP" value="dhcp">DHCP</option>
+							<option class="i18n" name="Shared" value="shared">Shared</option>
+							<option class="i18n" name="Ignore" value="ignore">Ignore</option>
+							<option class="i18n" name="Link-Local" value="link-local">Link-Local</option>
+							<option class="i18n" name="Disable" value="disabled">Disable</option>
+						</select>
+					</div>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Addresses">
+							<span class="input-group-text">Addresses</span>
+						</div>
+						<input type="text" class="form-control" id="ipv6-addresses" placeholder="0000:0000:0000:0000:0000:0000:0000:0000" readonly>
+					</div>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Gateway">
+							<span class="input-group-text">Gateway</span>
+						</div>
+						<input type="text" class="form-control" id="ipv6-gateway" placeholder="0000:0000:0000:0000:0000:0000:0000:0000" readonly>
+					</div>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="dns">
+							<span class="input-group-text">dns</span>
+						</div>
+						<input type="text" class="form-control" id="ipv6-dns" placeholder="0000:0000:0000:0000:0000:0000:0000:0000" readonly>
 					</div>
 				</div>
-            </div>
-			<div class="panel panel-default" id="connection-wifi-settings">
-				<div class="panel-heading">
-					<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Wireless Settings" href="#collapse-wifi-settings">Wireless Settings</a>
+			</div>
+		</div>
+	</div>
+
+	<div class="accordion mt-3" id="connection-settings-accordion">
+		<div class="card bg-light d-none" id="connection-wired-settings">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Ethernet Settings" href="#connection-wired-settings-body">Ethernet Settings</a>
+			</div>
+			<div id="connection-wired-settings-body" class="collapse in">
+				<div class="card-body">
 				</div>
-				<div id="collapse-wifi-settings" class="panel-collapse collapse in">
-					<div class="panel-body">
-						<div class="form-group" id="ssid-display">
-							<label class="pull-left" for="ssid">SSID:</label>
-							<input type="text" class="form-control" id="ssid" maxlength="32">
+			</div>
+		</div>
+		<div class="card bg-light d-none" id="connection-wifi-settings">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Wireless Settings" href="#connection-wifi-settings-body">Wireless Settings</a>
+			</div>
+			<div id="connection-wifi-settings-body" class="collapse in">
+				<div class="card-body">
+
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="SSID">
+							<span class="input-group-text">SSID</span>
 						</div>
-						<div class="form-group" id="radio-mode-display">
-							<label class="pull-left i18n" for="radio-mode" name="Radio Mode" >Radio Mode:</label>
-							<select class="form-control" id="radio-mode" onchange="onChangeRadioMode()">
-								<option class="i18n" name="Infrastructure" value="infrastructure" selected>Infrastructure</option>
-								<option class="i18n" name="Accesspoint" value="ap">AP</option>
-							</select>
+						<input type="text" class="form-control" id="ssid" maxlength="32">
+					</div>
+
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Radio Mode">
+							<span class="input-group-text">Radio Mode</span>
 						</div>
-						<div class="form-group">
-							<label class="pull-left i18n" name="Client Name" for="client-name">Client Name:</label>
-							<input type="text" class="form-control" id="client-name" maxlength="16">
+						<select class="form-control" id="radio-mode" onchange="onChangeRadioMode()">
+							<option class="i18n" name="Infrastructure" value="infrastructure" selected>Infrastructure</option>
+							<option class="i18n" name="Accesspoint" value="ap">AP</option>
+						</select>
+					</div>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Client Name">
+							<span class="input-group-text">Client Name</span>
 						</div>
-						<div class="form-group">
-							<label class="pull-left i18n" name="TX Power" for="tx-power">TX Power:</label>
-							<input type="text" class="form-control" id="tx-power" value="Auto">
+						<input type="text" class="form-control" id="client-name" maxlength="16">
+					</div>
+
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="TX Power">
+							<span class="input-group-text">TX Power</span>
 						</div>
-						<div class="form-group">
-							<label class="pull-left i18n" name="Radio Band" for="radio-band">Radio Band:</label>
-							<select class="form-control" id="radio-band">
-								<option value="default">Default</option>
-								<option value="a">A</option>
-								<option value="bg">BG</option>
-							</select>
+						<input type="text" class="form-control" id="tx-power" value="Auto">
+					</div>
+
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Radio Band">
+							<span class="input-group-text">Radio Band</span>
 						</div>
-						<div class="form-group hidden" id="radio-channel-display">
-							<label class="pull-left i18n" name="Channel" for="radio-channel">Radio Channel:</label>
-							<input type="text" class="form-control" id="radio-channel" value="">
+						<select class="form-control" id="radio-band">
+							<option value="default">Default</option>
+							<option value="a">A</option>
+							<option value="bg">BG</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none ">
+						<div class="input-group-prepend i18n" name="Radio Channel">
+							<span class="input-group-text">Radio Channel</span>
 						</div>
-						<div class="form-group" id="frequency-list-display">
-							<label class="pull-left i18n" name="Frequency List" for="frequency-list">Frequency List:</label>
-							<input type="text" class="form-control" id="frequency-list" value="">
+						<input type="text" class="form-control" id="radio-channel" value="">
+					</div>
+
+					<div class="input-group mb-3" id="frequency-list-display">
+						<div class="input-group-prepend i18n" name="Frequency List">
+							<span class="input-group-text">Frequency List</span>
 						</div>
-						<div class="form-group" id="radio-bgscan-display">
-							<label class="pull-left i18n" name="Scan Policy" for="radio-bgscan">Scan Policy:</label>
-							<input type="text" class="form-control" id="radio-bgscan" value="" placeholder="laird:<t1>:<threshold-in-dbm>:<t2> Scan t1 seconds below threahold and t2 seconds above">
+						<input type="text" class="form-control" id="frequency-list" value="">
+					</div>
+
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Scan Policy">
+							<span class="input-group-text">Scan Policy</span>
 						</div>
-						<div class="form-group">
-							<label class="pull-left i18n" name="Enable DFS" for="frequency-dfs">Enable DFS:</label>
-							<select class="form-control" id="frequency-dfs">
-								<option class="i18n" name="No" value=0>No</option>
-								<option class="i18n" name="Yes" value=1 selected>Yes</option>
-							</select>
+						<input type="text" class="form-control" id="radio-bgscan" value="" placeholder="laird:<t1>:<threshold-in-dbm>:<t2> Scan t1 seconds below threahold and t2 seconds above">
+					</div>
+
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Enable DFS">
+							<span class="input-group-text">Enable DFS</span>
 						</div>
-						<div class="form-group">
-							<label class="pull-left i18n" name="Power Save" for="powersave">Power Save:</label>
-							<select class="form-control" id="powersave">
-								<option class="i18n" name="Default" value="0" selected>Default</option>
-								<option class="i18n" name="Ignore" value="1">Ignore</option>
-								<option class="i18n" name="Disable" value="2">Disable</option>
-								<option class="i18n" name="Enable" value="3">Enable</option>
-							</select>
+						<select class="form-control" id="frequency-dfs">
+							<option class="i18n" name="No" value=0>No</option>
+							<option class="i18n" name="Yes" value=1 selected>Yes</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Power Save">
+							<span class="input-group-text">Power Save</span>
 						</div>
-						<div class="form-group">
-							<label class="pull-left i18n" name="WEP Type" for="key-mgmt">WEP Type:</label>
-							<select class="form-control" id="key-mgmt" onchange="onChangeKeymgmt()">
-								<option class="i18n" name="None" value="none" selected>None</option>
-								<option class="i18n" name="Static WEP" value="static">Static WEP</option>
-								<option class="i18n" name="Dynamic WEP" value="ieee8021x">Dynamic WEP</option>
-								<option class="i18n" name="Infrastructure WPA-PSK" value="wpa-psk">Infrastructure WPA-PSK</option>
-								<option class="i18n" name="WPA-Enterprise" value="wpa-eap">WPA-Enterprise</option>
-							</select>
+						<select class="form-control" id="powersave">
+							<option class="i18n" name="Default" value="0" selected>Default</option>
+							<option class="i18n" name="Ignore" value="1">Ignore</option>
+							<option class="i18n" name="Disable" value="2">Disable</option>
+							<option class="i18n" name="Enable" value="3">Enable</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="WEP Type">
+							<span class="input-group-text">WEP Type</span>
 						</div>
-						<div class="form-group hidden" id="auth-alg-display">
-							<label class="pull-left" for="auth-alg">Authentication Algorithm:</label>
-							<select class="form-control" id="auth-alg">
-								<option value="open" selected>Open</option>
-								<option value="shared">Shared</option>
-								<option value="leap">LEAP</option>
-							</select>
+						<select class="form-control" id="key-mgmt" onchange="onChangeKeymgmt()">
+							<option class="i18n" name="None" value="none" selected>None</option>
+							<option class="i18n" name="Static WEP" value="static">Static WEP</option>
+							<option class="i18n" name="Dynamic WEP" value="ieee8021x">Dynamic WEP</option>
+							<option class="i18n" name="Infrastructure WPA-PSK" value="wpa-psk">Infrastructure WPA-PSK</option>
+							<option class="i18n" name="WPA-Enterprise" value="wpa-eap">WPA-Enterprise</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="auth-alg-display">
+						<div class="input-group-prepend i18n" name="Authentication Algorithm">
+							<span class="input-group-text">Authentication Algorithm</span>
 						</div>
-						<div class="form-group hidden" id="wep-tx-keyidx-display">
-							<label class="pull-left i18n" name="WEP Key Index" for="wep-tx-keyidx">WEP Key Index:</label>
-							<select class="form-control" id="wep-tx-keyidx">
-								<option value="0" selected>0</option>
-								<option value="1">1</option>
-								<option value="2">2</option>
-								<option value="3">3</option>
-							</select>
+						<select class="form-control" id="auth-alg">
+							<option value="open" selected>Open</option>
+							<option value="shared">Shared</option>
+							<option value="leap">LEAP</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="wep-tx-keyidx-display">
+						<div class="input-group-prepend i18n" name="WEP Key Index">
+							<span class="input-group-text">WEP Key Index</span>
 						</div>
-						<div class="form-group hidden" id="wep-key-display">
-							<label class="pull-left i18n" name="Index 0" for="wep-key0">Index 0:</label>
+						<select class="form-control" id="wep-tx-keyidx">
+							<option value="0" selected>0</option>
+							<option value="1">1</option>
+							<option value="2">2</option>
+							<option value="3">3</option>
+						</select>
+					</div>
+
+					<div class="d-none" id="wep-key-display">
+						<div class="input-group mb-3">
+							<div class="input-group-prepend i18n" name="Index 0">
+								<span class="input-group-text">Index 0</span>
+							</div>
 							<input type="text" class="form-control" id="wep-key0">
-							<label class="pull-left i18n" name="Index 1"  for="wep-key1">Index 1:</label>
+						</div>
+
+						<div class="input-group mb-3">
+							<div class="input-group-prepend i18n" name="Index 1">
+								<span class="input-group-text">Index 1</span>
+							</div>
 							<input type="text" class="form-control" id="wep-key1">
-							<label class="pull-left i18n" name="Index 2"  for="wep-key2">Index 2:</label>
+						</div>
+
+						<div class="input-group mb-3">
+							<div class="input-group-prepend i18n" name="Index 2">
+								<span class="input-group-text">Index 2</span>
+							</div>
 							<input type="text" class="form-control" id="wep-key2">
-							<label class="pull-left i18n" name="Index 3" for="wep-key3">Index 3:</label>
+						</div>
+
+						<div class="input-group mb-3">
+							<div class="input-group-prepend i18n" name="Index 3">
+								<span class="input-group-text">Index 3</span>
+							</div>
 							<input type="text" class="form-control" id="wep-key3">
 						</div>
-						<div class="form-group hidden" id="psk-display">
-							<label class="pull-left i18n" name="PreShared Key" for="psk">PreShared Key:</label>
-							<input type="text" class="form-control" id="psk">
+					</div>
+
+					<div class="input-group mb-3 d-none" id="psk-display">
+						<div class="input-group-prepend i18n" name="PreShared Key">
+							<span class="input-group-text">PreShared Key</span>
 						</div>
-						<div class="form-group hidden" id="leap-username-display">
-							<label class="pull-left i18n" name="LEAP Username" for="leap-username">LEAP Username:</label>
-							<input type="text" class="form-control" id="leap-username">
+						<input type="text" class="form-control" id="psk">
+					</div>
+
+					<div class="input-group mb-3 d-none" id="leap-username-display">
+						<div class="input-group-prepend i18n" name="LEAP Username">
+							<span class="input-group-text">LEAP Username</span>
 						</div>
-						<div class="form-group hidden" id="leap-password-display">
-							<label class="pull-left i18n" name="LEAP Password" for="leap-password">LEAP Password:</label>
-							<input type="password" class="form-control" id="leap-password">
+						<input type="text" class="form-control" id="leap-username">
+					</div>
+
+					<div class="input-group mb-3 d-none" id="leap-password-display">
+						<div class="input-group-prepend i18n" name="LEAP Password">
+							<span class="input-group-text">LEAP Password</span>
 						</div>
-						<div class="form-group hidden" id="eap-method-display">
-							<label class="pull-left i18n" name="EAP Method" for="eap-method">EAP Method:</label>
-							<select class="form-control" id="eap-method" onchange="onChangeEap()">
-								<option value="leap">LEAP</option>
-								<option value="md5">MD5</option>
-								<option value="tls">TLS</option>
-								<option value="peap" selected>PEAP</option>
-								<option value="ttls">TTLS</option>
-								<option value="pwd">PWD</option>
-								<option value="fast">FAST</option>
-							</select>
+						<input type="password" class="form-control" id="leap-password">
+					</div>
+
+					<div class="input-group mb-3 d-none" id="eap-method-display">
+						<div class="input-group-prepend i18n" name="EAP Method">
+							<span class="input-group-text">EAP Method</span>
 						</div>
-						<div class="form-group hidden" id="eap-auth-timeout-display">
-							<label class="pull-left i18n" name="EAP Auth Timeout" for="eap-auth-timeout">EAP Auth Timeout:</label>
-							<input type="text" class="form-control" id="eap-auth-timeout" value="0">
+						<select class="form-control" id="eap-method" onchange="onChangeEap()">
+							<option value="leap">LEAP</option>
+							<option value="md5">MD5</option>
+							<option value="tls">TLS</option>
+							<option value="peap" selected>PEAP</option>
+							<option value="ttls">TTLS</option>
+							<option value="pwd">PWD</option>
+							<option value="fast">FAST</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="eap-auth-timeout-display">
+						<div class="input-group-prepend i18n" name="EAP Auth Timeout">
+							<span class="input-group-text">EAP Auth Timeout</span>
 						</div>
-						<div class="form-group hidden" id="eap-identity-display">
-							<label class="pull-left i18n" name="Identity" for="eap-identity">Identity:</label>
-							<input type="text" class="form-control" id="eap-identity">
+						<input type="text" class="form-control" id="eap-auth-timeout" value="0">
+					</div>
+
+					<div class="input-group mb-3 d-none" id="eap-identity-display">
+						<div class="input-group-prepend i18n" name="Identity">
+							<span class="input-group-text">Identity</span>
 						</div>
-						<div class="form-group hidden" id="eap-anonymous-identity-display">
-							<label class="pull-left i18n" name="Anonymous Identity" for="eap-anonymous-identity">Anonymous Identity:</label>
-							<input type="text" class="form-control" id="eap-anonymous-identity">
+						<input type="text" class="form-control" id="eap-identity">
+					</div>
+
+					<div class="input-group mb-3 d-none" id="eap-anonymous-identity-display">
+						<div class="input-group-prepend i18n" name="Anonymous Identity">
+							<span class="input-group-text">Anonymous Identity</span>
 						</div>
-						<div class="form-group hidden" id="eap-password-display">
-							<label class="pull-left i18n" name="Password" for="eap-password">Password:</label>
-							<input type="password" class="form-control" id="eap-password">
+						<input type="text" class="form-control" id="eap-anonymous-identity">
+					</div>
+
+					<div class="input-group mb-3 d-none" id="eap-password-display">
+						<div class="input-group-prepend i18n" name="Password">
+							<span class="input-group-text">Password</span>
 						</div>
-						<div class="form-group hidden" id="pac-file-display">
-							<label class="pull-left i18n" name="PAC Filename" for="pac-file">PAC Filename:</label>
-							<select class="form-control" id="pac-file">
-							</select>
+						<input type="password" class="form-control" id="eap-password">
+					</div>
+
+					<div class="input-group mb-3 d-none" id="pac-file-display">
+						<div class="input-group-prepend i18n" name="PAC Filename">
+							<span class="input-group-text">PAC Filename</span>
 						</div>
-						<div class="form-group hidden" id="pac-file-password-display">
-							<label class="pull-left i18n" name="PAC File Password" for="pac-file-password">PAC File Password:</label>
-							<input type="password" class="form-control" id="pac-file-password">
+						<select class="form-control" id="pac-file">
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="pac-file-password-display">
+						<div class="input-group-prepend i18n" name="PAC Filename">
+							<span class="input-group-text">PAC File Password</span>
 						</div>
-						<div class="form-group hidden" id="phase1-fast-provisioning-display">
-							<label class="pull-left i18n" name="Fast Provisioning" for="phase1-fast-provisioning">Fast Provisioning:</label>
-							<select class="form-control" id="phase1-fast-provisioning">
-								<option class="i18n" name="Disable" value="0" selected>Disable</option>
-								<option class="Allow Unauthenticated Provisioning" name="Disable" value="1">Allow Unauthenticated Provisioning</option>
-								<option class="i18n" name="Allow Authenticated Provisioning" value="2">Allow Authenticated Provisioning</option>
-								<option class="i18n" name="Both" value="3">Both</option>
-							</select>
+						<input type="password" class="form-control" id="pac-file-password">
+					</div>
+
+					<div class="input-group mb-3 d-none" id="phase1-fast-provisioning-display">
+						<div class="input-group-prepend i18n" name="Fast Provisioning">
+							<span class="input-group-text">Fast Provisioning</span>
 						</div>
-						<div class="form-group hidden" id="ca-cert-display">
-							<label class="pull-left i18n" name="CA Cert" for="ca-cert">CA Cert:</label>
-							<select class="form-control" id="ca-cert">
-								<option value="" selected>None</option>
-							</select>
+						<select class="form-control" id="phase1-fast-provisioning">
+							<option class="i18n" name="Disable" value="0" selected>Disable</option>
+							<option class="Allow Unauthenticated Provisioning" name="Disable" value="1">Allow Unauthenticated Provisioning</option>
+							<option class="i18n" name="Allow Authenticated Provisioning" value="2">Allow Authenticated Provisioning</option>
+							<option class="i18n" name="Both" value="3">Both</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="ca-cert-display">
+						<div class="input-group-prepend i18n" name="CA Cert">
+							<span class="input-group-text">CA Cert</span>
 						</div>
-						<div class="form-group hidden" id="ca-cert-password-display">
-							<label class="pull-left i18n" name="CA Cert Password" for="ca-cert-password">CA Cert Password:</label>
-							<input type="password" class="form-control" id="ca-cert-password">
+						<select class="form-control" id="ca-cert">
+							<option value="" selected>None</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="ca-cert-password-display">
+						<div class="input-group-prepend i18n" name="CA Cert Password">
+							<span class="input-group-text">CA Cert Password</span>
 						</div>
-						<div class="form-group hidden" id="client-cert-display">
-							<label class="pull-left i18n" name="Client Cert" for="client-cert">Client Cert:</label>
-							<select class="form-control" id="client-cert">
-								<option value="" selected>None</option>
-							</select>
+						<input type="password" class="form-control" id="ca-cert-password">
+					</div>
+
+					<div class="input-group mb-3 d-none" id="client-cert-display">
+						<div class="input-group-prepend i18n" name="Client Cert">
+							<span class="input-group-text">Client Cert</span>
 						</div>
-						<div class="form-group hidden" id="client-cert-password-display">
-							<label class="pull-left i18n" name="Client Cert Password" for="client-cert-password">Client Cert Password:</label>
-							<input type="password" class="form-control" id="client-cert-password">
+						<select class="form-control" id="client-cert">
+							<option value="" selected>None</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="client-cert-password-display">
+						<div class="input-group-prepend i18n" name="Client Cert Password">
+							<span class="input-group-text">Client Cert Password</span>
 						</div>
-						<div class="form-group hidden" id="private-key-display">
-							<label class="pull-left i18n" name="Private Cert" for="private-key">Private Cert:</label>
-							<select class="form-control" id="private-key">
-								<option value="" selected>None</option>
-							</select>
+						<input type="password" class="form-control" id="client-cert-password">
+					</div>
+
+					<div class="input-group mb-3 d-none" id="private-key-display">
+						<div class="input-group-prepend i18n" name="Private Cert">
+							<span class="input-group-text">Private Cert</span>
 						</div>
-						<div class="form-group hidden" id="private-key-password-display">
-							<label class="pull-left i18n" name="Private Key Password" for="private-key-password">Private Key Password:</label>
-							<input type="password" class="form-control" id="private-key-password">
+						<select class="form-control" id="private-key">
+							<option value="" selected>None</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="private-key-password-display">
+						<div class="input-group-prepend i18n" name="Private Key Password">
+							<span class="input-group-text">Private Key Password</span>
 						</div>
-						<div class="form-group hidden" id="phase2-auth-display">
-							<label class="pull-left i18n" name="Phase 2 non-EAP METHOD" for="phase2-auth">Phase 2 non-EAP METHOD:</label>
-							<select class="form-control" multiple id="phase2-auth" onchange="onChangePhase2NoneEap()">
-								<option value="none" selected>None</option>
-								<option value="pap">PAP</option>
-								<option value="chap">CHAP</option>
-								<option value="mschap">MSCHAP</option>
-								<option value="mschapv2">MSCHAPv2</option>
-								<option value="gtc">GTC</option>
-								<option value="otp">OTP</option>
-								<option value="md5">MD5</option>
-								<option value="tls">TLS</option>
-							</select>
-                        </div>
-						<div class="form-group hidden" id="phase2-autheap-display">
-							<label class="pull-left i18n" name="Phase 2 EAP METHOD" for="phase2-autheap">Phase 2 EAP METHOD:</label>
-							<select class="form-control" multiple id="phase2-autheap" onchange="onChangePhase2Eap()">
-								<option value="none" selected>None</option>
-								<option value="mschapv2">MSCHAPv2</option>
-								<option value="gtc">GTC</option>
-								<option value="otp">OTP</option>
-								<option value="md5">MD5</option>
-								<option value="tls">TLS</option>
-							</select>
-                        </div>
-						<div class="form-group hidden" id="phase2-ca-cert-display">
-							<label class="pull-left i18n" name="CA Cert" for="phase2-ca-cert">CA Cert:</label>
-							<select class="form-control" id="phase2-ca-cert">
-								<option value="" selected>None</option>
-							</select>
+						<input type="password" class="form-control" id="private-key-password">
+					</div>
+
+					<div class="input-group mb-3 d-none" id="phase2-auth-display">
+						<div class="input-group-prepend i18n" name="Phase 2 non-EAP METHOD">
+							<span class="input-group-text">Phase 2 non-EAP METHOD</span>
 						</div>
-						<div class="form-group hidden" id="phase2-ca-cert-password-display">
-							<label class="pull-left i18n" name="CA Cert Password" for="phase2-ca-cert-password">CA Cert Password:</label>
-							<input type="password" class="phase2-form-control" id="phase2-ca-cert-password">
+						<select class="form-control" multiple id="phase2-auth" onchange="onChangePhase2NoneEap()">
+							<option value="none" selected>None</option>
+							<option value="pap">PAP</option>
+							<option value="chap">CHAP</option>
+							<option value="mschap">MSCHAP</option>
+							<option value="mschapv2">MSCHAPv2</option>
+							<option value="gtc">GTC</option>
+							<option value="otp">OTP</option>
+							<option value="md5">MD5</option>
+							<option value="tls">TLS</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="phase2-autheap-display">
+						<div class="input-group-prepend i18n" name="Phase 2 EAP METHOD">
+							<span class="input-group-text">Phase 2 EAP METHOD</span>
 						</div>
-						<div class="form-group hidden" id="phase2-client-cert-display">
-							<label class="pull-left i18n" name="Client Cert" for="phase2-client-cert">Client Cert:</label>
-							<select class="form-control" id="phase2-client-cert">
-								<option value="" selected>None</option>
-							</select>
+						<select class="form-control" multiple id="phase2-autheap" onchange="onChangePhase2Eap()">
+							<option value="none" selected>None</option>
+							<option value="mschapv2">MSCHAPv2</option>
+							<option value="gtc">GTC</option>
+							<option value="otp">OTP</option>
+							<option value="md5">MD5</option>
+							<option value="tls">TLS</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="phase2-ca-cert-display">
+						<div class="input-group-prepend i18n" name="CA Cert">
+							<span class="input-group-text">CA Cert</span>
 						</div>
-						<div class="form-group hidden" id="phase2-client-cert-password-display">
-							<label class="pull-left i18n" name="Client Cert Password" for="phase2-client-cert-password">Client Cert Password:</label>
-							<input type="password" class="form-control" id="phase2-client-cert-password">
+						<select class="form-control" id="phase2-ca-cert">
+							<option value="" selected>None</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="phase2-ca-cert-password-display">
+						<div class="input-group-prepend i18n" name="CA Cert Password">
+							<span class="input-group-text">CA Cert Password</span>
 						</div>
-						<div class="form-group hidden" id="phase2-private-key-display">
-							<label class="pull-left i18n" name="Private Cert" for="phase2-private-key">Private Cert:</label>
-							<select class="form-control" id="phase2-private-key">
-								<option value="" selected>None</option>
-							</select>
+						<input type="password" class="phase2-form-control" id="phase2-ca-cert-password">
+					</div>
+
+					<div class="input-group mb-3 d-none" id="phase2-client-cert-display">
+						<div class="input-group-prepend i18n" name="Client Cert">
+							<span class="input-group-text">Client Cert</span>
 						</div>
-						<div class="form-group hidden" id="phase2-private-key-password-display">
-							<label class="pull-left i18n" name="Private Key Password" for="phase2-private-key-password">Private Key Password:</label>
-							<input type="password" class="form-control" id="phase2-private-key-password">
+						<select class="form-control" id="phase2-client-cert">
+							<option value="" selected>None</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="phase2-client-cert-password-display">
+						<div class="input-group-prepend i18n" name="Client Cert Password">
+							<span class="input-group-text">Client Cert Password</span>
 						</div>
-						<div class="form-group hidden" id="tls-disable-time-checks-display">
-							<label class="pull-left i18n" name="Disable TLS Time Check" for="tls-disable-time-checks">Disable TLS Time Check</label>
-							<select class="form-control" id="tls-disable-time-checks">
-								<option value="0">No</option>
-								<option value="1" selected>Yes</option>
-							</select>
+						<input type="password" class="form-control" id="phase2-client-cert-password">
+					</div>
+
+					<div class="input-group mb-3 d-none" id="phase2-private-key-display">
+						<div class="input-group-prepend i18n" name="Private Cert">
+							<span class="input-group-text">Private Cert</span>
 						</div>
-                    </div>
-                </div>
-            </div>
-			<div class="panel panel-default hidden" id="connection-modem-settings">
-				<div class="panel-heading">
-					<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Modem Settings" href="#collapse-modem-settings">Modem Settings</a>
-                </div>
-				<div id="collapse-modem-settings" class="panel-collapse collapse in">
-					<div class="panel-body">
+						<select class="form-control" id="phase2-private-key">
+							<option value="" selected>None</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="phase2-private-key-password-display">
+						<div class="input-group-prepend i18n" name="Private Key Password">
+							<span class="input-group-text">Private Key Password</span>
+						</div>
+						<input type="password" class="form-control" id="phase2-private-key-password">
+					</div>
+
+					<div class="input-group mb-3 d-none" id="tls-disable-time-checks-display">
+						<div class="input-group-prepend i18n" name="Disable TLS Time Check">
+							<span class="input-group-text">Disable TLS Time Check</span>
+						</div>
+						<select class="form-control" id="tls-disable-time-checks">
+							<option value="0">No</option>
+							<option value="1" selected>Yes</option>
+						</select>
 					</div>
 				</div>
 			</div>
-			<div class="panel panel-default hidden" id="connection-ppp-settings">
-				<div class="panel-heading">
-					<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="PPP Settings" href="#collapse-ppp-settings">PPP Settings</a>
-				</div>
-				<div id="collapse-ppp-settings" class="panel-collapse collapse in">
-					<div class="panel-body">
-					</div>
-                </div>
-            </div>
-			<div class="panel panel-default hidden" id="connection-bluetooth-settings">
-				<div class="panel-heading">
-					<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Bluetooth Settings" href="#collapse-bluetooth-settings">Bluetooth Settings</a>
-				</div>
-				<div id="collapse-bluetooth-settings" class="panel-collapse collapse in">
-					<div class="panel-body">
-					</div>
-				</div>
-            </div>
-			<div class="panel panel-default hidden" id="connection-bridge-settings">
-				<div class="panel-heading">
-					<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Bridge Settings" href="#collapse-bridge-settings">Bridge Settings</a>
-                </div>
-				<div id="collapse-bridge-settings" class="panel-collapse collapse in">
-					<div class="panel-body">
-					</div>
-				</div>
-            </div>
-			<div class="panel panel-default hidden" id="connection-wifi-p2p-settings">
-				<div class="panel-heading">
-					<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="WIFI-P2P Settings" href="#collapse-wifi-p2p-settings">WIFI-P2P Settings</a>
-				</div>
-				<div id="collapse-wifi-p2p-settings" class="panel-collapse collapse in">
-					<div class="panel-body">
-					</div>
-				</div>
-            </div>
 		</div>
-		<div>
-			<button onclick="addConnection()" id="addNewConnection" type="button" class="btn btn-primary">Save</button>
+		<div class="card bg-light d-none" id="connection-modem-settings">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Modem Settings" href="#connection-modem-settings-body">Modem Settings</a>
+			</div>
+			<div id="connection-modem-settings-body" class="collapse in">
+				<div class="card-body">
+				</div>
+			</div>
 		</div>
-	</form>
-</html>
+		<div class="card bg-light d-none" id="connection-ppp-settings">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="PPP Settings" href="#connection-ppp-settings-body">PPP Settings</a>
+			</div>
+			<div id="connection-ppp-settings-body" class="collapse in">
+				<div class="card-body">
+				</div>
+			</div>
+		</div>
+		<div class="card bg-light d-none" id="connection-bluetooth-settings">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Bluetooth Settings" href="#connection-bluetooth-settings-body">Bluetooth Settings</a>
+			</div>
+			<div id="connection-bluetooth-settings-body" class="collapse in">
+				<div class="card-body">
+				</div>
+			</div>
+		</div>
+		<div class="card bg-light d-none" id="connection-bridge-settings">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Bridge Settings" href="#connection-bridge-settings-body">Bridge Settings</a>
+			</div>
+			<div id="connection-bridge-settings-body" class="collapse in">
+				<div class="card-body">
+				</div>
+			</div>
+		</div>
+		<div class="card bg-light d-none" id="connection-wifi-p2p-settings">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="WIFI-P2P Settings" href="#connection-wifi-p2p-settings-body">WIFI-P2P Settings</a>
+			</div>
+			<div id="connection-wifi-p2p-settings-body" class="collapse in">
+				<div class="card-body">
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="text-center mt-3">
+		<button onclick="addConnection()" id="addNewConnection" type="button" class="btn btn-primary">Save</button>
+	</div>
+</form>
+

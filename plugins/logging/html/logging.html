@@ -1,110 +1,103 @@
-<!DOCTYPE html>
+<ul class="nav nav-tabs" id="tab-log">
+	<li class="nav-item"><a href="#get-log" id="tab-get-log" data-toggle="tab" class="nav-link i18n" name="Show logs">Show Logs</a></li>
+	<li class="nav-item"><a href="#set-log" id="tab-set-log" data-toggle="tab" class="nav-link i18n" name="Set Log Level">Set Log Level</a></li>
+</ul>
+<div class="tab-content">
+	<div class="tab-pane fade show active" role="tabpanel" id="get-log">
+		<form class="mt-3">
+			<div class="input-group mb-3">
+				<div class="input-group-prepend i18n" name="Log Type">
+					<span class="input-group-text">Log Type</span>
+				</div>
+				<select id="log-type" class="form-control">
+					<option class="i18n" name="kernel" value="kernel" selected>Kernel</option>
+					<option class="i18n" name="NetworkManager" value="NetworkManager">Network Manager</option>
+					<option class="i18n" name="Web server"  value="python">Web server</option>
+					<option class="i18n" name="All"  value="All">All</option>
+				</select>
+			</div>
 
-<html>
-	<div class="col-xs-12 placeholder">
-		<ul class="nav nav-tabs" id="tab-log">
-			<li><a href="#get-log" id="tab-get-log" data-toggle="tab" class="i18n" name="Show logs">Show Logs</a></li>
-			<li><a href="#set-log" id="tab-set-log" data-toggle="tab" class="i18n" name="Set Log Level">Set Log Level</a></li>
-		</ul>
-		<div class="tab-content">
-			<div class="tab-pane fade in active" role="tabpanel" id="get-log">
-				<br>
-				<div class="form-group row">
-					<div class="col-xs-6">
-						<div class="col-xs-4">
-							<label class="pull-left i18n" name="Log Type">Log Type:</label>
-						</div>
-						<div class="col-xs-8">
-							<select id="log-type" class="form-control">
-								<option class="i18n" name="kernel" value="kernel" selected>Kernel</option>
-								<option class="i18n" name="NetworkManager" value="NetworkManager">Network Manager</option>
-								<option class="i18n" name="Web server"  value="python">Web server</option>
-								<option class="i18n" name="All"  value="All">All</option>
-							</select>
-						</div>
-					</div>
-					<div class="col-xs-6">
-						<div class="col-xs-4">
-							<label class="pull-left i18n" name="Log level">Log Level:</label>
-						</div>
-						<div class="col-xs-8">
-							<select id="log-level" class="form-control">
-								<option class="i18n" name="All" value=7>All</option>
-								<option class="i18n" name="Info" value=6 selected>Info</option>
-								<option class="i18n" name="Notice" value=5>Notice</option>
-								<option class="i18n" name="Warning" value=4>Warning</option>
-								<option class="i18n" name="Error"  value=3>Error</option>
-								<option class="i18n" name="Critical" value=2>Critical</option>
-								<option class="i18n" name="Alert" value=1>Alert</option>
-								<option class="i18n" name="Emerg" value=0>Emerg</option>
-							</select>
-						</div>
-					</div>
+			<div class="input-group mb-3">
+				<div class="input-group-prepend i18n" name="Log Level">
+					<span class="input-group-text">Log Level</span>
 				</div>
-				<div class="form-group row">
-					<div class="col-xs-6">
-						<div class="col-xs-4">
-							<label class="pull-left i18n" name="Since">Since:</label>
-						</div>
-						<div class="col-xs-8">
-							<select id="log-date-from" class="form-control">
-								<option class="i18n" name="last day" value=1 selected>last day</option>
-								<option class="i18n" name="last 2 days" value=2>last 2 days</option>
-								<option class="i18n" name="last week" value=7>last week</option>
-								<option class="i18n" name="last 2 weeks" value=14>last 2 weeks</option>
-								<option class="i18n" name="last month" value=30>last month</option>
-								<option class="i18n" name="last 2 months" value=60>last 2 months</option>
-								<option class="i18n" name="All" value=-1>All</option>
-							</select>
-						</div>
-					</div>
-				</div>
-				<br>
-				<div class="table-responsive col-xs-12">
-					<table class="table table-striped table-bordered display compact" style="width:100%" id="table-log-data">
-						<thead>
-							<tr>
-								<th class="col-xs-2 i18n" name="Time">Time</th>
-								<th class="col-xs-1 i18n" name="Priority">Priority</th>
-								<th class="col-xs-1 i18n" name="Identifier">Identifier</th>
-								<th class="col-xs-8 i18n" name="Message">Message</th>
-							</tr>
-						</thead>
-						<tbody>
-						</tbody>
-					</table>
-				</div>
-				<div class="form-group">
-					<input class="btn btn-primary i18n" type="button" id="bt-query-log" onclick="queryLogData()" name="Query" value="Query" >
-				</div>
+				<select id="log-level" class="form-control">
+					<option class="i18n" name="All" value=7>All</option>
+					<option class="i18n" name="Info" value=6 selected>Info</option>
+					<option class="i18n" name="Notice" value=5>Notice</option>
+					<option class="i18n" name="Warning" value=4>Warning</option>
+					<option class="i18n" name="Error"  value=3>Error</option>
+					<option class="i18n" name="Critical" value=2>Critical</option>
+					<option class="i18n" name="Alert" value=1>Alert</option>
+					<option class="i18n" name="Emerg" value=0>Emerg</option>
+				</select>
 			</div>
-			<div class="tab-pane fade" role="tabpanel" id="set-log">
-				<br>
-				<form>
-					<div class="form-group">
-						<label class="pull-left i18n" for="supp-debug-level" name="Supplicant debug level">Supplicant debug level:</label>
-						<select class="form-control" id="supp-debug-level">
-							<option class="i18n" name="None" value="None" selected>None</option>
-							<option class="i18n" name="Error" value="error">Error</option>
-							<option class="i18n" name="Warning" value="warning">Warning</option>
-							<option class="i18n" name="Info" value="info">Info</option>
-							<option class="i18n" name="Debug">Debug</option>
-							<option class="i18n" name="MSG Dump" alue="msgdump">MSG Dump</option>
-							<option class="i18n" name="Excessive" value="excessive">Excessive</option>
-						</select>
-					</div>
-					<div class="form-group">
-						<label class="pull-left i18n" for="driver-debug-level" name="Driver debug level">Driver debug level:</label>
-						<select class="form-control" id="driver-debug-level">
-							<option class="i18n" name="Off" value="0" selected>Off</option>
-							<option class="i18n" name="On" value="1">On</option>
-						</select>
-					</div>
-					<div class="form-group">
-						<input class="btn btn-primary i18n" type="button" id="bt-submit-loglevel" onclick="submitlogSetting()" name="Submit" value="Submit" >
-					</div>
-				</form>
+
+			<div class="input-group mb-3">
+				<div class="input-group-prepend i18n" name="Since">
+					  <span class="input-group-text">Since</span>
+				</div>
+				<select id="log-date-from" class="form-control">
+					<option class="i18n" name="last day" value=1 selected>last day</option>
+					<option class="i18n" name="last 2 days" value=2>last 2 days</option>
+					<option class="i18n" name="last week" value=7>last week</option>
+					<option class="i18n" name="last 2 weeks" value=14>last 2 weeks</option>
+					<option class="i18n" name="last month" value=30>last month</option>
+					<option class="i18n" name="last 2 months" value=60>last 2 months</option>
+					<option class="i18n" name="All" value=-1>All</option>
+				</select>
 			</div>
-		</div>
+
+			<div class="table-responsive mt-3">
+				<table class="table table-striped table-bordered display" id="table-log-data">
+					<thead>
+						<tr>
+							<th scope="col-2 i18n" name="Time">Time</th>
+							<th scope="col-1 i18n" name="Priority">Priority</th>
+							<th scope="col-1 i18n" name="Identifier">Identifier</th>
+							<th scope="col-8 i18n" name="Message">Message</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+			</div>
+
+			<div class="text-center mt-3">
+				<input class="btn btn-primary i18n" type="button" id="bt-query-log" onclick="queryLogData()" name="Query" value="Query" >
+			</div>
+		</form>
 	</div>
-</html>
+	<div class="tab-pane fade" role="tabpanel" id="set-log">
+		<form class="mt-3">
+			<div class="input-group mb-3">
+				<div class="input-group-prepend i18n" name="Supplicant debug level">
+					  <span class="input-group-text">Supplicant debug level</span>
+				</div>
+				<select class="form-control" id="supp-debug-level">
+					<option class="i18n" name="None" value="none" selected>None</option>
+					<option class="i18n" name="Error" value="error">Error</option>
+					<option class="i18n" name="Warning" value="warning">Warning</option>
+					<option class="i18n" name="Info" value="info">Info</option>
+					<option class="i18n" name="Debug" value="debug">Debug</option>
+					<option class="i18n" name="MSG Dump" value="msgdump">MSG Dump</option>
+					<option class="i18n" name="Excessive" value="excessive">Excessive</option>
+				</select>
+			</div>
+
+			<div class="input-group mb-3">
+				<div class="input-group-prepend i18n" name="Driver debug level">
+					  <span class="input-group-text">Driver debug level</span>
+				</div>
+				<select class="form-control" id="driver-debug-level">
+					<option class="i18n" name="Off" value="0" selected>Off</option>
+					<option class="i18n" name="On" value="1">On</option>
+				</select>
+			</div>
+
+			<div class="text-center mt-3">
+				<input class="btn btn-primary i18n" type="button" id="bt-submit-loglevel" onclick="submitlogSetting()" name="Submit" value="Submit" >
+			</div>
+		</form>
+	</div>
+</div>

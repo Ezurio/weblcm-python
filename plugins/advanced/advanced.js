@@ -171,13 +171,12 @@ function clickAdvancedPage() {
     dataType: "html",
   })
   .done(function(data){
-    $("li").removeClass("active");
+    $(".active").removeClass("active");
     $("#advanced_main_menu").addClass("active");
     $("#advanced_mini_menu").addClass("active");
     $("#main_section").html(data);
 	  setLanguage("main_section");
     clearReturnData();
-    $(".infoText").addClass("hidden");
   })
   .fail(function(){
     console.log("Error, couldn't get advanced.html");
