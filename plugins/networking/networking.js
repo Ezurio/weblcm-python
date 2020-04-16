@@ -516,9 +516,9 @@ function updateStatus(){
           // BSSID
           activeaccesspoint.children(".bssid").text("BSSID:" + data.status[interfaceName].activeaccesspoint.HwAddress);
           // Frequency
-          activeaccesspoint.children(".frequency").text(i18nData['Frequency'] + ": " + data.status[interfaceName].activeaccesspoint.Frequency);
+          activeaccesspoint.children(".frequency").text(i18nData['Frequency'] + ": " + data.status[interfaceName].activeaccesspoint.Frequency + "MHz");
           // Signal Strength
-          activeaccesspoint.children(".strength").text(i18nData['Signal Strength'] + ": " + data.status[interfaceName].activeaccesspoint.Strength);
+          activeaccesspoint.children(".strength").text(i18nData['Signal Strength'] + ": " + data.status[interfaceName].activeaccesspoint.Strength + "%");
           // Progress Bar
           progress_bar = activeaccesspoint.children(".progress-bar");
           progress_bar.removeClass("d-none");
@@ -548,7 +548,7 @@ function updateStatus(){
           // HW Address
           wireless.children(".hwaddress").text(i18nData['MAC Address'] + ": " + data.status[interfaceName].wireless.HwAddress);
           // Bit Rate
-          wireless.children(".bitrate").text(i18nData['Bit Rate'] + ": " + data.status[interfaceName].wireless.Bitrate);
+          wireless.children(".bitrate").text(i18nData['Bit Rate'] + ": " + data.status[interfaceName].wireless.Bitrate + "Kb/s");
         } else {
           wireless.addClass("d-none");
         }
@@ -560,7 +560,7 @@ function updateStatus(){
           // HW Address
           wired.children(".hwaddress").text(i18nData['MAC Address'] + ": " + data.status[interfaceName].wired.HwAddress);
           // Speed
-          wired.children(".speed").text(i18nData['Speed'] + ": "  + data.status[interfaceName].wired.Speed);
+          wired.children(".speed").text(i18nData['Speed'] + ": "  + data.status[interfaceName].wired.Speed + "Mbit/s");
         } else {
           wired.addClass("d-none");
         }

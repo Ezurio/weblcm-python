@@ -8,7 +8,7 @@ import subprocess
 import NetworkManager
 import weblcm_def
 
-def filter_connection_types(dev):
+def filter_connection_by_dev(dev):
 
 	#Don't return connections with unmanaged interfaces
 	if dev.State == NetworkManager.NM_DEVICE_STATE_UNMANAGED:
@@ -22,6 +22,15 @@ def filter_connection_types(dev):
 
 	return True
 
+def filter_connection_by_type(typ):
+
+	#Don't return connections with type disabled in the configure file
+	if typ == "802-3-ethernet":
+		return cherrypy.request.app.config['weblcm'].get('enable_connection_wired', True)
+	if typ == "802-11-wireless":
+		return cherrypy.request.app.config['weblcm'].get('enable_connection_wifi', True)
+
+	return True
 
 @cherrypy.expose
 class NetworkConnections(object):
@@ -32,29 +41,26 @@ class NetworkConnections(object):
 			'connections': {},
 		}
 
-		devices = NetworkManager.NetworkManager.GetDevices()
-		for dev in devices:
-
-			if filter_connection_types(dev) == False:
+		for conn in NetworkManager.Settings.ListConnections():
+			s_all = conn.GetSettings()
+			s_conn = s_all.get('connection')
+			if not filter_connection_by_type(s_conn.get('type')):
 				continue;
 
-			connections = dev.AvailableConnections
-			for c in connections:
-				s_all = c.GetSettings();
-				s_con = s_all.get('connection')
+			t = {}
+			t['id'] = s_conn.get('id')
+			t['activated'] = 0
 
-				t = {}
-				t['id'] = s_con.get('id')
-				t['activated'] = 0
+			s_wifi = s_all.get('802-11-wireless')
+			if s_wifi and s_wifi.get('mode') == "ap":
+				t['type'] = "ap"
 
-				s_wifi = s_all.get('802-11-wireless')
-				if s_wifi and s_wifi.get('mode') == "ap":
-					t['type'] = "ap"
+			result['connections'][s_conn.get('uuid')] = t
 
-				result['connections'][s_con['uuid']] = t
-
-			if dev.ActiveConnection:
-				result['connections'][dev.ActiveConnection.Uuid]['activated'] = 1
+		for conn in NetworkManager.NetworkManager.ActiveConnections:
+			uuid = conn.Connection.GetSettings().get('connection').get('uuid')
+			if result.get('connections') and result.get('connections').get(uuid):
+				result['connections'][uuid]['activated'] = 1
 
 		result['length'] = len(result['connections'])
 		result['SDCERR'] = 0
@@ -294,7 +300,7 @@ class NetworkInterfaces(object):
 		try:
 			interfaces = []
 			for dev in NetworkManager.NetworkManager.GetDevices():
-				if filter_connection_types(dev):
+				if filter_connection_by_dev(dev):
 					interfaces.append(dev.Interface + " ")
 
 			result['SDCERR'] = 0

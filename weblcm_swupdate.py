@@ -46,12 +46,10 @@ class SWUpdate:
 
 		dryrun = 0
 
-		SWUpdate._lock.acquire()
-		if SWUpdate._isUpdating:
-			SWUpdate._lock.release()
-			return result
-		SWUpdate._isUpdating = True
-		SWUpdate._lock.release()
+		with SWUpdate._lock:
+			if SWUpdate._isUpdating:
+				return result
+			SWUpdate._isUpdating = True
 
 		try:
 			proc = Popen("/usr/sbin/weblcm_update_checking.sh", stdout=PIPE, stderr=PIPE)
