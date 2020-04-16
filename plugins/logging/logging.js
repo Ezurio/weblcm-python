@@ -82,13 +82,12 @@ function clickLoggingPage(retry){
     dataType: "html",
   })
   .done(function( data ) {
-    $("li").removeClass("active");
+    $(".active").removeClass("active");
     $("#logging_main_menu").addClass("active");
     $("#logging_mini_menu").addClass("active");
     $("#main_section").html(data);
 	  setLanguage("main_section");
     clearReturnData();
-    $(".infoText").addClass("hidden");
 
     var table = $("#table-log-data").DataTable({
       "language": i18nData["dtLang"],

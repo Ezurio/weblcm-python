@@ -27,7 +27,7 @@
 							<div class="form-group">
 								<div class="input-group">
 									<label class="pull-left" for="cert-select">Select Certificate:</label>
-									<input type="hidden" name="typ" value="cert">
+									<input type="d-none" name="typ" value="cert">
 									<input type="file" class="form-control-file" id="input-file-cert" name="fil" accept=".crt,.key,.pem,.pac,.bin,.tgz"/>
 									<span class="input-group-btn">
 										<button type="button" onclick="importFile('cert')" id="bt-import-cert" class="btn btn-primary">import</button>
@@ -59,7 +59,7 @@
 							<div class="form-group">
 								<div class="input-group">
 									<label class="pull-left" for="profile-select">Select Profile:</label>
-									<input type="hidden" name="typ" value="profile">
+									<input type="d-none" name="typ" value="profile">
 									<input type="file" class="form-control-file" id="input-file-profile" name="fil" accept=".nmconnection,.tgz"/>
 									<span class="input-group-btn">
 										<button type="button" onclick="importFile('profile')" id="bt-import-profile" class="btn btn-primary">import</button>

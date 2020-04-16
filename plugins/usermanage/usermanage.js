@@ -61,12 +61,12 @@ function addPasswdInputOnkeyup(prefix) {
 }
 
 function addPasswdInputOnblur(id){
-  $("#"+id).addClass("hidden");
+  $("#"+id).addClass("d-none");
 }
 
 function addPasswdInputOnfocus(id, prefix){
   addPasswdInputOnkeyup(prefix);
-  $("#"+id).removeClass("hidden");
+  $("#"+id).removeClass("d-none");
 }
 
 function validateUsername(username){
@@ -152,19 +152,19 @@ function createUserList(users) {
   for (var name in users) {
     row = '<tr permission="'+ users[name] + '">';
 
-    row += '<td>';
+    row += '<td class="text-center">';
     row += name;
     row += '</td>';
 
-    row += '<td>';
+    row += '<td class="text-center">';
     row += '<input type="button" class="btn btn-primary" role="button" id="bt-load-permission-' + name + '" value="' + i18nData['load perm'] + '" onclick="loadPermission()">';
     row += '</td>';
 
-    row += '<td>';
+    row += '<td class="text-center">';
     row += '<input type="button" class="btn btn-primary" role="button" id="bt-update-permission-' + name + '" value="' + i18nData['update perm'] + '" onclick="updatePermission()">';
     row += '</td>';
 
-    row += '<td>';
+    row += '<td class="text-center">';
     row += '<input type="button" class="btn btn-primary" role="button" id="bt-del-user-' + name + '" value="' + i18nData['delete user'] + '" onclick="delUser()">';
     row += '</td>';
 
@@ -175,7 +175,7 @@ function createUserList(users) {
 
   $("#table-user tbody").on("click", "tr td:first-child", function(e){
     row = $(this).closest('tr');
-    row.addClass('info').siblings().removeClass('info');
+    row.addClass('bg-info').siblings().removeClass('bg-info');
   });
 }
 
@@ -274,14 +274,14 @@ function loadPermission(){
   var row = $("#"+id).closest('tr');
   var perm = row.attr("permission");
   setPerm(perm);
-  row.addClass('info').siblings().removeClass('info');
+  row.addClass('bg-info').siblings().removeClass('bg-info');
 }
 
 function updatePermission(){
   var id = event.srcElement.id;
   var row = $("#"+id).closest('tr');
 
-  if(!row.hasClass("info"))
+  if(!row.hasClass("bg-info"))
   {
     CustomMsg("Please select user first by clicking user name", true);
     return;
@@ -315,7 +315,7 @@ function delUser(){
   var id = event.srcElement.id;
   var row = $("#"+id).closest('tr');
 
-  if(!row.hasClass("info"))
+  if(!row.hasClass("bg-info"))
   {
     CustomMsg("Please select user first by clicking user name", true);
     return;
@@ -345,30 +345,36 @@ function createPermissionsTable(){
   var attrs = defines.PLUGINS.usermanage.UserPermssionAttrs;
   var j = 0;
 
-  for (var i=0; i<types.length; i++){
+
+  var tbody = $("#table-user-permission > tbody");
+  tbody.empty()
+
+  for (let i = 0; i < types.length; i++){
+
+    if(attrs[i][0].length == 0)
+      continue;
+
     if (j == 0){
-      row = '<div class="row ">'
+      row = '<tr>';
     }
     ++j;
 
-    row += '<div class="col-xs-4">';
-    if(attrs[i][0].length){
-      row += '<label class="pull-left">';
-      row += '<input type="checkbox" id="user-permission-' + types[i] + '" name="' + types[i] + '" ' + attrs[i][1] + " " + attrs[i][2] + '>';
-      row += i18nData[attrs[i][0]] + '</label>';
-    }
-    row += '</div>';
+    row += '<td class="text-left">';
+    row += '<label>';
+    row += '<input type="checkbox" id="user-permission-' + types[i] + '" name="' + types[i] + '" ' + attrs[i][1] + " " + attrs[i][2] + '>';
+    row +=  (i18nData[attrs[i][0]] ? i18nData[attrs[i][0]] : attrs[i][0]) + '</label>'
+    row += '</td>';
 
-    if (j == 3){
-      row += '</div>';
-      $("#checkbox-group-user-permission").append(row);
+    if (j == 4){
+      row += '</tr>';
+      tbody.append(row);
       j = 0;
     }
   }
 
-  if (j != 0 && j != 3){
-    row += '</div>';
-    $("#checkbox-group-user-permission").append(row);
+  if (j % 4){
+    row += '</tr>';
+    tbody.append(row);
   }
 }
 
@@ -380,13 +386,12 @@ function clickAddOrDelUser(){
     dataType: "html",
   })
   .done(function(data){
-    $("li").removeClass("active");
+    $(".active").removeClass("active");
     $("#add_del_user_main_menu").addClass("active");
     $("#add_del_user_mini_menu").addClass("active");
     $("#main_section").html(data);
     setLanguage("main_section");
     clearReturnData();
-    $(".infoText").addClass("hidden");
     createPermissionsTable();
     get_user_list();
   })
@@ -403,13 +408,12 @@ function clickUpdatePassword(){
     dataType: "html",
   })
   .done( function(data) {
-    $("li").removeClass("active");
+    $(".active").removeClass("active");
     $("#update_password_main_menu").addClass("active");
     $("#update_password_mini_menu").addClass("active");
     $('#main_section').html(data);
     setLanguage("main_section");
     clearReturnData();
-    $(".infoText").addClass("hidden");
   })
   .fail(function() {
     consoleLog("Failed to get update_password.html");
