@@ -116,7 +116,7 @@ function clickFileManagePage(retry)
     $('#main_section').html(data);
     clearReturnData();
     $("#helpText").html("Manage profiles, certificates, etc.");
-    $(".infoText").addClass("hidden");
+    $(".infoText").addClass("d-none");
 	getFileList("cert");
 	getFileList("profile");
   })

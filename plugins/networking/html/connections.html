@@ -1,31 +1,19 @@
-<!DOCTYPE html>
-<!--
-  Copyright (c) 2016, Laird
-  Contact: support@lairdconnect.com
--->
 
-<html>
-	<form class="col-xs-12 col-sm-12 placeholder">
-		<div class="panel panel-default" id="">
-			<div class="panel-heading i18n" name="Connection list" >Connection List</div>
-			<div class="panel-body">
-				<select class="form-control" id="connectionSelect" onchange="onChangeConnections()">
-				</select>
-				<br>
-				<div class="btn-group btn-group-justified" role="group" aria-label="...">
-					<div class="btn-group" role="group">
-						<input onclick="activateConnection()" type="button" class="btn btn-primary i18n" name="Activate-connection" id="bt-connection-activate" value="Activate" disabled="disabled">
-					</div>
-					<div class="btn-group" role="group">
-						<input onclick="selectedConnection()" type="button" class="btn btn-primary i18n" name="Edit-connection" id="bt-connection-edit" value="Edit" disabled="disabled">
-					</div>
-					<div class="btn-group" role="group">
-						<input onclick="removeConnection()" type="button" class="btn btn-warning i18n" name="Delete-connection" id="bt-connection-delete" value="Delete" disabled="disabled">
-					</div>
-				</div>
-				<br>
-			</div>
+<form>
+	<br>
+	<div class="input-group mb-3">
+		<div class="input-group-prepend i18n" name="Connection list">
+			<span class="input-group-text">Connection List</span>
 		</div>
-		<br>
-	</form>
-</html>
+		<select class="form-control" id="connectionSelect" onchange="onChangeConnections()">
+		</select>
+	</div>
+	<div class="input-group mb-3">
+		<div class="input-group-prepend">
+		</div>
+		<input onclick="activateConnection()" type="button" class="col btn btn-primary i18n" name="Activate-connection" id="bt-connection-activate" value="Activate" disabled="disabled">
+		<input onclick="selectedConnection()" type="button" class="col btn btn-primary i18n" name="Edit-connection" id="bt-connection-edit" value="Edit" disabled="disabled">
+		<input onclick="removeConnection()" type="button" class="col btn btn-warning i18n" name="Delete-connection" id="bt-connection-delete" value="Delete" disabled="disabled">
+	</div>
+</form>
+

@@ -28,22 +28,19 @@
 		<!-- Bootstrap core CSS -->
 		<link href="assets/css/bootstrap.min.css" rel="stylesheet">
 
-		<!-- Custom styles for this template -->
 		<link href="assets/css/jquery.dataTables.min.css" rel="stylesheet">
 		<link href="assets/css/dataTables.bootstrap.min.css" rel="stylesheet">
-		<link href="assets/css/buttons.bootstrap.min.css" rel="stylesheet">
-		<link href="assets/css/dashboard.css" rel="stylesheet">
+		<!-- Custom styles -->
+		<link href="assets/css/custom.min.css" rel="stylesheet">
 
 		<script src="assets/js/jquery.min.js"></script>
-		<script src="assets/js/bootstrap.min.js"></script>
+		<script src="assets/js/bootstrap.bundle.min.js"></script>
 		<script src="assets/js/jquery.dataTables.min.js"></script>
 		<script src="assets/js/dataTables.bootstrap.min.js"></script>
 		<script src="assets/js/dataTables.buttons.min.js"></script>
-		<script src="assets/js/buttons.bootstrap.min.js"></script>
-		<script src="assets/js/buttons.html5.min.js"></script>
-		<script src="assets/js/jquery-ui.min.js"></script>
-		<script src="assets/js/jquery.ui.touch-punch.min.js"></script>
 		<script src="assets/js/jquery.i18n.properties.min.js"></script>
+
+
 
 		<script>
 
@@ -58,24 +55,17 @@
 
 		function loadjscssfile(key, filetype){
 			var jsPath = "plugins/" + key + "/" + key + "." + filetype;
-			if (filetype=="js"){
+			if (filetype == "js"){
 				var fileref=document.createElement('script');
 				fileref.setAttribute("type","text/javascript");
 				fileref.setAttribute("src", jsPath);
 			}
-			if (typeof fileref!="undefined"){
+			if (typeof fileref != "undefined"){
 				document.getElementsByTagName("head")[0].appendChild(fileref);
 				fileref.onload = function(){
 					window[key + "AUTORUN"](0);
 				}
 			}
-		}
-
-		function addPlugin(key){
-			var main_item = $("#"+key+"_frame").contents().find("#"+key+"_main_menu")[0];
-			var mini_item = $("#"+key+"_frame").contents().find("#"+key+"_mini_menu")[0];
-			$("#main_menu").append(main_item);
-			$("#mini_menu").append(mini_item);
 		}
 
 		//TBD: HTMLs should be loaded per user
@@ -85,7 +75,6 @@
 
 			for (i = 0; i < plugins.length; i++){
 				loadjscssfile(plugins[i], "js");
-				addPlugin(plugins[i]);
 			}
 
 			lang = window.navigator.userLanguage || window.navigator.language;
@@ -99,96 +88,44 @@
 		}
 
 		function clearReturnData(){
-			$("[id^='return']").removeClass();
-			$("[id^='return']").html("");
+			if($("#alert-msg-main-subdiv").length)
+				$("#alert-msg-main-subdiv").remove();
+			if($("#alert-msg-mini-subdiv").length)
+				$("#alert-msg-mini-subdiv").remove();
 		}
 
-		function notificationPermission(){
-			Notification.requestPermission();
-		}
-
-		function checkNotifyPermission(){
-			if (typeof Notification === 'undefined' || !Notification){
-				$("#enableNotify").addClass("disabled");
-				$("#enableNotify").html("Not Supported");
-				return;
-			}
-			if (Notification.permission === "granted"){
-				$("#enableNotify").html("Enabled");
-				$("#enableNotify").addClass("disabled");
-				$("#disableNotify").removeClass("hidden");
-			}
-		}
-
-		function sendNotification(title, message){
-			if (typeof Notification === 'undefined' || !Notification){
-				return false;
-			}
-			if (Notification.permission === "granted"){
-				var mobile = document.getElementById("mobileMenu");
-				if (mobile.offsetParent === null){
-					var notification = new Notification(title, {
-						icon: 'assets/img/logo.png',
-						body: message,
-					});
-					return true;
-				}
-			}
-			return false;
-		}
-
-		function dismissibleAlerts(){
-			var returnData = document.getElementById("returnDataHelp");
-			var dismissButton = document.createElement("button");
-			var dismissSpan = document.createElement("span");
-			var spanX = document.createTextNode("X");
-			dismissButton.className = "close";
-			dismissButton.appendChild(dismissSpan);
-			dismissButton.onclick = function() {
-				clearReturnData();
-			};
-			dismissSpan.appendChild(spanX);
-			returnData.appendChild(dismissButton);
+		function setReturnData(alerttype, message){
+			$("#alert-msg-main").append('<div id="alert-msg-main-subdiv" class="alert ' + alerttype + '"><a class="close" data-dismiss="alert">×</a><span>' + message + '</span></div>')
+			$("#alert-msg-mini").append('<div id="alert-msg-mini-subdiv" class="alert ' + alerttype + '"><a class="close" data-dismiss="alert">×</a><span>'+message + '</span></div>')
 		}
 
 		function CustomMsg(message, err){
-			nMsg = err ? "Failure":"Success";
-			if (!sendNotification(nMsg, i18nData[message] ? i18nData[message] : message)){
-				if (message.length >= 20){
-					$("#returnDataNav").css( "fontSize", "12px" );
-				}
-				$("[id^='return']").removeClass();
-				if(err)
-					$("[id^='return']").addClass("alert alert-dismissible alert-danger");
-				else
-					$("[id^='return']").addClass("alert alert-dismissible alert-success");
-				$("[id^='return']").html(i18nData[message]);
-				dismissibleAlerts();
+
+			clearReturnData()
+
+			if(err){
+				setReturnData("alert-danger", i18nData[message]? i18nData[message]:message);
+			}
+			else{
+				setReturnData("alert-success", i18nData[message]? i18nData[message]:message);
 			}
 		}
 
 		function SDCERRtoString(SDCERR){
-			$("[id^='return']").removeClass();
+
+			clearReturnData()
+
 			switch(parseInt(SDCERR)) {
 				case defines.SDCERR.SDCERR_SUCCESS:
-					if (!sendNotification("Success", "")){
-						$("[id^='return']").addClass("alert alert-dismissible alert-success");
-						$("[id^='return']").html(i18nData['Success']);
-					}
+					setReturnData("alert-success", i18nData['Success']? i18nData['Success']:"Success");
 					break;
 				case defines.SDCERR.SDCERR_FAIL:
-					if (!sendNotification("Failure", "")){
-						$("[id^='return']").addClass("alert alert-dismissible alert-danger");
-						$("[id^='return']").html(i18nData['Failure']);
-					}
+					setReturnData("alert-danger", i18nData['Failure']? i18nData['Failure']:"Failure");
 					break;
 				default:
-					if (!sendNotification("Unknown Data", "")){
-						$("[id^='return']").addClass("alert alert-dismissible alert-danger");
-						$("[id^='return']").html(i18nData['Unknown Data']);
-					}
+					setReturnData("alert-danger", i18nData['Unknown Data']? i18nData['Unknown Data']:"Unknown Data");
+					break;
 			}
-			dismissibleAlerts();
 		}
 
 		function enterKeyPress(e){
@@ -222,8 +159,8 @@
 			})
 			.done(function( data ) {
 				if (data.SDCERR == defines.SDCERR.SDCERR_SUCCESS){
-					$("#loggin").addClass("hidden");
-					$("#loggout").removeClass("hidden");
+					$("#loggin").addClass("d-none");
+					$("#loggout").removeClass("d-none");
 
 					clearReturnData();
 
@@ -231,8 +168,8 @@
 					currUserPermission = data.PERMISSION;
 
 					if (data.REDIRECT == 1){
-						$("#networking_main_menu").addClass("hidden");
-						$("#networking_mini_menu").addClass("hidden");
+						$("#networking_main_menu").addClass("d-none");
+						$("#networking_mini_menu").addClass("d-none");
 						clickUpdatePassword();
 					}
 					else{
@@ -240,20 +177,20 @@
 						$(".locked").each(function() {
 							let id = $(this).attr('id');
 							if (-1 !== currUserPermission.indexOf(id.slice(0, id.length - MENU_ID_TYPE_OFFSET))){
-								$(this).removeClass("hidden");
+								$(this).removeClass("d-none");
 							}
 						});
-						$("#networking_main_menu").removeClass("hidden");
-						$("#networking_mini_menu").removeClass("hidden");
-						$("#usermanage_main_menu").removeClass("hidden");
-						$("#usermanage_mini_menu").removeClass("hidden");
+						$("#networking_main_menu").removeClass("d-none");
+						$("#networking_mini_menu").removeClass("d-none");
+						$("#usermanage_main_menu").removeClass("d-none");
+						$("#usermanage_mini_menu").removeClass("d-none");
 						clickStatusPage();
 					}
 				} else {
 					CustomMsg("Credentials are invalid", true);
 				}
-				document.getElementById("username").value = null;
-				document.getElementById("password").value = null;
+				$("#username").val("");
+				$("#password").val("");
 			})
 			.fail(function(data) {
 				consoleLog("Error, couldn't get login.. retrying");
@@ -269,13 +206,11 @@
 			})
 			.done(function( data ) {
 				if (data.SDCERR == defines.SDCERR.SDCERR_SUCCESS){
-					$("#loggout").addClass("hidden");
-					$("#loggin").removeClass("hidden");
-					$(".locked").addClass("hidden");
+					$("#loggout").addClass("d-none");
+					$("#loggin").removeClass("d-none");
+					$(".locked").addClass("d-none");
 					clickStatusPage();
 				}
-				document.getElementById("username").value = null;
-				document.getElementById("password").value = null;
 
 				location.reload();
 			})
@@ -285,9 +220,9 @@
 		}
 
 		function expiredSession(){
-			$("#loggout").addClass("hidden");
-			$("#loggin").removeClass("hidden");
-			$(".locked").addClass("hidden");
+			$("#loggout").addClass("d-none");
+			$("#loggin").removeClass("d-none");
+			$(".locked").addClass("d-none");
 			clickStatusPage();
 		}
 
@@ -331,91 +266,102 @@
 				success:function (data) {
 					i18nData = data
 					setLanguage("main_menu");
-					setLanguage("navbar");
+					setLanguage("navbar_menu");
 					setLanguage("main_section");
-					setLanguage("helpSection");
+					setLanguage("help_section");
 				}
 			});
 		}
 
 		</script>
-
 	</head>
 
 	<body>
 
-		<iframe id="networking_frame" src="plugins/networking/networking.html" style="display: none;"></iframe>
-		<iframe id="logging_frame" src="plugins/logging/logging.html" style="display: none;"></iframe>
-		<iframe id="swupdate_frame" src="plugins/swupdate/swupdate.html" style="display: none;"></iframe>
-		<iframe id="usermanage_frame" src="plugins/usermanage/usermanage.html" style="display: none;"></iframe>
-		<iframe id="advanced_frame" src="plugins/advanced/advanced.html" style="display: none;"></iframe>
-
-		<nav class="navbar navbar-inverse navbar-fixed-top">
-			<div class="container-fluid">
-				<div class="navbar-header">
-					<button id="mobileMenu" type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-						<span class="sr-only">Toggle navigation</span>
-						<span class="icon-bar"></span>
-						<span class="icon-bar"></span>
-						<span class="icon-bar"></span>
-					</button>
-					<a class="navbar-brand hidden-xs hidden-sm" href="#">WebLCM</a>
-					<img class="navbar-brand img-responsive visible-xs-block visible-sm-block" alt="Brand" src="assets/img/logo_white.png" width="90" height="34" style="padding-left:2px;padding-right:0px;">
-					<span class="navbar-brand visible-xs-block visible-sm-block" style="padding-top:13px;padding-left:8px;padding-right:8px;">
-						<span id="returnDataNav" class="" style="padding-left:8px;padding-right:8px;" role="alert"></span>
-					</span>
-				</div>
-				<div id="navbar" class="navbar-collapse collapse">
-					<form id="loggin" class="navbar-form navbar-right">
-						<div class="form-group">
-							<input type="text" id="username" name="Username" placeholder="Username" class="form-control i18n">
-						</div>
-						<div class="form-group">
-							<input type="password" id="password" name="Password" placeholder="Password" class="form-control i18n" onkeypress="enterKeyPress(event)">
-						</div>
-						<div class="form-group">
-							<input type="button" onclick="login()" class="btn btn-default i18n" href="#" name="Sign in" value="Sign in">
-						</div>
-						<div class="form-group">
-							<select class="form-control" id="language" onchange="onChangeLanguageType()">
-								<option value="en" default>English</option>
-								<option value="zh-CN">中文简体</option>
-							</select>
-						</div>
-					</form>
-					<form id="loggout" class="navbar-form navbar-right hidden">
-						<div class="form-group">
-							<a type="button" onclick="logout()" class="btn btn-default i18n" name= "Log out" href="#">Log out</a>
-						</div>
-					</form>
-					<ul class="nav navbar-nav navbar-right visible-xs" id="mini_menu">
+		<nav class="navbar navbar-expand-md navbar-dark bg-dark">
+			<a class="navbar-brand" href="#">WebLCM</a>
+			<div class="d-md-none">
+				<div id="alert-msg-mini" ></div>
+			</div>
+			<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar_menu" aria-controls="navbar_menu" aria-expanded="false" aria-label="Navigation">
+				<span class="navbar-toggler-icon"></span>
+			</button>
+			<div class="collapse navbar-collapse flex-grow-0 ml-auto" id="navbar_menu">
+				<form id="loggin" class="form-inline">
+					<input type="text" id="username" name="Username" placeholder="Username" class="form-control mx-1 i18n">
+					<input type="password" id="password" name="Password" placeholder="Password" class="form-control mx-1 i18n" onkeypress="enterKeyPress(event)">
+					<a type="button" onclick="login()" class="btn btn-light mx-1 i18n" href="#" name="Sign in">Sign in</a>
+					<select class="form-control mx-1" id="language" onchange="onChangeLanguageType()">
+						<option value="en" default>English</option>
+						<option value="zh-CN">中文简体</option>
+					</select>
+				</form>
+				<form id="loggout" class="form-inline d-none">
+					<a type="button" onclick="logout()" class="btn btn-light i18n" name= "Log out" href="#">Log out</a>
+				</form>
+				<ul class="navbar-nav d-md-none float-right" id="mini_menu">
+					<ul class="nav flex-column" id="mini">
+						<li id="networking_mini_menu" class="locked nav-item">
+							<a name="Networking" class="nav-link i18n" href="#" data-toggle="collapse" data-target="#networking_mini_submenu" aria-expanded="false">Networking &blacktriangledown;</a>
+							<ul class="collapse in" id="networking_mini_submenu" role="menu" aria-labelledby="networking_mini_menu">
+								<li id="networking_status_mini_menu" class="nav-link" onclick="clickStatusPage()"><a class="i18n" name="Networking Status" href="#">Status</a></li>
+								<li id="networking_connections_mini_menu" class="locked d-none nav-link" onclick="clickConnectionsPage()"><a class="i18n" name="View Connections" href="#">Manage Connections</a></li>
+								<li id="networking_edit_mini_menu" class="locked d-none nav-link" onclick="clickEditConnectionPage()"><a class="i18n" name="Edit Connection" href="#">Edit Connection</a></li>
+								<li id="networking_scan_mini_menu" class="locked d-none nav-link" onclick="clickScanPage()"><a class="i18n" name="Wifi Scan" href="#">Wifi Scan</a></li>
+								<li id="networking_version_mini_menu" class="nav-link" onclick="clickVersionPage()"><a class="i18n" name="Version" href="#">System Version</a></li>
+							</ul>
+						</li>
+						<li id="logging_mini_menu" class="locked d-none nav-link" onclick="clickLoggingPage()"><a class="i18n" name="Logging" href="#">Logging</a></li>
+						<li id="swupdate_mini_menu" class="locked d-none nav-link" onclick="clickSWUpdatePage()"><a class="i18n" name="Firmware Update" href="#">Firmware Update</a></li>
+						<li id="usermanage_mini_menu" class="locked d-none nav-item">
+							<a href="#" class="nav-link i18n" name="Manage Users" data-toggle="collapse" data-target="#usermanage_mini_submenu" aria-expanded="false">Manage Users &blacktriangledown;</a>
+							<ul class="collapse in" id="usermanage_mini_submenu" role="menu" aria-labelledby="usermanage_mini_menu">
+								<li id="add_del_user_mini_menu" class="locked d-none nav-link" onclick="clickAddOrDelUser()"><a class="i18n" name="Add Del User" href="#">Add/Del User</a></li>
+								<li id="update_password_mini_menu" class="locked d-none nav-link" onclick="clickUpdatePassword('Update login user password.')"><a class="i18n" name="Update Password" href="#">Update Password</a></li>
+							</ul>
+						</li>
+						<li id="advanced_mini_menu" class="locked d-none nav-link " onclick="clickAdvancedPage()"><a class="i18n" name="Advanced" href="#">Advance Settings</a></li>
 					</ul>
-				</div>
+				</ul>
 			</div>
 		</nav>
 
 		<div class="container-fluid">
-			<div class="row">
-				<div class="hidden-xs col-sm-3 col-md-2 sidebar">
-					<ul class="nav nav-sidebar" id="main_menu">
+			<div class="row mt-3">
+				<nav class="col-md-2 d-none d-md-block bg-light">
+					<ul class="nav flex-column" id="main_menu">
+						<li id="networking_main_menu" class="locked nav-item">
+							<a name="Networking" class="nav-link i18n" href="#" data-toggle="collapse" data-target="#networking_main_submenu" aria-expanded="false">Networking &blacktriangledown;</a>
+							<ul class="collapse in" id="networking_main_submenu" role="menu" aria-labelledby="networking_main_menu">
+								<li id="networking_status_main_menu" class="nav-link" onclick="clickStatusPage()"><a class="i18n" name="Networking Status" href="#">Status</a></li>
+								<li id="networking_connections_main_menu" class="locked d-none nav-link" onclick="clickConnectionsPage()"><a class="i18n" name="View Connections" href="#">Manage Connections</a></li>
+								<li id="networking_edit_main_menu" class="locked d-none nav-link" onclick="clickEditConnectionPage()"><a class="i18n" name="Edit Connection" href="#">Edit Connection</a></li>
+								<li id="networking_scan_main_menu" class="locked d-none nav-link" onclick="clickScanPage()"><a class="i18n" name="Wifi Scan" href="#">Wifi Scan</a></li>
+								<li id="networking_version_main_menu" class="nav-link" onclick="clickVersionPage()"><a class="i18n" name="Version" href="#">System Version</a></li>
+							</ul>
+						</li>
+						<li id="logging_main_menu" class="locked d-none nav-link" onclick="clickLoggingPage()"><a class="i18n" name="Logging" href="#">Logging</a></li>
+						<li id="swupdate_main_menu" class="locked d-none nav-link" onclick="clickSWUpdatePage()"><a class="i18n" name="Firmware Update" href="#">Firmware Update</a></li>
+						<li id="usermanage_main_menu" class="locked d-none nav-item">
+							<a href="#" class="nav-link i18n" name="Manage Users" data-toggle="collapse" data-target="#usermanage_main_submenu" aria-expanded="false">Manage Users ▼</a>
+							<ul class="collapse in" id="usermanage_main_submenu" role="menu" aria-labelledby="usermanage_main_menu">
+								<li id="add_del_user_main_menu" class="locked d-none nav-link" onclick="clickAddOrDelUser()"><a class="i18n" name="Add Del User" href="#">Add/Del User</a></li>
+								<li id="update_password_main_menu" class="locked d-none nav-link" onclick="clickUpdatePassword('Update login user password.')"><a class="i18n" name="Update Password" href="#">Update Password</a></li>
+							</ul>
+						</li>
+						<li id="advanced_main_menu" class="locked d-none nav-link " onclick="clickAdvancedPage()"><a class="i18n" name="Advanced" href="#">Advance Settings</a></li>
 					</ul>
-				</div>
-				<div class="col-xs-12 col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-					<div class="row placeholders">
-						<div class="col-xs-12 col-sm-12 col-md-9 col-lg-9 placeholder">
-							<p id="main_section"></p>
-						</div>
-						<div id="helpSection" class="hidden-xs hidden-sm col-md-3 col-lg-3 placeholder">
-							<div id="returnDataHelp" class="" role="alert"></div>
-							<img src="assets/img/logo.png" width="320" height="87" class="img-responsive" alt="Responsive image" style="border-radius: 0%" ondragstart="return false;">
-							<h4 class="i18n" name="Need help">Need help?</h4>
-
-							<br>
-							<span id="infoText" class="text-muted"></span>
-						</div>
-					</div>
+				</nav>
+				<main role="main" class="col-md-8 ml-sm-auto">
+					<p id="main_section"></p>
+				</main>
+				<div id="help_section" class="col-md-2 d-none d-md-block mt-3 text-center">
+					<div id="alert-msg-main"></div>
+					<img src="assets/img/logo.png" class="img-fluid" alt="Responsive image">
+					<h4 class="i18n" name="Need help">Need help?</h4>
 				</div>
 			</div>
-		</div>
+        </div>
+
 	</body>
 </html>
