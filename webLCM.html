@@ -299,10 +299,10 @@
 				<form id="loggout" class="form-inline d-none">
 					<a type="button" onclick="logout()" class="btn btn-light i18n" name= "Log out" href="#">Log out</a>
 				</form>
-				<ul class="navbar-nav d-md-none float-right" id="mini_menu">
-					<ul class="nav flex-column" id="mini">
+				<ul class="d-md-none float-right">
+					<ul class="navbar-nav" id="mini_menu">
 						<li id="networking_mini_menu" class="locked nav-item">
-							<a name="Networking" class="nav-link i18n" href="#" data-toggle="collapse" data-target="#networking_mini_submenu" aria-expanded="false">Networking &blacktriangledown;</a>
+							<a name="Networking" class="nav-link i18n" href="#" data-toggle="collapse" data-target="#networking_mini_submenu" aria-expanded="false">Networking Settings &blacktriangledown;</a>
 							<ul class="collapse in" id="networking_mini_submenu" role="menu" aria-labelledby="networking_mini_menu">
 								<li id="networking_status_mini_menu" class="nav-link" onclick="clickStatusPage()"><a class="i18n" name="Networking Status" href="#">Status</a></li>
 								<li id="networking_connections_mini_menu" class="locked d-none nav-link" onclick="clickConnectionsPage()"><a class="i18n" name="View Connections" href="#">Manage Connections</a></li>
@@ -320,7 +320,7 @@
 								<li id="update_password_mini_menu" class="locked d-none nav-link" onclick="clickUpdatePassword('Update login user password.')"><a class="i18n" name="Update Password" href="#">Update Password</a></li>
 							</ul>
 						</li>
-						<li id="advanced_mini_menu" class="locked d-none nav-link " onclick="clickAdvancedPage()"><a class="i18n" name="Advanced" href="#">Advance Settings</a></li>
+						<li id="advanced_mini_menu" class="locked d-none nav-link " onclick="clickAdvancedPage()"><a class="i18n" name="Advanced" href="#">Advanced Settings</a></li>
 					</ul>
 				</ul>
 			</div>
@@ -329,10 +329,10 @@
 		<div class="container-fluid">
 			<div class="row mt-3">
 				<nav class="col-md-2 d-none d-md-block bg-light">
-					<ul class="nav flex-column" id="main_menu">
+					<ul class="navbar-nav" id="main_menu">
 						<li id="networking_main_menu" class="locked nav-item">
-							<a name="Networking" class="nav-link i18n" href="#" data-toggle="collapse" data-target="#networking_main_submenu" aria-expanded="false">Networking &blacktriangledown;</a>
-							<ul class="collapse in" id="networking_main_submenu" role="menu" aria-labelledby="networking_main_menu">
+							<a name="Networking" class="nav-link i18n" href="#" data-toggle="collapse" data-target="#networking_main_submenu" aria-expanded="false">Networking Settings &blacktriangledown;</a>
+							<ul class="collapse show" id="networking_main_submenu" role="menu" aria-labelledby="networking_main_menu">
 								<li id="networking_status_main_menu" class="nav-link" onclick="clickStatusPage()"><a class="i18n" name="Networking Status" href="#">Status</a></li>
 								<li id="networking_connections_main_menu" class="locked d-none nav-link" onclick="clickConnectionsPage()"><a class="i18n" name="View Connections" href="#">Manage Connections</a></li>
 								<li id="networking_edit_main_menu" class="locked d-none nav-link" onclick="clickEditConnectionPage()"><a class="i18n" name="Edit Connection" href="#">Edit Connection</a></li>
@@ -349,7 +349,7 @@
 								<li id="update_password_main_menu" class="locked d-none nav-link" onclick="clickUpdatePassword('Update login user password.')"><a class="i18n" name="Update Password" href="#">Update Password</a></li>
 							</ul>
 						</li>
-						<li id="advanced_main_menu" class="locked d-none nav-link " onclick="clickAdvancedPage()"><a class="i18n" name="Advanced" href="#">Advance Settings</a></li>
+						<li id="advanced_main_menu" class="locked d-none nav-link " onclick="clickAdvancedPage()"><a class="i18n" name="Advanced" href="#">Advanced Settings</a></li>
 					</ul>
 				</nav>
 				<main role="main" class="col-md-8 ml-sm-auto">
