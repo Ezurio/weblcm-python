@@ -25,7 +25,7 @@
     "Logging": "Logging",
     "Update Password": "Update Password",
     "Firmware Update": "Firmware Update",
-    "Advanced": "Advanced",
+    "Advanced": "Advanced Settings",
 
     "Select config archive": "Select config archive",
     "Import system configuration": "Import system configuration",
@@ -120,7 +120,7 @@
 
     "UUID": "UUID",
     "SSID": "SSID",
-    "Networking": "Networking &blacktriangledown;",
+    "Networking": "Networking Settings &blacktriangledown;",
     "Click or drag a scan item here to add as connection": "Click or drag a scan item here to add as connection",
     "No hardware detected": "No hardware detected",
     "Add connection": "Add connection",
