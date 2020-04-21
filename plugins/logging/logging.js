@@ -20,8 +20,8 @@ function submitlogSetting(retry){
   .done(function( msg ) {
     SDCERRtoString(msg.SDCERR);
   })
-  .fail(function() {
-    consoleLog("Set log level failed");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -33,6 +33,7 @@ function queryLogData() {
   $.ajax({
     url: "logData?typ=" + $("#log-type").val() + "&priority=" + parseInt($("#log-level").val()) + "&days=" + parseInt($("#log-date-from").val()),
     type: "GET",
+    cache: false,
   })
   .done(function(msg){
 
@@ -51,10 +52,10 @@ function queryLogData() {
     $("#bt-query-log").prop("disabled", false);
     $("#bt-query-log").val("Query");
   })
-  .fail(function() {
+  .fail(function( xhr, textStatus, errorThrown) {
     $("#bt-query-log").prop("disabled", false);
     $("#bt-query-log").val("Query");
-    consoleLog("Request log failed");
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -62,14 +63,15 @@ function getlogSetting(retry){
   $.ajax({
     url: "logSetting",
     type: "GET",
+    cache: false,
     contentType: "application/json",
   })
   .done(function(msg) {
     $("#supp-debug-level").val(msg.suppDebugLevel);
     $("#driver-debug-level").val(msg.driverDebugLevel);
   })
-  .fail(function() {
-    consoleLog("Get log level failed");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -112,7 +114,7 @@ function clickLoggingPage(retry){
       }
     });
   })
-  .fail(function() {
-    consoleLog("Failed to get logging.html");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }

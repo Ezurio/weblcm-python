@@ -12,16 +12,18 @@ class LogData(object):
 
 	@cherrypy.tools.accept(media='text/plain')
 	@cherrypy.config(**{'response.stream': True})
-	def GET(self, typ, priority, days):
+	def GET(self,  *args, **kwargs):
 
 		cherrypy.response.headers['Content-Type'] = 'text/plain'
 
 		reader = journal.Reader()
-		reader.log_level(int(priority))
+		priority = int(kwargs.get('priority', 6))
+		reader.log_level(priority)
+		typ = kwargs.get('typ', "All")
 		if typ != "All":
 			reader.add_match(SYSLOG_IDENTIFIER=typ)
-		if int(days) > 0:
-			reader.seek_realtime(time.time() - int(days) * 86400)
+		days = int(kwargs.get('days', 1))
+		reader.seek_realtime(time.time() - days * 86400)
 
 		def streaming():
 			logs = []
@@ -71,7 +73,7 @@ class LogSetting(object):
 
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()
-	def GET(self):
+	def GET(self, *args, **kwargs):
 		result = {
 			'SDCERR': 1,
 		}

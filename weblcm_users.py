@@ -217,7 +217,7 @@ class UserManage(object):
 		return result
 
 	@cherrypy.tools.json_out()
-	def GET(self):
+	def GET(self, *args, **kwargs):
 		return UserConfManage.getUserList()
 
 @cherrypy.expose
@@ -262,7 +262,7 @@ class LogoutManage(object):
 	@cherrypy.tools.json_in()
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()
-	def GET(self):
+	def GET(self, *args, **kwargs):
 		result = {
 			'SDCERR': 0,
 		}

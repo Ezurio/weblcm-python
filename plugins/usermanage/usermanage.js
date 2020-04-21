@@ -137,8 +137,8 @@ function updatePassword() {
       login(currUser, new_password);
 	}
   })
-  .fail(function() {
-    consoleLog("Failed to update password");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -185,14 +185,15 @@ function get_user_list() {
   $.ajax({
     url: "users",
     type: "GET",
+    cache: false,
     contentType: "application/json",
   })
   .done(function(data) {
     createUserList(data);
     clearPerm();
   })
-  .fail(function() {
-    consoleLog("Failed to get user list");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -264,8 +265,8 @@ function addUser() {
       get_user_list();
 	}
   })
-  .fail(function() {
-    consoleLog("Failed to add user");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -306,8 +307,8 @@ function updatePermission(){
       setPerm(perm);
     }
   })
-  .fail(function() {
-    consoleLog("Failed to update user permission");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -334,8 +335,8 @@ function delUser(){
       get_user_list();
     }
   })
-  .fail(function() {
-    consoleLog("Failed to delete user");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -395,8 +396,8 @@ function clickAddOrDelUser(){
     createPermissionsTable();
     get_user_list();
   })
-  .fail(function() {
-    consoleLog("Failed to get add_del_user.html");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -415,7 +416,7 @@ function clickUpdatePassword(){
     setLanguage("main_section");
     clearReturnData();
   })
-  .fail(function() {
-    consoleLog("Failed to get update_password.html");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
