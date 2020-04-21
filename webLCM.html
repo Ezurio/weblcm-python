@@ -53,18 +53,31 @@
 			console.log(message);
 		}
 
+		function httpErrorResponseHandler(xhr, textStatus, errorThrown){
+			switch(xhr.status) {
+				//HTTP 401 Unauthorized Error
+				case 401:
+					logout();
+					break;
+				default:
+					consoleLog("HTTP Error: " + xhr.status);
+					break;
+			}
+		}
+
 		function loadjscssfile(key, filetype){
-			var jsPath = "plugins/" + key + "/" + key + "." + filetype;
+			let jsPath = "plugins/" + key + "/" + key + "." + filetype;
 			if (filetype == "js"){
-				var fileref=document.createElement('script');
+
+				let fileref = document.createElement('script');
+
 				fileref.setAttribute("type","text/javascript");
 				fileref.setAttribute("src", jsPath);
-			}
-			if (typeof fileref != "undefined"){
-				document.getElementsByTagName("head")[0].appendChild(fileref);
 				fileref.onload = function(){
 					window[key + "AUTORUN"](0);
 				}
+
+				document.getElementsByTagName("head")[0].appendChild(fileref);
 			}
 		}
 
@@ -204,32 +217,20 @@
 				type: "GET",
 				contentType: "application/json",
 			})
-			.done(function( data ) {
-				if (data.SDCERR == defines.SDCERR.SDCERR_SUCCESS){
-					$("#loggout").addClass("d-none");
-					$("#loggin").removeClass("d-none");
-					$(".locked").addClass("d-none");
-					clickStatusPage();
-				}
-
+			.always(function( data ) {
+				$("#loggout").addClass("d-none");
+				$("#loggin").removeClass("d-none");
+				$(".locked").addClass("d-none");
 				location.reload();
-			})
-			.fail(function() {
-				consoleLog("Error, couldn't get logout.. retrying");
+				clickStatusPage();
 			});
-		}
-
-		function expiredSession(){
-			$("#loggout").addClass("d-none");
-			$("#loggin").removeClass("d-none");
-			$(".locked").addClass("d-none");
-			clickStatusPage();
 		}
 
 		$(document).ready(function() {
 			$.ajax({
 				url: "definitions",
 				type: "GET",
+				cache: false,
 				contentType: "application/json",
 			})
 			.done(function( data ) {
@@ -361,7 +362,6 @@
 					<h4 class="i18n" name="Need help">Need help?</h4>
 				</div>
 			</div>
-        </div>
-
+		</div>
 	</body>
 </html>

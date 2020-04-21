@@ -15,7 +15,10 @@ class Root(object):
 	@cherrypy.expose
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()
-	def definitions(self):
+	def definitions(self, *args, **kwargs):
+
+		count = cherrypy.session.get('count', 0) + 1
+		cherrypy.session['count'] = count
 
 		return {
 			'SDCERR': {
@@ -44,6 +47,24 @@ def setup_http_server():
 
 	cherrypy.request.hooks.attach('on_start_resource', force_tls)
 
+def force_session_checking():
+
+	"""
+		Raise HTTP 401 Unauthorized client error if a session with invalid id tries to assess following resources.
+		HTMLs still can be loaded to keep consistency, i.e. loaded from local cache or remotely.
+	"""
+
+	paths = (
+				"connections", "connection", "accesspoints", "networkInterfaces",
+				"archiveFiles", "users", "firmware", "logData",
+				"logSetting", "factoryReset", "reboot", "files"
+			)
+
+	if not cherrypy.session._exists():
+		url = cherrypy.url().split('/')[-1]
+		if url and ".html" not in url and any(path in url for path in paths):
+			raise cherrypy.HTTPError(401)
+
 if __name__ == '__main__':
 
 	webapp = Root()
@@ -71,6 +92,8 @@ if __name__ == '__main__':
 	webapp.factoryReset = FactoryReset()
 
 	setup_http_server()
+
+	cherrypy.request.hooks.attach('before_handler', force_session_checking)
 
 	#Server config
 	cherrypy.config.update({

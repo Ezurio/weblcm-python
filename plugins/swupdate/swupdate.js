@@ -28,31 +28,27 @@ function updateFirmware() {
     return;
 
   $("#bt-firmware-update").prop("disabled", true);
+  $(".progress-bar").attr("aria-valuenow", 0);
+  $(".progress-bar").attr("style", "width: 0%");
+  $(".progress-bar").text("0%");
   $("#fw-update-status").text(i18nData['Checking...']);
 
   $.ajax({
     url: "firmware",
-    type: "POST",
+    type: "GET",
+    cache: false,
     dataType: "json",
   })
   .done(function(msg) {
 
     if(msg.SDCERR){
-      if (msg.message in i18nData)
-        $("#fw-update-status").text(i18nData[msg.message]);
-      else
-        $("#fw-update-status").text(msg.message);
-      $("#bt-firmware-update").prop("disabled", false);
+      update_end(i18nData[msg.message] ? i18nData[msg.message] : msg.message);
       return;
     }
 
     fw_start = 0;
     fw_total_bytes = $("#fw-name")[0].files[0].size;
 
-    r = Math.round(fw_start * 100/fw_total_bytes);
-    $(".progress-bar").attr("aria-valuenow", r);
-    $(".progress-bar").attr("style", "width: "+ r + "%");
-    $(".progress-bar").text(r + "%");
     $("#fw-update-status").text(i18nData['Updating...']);
 
     fw_reader = new FileReader();
@@ -88,8 +84,9 @@ function updateFirmware() {
 
     upload_one_chunk();
   })
-  .fail(function(xhr){
-    $("#bt-firmware-update").prop("disabled", false);
+  .fail(function( xhr, textStatus, errorThrown) {
+    update_end(i18nData['Update failed!']);
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -103,7 +100,8 @@ function update_end(msg) {
     $("#fw-update-status").text(msg);
     $("#bt-firmware-update").prop("disabled", false);
   })
-  .fail(function() {
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -120,8 +118,11 @@ function clickSWUpdatePage() {
     $('#main_section').html(data);
     setLanguage("main_section");
     clearReturnData();
+
+    //In case swupdate was cancelled by clicking a menu item, backend needs to be updated.
+    update_end(i18nData['Update Status']);
   })
-  .fail(function(){
-    console.log("Error, couldn't get swupdate.html");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }

@@ -218,7 +218,7 @@ class NetworkStatus(object):
 		t.start()
 
 	@cherrypy.tools.json_out()
-	def GET(self):
+	def GET(self, *args, **kwargs):
 		global network_status
 		return {
 			'SDCERR': 0,
