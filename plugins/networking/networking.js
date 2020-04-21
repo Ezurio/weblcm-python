@@ -423,8 +423,8 @@ function onChangeKeymgmt(){
 }
 
 var statusUpdateTimerId;
-function setIntervalUpdate(functionName){
-  statusUpdateTimerId = setTimeout(functionName, 10000)
+function setIntervalUpdate(functionName, timeout, arg){
+  statusUpdateTimerId = setTimeout(functionName, timeout, arg)
 }
 
 function updateStatus(){
@@ -565,12 +565,12 @@ function updateStatus(){
           wired.addClass("d-none");
         }
       }
-      setIntervalUpdate(updateStatus);
+      setIntervalUpdate(updateStatus, 10000);
     }
   })
-  .fail(function(data) {
+  .fail(function( xhr, textStatus, errorThrown) {
     clearTimeout(statusUpdateTimerId);
-    consoleLog("Failed to get status");
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -592,8 +592,8 @@ function clickStatusPage() {
     clearTimeout(statusUpdateTimerId);
     updateStatus();
   })
-  .fail(function() {
-    consoleLog("Failed to get status.html");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -730,6 +730,7 @@ function updateGetConnectionPage(uuid, id, ssid, key_mgmt){
   $.ajax({
     url: "connection?uuid="+uuid,
     type: "GET",
+    cache: false,
     contentType: "application/json",
   })
   .done(function( msg ) {
@@ -755,8 +756,8 @@ function updateGetConnectionPage(uuid, id, ssid, key_mgmt){
       }
     }
   })
-  .fail(function() {
-    consoleLog("Failed to get connection settings");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -782,8 +783,8 @@ function editConnection(uuid, id, ssid, key_mgmt) {
       updateGetConnectionPage(uuid, id, ssid, key_mgmt);
     });
   })
-  .fail(function() {
-    consoleLog("Failed to get addConnection.html");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -806,6 +807,7 @@ function updateConnectionsPage(){
   $.ajax({
     url: "connections",
     type: "GET",
+    cache: false,
     contentType: "application/json",
   })
   .done(function( msg ) {
@@ -823,8 +825,8 @@ function updateConnectionsPage(){
       onChangeConnections();
     }
   })
-  .fail(function() {
-    consoleLog("Failed to get connections");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -843,8 +845,8 @@ function activateConnection(){
     SDCERRtoString(msg.SDCERR);
     updateConnectionsPage();
   })
-  .fail(function() {
-    consoleLog("Failed to activate connection");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -889,8 +891,8 @@ function clickConnectionsPage() {
     }
 
   })
-  .fail(function() {
-    consoleLog("Failed to get connections.html");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -1277,20 +1279,55 @@ function drop(ev){
   $("#goToConnectionDisplay").removeClass("d-none");
 }
 
-function getScan(){
+function requestScan(){
+
+  clearTimeout(statusUpdateTimerId);
+
+  $("#bt-manual-scan").prop("disabled", true);
+  $('#scanTable tbody').empty();
+  $("#scanProgressDisplay").removeClass("d-none");
+  $("#form-addWifiConnection").addClass("d-none");
+
   $.ajax({
     url: "accesspoints",
-    type: "GET",
+    type: "PUT",
     contentType: "application/json",
   })
   .done(function(msg) {
-    $("#scanProgressDisplay").addClass("d-none");
-    if (msg.SDCERR == defines.SDCERR.SDCERR_NO_HARDWARE || msg.SDCERR == defines.SDCERR.SDCERR_FAIL){
-      $("#status-hardware").removeClass("d-none");
-    } else if($("#scanTable").length > 0){
-      $("#scanTableDisplay").removeClass("d-none");
+    setIntervalUpdate(getScan, 10000, 0);
+  })
+  .fail(function( xhr, textStatus, errorThrown) {
+    $("#bt-manual-scan").prop("disabled", false);
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
+  });
+}
 
-      for (var ap in msg["accesspoints"]){
+function getScan(retry){
+
+  $.ajax({
+    url: "accesspoints",
+    type: "GET",
+    cache: false,
+    contentType: "application/json",
+  })
+  .done(function(msg) {
+
+    if (msg.SDCERR == defines.SDCERR.SDCERR_FAIL){
+      if(retry < 3){
+        setIntervalUpdate(getScan, 10000, retry + 1);
+      }
+      else{
+        $("#status-ap-scanning").removeClass("d-none");
+        $("#scanProgressDisplay").addClass("d-none");
+        $("#bt-manual-scan").prop("disabled", false);
+      }
+    }
+    else if($("#scanTable").length > 0){
+
+      $("#scanProgressDisplay").addClass("d-none");
+
+      $('#scanTable tbody').empty();
+      for (let ap = 0; ap < msg["accesspoints"].length; ap++){
 
         var markup =  "<tr><td>" + msg["accesspoints"][ap].Ssid +
                       "</td><td>" + msg["accesspoints"][ap].HwAddress +
@@ -1310,12 +1347,17 @@ function getScan(){
           $("#connectionNameDisplay").removeClass("has-error");
           $("#goToConnectionDisplay").removeClass("d-none");
         });
-        $("#emptyNode").remove();
+      }
+
+      $("#bt-manual-scan").prop("disabled", false);
+
+      if (-1 !== currUserPermission.indexOf("networking_edit")){
+        $("#form-addWifiConnection").removeClass("d-none");
       }
     }
   })
-  .fail(function() {
-    consoleLog("Failed to get AP list");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -1333,15 +1375,12 @@ function clickScanPage(){
     $("#main_section").html(data);
     setLanguage("main_section");
     clearReturnData();
-    $("#helpText").html("Scan for wireless networks");
+    clearTimeout(statusUpdateTimerId);
 
-    if (-1 !== currUserPermission.indexOf("networking_edit")){
-      $("#form-addWifiConnection").removeClass("d-none");
-    }
     getScan(0);
   })
-  .fail(function() {
-    consoleLog("Failed to get scan.html");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -1380,21 +1419,23 @@ function getCerts(connection){
   return $.ajax({
     url: "files?typ=cert",
     type: "GET",
+    cache: false,
     contentType: "application/json",
   })
   .done(function(msg) {
     createCertList(msg);
   })
-  .fail(function() {
-    consoleLog("Failed to get certificates.");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
 function getVersion(){
   $.ajax({
     url: "version",
-	type: "GET",
-	contentType: "application/json",
+    type: "GET",
+    cache: false,
+    contentType: "application/json",
   })
   .done(function(msg) {
     $("#sdk").text(msg['sdk'])
@@ -1405,8 +1446,8 @@ function getVersion(){
     $("#weblcm_python_webapp").text(msg['weblcm_python_webapp']);
     $("#build").text(msg['build']);
   })
-  .fail(function() {
-    consoleLog("Failed to get version information");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -1426,8 +1467,8 @@ function clickVersionPage(){
     clearReturnData();
     getVersion(0);
   })
-  .fail(function() {
-    consoleLog("Failed to get version.html");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -1435,6 +1476,7 @@ function getNetworkInterfaces(){
   return $.ajax({
     url: "networkInterfaces",
     type: "GET",
+    cache: false,
     contentType: "application/json",
   })
   .done(function(data) {
@@ -1467,8 +1509,8 @@ function getNetworkInterfaces(){
       }
     }
   })
-  .fail(function() {
-    consoleLog("Failed to get interfaces");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 

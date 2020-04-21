@@ -35,7 +35,7 @@ def filter_connection_by_type(typ):
 @cherrypy.expose
 class NetworkConnections(object):
 	@cherrypy.tools.json_out()
-	def GET(self):
+	def GET(self, *args, **kwargs):
 		result = {
 			'SDCERR': 1,
 			'connections': {},
@@ -172,7 +172,7 @@ class NetworkConnection(object):
 		return result
 
 	@cherrypy.tools.json_out()
-	def GET(self, uuid):
+	def GET(self, *args, **kwargs):
 
 		def cert_to_filename(cert):
 			"""
@@ -185,6 +185,7 @@ class NetworkConnection(object):
 			'SDCERR': 1,
 		}
 		try:
+			uuid = kwargs.get('uuid')
 			connections = NetworkManager.Settings.ListConnections()
 			connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in connections])
 			settings = connections[uuid].GetSettings()
@@ -204,19 +205,41 @@ class NetworkConnection(object):
 
 @cherrypy.expose
 class NetworkAccessPoints(object):
+
 	@cherrypy.tools.json_out()
-	def GET(self):
+	def PUT(self):
+		"""
+			Start a manual scan
+		"""
 		result = {
 			'SDCERR': 1,
-			'accesspoints': {},
 		}
+
 		try:
 			for dev in NetworkManager.Device.all():
 				if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
 					options = []
 					dev.RequestScan(options)
 
-			i = 0;
+			result['SDCERR'] = 0
+
+		except Exception as e:
+			print(e)
+
+		return result
+
+	@cherrypy.tools.json_out()
+	def GET(self, *args, **kwargs):
+
+		"""
+			Get Cached AP list
+		"""
+		result = {
+			'SDCERR': 1,
+			'accesspoints': [],
+		}
+
+		try:
 			for ap in NetworkManager.AccessPoint.all():
 				security_string = ""
 				keymgmt = 'none'
@@ -251,10 +274,11 @@ class NetworkAccessPoints(object):
 					'Security': security_string,
 					'Keymgmt': keymgmt,
 				}
+				result['accesspoints'].append(ap_data)
 
-				result['accesspoints'][i] = ap_data
+			if len(result['accesspoints']):
 				result['SDCERR'] = 0
-				i += 1
+
 		except Exception as e:
 			print(e)
 
@@ -263,7 +287,7 @@ class NetworkAccessPoints(object):
 @cherrypy.expose
 class Version(object):
 	@cherrypy.tools.json_out()
-	def GET(self):
+	def GET(self, *args, **kwargs):
 		result = {
 				'SDCERR': 0,
 				'sdk': "undefined",
@@ -293,7 +317,7 @@ class Version(object):
 @cherrypy.expose
 class NetworkInterfaces(object):
 	@cherrypy.tools.json_out()
-	def GET(self):
+	def GET(self, *args, **kwargs):
 		result = {
 			'SDCERR': 1,
 		}
