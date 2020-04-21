@@ -42,10 +42,10 @@ class FileManage(object):
 		return result
 
 	@cherrypy.tools.json_out()
-	def GET(self, typ):
+	def GET(self, *args, **kwargs):
 
 		files = []
-
+		typ = kwargs.get('typ')
 		with os.scandir(weblcm_def.FILEDIR_DICT.get(typ)) as listOfEntries:
 			for entry in listOfEntries:
 				if entry.is_file():
@@ -61,16 +61,20 @@ class ArchiveFilesManage(object):
 	"""
 		Manage archive files.
 	"""
-	def POST(self, typ, fil, Password):
+	def POST(self, *args, **kwargs):
 
 		res = 1
+
+		typ = kwargs.get('typ')
+		fil = kwargs.get('fil')
+		password = kwargs.get('Password')
 
 		f = save_file(typ, fil)
 
 		if os.path.isfile(f):
 			p = subprocess.Popen([
 				'/usr/sbin/weblcm_file_import_export.sh', "config", "unzip",
-				f, weblcm_def.FILEDIR_DICT.get(typ), Password
+				f, weblcm_def.FILEDIR_DICT.get(typ), password
 			])
 			res = p.wait()
 			os.unlink(f)
@@ -78,19 +82,22 @@ class ArchiveFilesManage(object):
 		if res:
 			raise cherrypy.HTTPError()
 
-	def GET(self, typ, passwd):
+	def GET(self, *args, **kwargs):
+
+		typ = kwargs.get('typ')
+		password = kwargs.get('Password')
 
 		fil = '{0}{1}'.format(typ, ".zip")
 		f = '{0}{1}'.format("/tmp/", fil)
 		if typ == "config":
 			p = subprocess.Popen([
 				'/usr/sbin/weblcm_file_import_export.sh', "config", "zip",
-				weblcm_def.FILEDIR_DICT.get(typ), f, passwd
+				weblcm_def.FILEDIR_DICT.get(typ), f, password
 			])
 		elif typ == "log":
 			p = subprocess.Popen([
 				'/usr/sbin/weblcm_file_import_export.sh', "log", "zip",
-				cherrypy.request.app.config['weblcm'].get('log_data_dir', "/run/log/journal/"), f, passwd
+				cherrypy.request.app.config['weblcm'].get('log_data_dir', "/run/log/journal/"), f, password
 			])
 		else:
 			p = subprocess.Popen([

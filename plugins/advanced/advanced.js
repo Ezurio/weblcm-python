@@ -24,8 +24,8 @@ function reboot(show) {
     $("#bt-reboot").prop("disabled", true);
     setTimeout(function(){ window.location.reload(true); }, 60000);
   })
-  .fail(function() {
-    consoleLog("Reboot failed");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -43,8 +43,8 @@ function factoryReset(){
     SDCERRtoString(msg.SDCERR);
     reboot();
   })
-  .fail(function() {
-    consoleLog("Factory reset failed");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -100,8 +100,8 @@ function doDelete(type) {
   })
   .done(function(data){
   })
-  .fail(function(){
-    console.log("Error, Failed to delete archive");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
 
@@ -159,7 +159,7 @@ function exportArchive(type) {
     }
   }
 
-  var url = "archiveFiles?typ="+type+"&passwd="+passwd;
+  var url = "archiveFiles?typ="+type+"&Password="+passwd;
   doDownload(url, type);
 }
 
@@ -175,10 +175,10 @@ function clickAdvancedPage() {
     $("#advanced_main_menu").addClass("active");
     $("#advanced_mini_menu").addClass("active");
     $("#main_section").html(data);
-	  setLanguage("main_section");
+    setLanguage("main_section");
     clearReturnData();
   })
-  .fail(function(){
-    console.log("Error, couldn't get advanced.html");
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }

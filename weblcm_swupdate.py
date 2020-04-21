@@ -38,7 +38,7 @@ class SWUpdate:
 		pass
 
 	@cherrypy.tools.json_out()
-	def POST(self):
+	def GET(self, *args, **kwargs):
 		result = {
 			'SDCERR': 1,
 			'message': "Device is busy"
@@ -50,6 +50,8 @@ class SWUpdate:
 			if SWUpdate._isUpdating:
 				return result
 			SWUpdate._isUpdating = True
+
+		cherrypy.session['swupdate'] = True
 
 		try:
 			proc = Popen("/usr/sbin/weblcm_update_checking.sh", stdout=PIPE, stderr=PIPE)
@@ -75,6 +77,10 @@ class SWUpdate:
 		return result
 
 	def DELETE(self):
-		swclient.end_fw_update()
-		SWUpdate._isUpdating = False
+
+		if cherrypy.session.get('swupdate', False):
+			swclient.end_fw_update()
+			SWUpdate._isUpdating = False
+			cherrypy.session.pop('swupdate')
+
 		return
