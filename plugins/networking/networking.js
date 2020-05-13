@@ -428,8 +428,14 @@ function setIntervalUpdate(functionName, timeout, arg){
 }
 
 function updateStatus(){
-  let card_id_prefix = "network-status-accordion-";
-  let getStatusJSON = $.getJSON( "networkStatus", function( data ) {
+  $.ajax({
+    url: "networkStatus",
+    type: "GET",
+    cache: false,
+    contentType: "application/json",
+  })
+  .done(function( data ) {
+    let card_id_prefix = "network-status-accordion-";
     if($("#network-status-accordion").length > 0){
       $("#updateProgressDisplay").addClass("d-none");
       for (interfaceName in data.status){
