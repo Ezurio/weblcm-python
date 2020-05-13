@@ -120,7 +120,7 @@
 
     "UUID": "UUID",
     "SSID": "SSID",
-    "Networking": "Networking Settings &blacktriangledown;",
+    "Networking": "Network Settings &blacktriangledown;",
     "Click or drag a scan item here to add as connection": "Click or drag a scan item here to add as connection",
     "No AP available": "No AP available",
     "Manual scan": "Manual scan",
