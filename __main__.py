@@ -1,6 +1,7 @@
 import os
 import cherrypy
 import weblcm_def
+import logging
 from weblcm_network_status import NetworkStatus
 from weblcm_network import NetworkInterfaces, NetworkConnections, NetworkConnection, NetworkAccessPoints, Version
 from weblcm_log import LogData, LogSetting
@@ -92,6 +93,8 @@ if __name__ == '__main__':
 	webapp.factoryReset = FactoryReset()
 
 	setup_http_server()
+
+	logging.getLogger("cherrypy").propagate = False
 
 	cherrypy.request.hooks.attach('before_handler', force_session_checking)
 
