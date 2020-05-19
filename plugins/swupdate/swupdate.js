@@ -35,8 +35,7 @@ function updateFirmware() {
 
   $.ajax({
     url: "firmware",
-    type: "GET",
-    cache: false,
+    type: "POST",
     dataType: "json",
   })
   .done(function(msg) {
@@ -75,7 +74,7 @@ function updateFirmware() {
         if(fw_start < fw_total_bytes)
           upload_one_chunk();
         else
-          update_end(i18nData['Update finished. Please reboot device!']);
+          update_end_check();
       }
       else {
         update_end(i18nData['Update failed!']);
@@ -86,6 +85,21 @@ function updateFirmware() {
   })
   .fail(function( xhr, textStatus, errorThrown) {
     update_end(i18nData['Update failed!']);
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
+  });
+}
+
+function update_end_check(){
+  $.ajax({
+    url: "firmware",
+    type: "GET",
+    cache: false,
+    dataType: "json",
+  })
+  .done(function(msg) {
+    update_end(msg.SDCERR ? i18nData['Update failed!'] : i18nData['Update finished. Please reboot device!']);
+  })
+  .fail(function( xhr, textStatus, errorThrown) {
     httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
 }
