@@ -1,7 +1,6 @@
 import os
 
-WEBLCM_PYTHON_BUILD = '0.0.0.0'
-WEBLCM_PYTHON_VERSION = '0.0.0.0'
+WEBLCM_PYTHON_VERSION = '1.0.0.0'
 
 WEBLCM_PYTHON_CONF_DIR = '/data/secret/'
 WEBLCM_PYTHON_USER_CONF_FILE = '/data/secret/weblcm-python/users.ini'

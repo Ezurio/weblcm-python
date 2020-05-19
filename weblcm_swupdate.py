@@ -1,6 +1,6 @@
 import cherrypy
 import dbus
-import threading
+from threading import Lock
 import os,errno
 import uuid
 import time
@@ -30,7 +30,7 @@ def octet_stream_in(force=True, debug=False):
 class SWUpdate:
 
 	_isUpdating = False
-	_lock = threading.Lock()
+	_lock = Lock()
 	cherrypy.tools.octet_stream_in = cherrypy.Tool('before_request_body', octet_stream_in)
 
 	@cherrypy.config(**{'tools.octet_stream_in.on': True})
@@ -39,12 +39,43 @@ class SWUpdate:
 
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
+
 		result = {
 			'SDCERR': 1,
 			'message': "Device is busy"
 		}
 
+		if cherrypy.session.get('swupdate', False) == False:
+			return result
+
+		try:
+			proc = Popen(["/usr/sbin/weblcm_update_checking.sh", "get-update"], stdout=PIPE, stderr=PIPE)
+			outs, errs = proc.communicate(timeout=cherrypy.request.app.config['weblcm'].get('swupdate_callback_timeout', 5))
+
+			if proc.returncode:
+				result['message'] = errs.decode("utf-8")
+				result['SDCERR'] = proc.returncode
+			else:
+				result['SDCERR'] = 0
+
+		except TimeoutExpired:
+			proc.kill()
+			outs, errs = proc.communicate()
+			result['message'] = "Update checking timeout"
+		except Exception as e:
+			result['message'] = "{}".format(e)
+
+		return result
+
+	@cherrypy.tools.json_out()
+	def POST(self):
+
 		dryrun = 0
+
+		result = {
+			'SDCERR': 1,
+			'message': "Device is busy"
+		}
 
 		with SWUpdate._lock:
 			if SWUpdate._isUpdating:
@@ -54,15 +85,13 @@ class SWUpdate:
 		cherrypy.session['swupdate'] = True
 
 		try:
-			proc = Popen("/usr/sbin/weblcm_update_checking.sh", stdout=PIPE, stderr=PIPE)
+			proc = Popen(["/usr/sbin/weblcm_update_checking.sh", "pre-update"], stdout=PIPE, stderr=PIPE)
 			outs, errs = proc.communicate(timeout=cherrypy.request.app.config['weblcm'].get('swupdate_callback_timeout', 5))
-
 			if proc.returncode:
 				result['message'] = errs.decode("utf-8")
 				result['SDCERR'] = proc.returncode
-			else:
-				if swclient.prepare_fw_update(dryrun) > 0:
-					result['SDCERR'] = 0
+			elif swclient.prepare_fw_update(dryrun) > 0:
+				result['SDCERR'] = 0
 
 		except TimeoutExpired:
 			proc.kill()
@@ -80,6 +109,8 @@ class SWUpdate:
 
 		if cherrypy.session.get('swupdate', False):
 			swclient.end_fw_update()
+			proc = Popen(["/usr/sbin/weblcm_update_checking.sh", "post-update"], stdout=PIPE, stderr=PIPE)
+			proc.wait()
 			SWUpdate._isUpdating = False
 			cherrypy.session.pop('swupdate')
 

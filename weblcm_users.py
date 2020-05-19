@@ -7,12 +7,12 @@ import time
 import hashlib
 import configparser
 import weblcm_def
-import threading
+from threading import Lock
 
 class UserConfManage(object):
 
 	_filename = None
-	_lock = threading.Lock()
+	_lock = Lock()
 	_parser = configparser.ConfigParser(defaults=None)
 
 	@classmethod

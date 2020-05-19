@@ -289,28 +289,22 @@ class Version(object):
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
 		result = {
-				'SDCERR': 0,
-				'sdk': "undefined",
-				'chipset': "undefined",
-				'driver': "undefined",
-				'driver-version': "undefined",
-				'build' : "undefined",
-				'supplicant' : "undefined",
+			'SDCERR': 1,
 		}
-
 		try:
 			result['nm_version'] = NetworkManager.NetworkManager.Version
+			result['weblcm_python_webapp'] = weblcm_def.WEBLCM_PYTHON_VERSION
+			result['build'] = subprocess.check_output(['cat','/etc/laird-release']).decode('ascii').rstrip()
+			result['supplicant'] = subprocess.check_output(['sdcsupp','-v']).decode('ascii').rstrip()
 			for dev in NetworkManager.Device.all():
 				if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
 					result['driver'] = dev.Driver
-					result['driver-version'] = dev.DriverVersion
+					result['driver_version'] = dev.DriverVersion
+
+			result['SDCERR'] = 0
 
 		except Exception as e:
 			print(e)
-
-		result['build'] = subprocess.check_output(['cat','/etc/laird-release']).decode('ascii').rstrip()
-		result['supplicant'] = subprocess.check_output(['sdcsupp','-v']).decode('ascii').rstrip()
-		result['weblcm_python_webapp'] = weblcm_def.WEBLCM_PYTHON_BUILD + '-' + weblcm_def.WEBLCM_PYTHON_VERSION
 
 		return result
 
