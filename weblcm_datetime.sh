@@ -6,6 +6,7 @@ datetime=${3}
 
 zoneinfo="/usr/share/zoneinfo"
 userZoneinfo="/data/misc/zoneinfo"
+timeOverrideFile="/tmp/time_override"
 
 exit_on_error() {
 	echo ${1}
@@ -34,5 +35,9 @@ case "${method}" in
 	auto)
 		#Add callback here
 		set_timezone
+		;;
+	check)
+		#Add callback here
+		[ -f "${timeOverrideFile}" ] || exit 1
 		;;
 esac

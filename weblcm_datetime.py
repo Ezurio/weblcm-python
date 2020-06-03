@@ -28,11 +28,6 @@ class DateTimeSetting(object):
 		self.userLocaltime = self.userZoneinfo + "localtime"
 		self.zones = self.getZoneList()
 
-	def getMethod(self):
-		method = "manual"
-
-		return method
-
 	def getLocalZone(self):
 
 		localtime = os.readlink(self.userLocaltime)
@@ -53,10 +48,18 @@ class DateTimeSetting(object):
 			result['zones'] = self.zones
 			result['zone'] = self.getLocalZone()
 
-		result['method'] = SystemSettingsManage.get("datetime_method", "manual")
 		dt = datetime.datetime.now()
 		result['time'] = "{0}-{1}-{2} {3}:{4}:{5}".format(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
 
+		proc = Popen(['/usr/sbin/weblcm_datetime.sh', "check", "", ""], stdout=PIPE, stderr=PIPE)
+		outs, errs = proc.communicate(timeout=SystemSettingsManage.getInt('user_callback_timeout', 5))
+
+		if proc.returncode:
+			result['method'] = "manual"
+		else:
+			result['method'] = "auto"
+
+		result['SDCERR'] = 0
 		return result
 
 	@cherrypy.tools.accept(media='application/json')
@@ -79,5 +82,4 @@ class DateTimeSetting(object):
 			result['SDCERR'] = proc.returncode
 		else:
 			result['SDCERR'] = 0
-			SystemSettingsManage.update_persistent("datetime_method", method)
 		return result
