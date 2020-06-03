@@ -6,6 +6,7 @@ import time
 import sys
 from systemd import journal
 import weblcm_def
+from weblcm_settings import SystemSettingsManage
 
 @cherrypy.expose
 class LogData(object):
@@ -27,12 +28,13 @@ class LogData(object):
 
 		def streaming():
 			logs = []
+			log_data_streaming_size = SystemSettingsManage.getInt('log_data_streaming_size', 100)
 			for entry in reader:
 				logs.append(str(entry.get('__REALTIME_TIMESTAMP', "Undefined")))
 				logs.append(str(entry.get('PRIORITY', 7)))
 				logs.append(entry.get('SYSLOG_IDENTIFIER', "Undefined"))
 				logs.append(entry.get('MESSAGE', "Undefined"))
-				if len(logs) == cherrypy.request.app.config['weblcm'].get('log_data_streaming_size', 100):
+				if len(logs) == log_data_streaming_size:
 					yield (":#:".join(logs) + ":#:")
 					logs.clear()
 			if len(logs) > 0:
