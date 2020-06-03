@@ -6,6 +6,7 @@ import uuid
 import time
 import swclient
 from subprocess import Popen, PIPE, TimeoutExpired
+from weblcm_settings import SystemSettingsManage
 
 def octet_stream_in(force=True, debug=False):
 	request = cherrypy.serving.request
@@ -49,8 +50,8 @@ class SWUpdate:
 			return result
 
 		try:
-			proc = Popen(["/usr/sbin/weblcm_update_checking.sh", "get-update"], stdout=PIPE, stderr=PIPE)
-			outs, errs = proc.communicate(timeout=cherrypy.request.app.config['weblcm'].get('swupdate_callback_timeout', 5))
+			proc = Popen(["/usr/sbin/weblcm_swupdate.sh", "get-update"], stdout=PIPE, stderr=PIPE)
+			outs, errs = proc.communicate(timeout=SystemSettingsManage.getInt('user_callback_timeout', 5))
 
 			if proc.returncode:
 				result['message'] = errs.decode("utf-8")
@@ -85,8 +86,8 @@ class SWUpdate:
 		cherrypy.session['swupdate'] = True
 
 		try:
-			proc = Popen(["/usr/sbin/weblcm_update_checking.sh", "pre-update"], stdout=PIPE, stderr=PIPE)
-			outs, errs = proc.communicate(timeout=cherrypy.request.app.config['weblcm'].get('swupdate_callback_timeout', 5))
+			proc = Popen(["/usr/sbin/weblcm_swupdate.sh", "pre-update"], stdout=PIPE, stderr=PIPE)
+			outs, errs = proc.communicate(timeout=SystemSettingsManage.getInt('user_callback_timeout', 5))
 			if proc.returncode:
 				result['message'] = errs.decode("utf-8")
 				result['SDCERR'] = proc.returncode
@@ -109,7 +110,7 @@ class SWUpdate:
 
 		if cherrypy.session.get('swupdate', False):
 			swclient.end_fw_update()
-			proc = Popen(["/usr/sbin/weblcm_update_checking.sh", "post-update"], stdout=PIPE, stderr=PIPE)
+			proc = Popen(["/usr/sbin/weblcm_swupdate.sh", "post-update"], stdout=PIPE, stderr=PIPE)
 			proc.wait()
 			SWUpdate._isUpdating = False
 			cherrypy.session.pop('swupdate')

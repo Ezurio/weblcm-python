@@ -1,12 +1,11 @@
 import sys
 import os
-import os.path
-import six
 import time
 import cherrypy
 from cherrypy.lib import static
 import weblcm_def
 import subprocess
+from weblcm_settings import SystemSettingsManage
 
 def save_file(typ, fil):
 	f = os.path.normpath(os.path.join(weblcm_def.FILEDIR_DICT.get(typ), fil.filename))
@@ -22,19 +21,23 @@ def save_file(typ, fil):
 @cherrypy.expose
 class FileManage(object):
 	"""
-		Manage regular certificate/profile files.
+		Manage regular config/timezone files.
 	"""
-	def POST(self, typ, fil):
+	def POST(self, *args, **kwargs):
+		typ = kwargs.get('typ')
+		fil = kwargs.get('fil')
 		save_file(typ, fil)
 		return;
 
 
 	@cherrypy.tools.json_out()
-	def DELETE(self, typ, fil):
+	def DELETE(self, *args, **kwargs):
 		result = {
 			'SDCERR': 1,
 		}
 
+		typ = kwargs.get('typ')
+		fil = kwargs.get('fil')
 		f = os.path.normpath(os.path.join(weblcm_def.FILEDIR_DICT.get(typ), fil))
 		if os.path.isfile(f):
 			os.remove(f)
@@ -67,13 +70,13 @@ class ArchiveFilesManage(object):
 
 		typ = kwargs.get('typ')
 		fil = kwargs.get('fil')
-		password = kwargs.get('Password')
+		password = kwargs.get('Password', "Don't care")
 
 		f = save_file(typ, fil)
 
 		if os.path.isfile(f):
 			p = subprocess.Popen([
-				'/usr/sbin/weblcm_file_import_export.sh', "config", "unzip",
+				'/usr/sbin/weblcm_files.sh', typ, "unzip",
 				f, weblcm_def.FILEDIR_DICT.get(typ), password
 			])
 			res = p.wait()
@@ -91,30 +94,28 @@ class ArchiveFilesManage(object):
 		f = '{0}{1}'.format("/tmp/", fil)
 		if typ == "config":
 			p = subprocess.Popen([
-				'/usr/sbin/weblcm_file_import_export.sh', "config", "zip",
+				'/usr/sbin/weblcm_files.sh', "config", "zip",
 				weblcm_def.FILEDIR_DICT.get(typ), f, password
 			])
 		elif typ == "log":
 			p = subprocess.Popen([
-				'/usr/sbin/weblcm_file_import_export.sh', "log", "zip",
-				cherrypy.request.app.config['weblcm'].get('log_data_dir', "/run/log/journal/"), f, password
+				'/usr/sbin/weblcm_files.sh', "log", "zip",
+				SystemSettingsManage.get('log_data_dir', "/run/log/journal/"), f, password
 			])
 		else:
 			p = subprocess.Popen([
-				'/usr/sbin/weblcm_file_import_export.sh', "debug", "zip",
-				' '.join([cherrypy.request.app.config['weblcm'].get('log_data_dir', "/run/log/journal/"), weblcm_def.FILEDIR_DICT.get('config')]),
-				f, cherrypy.request.app.config['weblcm'].get('cert_for_file_encryption', "/etc/weblcm-python/ssl/ca.crt")
+				'/usr/sbin/weblcm_files.sh', "debug", "zip",
+				' '.join([SystemSettingsManage.get('log_data_dir', "/run/log/journal/"), weblcm_def.FILEDIR_DICT.get('config')]),
+				f, SystemSettingsManage.get('cert_for_file_encryption', "/etc/weblcm-python/ssl/ca.crt")
 			])
 		p.wait()
 
 		if os.path.isfile(f):
-			return static.serve_file(f, 'application/x-download', 'attachment', fil)
+			objFile = static.serve_file(f, 'application/x-download', 'attachment', fil)
+			os.unlink(f);
+			return objFile;
 
 		raise cherrypy.HTTPError()
 
 	def DELETE(self, typ):
-
-		fil = '{0}{1}'.format(typ, ".zip")
-		f = '{0}{1}'.format("/tmp/", fil)
-		if os.path.isfile(f):
-			os.remove(f)
+		return
