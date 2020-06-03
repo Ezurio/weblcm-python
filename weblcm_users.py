@@ -3,145 +3,69 @@ import dbus
 import subprocess
 import os,errno
 import uuid
-import time
 import hashlib
-import configparser
+import time
 import weblcm_def
-from threading import Lock
+from weblcm_settings import WeblcmConfigManage, SystemSettingsManage
 
-class UserConfManage(object):
-
-	_filename = None
-	_lock = Lock()
-	_parser = configparser.ConfigParser(defaults=None)
-
-	@classmethod
-	def init(cls, username, password):
-
-		with cls._lock:
-			if cls._filename:
-				return
-			cls._filename = weblcm_def.WEBLCM_PYTHON_USER_CONF_FILE
-
-		if os.path.isfile(cls._filename):
-			cls._parser.read(cls._filename)
-			if username in cls._parser:
-				return
-
-		#Create users config file with default username and password if not exist
-		cls._parser.clear()
-		if cls.addUser(username, password, None):
-			return
-
-		cls._filename = None
-		return
+class UserManageHelper(object):
 
 	@classmethod
 	def verify(cls, username, password):
-		res = False
-
-		with cls._lock:
-			if username in cls._parser:
-				attempt = hashlib.sha256(cls._parser.get(username, 'salt').encode() + password.encode()).hexdigest()
-				res = (attempt == cls._parser.get(username, 'password'))
-
-		return res
-
-	@classmethod
-	def size(cls):
-
-		with cls._lock:
-			res = len(cls._parser.sections())
-
-		return res
+		if WeblcmConfigManage.get_key_from_section(username, 'salt', None):
+			attempt = hashlib.sha256(WeblcmConfigManage.get_key_from_section(username, 'salt').encode() + password.encode()).hexdigest()
+			return (attempt == WeblcmConfigManage.get_key_from_section(username, 'password', None))
+		return False
 
 	@classmethod
 	def delUser(cls, username):
-		res = False
-
-		with cls._lock:
-			if username in cls._parser:
-				cls._parser.remove_section(username)
-				res = True
-
-		return cls.save() if res else False
+		if WeblcmConfigManage.remove_section(username):
+			return WeblcmConfigManage.save()
+		return False
 
 	@classmethod
-	def addUser(cls, username, password, permission):
-		res = False
-
-		# Don't use any case-insensitive variants of "DEFAULT"
-		if username.upper() == "DEFAULT":
-			return res
-
-		with cls._lock:
-			if username not in cls._parser:
-				salt = uuid.uuid4().hex
-				cls._parser.add_section(username)
-				cls._parser[username]['salt'] = salt
-				cls._parser[username]['password'] = hashlib.sha256(salt.encode() + password.encode()).hexdigest()
-				if permission:
-					cls._parser[username]['permission'] = permission
-				res = True
-
-		return cls.save() if res else False
+	def addUser(cls, username, password, permission=None):
+		if WeblcmConfigManage.add_section(username):
+			salt = uuid.uuid4().hex
+			WeblcmConfigManage.upadte_key_from_section(username, 'salt', salt)
+			WeblcmConfigManage.upadte_key_from_section(username, 'password', hashlib.sha256(salt.encode() + password.encode()).hexdigest())
+			if permission:
+				WeblcmConfigManage.upadte_key_from_section(username, 'permission', permission)
+			return WeblcmConfigManage.save()
+		return False
 
 	@classmethod
 	def updatePassword(cls, username, password):
-		res = False
-
-		with cls._lock:
-			if username in cls._parser:
-				salt = uuid.uuid4().hex
-				cls._parser[username]['salt'] = salt
-				cls._parser[username]['password'] = hashlib.sha256(salt.encode() + password.encode()).hexdigest()
-				res = True
-
-		return cls.save() if res else False
+		if WeblcmConfigManage.get_key_from_section(username, 'salt', None):
+			salt = uuid.uuid4().hex
+			WeblcmConfigManage.upadte_key_from_section(username, 'salt', salt)
+			WeblcmConfigManage.upadte_key_from_section(username, 'password', hashlib.sha256(salt.encode() + password.encode()).hexdigest())
+			return WeblcmConfigManage.save()
+		return False
 
 	@classmethod
 	def getPermission(cls, username):
-		permission = ""
-
-		with cls._lock:
-			if username in cls._parser:
-				permission = cls._parser.get(username, 'permission')
-
-		return permission
+		return WeblcmConfigManage.get_key_from_section(username, 'permission', None)
 
 	@classmethod
 	def updatePermission(cls, username, permission):
-		res = False
+		if permission and WeblcmConfigManage.get_key_from_section(username, 'permission', None):
+			return WeblcmConfigManage.upadte_key_from_section(username, 'permission', permission)
+		return False
 
-		with cls._lock:
-			if username in cls._parser and permission:
-				cls._parser[username]['permission'] = permission
-				res = True
+	@classmethod
+	def size(cls):
+		''' All users including root '''
+		return WeblcmConfigManage.get_section_size_by_key('password')
 
-		return cls.save() if res else False
+	@classmethod
+	def getUserCount(cls):
+		''' None root users'''
+		return WeblcmConfigManage.get_section_size_by_key('permission')
 
 	@classmethod
 	def getUserList(cls):
-		result = {}
-
-		with cls._lock:
-			for k in cls._parser:
-				if cls._parser[k].get('permission'):
-					result[k] = cls._parser[k].get('permission')
-
-		return result
-
-	@classmethod
-	def save(cls):
-		res = False
-
-		with cls._lock:
-			with open(cls._filename, 'w') as configfile:
-				cls._parser.write(configfile)
-				res = True
-
-		return res
-
+		return WeblcmConfigManage.get_sections_and_key('permission')
 
 @cherrypy.expose
 class UserManage(object):
@@ -160,23 +84,22 @@ class UserManage(object):
 		}
 
 		post_data = cherrypy.request.json
-		username = post_data.get('username')
-		new_password = post_data.get('new_password')
+		username = post_data.get('username', None)
+		new_password = post_data.get('new_password', None)
 		if new_password:
-			current_password = post_data.get('current_password')
-			if UserConfManage.verify(username, current_password):
-				if UserConfManage.updatePassword(username, new_password):
+			current_password = post_data.get('current_password', None)
+			if UserManageHelper.verify(username, current_password):
+				if UserManageHelper.updatePassword(username, new_password):
 					result['SDCERR'] = 0
-
 					#Redirect is required when the default password is updated
 					default_username = cherrypy.request.app.config['weblcm'].get('default_username', "root")
 					default_password = cherrypy.request.app.config['weblcm'].get('default_password', "summit")
 					if current_password == default_password and username == default_username:
 						result['REDIRECT'] = 1
 		else:
-			permission = post_data.get('permission')
+			permission = post_data.get('permission', None)
 			if permission:
-				if UserConfManage.updatePermission(username, permission):
+				if UserManageHelper.updatePermission(username, permission):
 					result['SDCERR'] = 0
 
 		return result
@@ -197,11 +120,9 @@ class UserManage(object):
 		if not username or not password or not permission:
 			return result
 
-		if(UserConfManage.size() >= cherrypy.request.app.config['weblcm'].get('max_web_clients', 5)):
-			return result
-
-		if UserConfManage.addUser(username, password, permission):
-			result['SDCERR'] = 0
+		if UserManageHelper.getUserCount() < SystemSettingsManage.getInt('max_web_clients', 5):
+			if UserManageHelper.addUser(username, password, permission):
+				result['SDCERR'] = 0
 
 		return result
 
@@ -211,14 +132,14 @@ class UserManage(object):
 			'SDCERR': 1,
 		}
 
-		if UserConfManage.delUser(username):
+		if UserManageHelper.delUser(username):
 			result['SDCERR'] = 0
 
 		return result
 
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
-		return UserConfManage.getUserList()
+		return UserManageHelper.getUserList()
 
 @cherrypy.expose
 class LoginManage(object):
@@ -240,20 +161,26 @@ class LoginManage(object):
 		if not username or not password:
 			return result
 
-		default_username = cherrypy.request.app.config['weblcm'].get('default_username', "root")
-		default_password = cherrypy.request.app.config['weblcm'].get('default_password', "summit")
+		if UserManageHelper.size() == 0:
+			default_username = cherrypy.request.app.config['weblcm'].get('default_username', "root")
+			default_password = cherrypy.request.app.config['weblcm'].get('default_password', "summit")
+			if username != default_username or password != default_password:
+				return result
 
-		UserConfManage.init(default_username, default_password)
+			UserManageHelper.addUser(username, password)
 
-		if UserConfManage.verify(username, password):
 			result['SDCERR'] = 0
+			result['REDIRECT'] = 1
+			return result
+
+		if UserManageHelper.verify(username, password):
+			result['SDCERR'] = 0
+			default_username = cherrypy.request.app.config['weblcm'].get('default_username', "root")
 			if username == default_username:
-				"""Redirect to password update page"""
-				if password == default_password:
-					result['REDIRECT'] = 1
 				result['PERMISSION'] = " ".join(weblcm_def.USER_PERMISSION_TYPES['UserPermssionTypes'])
 			else:
-				result['PERMISSION'] = UserConfManage.getPermission(username)
+				result['PERMISSION'] = UserManageHelper.getPermission(username)
+
 		return result
 
 @cherrypy.expose

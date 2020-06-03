@@ -12,12 +12,18 @@ exit_on_error() {
 }
 
 do_zip(){
-	cd ${source} && /usr/bin/zip --password ${passwd} -9 -qqr ${target} * || exit_on_error "Failed to zip(encrypt) files in ${source}"
+	cd ${source} && /usr/bin/zip --password ${passwd} -9 -qqr ${target} * || exit_on_error "Failed to zip files in ${source}"
 }
 
-do_unzip(){
+do_unzip_config(){
+
 	cd ${target} && unzip -P ${passwd} -qqt ${source} || exit_on_error "Failed to unzip due to wrong password"
 	cd ${target} && rm -fr NetworkManager/ weblcm-python/ && /usr/bin/unzip -P ${passwd} -qqo ${source} || exit_on_error "Failed to unzip(decrypt) files to ${target}"
+}
+
+do_unzip_timezone(){
+
+	cd ${target} && /usr/bin/unzip -u -qqo ${source} || exit_on_error "Failed to unzip files to ${target}"
 }
 
 do_openssl_encryption(){
@@ -43,6 +49,10 @@ case ${typ} in
 		else
 			do_unzip
 		fi
+		;;
+
+	timezone)
+		do_unzip_timezone
 		;;
 
 	log)
