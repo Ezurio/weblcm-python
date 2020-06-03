@@ -84,7 +84,7 @@
 		//TBD: HTMLs should be loaded per user
 		function weblcm_init(){
 			let i, lang;
-			let plugins = ["networking", "logging", "swupdate", "usermanage", "advanced"];
+			let plugins = ["networking", "logging", "swupdate", "usermanage", "advanced", "datetime"];
 
 			for (i = 0; i < plugins.length; i++){
 				loadjscssfile(plugins[i], "js");
@@ -322,6 +322,7 @@
 							</ul>
 						</li>
 						<li id="advanced_mini_menu" class="locked d-none nav-link " onclick="clickAdvancedPage()"><a class="i18n" name="Advanced" href="#">Advanced Settings</a></li>
+						<li id="datetime_mini_menu" class="locked d-none nav-link " onclick="clickDatetimePage()"><a class="i18n" name="Datetime" href="#">Datetime Settings</a></li>
 					</ul>
 				</ul>
 			</div>
@@ -351,6 +352,7 @@
 							</ul>
 						</li>
 						<li id="advanced_main_menu" class="locked d-none nav-link " onclick="clickAdvancedPage()"><a class="i18n" name="Advanced" href="#">Advanced Settings</a></li>
+						<li id="datetime_main_menu" class="locked d-none nav-link " onclick="clickDatetimePage()"><a class="i18n" name="Datetime" href="#">Datetime Settings</a></li>
 					</ul>
 				</nav>
 				<main role="main" class="col-md-8 ml-sm-auto">

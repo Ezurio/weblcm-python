@@ -19,7 +19,7 @@ class WeblcmConfigManage(object):
 
 	_lock = Lock()
 	_parser = configparser.ConfigParser(defaults=None)
-	_filename = weblcm_def.WEBLCM_PYTHON_DATABASE
+	_filename = weblcm_def.WEBLCM_PYTHON_SETTINGS_FILE
 	if os.path.isfile(_filename):
 		_parser.read(_filename)
 
