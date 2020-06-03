@@ -258,6 +258,12 @@
     "Update finished. Please reboot device!": "Update finished. Please reboot device!",
     "An Error happened during update checking": "An Error happened during update checking",
     "Update checking timeout": "Update checking timeout",
-    "Device is busy": "Device is busy"
+    "Device is busy": "Device is busy",
 
+    "Datetime": "Datetime Setting",
+    "Timezone": "Time zone",
+    "Configure": "Configure",
+    "Date time setting is invalid": "Date time setting is invalid",
+    "Date is invalid": "Date is invalid",
+    "Time is invalid": "Time is invalid"
 }

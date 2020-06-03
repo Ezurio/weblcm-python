@@ -2,9 +2,12 @@ import os
 
 WEBLCM_PYTHON_VERSION = '1.0.0.0'
 
+WEBLCM_PYTHON_USER_ZONEINFO = '/data/misc/zoneinfo/'
+
 WEBLCM_PYTHON_CONF_DIR = '/data/secret/'
-WEBLCM_PYTHON_USER_CONF_FILE = '/data/secret/weblcm-python/users.ini'
+WEBLCM_PYTHON_TIMEZONE_CONF_FILE = '/data/secret/weblcm-python/zonelist.db'
 WEBLCM_PYTHON_SERVER_CONF_FILE = '/data/secret/weblcm-python/weblcm-python.ini'
+WEBLCM_PYTHON_SETTINGS_FILE = '/data/secret/weblcm-python/weblcm-settings.ini'
 
 WIFI_DRIVER_DEBUG_PARAM = '/sys/module/lrdmwl/parameters/lrd_debug'
 """Change to ath6kl driver for wb50n"""
@@ -15,6 +18,7 @@ FILEDIR_DICT = {
 	'cert': '{0}{1}'.format(WEBLCM_PYTHON_CONF_DIR, 'weblcm-python/ssl/'),
 	'profile': '{0}{1}'.format(WEBLCM_PYTHON_CONF_DIR, 'NetworkManager/system-connections/'),
 	'config': WEBLCM_PYTHON_CONF_DIR,
+	'timezone': WEBLCM_PYTHON_USER_ZONEINFO,
 }
 
 FILEFMT_DICT = {
@@ -39,6 +43,7 @@ USER_PERMISSION_TYPES = {
 		"logging",
 		"update_password",
 		"swupdate",
+		"datetime",
 		"advanced",
 		#Root only permissions
 		"add_del_user",
@@ -57,6 +62,7 @@ USER_PERMISSION_TYPES = {
 		["Logging", "", ""],
 		["Update Password", "checked", "disabled"],
 		["Firmware Update", "", ""],
+		["Date Time Setting","", ""],
 		["Advanced", "", ""],
 		#Don't need to display root only permissions
 		["", "", ""],
