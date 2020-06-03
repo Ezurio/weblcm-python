@@ -9,7 +9,7 @@ from weblcm_swupdate import SWUpdate
 from weblcm_users import UserManage, LoginManage, LogoutManage
 from weblcm_files import FileManage, ArchiveFilesManage
 from weblcm_advanced import Reboot, FactoryReset
-
+from weblcm_datetime import DateTimeSetting
 
 class Root(object):
 
@@ -58,7 +58,7 @@ def force_session_checking():
 	paths = (
 				"connections", "connection", "accesspoints", "networkInterfaces",
 				"archiveFiles", "users", "firmware", "logData",
-				"logSetting", "factoryReset", "reboot", "files"
+				"logSetting", "factoryReset", "reboot", "files", "datetime"
 			)
 
 	if not cherrypy.session._exists():
@@ -91,6 +91,7 @@ if __name__ == '__main__':
 
 	webapp.reboot = Reboot()
 	webapp.factoryReset = FactoryReset()
+	webapp.datetime = DateTimeSetting()
 
 	setup_http_server()
 

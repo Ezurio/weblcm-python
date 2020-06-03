@@ -257,5 +257,13 @@
     "Update finished. Please reboot device!": "更新成功，请重启设备",
     "An Error happened during update checking": "更新检查出错",
     "Update checking timeout": "更新检查超时",
-    "Device is busy": "设备忙"
+    "Device is busy": "设备忙",
+
+
+    "Datetime": "系统时间设置",
+    "Timezone": "时区",
+    "Configure": "配置",
+    "Date time setting is invalid": "日期时间非法",
+    "Date is invalid": "日期非法",
+    "Time is invalid": "时间非法"
 }
