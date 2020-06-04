@@ -1444,14 +1444,12 @@ function getVersion(){
     contentType: "application/json",
   })
   .done(function(msg) {
-    if (msg.SDCERR == defines.SDCERR.SDCERR_SUCCESS){
-      $("#driver").text(msg['driver']);
-      $("#driver-version").text(msg['driver_version']);
-      $("#supplicant").text(msg['supplicant']);
-      $("#build").text(msg['build']);
-      $("#nm-version").text(msg['nm_version']);
-      $("#weblcm-python-webapp").text(msg['weblcm_python_webapp']);
-    }
+    $("#driver").text(msg['driver']);
+    $("#driver-version").text(msg['driver_version']);
+    $("#supplicant").text(msg['supplicant']);
+    $("#build").text(msg['build']);
+    $("#nm-version").text(msg['nm_version']);
+    $("#weblcm-python-webapp").text(msg['weblcm_python_webapp']);
   })
   .fail(function( xhr, textStatus, errorThrown) {
     httpErrorResponseHandler(xhr, textStatus, errorThrown)
