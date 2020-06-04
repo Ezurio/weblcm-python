@@ -286,27 +286,27 @@ class NetworkAccessPoints(object):
 
 @cherrypy.expose
 class Version(object):
+
+	_version = {}
+
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
-		result = {
-			'SDCERR': 1,
-		}
 		try:
-			result['nm_version'] = NetworkManager.NetworkManager.Version
-			result['weblcm_python_webapp'] = weblcm_def.WEBLCM_PYTHON_VERSION
-			result['build'] = subprocess.check_output(['cat','/etc/laird-release']).decode('ascii').rstrip()
-			result['supplicant'] = subprocess.check_output(['sdcsupp','-v']).decode('ascii').rstrip()
-			for dev in NetworkManager.Device.all():
-				if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
-					result['driver'] = dev.Driver
-					result['driver_version'] = dev.DriverVersion
-
-			result['SDCERR'] = 0
+			if not Version._version:
+				Version._version['nm_version'] = NetworkManager.NetworkManager.Version
+				Version._version['weblcm_python_webapp'] = weblcm_def.WEBLCM_PYTHON_VERSION
+				Version._version['build'] = subprocess.check_output("sed -n 's/^VERSION=//p' /etc/os-release", shell=True).decode('ascii').strip().strip('"')
+				Version._version['supplicant'] = subprocess.check_output(['sdcsupp','-v']).decode('ascii').rstrip()
+				for dev in NetworkManager.Device.all():
+					if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
+						Version._version['driver'] = dev.Driver
+						Version._version['driver_version'] = dev.DriverVersion
+						break
 
 		except Exception as e:
-			print(e)
+			Version._version = {}
 
-		return result
+		return Version._version
 
 @cherrypy.expose
 class NetworkInterfaces(object):
