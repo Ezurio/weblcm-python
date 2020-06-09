@@ -200,7 +200,19 @@
 						clickStatusPage();
 					}
 				} else {
-					CustomMsg("Credentials are invalid", true);
+					switch(data.SDCERR)
+					{
+						case defines.SDCERR.SDCERR_USER_LOGGED:
+							CustomMsg("User is already logged in", true);
+							break;
+						case defines.SDCERR.SDCERR_USER_BLOCKED:
+							CustomMsg("User is temporarily blocked", true);
+							break;
+						case defines.SDCERR.SDCERR_FAIL:
+						default:
+							CustomMsg("Credentials are invalid", true);
+							break;
+					}
 				}
 				$("#username").val("");
 				$("#password").val("");
@@ -212,9 +224,9 @@
 
 		function logout(){
 			$.ajax({
-				url: "logout",
+				url: "login",
 				data: {},
-				type: "GET",
+				type: "DELETE",
 				contentType: "application/json",
 			})
 			.always(function( data ) {

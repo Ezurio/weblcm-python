@@ -1,6 +1,6 @@
 import os
 import cherrypy
-import datetime
+from datetime import datetime
 import weblcm_def
 from subprocess import Popen, PIPE
 from weblcm_settings import SystemSettingsManage
@@ -48,7 +48,7 @@ class DateTimeSetting(object):
 			result['zones'] = self.zones
 			result['zone'] = self.getLocalZone()
 
-		dt = datetime.datetime.now()
+		dt = datetime.now()
 		result['time'] = "{0}-{1}-{2} {3}:{4}:{5}".format(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
 
 		proc = Popen(['/usr/sbin/weblcm_datetime.sh', "check", "", ""], stdout=PIPE, stderr=PIPE)

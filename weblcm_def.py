@@ -30,6 +30,13 @@ DBUS_PROP_IFACE = 'org.freedesktop.DBus.Properties'
 WPA_OBJ = '/fi/w1/wpa_supplicant1'
 WPA_IFACE =	'fi.w1.wpa_supplicant1'
 
+WEBLCM_ERRORS = {
+	'SDCERR_SUCCESS': 0,
+	'SDCERR_FAIL': 1,
+	'SDCERR_USER_LOGGED': 2,
+	'SDCERR_USER_BLOCKED': 3,
+}
+
 USER_PERMISSION_TYPES = {
 	'UserPermssionTypes':[
 		"networking_status",

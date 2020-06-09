@@ -342,8 +342,8 @@ function delUser(){
 
 function createPermissionsTable(){
 
-  var types = defines.PLUGINS.usermanage.UserPermssionTypes;
-  var attrs = defines.PLUGINS.usermanage.UserPermssionAttrs;
+  var types = defines.PERMISSIONS.UserPermssionTypes;
+  var attrs = defines.PERMISSIONS.UserPermssionAttrs;
   var j = 0;
 
 

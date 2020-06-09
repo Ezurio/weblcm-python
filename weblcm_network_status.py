@@ -5,7 +5,6 @@ import dbus.mainloop.glib
 from gi.repository import GLib
 import NetworkManager
 from threading import Thread, Lock
-from time import sleep
 
 
 class NetworkStatusHelper(object):
@@ -154,7 +153,7 @@ def dev_added(nm, interface, signal, device_path):
 
 def dev_removed(nm, interface, signal, device_path):
 	with NetworkStatusHelper._lock:
-		NetworkStatusHelper._network_status.pop(device_path.Interface)
+		NetworkStatusHelper._network_status.pop(device_path.Interface, None)
 
 def ap_propchange(ap, interface, signal, properties):
 		if 'Strength' in properties:
@@ -180,18 +179,18 @@ def dev_statechange(dev, interface, signal, new_state, old_state, reason):
 				dev.ActiveAccessPoint.OnPropertiesChanged(ap_propchange)
 		elif new_state == NetworkManager.NM_DEVICE_STATE_DISCONNECTED:
 			if 'ip4config' in NetworkStatusHelper._network_status[dev.Interface]:
-				NetworkStatusHelper._network_status[dev.Interface].pop('ip4config')
+				NetworkStatusHelper._network_status[dev.Interface].pop('ip4config', None)
 			if 'ip6config' in NetworkStatusHelper._network_status[dev.Interface]:
-				NetworkStatusHelper._network_status[dev.Interface].pop('ip6config')
+				NetworkStatusHelper._network_status[dev.Interface].pop('ip6config', None)
 			if 'activeaccesspoint' in NetworkStatusHelper._network_status[dev.Interface]:
-				NetworkStatusHelper._network_status[dev.Interface].pop('activeaccesspoint')
+				NetworkStatusHelper._network_status[dev.Interface].pop('activeaccesspoint', None)
 			if 'connection_active' in NetworkStatusHelper._network_status[dev.Interface]:
-				NetworkStatusHelper._network_status[dev.Interface].pop('connection_active')
+				NetworkStatusHelper._network_status[dev.Interface].pop('connection_active', None)
 		elif new_state == NetworkManager.NM_DEVICE_STATE_UNAVAILABLE:
 			if 'wired' in NetworkStatusHelper._network_status[dev.Interface]:
-				NetworkStatusHelper._network_status[dev.Interface].pop('wired')
+				NetworkStatusHelper._network_status[dev.Interface].pop('wired', None)
 			if 'wireless' in NetworkStatusHelper._network_status[dev.Interface]:
-				NetworkStatusHelper._network_status[dev.Interface].pop('wireless')
+				NetworkStatusHelper._network_status[dev.Interface].pop('wireless', None)
 		NetworkStatusHelper._network_status[dev.Interface]['status']['State'] = new_state
 
 def run_event_listener():

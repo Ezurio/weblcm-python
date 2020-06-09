@@ -24,7 +24,8 @@ class LogData(object):
 		if typ != "All":
 			reader.add_match(SYSLOG_IDENTIFIER=typ)
 		days = int(kwargs.get('days', 1))
-		reader.seek_realtime(time.time() - days * 86400)
+		if days > 0:
+			reader.seek_realtime(time.time() - days * 86400)
 
 		def streaming():
 			logs = []
