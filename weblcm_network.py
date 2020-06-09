@@ -1,7 +1,6 @@
 import sys
 import os
 import uuid
-import six
 import time
 import cherrypy
 import subprocess
@@ -302,7 +301,6 @@ class Version(object):
 						Version._version['driver'] = dev.Driver
 						Version._version['driver_version'] = dev.DriverVersion
 						break
-
 		except Exception as e:
 			Version._version = {}
 

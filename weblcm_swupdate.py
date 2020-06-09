@@ -46,7 +46,7 @@ class SWUpdate:
 			'message': "Device is busy"
 		}
 
-		if cherrypy.session.get('swupdate', False) == False:
+		if not cherrypy.session.get('swupdate', None):
 			return result
 
 		try:
@@ -83,7 +83,7 @@ class SWUpdate:
 				return result
 			SWUpdate._isUpdating = True
 
-		cherrypy.session['swupdate'] = True
+		cherrypy.session['swupdate'] = cherrypy.session.id
 
 		try:
 			proc = Popen(["/usr/sbin/weblcm_swupdate.sh", "pre-update"], stdout=PIPE, stderr=PIPE)
@@ -108,11 +108,11 @@ class SWUpdate:
 
 	def DELETE(self):
 
-		if cherrypy.session.get('swupdate', False):
+		if cherrypy.session.get('swupdate', None) == cherrypy.session.id:
 			swclient.end_fw_update()
 			proc = Popen(["/usr/sbin/weblcm_swupdate.sh", "post-update"], stdout=PIPE, stderr=PIPE)
 			proc.wait()
 			SWUpdate._isUpdating = False
-			cherrypy.session.pop('swupdate')
+			cherrypy.session.pop('swupdate', None)
 
 		return

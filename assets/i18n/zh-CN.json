@@ -265,5 +265,8 @@
     "Configure": "配置",
     "Date time setting is invalid": "日期时间非法",
     "Date is invalid": "日期非法",
-    "Time is invalid": "时间非法"
+    "Time is invalid": "时间非法",
+
+    "User is already logged in": "用户已登录",
+    "User is temporarily blocked": "用户名密码多次出错，暂停登录"
 }
