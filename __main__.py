@@ -6,7 +6,7 @@ from weblcm_network_status import NetworkStatus
 from weblcm_network import NetworkInterfaces, NetworkConnections, NetworkConnection, NetworkAccessPoints, Version
 from weblcm_log import LogData, LogSetting
 from weblcm_swupdate import SWUpdate
-from weblcm_users import UserManage, LoginManage, LogoutManage
+from weblcm_users import UserManage, LoginManage, LoginManageHelper
 from weblcm_files import FileManage, ArchiveFilesManage
 from weblcm_advanced import Reboot, FactoryReset
 from weblcm_datetime import DateTimeSetting
@@ -22,13 +22,8 @@ class Root(object):
 		cherrypy.session['count'] = count
 
 		return {
-			'SDCERR': {
-				'SDCERR_SUCCESS': 0,
-				'SDCERR_FAIL': 1
-			},
-			'PLUGINS': {
-				'usermanage': weblcm_def.USER_PERMISSION_TYPES
-			},
+			'SDCERR': weblcm_def.WEBLCM_ERRORS,
+			'PERMISSIONS': weblcm_def.USER_PERMISSION_TYPES,
 		}
 
 
@@ -65,13 +60,14 @@ def force_session_checking():
 		url = cherrypy.url().split('/')[-1]
 		if url and ".html" not in url and any(path in url for path in paths):
 			raise cherrypy.HTTPError(401)
+	else:
+		LoginManageHelper.update_time()
 
 if __name__ == '__main__':
 
 	webapp = Root()
 
 	webapp.login = LoginManage()
-	webapp.logout = LogoutManage()
 
 	webapp.networkStatus = NetworkStatus()
 	webapp.connections = NetworkConnections()

@@ -265,5 +265,8 @@
     "Configure": "Configure",
     "Date time setting is invalid": "Date time setting is invalid",
     "Date is invalid": "Date is invalid",
-    "Time is invalid": "Time is invalid"
+    "Time is invalid": "Time is invalid",
+
+    "User is already logged in": "User is already logged in",
+    "User is temporarily blocked": "User is temporarily blocked"
 }
