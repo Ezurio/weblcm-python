@@ -1537,25 +1537,6 @@ function onChangeRadioMode(){
   }
 }
 
-function onChangeIpv6Method(){
-  var mode = $("#radio-mode").val();
-
-  switch(mode){
-    case "infrastructure":
-      $("#frequency-list-display").removeClass("d-none");
-      $("#radio-channel-display").addClass("d-none");
-      $("#frequency-dfs").removeClass("d-none");
-      break;
-    case "ap":
-      $("#frequency-list-display").addClass("d-none");
-      $("#radio-channel-display").removeClass("d-none");
-      $("#frequency-dfs").addClass("d-none");
-      break;
-    default:
-      break;
-  }
-}
-
 function onChangeIpv4Method(){
   let method = $("#ipv4-method").val();
   switch(method){
