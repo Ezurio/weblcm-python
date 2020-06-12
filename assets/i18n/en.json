@@ -153,6 +153,7 @@
     "Accesspoint": "AP",
     "TX Power": "TX Power",
     "Radio Band": "Radio Band",
+    "Radio Channel": "Radio Channel",
     "Frequency List": "Frequency List",
     "Scan Policy": "Scan Policy",
     "Enable DFS": "Enable DFS",

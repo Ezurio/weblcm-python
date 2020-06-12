@@ -152,6 +152,7 @@
     "Accesspoint": "接入点",
     "TX Power": "发送功率",
     "Radio Band": "频段",
+    "Radio Channel": "频道",
     "Frequency List": "允许频率列表",
     "Scan Policy": "无限扫描策略",
     "Enable DFS": "使能DFS",
