@@ -1,9 +1,6 @@
 [Unit]
 Description=SWUpdate daemon
-Before=weblcm-python.service
 
 [Service]
 ExecStart=/usr/sbin/swupdate.sh
-
-[Install]
-WantedBy=multi-user.target
+KeyringMode=inherit
