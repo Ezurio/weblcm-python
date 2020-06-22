@@ -47,7 +47,7 @@ case ${typ} in
 		if [ ${action} == "zip" ]; then
 			do_zip
 		else
-			do_unzip
+			do_unzip_config
 		fi
 		;;
 
