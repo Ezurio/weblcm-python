@@ -49,7 +49,7 @@ class DateTimeSetting(object):
 			result['zone'] = self.getLocalZone()
 
 		dt = datetime.now()
-		result['time'] = "{0}-{1}-{2} {3}:{4}:{5}".format(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
+		result['time'] = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
 
 		proc = Popen(['/usr/sbin/weblcm_datetime.sh', "check", "", ""], stdout=PIPE, stderr=PIPE)
 		outs, errs = proc.communicate(timeout=SystemSettingsManage.getInt('user_callback_timeout', 5))
