@@ -304,11 +304,16 @@ function resetPhase2AuthSetting(wxs, method, disabled) {
   if (-1 !== auth.indexOf("tls")) {
     $("#phase2-ca-cert-display").removeClass("d-none");
     $("#phase2-ca-cert").val(parseSettingData(wxs, "phase2-ca-cert", ""));
+    $("#phase2-ca-cert-password-display").removeClass("d-none");
+    $("#phase2-ca-cert-password").val("");
     $("#phase2-client-cert-display").removeClass("d-none");
     $("#phase2-client-cert").val(parseSettingData(wxs, "phase2-client-cert", ""));
+    $("#phase2-client-cert-password-display").removeClass("d-none");
+    $("#phase2-client-cert-password").val("");
     $("#phase2-private-key-display").removeClass("d-none");
     $("#phase2-private-key").val(parseSettingData(wxs, "phase2-private-key", ""));
     $("#phase2-private-key-password-display").removeClass("d-none");
+    $("#phase2-private-key-password").val("");
   }
   else
   {
@@ -328,7 +333,7 @@ function resetPhase2AuthSetting(wxs, method, disabled) {
     $("#phase2-private-key").val("");
 
     $("#phase2-private-key-password-display").addClass("d-none");
-    $("#phase2-private-key-password-display").val("");
+    $("#phase2-private-key-password").val("");
   }
 }
 
@@ -342,28 +347,52 @@ function onChangePhase2Eap() {
 
 function resetEapSetting(wxs){
 
+  $("#ca-cert-display").addClass("d-none");
+  $("#ca-cert").val();
+  $("#ca-cert-password-display").addClass("d-none");
+  $("#ca-cert-password").val();
+  $("#client-cert-display").addClass("d-none");
+  $("#client-cert").val();
+  $("#client-cert-password-display").addClass("d-none");
+  $("#client-cert-password").val();
+  $("#private-key-display").addClass("d-none");
+  $("#private-key").val();
+  $("#private-key-password-display").addClass("d-none");
+  $("#tls-disable-time-checks-display").addClass("d-none");
+  $("#tls-disable-time-checks").val();
+
+  $("#pac-file-display").addClass("d-none");
+  $("#pac-file").val();
+  $("#pac-file-password-display").addClass("d-none");
+  $("#phase1-fast-provisioning-display").addClass("d-none");
+  $("#phase1-fast-provisioning").val();
+
   var eap = $("#eap-method").val();
-  if (eap == "fast"){
-    $("#pac-file-display").removeClass("d-none");
-    $("#pac-file").val(parseSettingData(wxs, "pac-file", ""));
-    $("#pac-file-password-display").removeClass("d-none");
-    $("#phase1-fast-provisioning-display").removeClass("d-none");
-    $("#phase1-fast-provisioning").val(parseSettingData(wxs, "phase1-fast-provisioning", "0"));
-  } else if (-1 !== eap.indexOf("tls")) {
-    $("#ca-cert-display").removeClass("d-none");
-    $("#ca-cert").val(parseSettingData(wxs, "ca-cert", ""));
-    $("#client-cert-display").removeClass("d-none");
-    $("#client-cert").val(parseSettingData(wxs, "client-cert", ""));
-    $("#private-key-display").removeClass("d-none");
-    $("#private-key").val(parseSettingData(wxs, "private-key", ""));
-    $("#private-key-password-display").removeClass("d-none");
-    $("#tls-disable-time-checks-display").removeClass("d-none");
-    $("#tls-disable-time-checks").val(parseSettingData(wxs, "tls-disable-time-checks", "1"));
-  } else if (-1 !== eap.indexOf("ttls")) {
-    $("#ca-cert-display").removeClass("d-none");
-    $("#ca-cert").val(parseSettingData(wxs, "ca-cert", ""));
-    $("#client-cert-display").removeClass("d-none");
-    $("#client-cert").val(parseSettingData(wxs, "client-cert", ""));
+  switch(eap){
+    case "fast":
+      $("#pac-file-display").removeClass("d-none");
+      $("#pac-file").val(parseSettingData(wxs, "pac-file", ""));
+      $("#pac-file-password-display").removeClass("d-none");
+      $("#phase1-fast-provisioning-display").removeClass("d-none");
+      $("#phase1-fast-provisioning").val(parseSettingData(wxs, "phase1-fast-provisioning", "0"));
+      break;
+    case "tls":
+    case "ttls":
+    case "peap":
+      $("#ca-cert-display").removeClass("d-none");
+      $("#ca-cert").val(parseSettingData(wxs, "ca-cert", ""));
+      $("#ca-cert-password-display").removeClass("d-none");
+      $("#client-cert-display").removeClass("d-none");
+      $("#client-cert").val(parseSettingData(wxs, "client-cert", ""));
+      $("#client-cert-password-display").removeClass("d-none");
+      $("#private-key-display").removeClass("d-none");
+      $("#private-key").val(parseSettingData(wxs, "private-key", ""));
+      $("#private-key-password-display").removeClass("d-none");
+      $("#tls-disable-time-checks-display").removeClass("d-none");
+      $("#tls-disable-time-checks").val(parseSettingData(wxs, "tls-disable-time-checks", "1"));
+      break;
+    default:
+      break;
   }
 }
 
@@ -399,6 +428,7 @@ function resetWirelessSecuritySettings(wss, wxs){
     case "wpa-eap":
       $("#eap-method-display").removeClass("d-none");
       $("#eap-method").val(parseSettingData(wxs, "eap", "peap"));
+      resetEapSetting(wxs)
       $("#eap-auth-timeout-display").removeClass("d-none");
       $("#eap-auth-timeout").val(parseSettingData(wxs, "auth-timeout", 0).toString());
       $("#eap-identity-display").removeClass("d-none");

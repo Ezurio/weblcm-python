@@ -314,12 +314,9 @@
 							<span class="input-group-text">EAP Method</span>
 						</div>
 						<select class="form-control" id="eap-method" onchange="onChangeEap()">
-							<option value="leap">LEAP</option>
-							<option value="md5">MD5</option>
 							<option value="tls">TLS</option>
 							<option value="peap" selected>PEAP</option>
 							<option value="ttls">TTLS</option>
-							<option value="pwd">PWD</option>
 							<option value="fast">FAST</option>
 						</select>
 					</div>
@@ -471,7 +468,7 @@
 						<div class="input-group-prepend i18n" name="CA Cert Password">
 							<span class="input-group-text">CA Cert Password</span>
 						</div>
-						<input type="password" class="phase2-form-control" id="phase2-ca-cert-password">
+						<input type="password" class="form-control" id="phase2-ca-cert-password">
 					</div>
 
 					<div class="input-group mb-3 d-none" id="phase2-client-cert-display">
