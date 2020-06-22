@@ -42,18 +42,9 @@
 		<div class="input-group-prepend i18n" name="Password">
 			  <span class="input-group-text">Password</span>
 		</div>
-		<input type="password" class="form-control i18n" id="ipm-password" name="Password" placeholder="Password" onblur="addPasswdInputOnblur('input-password-message')" onfocus="addPasswdInputOnfocus('input-password-message', 'ipm')" onkeyup="addPasswdInputOnkeyup('ipm')">
+		<input type="password" class="form-control i18n" id="ipm-password" name="Password" placeholder="8-64 characters, including at least one number and one speical character">
 	</div>
 	<div class="text-center mb-3">
 		<input type="button" onclick="addUser()" class="btn btn-primary i18n" name="Add User" value="Add User" id="bt-add-user">
 	</div>
 </form>
-
-<div id="input-password-message" class="text-left d-none">
-	<p class="i18n" name="Password must contain the following">Password must contain the following:</p>
-	<p id="ipm-lower" class="text-danger i18n" name="A lowercase character">A lowercase character</p>
-	<p id="ipm-upper" class="text-danger i18n" name="An uppercase character" >A uppercase character</p>
-	<p id="ipm-number" class="text-danger i18n" name="A number">A number</p>
-	<p id="ipm-special" class="text-danger i18n" name="A speical character">A speical character</p>
-	<p id="ipm-length" class="text-danger i18n" name="8-64 characters">8-64 characters</p>
-</div>
