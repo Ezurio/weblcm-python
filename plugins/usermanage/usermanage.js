@@ -1,72 +1,24 @@
-// Copyright (c) 2019, Laird
+// Copyright (c) 2020, Laird
 // Contact: support@lairdconnect.com
 
 function usermanageAUTORUN(retry) {
   return;
 }
 
-function addPasswdInputOnkeyup(prefix) {
+function validatePassword(passwd) {
 
-  var psw = $("#"+prefix+"-password");
-
-  // Validate lowercase letters
-  var letter = $("#"+prefix+"-lower");
-  if(psw.val().match(/[a-z]/g)) {
-    letter.removeClass("text-danger");
-    letter.addClass("text-success");
-  } else {
-    letter.removeClass("text-success");
-    letter.addClass("text-danger");
+  if(passwd.length < 8 || passwd.length > 64) {
+    return "8-64 characters are required for password";
   }
 
-  // Validate uppercase letters
-  var capital = $("#"+prefix+"-upper");
-  if(psw.val().match(/[A-Z]/g)) {
-    capital.removeClass("text-danger");
-    capital.addClass("text-success");
-  } else {
-    capital.removeClass("text-success");
-    capital.addClass("text-danger");
+  if(passwd.match(/[0-9]/g) == null) {
+    return "Minimally one number is required";
   }
 
-  // Validate numbers
-  var number = $("#"+prefix+"-number");
-  if(psw.val().match(/[0-9]/g)) {
-    number.removeClass("text-danger");
-    number.addClass("text-success");
-  } else {
-    number.removeClass("text-success");
-    number.addClass("text-danger");
+  if(passwd.match(/\W+/g) == null) {
+    return "Minimally one special charcter is required";
   }
-
-  // Validate special letters
-  var special = $("#"+prefix+"-special");
-  if(psw.val().match(/[@$!%*?&]/g)) {
-    special.removeClass("text-danger");
-    special.addClass("text-success");
-  } else {
-    special.removeClass("text-success");
-    special.addClass("text-danger");
-  }
-
-  // Validate length
-  var length = $("#"+prefix+"-length");
-  if(psw.val().length >= 8 && psw.val().length <= 64) {
-    length.removeClass("text-danger");
-    length.addClass("text-success");
-  } else {
-    length.removeClass("text-success");
-    length.addClass("text-danger");
-  }
-}
-
-function addPasswdInputOnblur(id){
-  $("#"+id).addClass("d-none");
-}
-
-function addPasswdInputOnfocus(id, prefix){
-  addPasswdInputOnkeyup(prefix);
-  $("#"+id).removeClass("d-none");
+  return;
 }
 
 function validateUsername(username){
@@ -75,31 +27,9 @@ function validateUsername(username){
 
   inval = username.match(/\W/g);
   if(inval != null)
-    return "Only number, lowercase, uppercase and underscore is allowed for username"
+    return "Only alphanumeric characters are allowed for username";
 
   return;
-}
-
-function validatePassword(psw) {
-  if(psw.match(/[a-z]/g) == null) {
-    return "Minimally one lowercase charcter required";
-  }
-
-  if(psw.match(/[A-Z]/g) == null) {
-    return "Minimally one uppercase charcter required";
-  }
-
-  if(psw.match(/[0-9]/g) == null) {
-    return "Minimally one number is required";
-  }
-
-  if(psw.match(/[@$!%*?&]/g) == null) {
-    return "Minimally one special charcter is required";
-  }
-
-  if(psw.length < 8 || psw.length > 64) {
-    return "8-64 characters are required";
-  }
 }
 
 function updatePassword() {
