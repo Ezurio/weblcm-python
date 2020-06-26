@@ -2,7 +2,23 @@
 // Contact: support@lairdconnect.com
 
 function usermanageAUTORUN(retry) {
-  return;
+
+  $(document).on("click", "#add_del_user_mini_menu, #add_del_user_main_menu", function(){
+    clickAddOrDelUser();
+  });
+
+  $(document).on("click", "#update_password_mini_menu, #update_password_main_menu", function(){
+    clickUpdatePassword();
+  });
+
+  $(document).on("click", "#bt-update-password", function(){
+    updatePassword();
+  });
+
+  $(document).on("click", "#bt-add-user", function(){
+    addUser();
+  });
+
 }
 
 function validatePassword(passwd) {
@@ -87,16 +103,28 @@ function createUserList(users) {
     row += '</td>';
 
     row += '<td class="text-center">';
-    row += '<input type="button" class="btn btn-primary" role="button" id="bt-load-permission-' + name + '" value="' + i18nData['load perm'] + '" onclick="loadPermission()">';
+    row += '<input type="button" class="btn btn-primary" id="bt-load-permission-' + name + '" value="' + i18nData['load perm'] + '">';
     row += '</td>';
 
-    row += '<td class="text-center">';
-    row += '<input type="button" class="btn btn-primary" role="button" id="bt-update-permission-' + name + '" value="' + i18nData['update perm'] + '" onclick="updatePermission()">';
-    row += '</td>';
+    $(document).on("click", "#bt-load-permission-" + name, function(){
+      loadPermission();
+    });
 
     row += '<td class="text-center">';
-    row += '<input type="button" class="btn btn-primary" role="button" id="bt-del-user-' + name + '" value="' + i18nData['delete user'] + '" onclick="delUser()">';
+    row += '<input type="button" class="btn btn-primary" id="bt-update-permission-' + name + '" value="' + i18nData['update perm'] + '">';
     row += '</td>';
+
+    $(document).on("click", "#bt-update-permission-" + name, function(){
+      updatePermission();
+    });
+
+    row += '<td class="text-center">';
+    row += '<input type="button" class="btn btn-primary" id="bt-del-user-' + name + '" value="' + i18nData['delete user'] + '">';
+    row += '</td>';
+
+    $(document).on("click", "#bt-del-user-" + name, function(){
+      delUser();
+    });
 
     row += '</tr>';
 
