@@ -29,7 +29,7 @@
 						<div class="input-group-prepend i18n" name="Type">
 							<span class="input-group-text">Type</span>
 						</div>
-						<select class="form-control" id="connection-type" onchange="onChangeConnectionType()"></select>
+						<select class="form-control" id="connection-type"></select>
 					</div>
 				</div>
 			</div>
@@ -46,7 +46,7 @@
 						<div class="input-group-prepend i18n" name="Method">
 							<span class="input-group-text">Method</span>
 						</div>
-						<select class="form-control" id="ipv4-method" onchange="onChangeIpv4Method()">
+						<select class="form-control" id="ipv4-method">
 							<option class="i18n" name="Auto" value="auto" selected>Auto</option>
 							<option class="i18n" name="Manual" value="manual">Manual</option>
 							<option class="i18n" name="Shared" value="shared">Shared</option>
@@ -87,7 +87,7 @@
 						<div class="input-group-prepend i18n" name="Method">
 							<span class="input-group-text">Method</span>
 						</div>
-						<select class="form-control" id="ipv6-method" onchange="onChangeIpv6Method()">
+						<select class="form-control" id="ipv6-method">
 							<option class="i18n" name="Auto" value="auto" selected>Auto</option>
 							<option class="i18n" name="Manual" value="manual">Manual</option>
 							<option class="i18n" name="DHCP" value="dhcp">DHCP</option>
@@ -148,7 +148,7 @@
 						<div class="input-group-prepend i18n" name="Radio Mode">
 							<span class="input-group-text">Radio Mode</span>
 						</div>
-						<select class="form-control" id="radio-mode" onchange="onChangeRadioMode()">
+						<select class="form-control" id="radio-mode">
 							<option class="i18n" name="Infrastructure" value="infrastructure" selected>Infrastructure</option>
 							<option class="i18n" name="Accesspoint" value="ap">AP</option>
 						</select>
@@ -226,7 +226,7 @@
 						<div class="input-group-prepend i18n" name="WEP Type">
 							<span class="input-group-text">WEP Type</span>
 						</div>
-						<select class="form-control" id="key-mgmt" onchange="onChangeKeymgmt()">
+						<select class="form-control" id="key-mgmt">
 							<option class="i18n" name="None" value="none" selected>None</option>
 							<option class="i18n" name="Static WEP" value="static">Static WEP</option>
 							<option class="i18n" name="Dynamic WEP" value="ieee8021x">Dynamic WEP</option>
@@ -313,7 +313,7 @@
 						<div class="input-group-prepend i18n" name="EAP Method">
 							<span class="input-group-text">EAP Method</span>
 						</div>
-						<select class="form-control" id="eap-method" onchange="onChangeEap()">
+						<select class="form-control" id="eap-method">
 							<option value="tls">TLS</option>
 							<option value="peap" selected>PEAP</option>
 							<option value="ttls">TTLS</option>
@@ -428,7 +428,7 @@
 						<div class="input-group-prepend i18n" name="Phase 2 non-EAP METHOD">
 							<span class="input-group-text">Phase 2 non-EAP METHOD</span>
 						</div>
-						<select class="form-control" multiple id="phase2-auth" onchange="onChangePhase2NoneEap()">
+						<select class="form-control" multiple id="phase2-auth">
 							<option value="none" selected>None</option>
 							<option value="pap">PAP</option>
 							<option value="chap">CHAP</option>
@@ -445,7 +445,7 @@
 						<div class="input-group-prepend i18n" name="Phase 2 EAP METHOD">
 							<span class="input-group-text">Phase 2 EAP METHOD</span>
 						</div>
-						<select class="form-control" multiple id="phase2-autheap" onchange="onChangePhase2Eap()">
+						<select class="form-control" multiple id="phase2-autheap">
 							<option value="none" selected>None</option>
 							<option value="mschapv2">MSCHAPv2</option>
 							<option value="gtc">GTC</option>
@@ -562,7 +562,7 @@
 		</div>
 	</div>
 	<div class="text-center mt-3">
-		<button onclick="addConnection()" id="addNewConnection" type="button" class="btn btn-primary">Save</button>
+		<button type="button" id="addNewConnection" class="btn btn-primary">Save</button>
 	</div>
 </form>
 

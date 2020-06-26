@@ -2,7 +2,18 @@
 // Contact: support@lairdconnect.com
 
 function loggingAUTORUN(retry){
-  return;
+
+  $(document).on("click", "#logging_mini_menu, #logging_main_menu", function(){
+    clickLoggingPage();
+  });
+
+  $(document).on("click", "#bt-query-log", function(){
+    queryLogData();
+  });
+
+  $(document).on("click", "#bt-submit-loglevel", function(){
+    submitlogSetting();
+  });
 }
 
 function submitlogSetting(retry){
