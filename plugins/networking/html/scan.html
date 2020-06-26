@@ -1,11 +1,11 @@
 
 
 <div class="progress mt-3" id="scanProgressDisplay">
-	<div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div>
+	<div class="progress-bar progress-bar-striped w-100 active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
 </div>
 
 <div class="mt-3" id="scanTableDisplay">
-	<form class="d-none " id="form-addWifiConnection" ondrop="drop(event)" ondragover="allowDrop(event)">
+	<form class="d-none mt-3" id="form-addWifiConnection">
 		<legend class="i18n text-center" name="Click or drag a scan item here to add as connection">Click or drag a scan item here to add as connection.</legend>
 		<div class="row">
 			<div class="col">
@@ -13,7 +13,7 @@
 					<div class="input-group-prepend mx-1 i18n" name="Connection Name">
 						<span class="input-group-text">ID</span>
 					</div>
-					<input type="text" class="form-control i18n" id="connectionName" name="Enter Connection Name" placeholder="Enter Connection Name" maxlength="32">
+					<input type="text" class="form-control" id="connectionName">
 				</div>
 			</div>
 			<div class="col">
@@ -21,7 +21,7 @@
 					<div class="input-group-prepend mx-1 i18n" name="SSID">
 						<span class="input-group-text">SSID</span>
 					</div>
-					<input type="text" class="form-control" id="newSSID" placeholder="SSID" readonly>
+					<input type="text" class="form-control" id="newSSID" readonly>
 				</div>
 			</div>
 
@@ -30,15 +30,15 @@
 					<div class="input-group-prepend mx-1 i18n" name=Security>
 						<span class="input-group-text">Security</span>
 					</div>
-					<input type="text" class="form-control i18n" name="security" id="Security" placeholder="Security" readonly>
+					<input type="text" class="form-control" id="security" readonly>
 				</div>
 			</div>
 		</div>
 		<div class="col text-center d-none" id="goToConnectionDisplay">
-			<a id="goToConnection" onclick="addScanConnection()" class="btn btn-primary i18n" name="Add connection" role="button">Add connection</a>
+			<button type="button" id="goToConnection" class="btn btn-primary i18n" name="Add connection" role="button">Add connection</button>
 		</div>
 	</form>
-	<div class="table-responsive bt-3">
+	<div class="table-responsive mt-3">
 		<table class="table table-hover table-condensed" id="scanTable">
 			<thead>
 				<tr>
@@ -58,7 +58,7 @@
 	</div>
 	<div class="input-group justify-content-center mt-3">
 		<span class="input-group-btn">
-			<button type="button" id="bt-manual-scan" onclick="requestScan()" class="btn btn-primary i18n" name="Manual scan" disabled>Manual scan</button>
+			<button type="button" id="bt-manual-scan" class="btn btn-primary i18n" name="Manual scan" disabled>Manual scan</button>
 		</span>
 	</div>
 </div>

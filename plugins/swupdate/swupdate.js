@@ -1,5 +1,13 @@
 function swupdateAUTORUN(retry) {
-  return;
+
+  $(document).on("click", "#swupdate_mini_menu, #swupdate_main_menu", function(){
+    clickSWUpdatePage();
+  });
+
+  $(document).on("click", "#bt-firmware-update", function(){
+    updateFirmware();
+  });
+
 }
 
 var fw_start;
@@ -24,13 +32,15 @@ function upload_one_chunk() {
 
 function updateFirmware() {
 
-  if( $("#fw-name")[0].files.length == 0 )
+  if( $("#fw-name")[0].files.length == 0 ) {
+	CustomMsg("Please select firmware", true);
     return;
+  }
 
   $("#bt-firmware-update").prop("disabled", true);
-  $(".progress-bar").attr("aria-valuenow", 0);
-  $(".progress-bar").attr("style", "width: 0%");
-  $(".progress-bar").text("0%");
+  $("#swupdateProgressDisplay").attr("aria-valuenow", 0);
+  $("#swupdateProgressDisplay").width("0%");
+  $("#swupdateProgressDisplay").text("0%");
   $("#fw-update-status").text(i18nData['Checking...']);
 
   $.ajax({
@@ -56,9 +66,9 @@ function updateFirmware() {
     fw_xhr.upload.onprogress = function(event) {
       fw_start +=  event.loaded;
       r = Math.round(fw_start * 100/fw_total_bytes);
-      $(".progress-bar").attr("aria-valuenow", r);
-      $(".progress-bar").attr("style", "width: "+ r + "%");
-      $(".progress-bar").text(r + "%");
+      $("#swupdateProgressDisplay").attr("aria-valuenow", r);
+      $("#swupdateProgressDisplay").width(r + "%");
+      $("#swupdateProgressDisplay").text(r + "%");
     };
 
     fw_xhr.upload.onerror = function() {

@@ -27,7 +27,7 @@ class Root(object):
 		}
 
 
-"""Redirect http to https"""
+#Redirect http to https
 def force_tls():
 
 	if cherrypy.request.scheme == "http":
@@ -58,10 +58,21 @@ def force_session_checking():
 
 	if not cherrypy.session._exists():
 		url = cherrypy.url().split('/')[-1]
-		if url and ".html" not in url and any(path in url for path in paths):
+		if url and ".html" not in url and ".js" not in url and any(path in url for path in paths):
 			raise cherrypy.HTTPError(401)
 	else:
 		LoginManageHelper.update_time()
+
+@cherrypy.tools.register('before_finalize', priority=60)
+def secureheaders():
+	headers = cherrypy.response.headers
+	headers['X-Frame-Options'] = 'DENY'
+	headers['X-XSS-Protection'] = '1; mode=block'
+	headers['X-Content-Type-Options'] = 'nosniff'
+	headers['Content-Security-Policy'] = "default-src 'self'"
+	#Add Strict-Transport headers
+	headers['Strict-Transport-Security'] = 'max-age=31536000'  # one year
+
 
 if __name__ == '__main__':
 
