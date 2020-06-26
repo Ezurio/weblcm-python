@@ -2,7 +2,35 @@
 // Contact: support@lairdconnect.com
 
 function advancedAUTORUN(retry) {
-  return;
+
+  $(document).on("click", "#advanced_mini_menu, #advanced_main_menu", function(){
+    clickAdvancedPage();
+  });
+
+  $(document).on("click", "#bt-import-config", function(){
+    importArchive('config');
+  });
+
+  $(document).on("click", "#bt-export-config", function(){
+    exportArchive('config');
+  });
+
+  $(document).on("click", "#bt-export-log", function(){
+    exportArchive('log');
+  });
+
+  $(document).on("click", "#bt-export-debug", function(){
+    exportArchive('debug');
+  });
+
+  $(document).on("click", "#bt-reboot", function(){
+    reboot(true);
+  });
+
+  $(document).on("click", "#bt-factory-reset", function(){
+    factoryReset();
+  });
+
 }
 
 function reboot(show) {

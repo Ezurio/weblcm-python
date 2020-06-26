@@ -2,7 +2,23 @@
 // Contact: support@lairdconnect.com
 
 function datetimeAUTORUN(retry) {
-  return;
+
+  $(document).on("click", "#datetime_mini_menu, #datetime_main_menu", function(){
+    clickDatetimePage();
+  });
+
+  $(document).on("click", "#bt-import-timezone", function(){
+    xmlhttpFileUpload('timezone');
+  });
+
+  $(document).on("click", "#datetime-config", function(){
+    onChangeDatetimeConfig();
+  });
+
+  $(document).on("click", "#bt-save-datetime", function(){
+    saveDateTime();
+  });
+
 }
 
 function validateDateString(date){
@@ -197,8 +213,8 @@ function xmlhttpFileUpload(type){
 function clickDatetimePage() {
   $.ajax({
     url: "plugins/datetime/html/datetime.html",
-    data: {},
     type: "GET",
+    cache: false,
     dataType: "html",
   })
   .done(function(data){

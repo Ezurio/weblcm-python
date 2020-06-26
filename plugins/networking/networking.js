@@ -2,7 +2,88 @@
 // Contact: support@lairdconnect.com
 
 function networkingAUTORUN(retry){
-  clickStatusPage(0);
+
+  $(document).on("click", "#networking_status_mini_menu, #networking_status_main_menu", function(){
+    clickStatusPage();
+  });
+
+  $(document).on("click", "#networking_connections_mini_menu, #networking_connections_main_menu", function(){
+    clickConnectionsPage();
+  });
+
+  $(document).on("click", "#networking_edit_mini_menu, #networking_edit_main_menu", function(){
+    clickEditConnectionPage();
+  });
+
+  $(document).on("click", "#networking_scan_mini_menu, #networking_scan_main_menu", function(){
+    clickScanPage();
+  });
+
+  $(document).on("click", "#networking_version_mini_menu, #networking_version_main_menu", function(){
+    clickVersionPage();
+  });
+
+  $(document).on("click", "#bt-connection-activate", function(){
+    activateConnection();
+  });
+
+  $(document).on("click", "#bt-connection-edit", function(){
+    selectedConnection();
+  });
+
+  $(document).on("click", "#bt-connection-delete", function(){
+    removeConnection();
+  });
+
+  $(document).on("change", "#connectionSelect", function(){
+    onChangeConnections();
+  });
+
+  $(document).on("click", "#goToConnection", function(){
+    addScanConnection();
+  });
+
+  $(document).on("click", "#bt-manual-scan", function(){
+    requestScan();
+  });
+
+  $(document).on("click", "#addNewConnection", function(){
+    addConnection();
+  });
+
+  $(document).on("change", "#connection-type", function(){
+    onChangeConnectionType();
+  });
+
+  $(document).on("change", "#ipv4-method", function(){
+    onChangeIpv4Method();
+  });
+
+  $(document).on("change", "#ipv6-method", function(){
+    onChangeIpv6Method();
+  });
+
+  $(document).on("change", "#radio-mode", function(){
+    onChangeRadioMode();
+  });
+
+  $(document).on("change", "#key-mgmt", function(){
+    onChangeKeymgmt();
+  });
+
+  $(document).on("change", "#eap-method", function(){
+    onChangeEap();
+  });
+
+  $(document).on("change", "#phase2-auth", function(){
+    onChangePhase2NoneEap();
+  });
+
+  $(document).on("change", "#phase2-autheap", function(){
+    onChangePhase2Eap();
+  });
+
+  clickStatusPage();
 }
 
 const NMDeviceState = {
@@ -1280,6 +1361,9 @@ function addConnection() {
     })
     .done(function(msg) {
       SDCERRtoString(msg.SDCERR);
+    })
+    .fail(function( xhr, textStatus, errorThrown) {
+      httpErrorResponseHandler(xhr, textStatus, errorThrown)
     });
   } else {
     CustomMsg("Connection name can not be empty", true);
@@ -1297,20 +1381,28 @@ function allowDrop(ev){
   ev.preventDefault();
 }
 
-function drag(ev){
-  var index = $(ev.currentTarget).index() + 1;
+function clickScantableRow(row){
+  $("#newSSID").val(row.find("td:eq(0)").text())
+  $("#security").val(row.find("td:eq(4)").text());
+  $("#security").attr("key-mgmt", row.attr("key-mgmt"));
+  $("#connectionNameDisplay").removeClass("has-error");
+  $("#goToConnectionDisplay").removeClass("d-none");
+}
+
+function dragStart(ev){
+  let index = $(ev.currentTarget).index() + 1;
   if (index > 0){
-	ev.dataTransfer.setData("ssid", $('#scanTable tr').eq(index).find("td:eq(0)").text());
-	ev.dataTransfer.setData("security", $('#scanTable tr').eq(index).find("td:eq(4)").text());
-	ev.dataTransfer.setData("key-mgmt",$('#scanTable tr').eq(index).attr("key-mgmt"));
+    ev.originalEvent.dataTransfer.setData("ssid", $('#scanTable tr').eq(index).find("td:eq(0)").text());
+    ev.originalEvent.dataTransfer.setData("security", $('#scanTable tr').eq(index).find("td:eq(4)").text());
+    ev.originalEvent.dataTransfer.setData("key-mgmt",$('#scanTable tr').eq(index).attr("key-mgmt"));
   }
 }
 
 function drop(ev){
   ev.preventDefault();
-  $("#newSSID").val(ev.dataTransfer.getData("ssid"));
-  $("#security").val(ev.dataTransfer.getData("security"));
-  $("#security").attr("key-mgmt",ev.dataTransfer.getData("key-mgmt"));
+  $("#newSSID").val(ev.originalEvent.dataTransfer.getData("ssid"));
+  $("#security").val(ev.originalEvent.dataTransfer.getData("security"));
+  $("#security").attr("key-mgmt",ev.originalEvent.dataTransfer.getData("key-mgmt"));
   $("#connectionNameDisplay").removeClass("has-error");
   $("#goToConnectionDisplay").removeClass("d-none");
 }
@@ -1360,6 +1452,9 @@ function getScan(retry){
     }
     else if($("#scanTable").length > 0){
 
+      $(document).off("drop", "#form-addWifiConnection");
+      $(document).off("dragover", "#form-addWifiConnection");
+
       $("#scanProgressDisplay").addClass("d-none");
 
       $('#scanTable tbody').empty();
@@ -1370,20 +1465,27 @@ function getScan(retry){
                       "</td><td>" + msg["accesspoints"][ap].Frequency +
                       "</td><td>" + msg["accesspoints"][ap].Strength +
                       "</td><td>" + msg["accesspoints"][ap].Security + "</td></tr>";
-
         $('#scanTable tbody').append(markup);
         $("#scanTable tr:last").attr("draggable", true);
-        $("#scanTable tr:last").attr("ondragstart", "drag(event)");
         $("#scanTable tr:last").attr("key-mgmt", msg["accesspoints"][ap].Keymgmt);
-        $("#scanTable tr:last").on('click', function(){
-          var row=$(this).closest("tr");
-          $("#newSSID").val(row.find("td:eq(0)").text())
-          $("#security").val(row.find("td:eq(4)").text());
-          $("#security").attr("key-mgmt", row.attr("key-mgmt"));
-          $("#connectionNameDisplay").removeClass("has-error");
-          $("#goToConnectionDisplay").removeClass("d-none");
-        });
       }
+
+      $(document).on('dragstart', "#scanTable tbody tr", function(event){
+        dragStart(event);
+      });
+
+      $("#scanTable tbody tr").on('click', function(){
+        let row=$(this).closest("tr");
+        clickScantableRow(row);
+      });
+
+      $(document).on("drop", "#form-addWifiConnection", function(event){
+        drop(event);
+      });
+
+      $(document).on("dragover", "#form-addWifiConnection", function(event){
+        allowDrop(event);
+      });
 
       $("#bt-manual-scan").prop("disabled", false);
 
