@@ -18,9 +18,6 @@ class Root(object):
 	@cherrypy.tools.json_out()
 	def definitions(self, *args, **kwargs):
 
-		count = cherrypy.session.get('count', 0) + 1
-		cherrypy.session['count'] = count
-
 		return {
 			'SDCERR': weblcm_def.WEBLCM_ERRORS,
 			'PERMISSIONS': weblcm_def.USER_PERMISSION_TYPES,
