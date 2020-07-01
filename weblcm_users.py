@@ -61,12 +61,13 @@ class UserManageHelper(object):
 		return WeblcmConfigManage.get_section_size_by_key('password')
 
 	@classmethod
-	def getNumberOfNonRootUsers(cls):
-		return WeblcmConfigManage.get_section_size_by_key('permission')
-
-	@classmethod
 	def getUserList(cls):
-		return WeblcmConfigManage.get_sections_and_key('permission')
+		userlist = WeblcmConfigManage.get_sections_and_key('permission')
+		if userlist:
+			#Default user shouldn't be listed as its permission can't be updated by weblcm
+			default_username = cherrypy.request.app.config['weblcm'].get('default_username', "root")
+			userlist.pop(default_username, None)
+		return userlist
 
 @cherrypy.expose
 class UserManage(object):
@@ -121,7 +122,7 @@ class UserManage(object):
 		if not username or not password or not permission:
 			return result
 
-		if UserManageHelper.getNumberOfNonRootUsers() < SystemSettingsManage.getInt('max_web_users', 0):
+		if UserManageHelper.getNumberOfUsers() < SystemSettingsManage.getInt('max_web_users', 1):
 			if UserManageHelper.addUser(username, password, permission):
 				result['SDCERR'] = 0
 
@@ -184,44 +185,53 @@ class LoginManageHelper(object):
 	@classmethod
 	def create(cls, username):
 
-		def find_session_id_by_username(username):
-			for session_id in cls._sessions:
-				if cls._sessions[session_id].get('username') == username:
-					return session_id
-			return None
-
-		def delete_session(session_id):
-			temp_id = cherrypy.session.id
-			cherrypy.session.id = session_id
-			cherrypy.session._delete()
-			cherrypy.session.id = temp_id
+		def delete_session_by_id(session_id):
+			if id:
+				temp_id = cherrypy.session.id
+				cherrypy.session.id = session_id
+				#cherrypy.lib.sessions.expire()
+				cherrypy.session._delete()
+				cherrypy.session.id = temp_id
 
 		with cls._lock:
-			session_id = find_session_id_by_username(username)
-			if session_id:
-				dt = datetime.now() - cls._sessions[session_id].get('time')
+
+			#Clean up inactive user session
+			session = cls._sessions.get(username, None)
+			if  session:
+				dt = datetime.now() - session.get('time')
 				if dt.total_seconds() < SystemSettingsManage.getInt('inactive_session_timeout', 300):
 					return False
-				delete_session(session_id)
-				cls._sessions.pop(session_id, None)
+				delete_session_by_id(session.get('id', None))
+				cls._sessions.pop(session.get('id'), None)
+
+			#Clean up expired sessions
+			temp_id = cherrypy.session.id
+			for k, v in cls._sessions.copy().items():
+				cherrypy.session.id = v.get('id')
+				if not cherrypy.session._exists():
+					cls._sessions.pop(v.get('id'), None)
+			cherrypy.session.id = temp_id
 
 			session = {}
-			session['username'] = username
 			session['time'] = datetime.now()
-			cls._sessions[cherrypy.session.id] = session
+			session['id'] = cherrypy.session.id
+			cls._sessions[username] = session
+			cherrypy.session['USERNAME'] = username
 		return True
 
 	@classmethod
 	def update_time(cls):
 		with cls._lock:
-			session = cls._sessions.get(cherrypy.session.id)
+			username = cherrypy.session.get('USERNAME', None)
+			session = cls._sessions.get(username, None)
 			if session:
 				session['time'] = datetime.now()
 
 	@classmethod
-	def delete(cls, session_id):
+	def delete(cls):
 		with cls._lock:
-			cls._sessions.pop(session_id, None)
+			user = cherrypy.session.pop('USERNAME', None)
+			cls._sessions.pop(user, None)
 
 @cherrypy.expose
 class LoginManage(object):
@@ -243,14 +253,14 @@ class LoginManage(object):
 		if not username or not password:
 			return result
 
-		if UserManageHelper.getNumberOfUsers() == 0:
-			default_username = cherrypy.request.app.config['weblcm'].get('default_username', "root")
-			default_password = cherrypy.request.app.config['weblcm'].get('default_password', "summit")
-			if username != default_username or password != default_password:
-				return result
-
-			UserManageHelper.addUser(username, password)
-
+		default_username = cherrypy.request.app.config['weblcm'].get('default_username', "root")
+		default_password = cherrypy.request.app.config['weblcm'].get('default_password', "summit")
+		if UserManageHelper.getNumberOfUsers() == 0 and username == default_username and password == default_password:
+			UserManageHelper.addUser(username, password, " ".join(USER_PERMISSION_TYPES['UserPermssionTypes']))
+			result['SDCERR'] = 0
+			result['REDIRECT'] = 1
+			return result
+		elif UserManageHelper.getNumberOfUsers() == 1 and password == default_password and UserManageHelper.verify(username, password):
 			result['SDCERR'] = 0
 			result['REDIRECT'] = 1
 			return result
@@ -269,14 +279,10 @@ class LoginManage(object):
 			result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_USER_LOGGED')
 			return result
 
-		default_username = cherrypy.request.app.config['weblcm'].get('default_username', "root")
-		if username == default_username:
-			if SystemSettingsManage.getInt('max_web_users', 0) > 0:
-				result['PERMISSION'] = " ".join(USER_PERMISSION_TYPES['UserPermssionTypes'])
-			else:
-				result['PERMISSION'] = " ".join(USER_PERMISSION_TYPES['UserPermssionTypes'][1:-1])
-		else:
-			result['PERMISSION'] = UserManageHelper.getPermission(username)
+		result['PERMISSION'] = UserManageHelper.getPermission(username)
+		#Don't display "add_del_user" page for single user mode
+		if SystemSettingsManage.getInt('max_web_users', 1) == 1:
+			result['PERMISSION'] = result['PERMISSION'].replace("add_del_user", "")
 
 		result['SDCERR'] = 0
 		return result
@@ -289,7 +295,6 @@ class LoginManage(object):
 			'SDCERR': 0,
 		}
 
-		LoginManageHelper.delete(cherrypy.session.id)
+		LoginManageHelper.delete()
 		cherrypy.lib.sessions.expire()
-
 		return result
