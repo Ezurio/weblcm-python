@@ -21,9 +21,14 @@ class Root(object):
 		count = cherrypy.session.get('count', 0) + 1
 		cherrypy.session['count'] = count
 
+		plugins = []
+		for k in cherrypy.request.app.config['plugins']:
+			plugins.append(k)
+
 		return {
 			'SDCERR': weblcm_def.WEBLCM_ERRORS,
 			'PERMISSIONS': weblcm_def.USER_PERMISSION_TYPES,
+			'PLUGINS': plugins,
 		}
 
 
