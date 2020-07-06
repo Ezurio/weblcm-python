@@ -35,13 +35,31 @@ function loadjscssfile(key, filetype) {
   }
 }
 
-function weblcm_init() {
+function loadmenu(menu, id){
+
+  $.ajax({
+    url: "plugins/" + menu,
+    data: {},
+    type: "GET",
+    dataType: "html",
+  })
+  .done(function( data ) {
+    $("#"+id).html(data);
+  })
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
+  });
+}
+
+function weblcm_init(plugins) {
   let i, lang;
-  let plugins = ["networking", "logging", "swupdate", "usermanage", "advanced", "datetime"];
 
   for (i = 0; i < plugins.length; i++) {
     loadjscssfile(plugins[i], "js");
   }
+
+  loadmenu("main_menu.html", "main_menu");
+  loadmenu("mini_menu.html", "mini_menu");
 
   lang = window.navigator.userLanguage || window.navigator.language;
   if (lang == "zh" || lang == "zh-CN") {
@@ -242,7 +260,7 @@ $(document).ready( function (){
   })
   .done(function (data) {
     defines = data;
-    weblcm_init();
+    weblcm_init(data['PLUGINS']);
   })
   .fail(function( xhr, textStatus, errorThrown) {
     httpErrorResponseHandler(xhr, textStatus, errorThrown)
