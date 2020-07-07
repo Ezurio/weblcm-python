@@ -54,7 +54,7 @@ function queryLogData() {
     table.clear().draw();
 
     data = msg.split(':#:');
-    for(i=0; i<data.length-4; i+=4){
+    for(i=0; i<=data.length-4; i+=4){
       table.row.add([ data[i], strLevel[data[i+1]], data[i+2], data[i+3] ]);
     }
 
