@@ -61,7 +61,8 @@ function weblcm_init(plugins) {
   loadmenu("main_menu.html", "main_menu");
   loadmenu("mini_menu.html", "mini_menu");
 
-  lang = window.navigator.userLanguage || window.navigator.language;
+  //"Lang" can be effective even session is closed.
+  lang = window.localStorage.getItem("Lang") || window.navigator.userLanguage || window.navigator.language;
   if (lang == "zh" || lang == "zh-CN") {
     $("#language").val("zh-CN");
   }
@@ -174,13 +175,20 @@ function login(user, passwd) {
         case defines.SDCERR.SDCERR_USER_BLOCKED:
           CustomMsg("User is temporarily blocked", true);
           break;
+        case defines.SDCERR.SDCERR_SESSION_CHECK_FAILED:
+          CustomMsg("User is not allowed for the session");
+          break;
         case defines.SDCERR.SDCERR_FAIL:
         default:
           CustomMsg("Credentials are invalid", true);
           break;
       }
     }
+
+    //"Username" and "password" are saved for session only
+    window.sessionStorage.setItem('username', user);
     $("#username").val("");
+    window.sessionStorage.setItem('password', passwd);
     $("#password").val("");
   })
   .fail(function (data) {
@@ -196,10 +204,16 @@ function logout() {
     contentType: "application/json",
   })
   .always(function (data) {
+
+    window.sessionStorage.removeItem('username');
+    window.sessionStorage.removeItem('password');
+
     $("#form-logout").addClass("d-none");
     $("#form-login").removeClass("d-none");
     $(".locked").addClass("d-none");
+
     location.reload();
+
     clickStatusPage();
   });
 }
@@ -237,6 +251,7 @@ function onChangeLanguageType() {
       setLanguage("help_section");
     }
   });
+  window.localStorage.setItem('Lang', lang);
 }
 
 // Add event listeners once the DOM has fully loaded
@@ -245,11 +260,8 @@ $(document).ready( function (){
   $(document).on("click", "#bt-login", function() {
     login($("#username").val(), $("#password").val());
   });
-
   $(document).on("click", "#bt-logout", logout);
-
   $(document).on("keypress", "#password", enterKeyPress);
-
   $(document).on("change", "#language", onChangeLanguageType);
 
   $.ajax({
@@ -261,6 +273,14 @@ $(document).ready( function (){
   .done(function (data) {
     defines = data;
     weblcm_init(data['PLUGINS']);
+    username = window.sessionStorage.getItem('username');
+    password = window.sessionStorage.getItem('password');
+    if (username && password){
+      login(username, password);
+    }
+    else{
+      $("#form-login").removeClass("d-none");
+    }
   })
   .fail(function( xhr, textStatus, errorThrown) {
     httpErrorResponseHandler(xhr, textStatus, errorThrown)
