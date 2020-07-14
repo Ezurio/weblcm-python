@@ -201,6 +201,7 @@ class LoginManageHelper(object):
 				dt = datetime.now() - session.get('time')
 				if dt.total_seconds() < SystemSettingsManage.getInt('inactive_session_timeout', 300):
 					return False
+
 				delete_session_by_id(session.get('id', None))
 				cls._sessions.pop(session.get('id'), None)
 
@@ -216,7 +217,6 @@ class LoginManageHelper(object):
 			session['time'] = datetime.now()
 			session['id'] = cherrypy.session.id
 			cls._sessions[username] = session
-			cherrypy.session['USERNAME'] = username
 		return True
 
 	@classmethod
@@ -259,10 +259,12 @@ class LoginManage(object):
 			UserManageHelper.addUser(username, password, " ".join(USER_PERMISSION_TYPES['UserPermssionTypes']))
 			result['SDCERR'] = 0
 			result['REDIRECT'] = 1
+			cherrypy.session['USERNAME'] = username
 			return result
 		elif UserManageHelper.getNumberOfUsers() == 1 and password == default_password and UserManageHelper.verify(username, password):
 			result['SDCERR'] = 0
 			result['REDIRECT'] = 1
+			cherrypy.session['USERNAME'] = username
 			return result
 
 		if LoginManageHelper.is_blocked(username):
@@ -275,7 +277,13 @@ class LoginManage(object):
 
 		LoginManageHelper.login_reset(username)
 
-		if not LoginManageHelper.create(username):
+		#For each session, allow multiple logins with the same account
+		sess_user = cherrypy.session.get('USERNAME', None)
+		if sess_user and sess_user != username:
+			result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_SESSION_CHECK_FAILED')
+			return result
+
+		if not sess_user and not LoginManageHelper.create(username):
 			result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_USER_LOGGED')
 			return result
 
@@ -284,6 +292,7 @@ class LoginManage(object):
 		if SystemSettingsManage.getInt('max_web_users', 1) == 1:
 			result['PERMISSION'] = result['PERMISSION'].replace("add_del_user", "")
 
+		cherrypy.session['USERNAME'] = username
 		result['SDCERR'] = 0
 		return result
 
