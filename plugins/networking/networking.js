@@ -561,10 +561,9 @@ function updateStatus(){
 
         //Set card-header attributes
         $("#" + card_id + " > .card-header").attr("id", card_id + "-header");
+        $("#" + card_id + " > .card-header").attr("data-target", "#" + card_id + "-body");
 
-        button = $("#" + card_id + " >.card-header >.interface");
-        button.attr("data-target", "#" + card_id + "-body");
-        button.text(interfaceName);
+        $("#" + card_id + " >.card-header >.interface").text(interfaceName);
 
         // Device Type
         $("#" + card_id + " >.card-header >.devicetype").text(DeviceTypetoString(data.status[interfaceName].status.DeviceType));

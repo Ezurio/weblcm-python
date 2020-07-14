@@ -264,5 +264,6 @@
     "Time is invalid": "Time is invalid",
 
     "User is already logged in": "User is already logged in",
-    "User is temporarily blocked": "User is temporarily blocked"
+    "User is temporarily blocked": "User is temporarily blocked",
+    "User is not allowed for the session": "User is allowed for the session"
 }
