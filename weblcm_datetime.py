@@ -52,7 +52,7 @@ class DateTimeSetting(object):
 		result['time'] = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
 
 		proc = Popen(['/usr/sbin/weblcm_datetime.sh', "check", "", ""], stdout=PIPE, stderr=PIPE)
-		outs, errs = proc.communicate(timeout=SystemSettingsManage.getInt('user_callback_timeout', 5))
+		outs, errs = proc.communicate(timeout=SystemSettingsManage.getInt('user_callback_timeout', 10))
 
 		if proc.returncode:
 			result['method'] = "manual"
@@ -75,7 +75,7 @@ class DateTimeSetting(object):
 		dt = cherrypy.request.json['datetime']
 
 		proc = Popen(['/usr/sbin/weblcm_datetime.sh', method, zone, dt], stdout=PIPE, stderr=PIPE)
-		outs, errs = proc.communicate(timeout=SystemSettingsManage.getInt('user_callback_timeout', 5))
+		outs, errs = proc.communicate(timeout=SystemSettingsManage.getInt('user_callback_timeout', 10))
 
 		if proc.returncode:
 			result['message'] = errs.decode("utf-8")
