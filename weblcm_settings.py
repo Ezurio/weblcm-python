@@ -51,7 +51,7 @@ class WeblcmConfigManage(object):
 	def get_key_from_section(cls, section, key, fallback=None):
 		if cls._parser.has_section(section):
 			return cls._parser.get(section, key, fallback=fallback)
-		return None
+		return fallback
 
 	@classmethod
 	def delete_key_from_section(cls, section, key):

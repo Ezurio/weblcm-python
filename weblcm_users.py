@@ -159,7 +159,7 @@ class LoginManageHelper(object):
 			#Block username for 'login_block_timeout' seconds if failed consecutively for 'login_retry_times' times
 			if user and user.get('failed', 0) >= SystemSettingsManage.getInt('login_retry_times', 3):
 				dt = (datetime.now() - user['time']).total_seconds()
-				if dt < SystemSettingsManage.getInt('tamper_protection_timeout', 120):
+				if dt < SystemSettingsManage.getInt('tamper_protection_timeout', 60):
 					return True
 				cls._failed_logins.pop(username, None)
 		return False
