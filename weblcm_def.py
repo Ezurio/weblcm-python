@@ -6,8 +6,10 @@ WEBLCM_PYTHON_USER_ZONEINFO = '/data/misc/zoneinfo/'
 
 WEBLCM_PYTHON_CONF_DIR = '/data/secret/'
 WEBLCM_PYTHON_TIMEZONE_CONF_FILE = '/data/secret/weblcm-python/zonelist.db'
-WEBLCM_PYTHON_SERVER_CONF_FILE = '/data/secret/weblcm-python/weblcm-python.ini'
 WEBLCM_PYTHON_SETTINGS_FILE = '/data/secret/weblcm-python/weblcm-settings.ini'
+
+#weblcm-python.ini is for server config. It should be updated only by software update.
+WEBLCM_PYTHON_SERVER_CONF_FILE = '/etc/weblcm-python/weblcm-python.ini'
 
 WIFI_DRIVER_DEBUG_PARAM = '/sys/module/lrdmwl/parameters/lrd_debug'
 """Change to ath6kl driver for wb50n"""
