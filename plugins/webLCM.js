@@ -165,8 +165,11 @@ function login(user, passwd) {
         $("#usermanage_main_menu").removeClass("d-none");
         $("#usermanage_mini_menu").removeClass("d-none");
         clickStatusPage();
-
       }
+
+      //Correct creds are saved, and for session only
+      window.sessionStorage.setItem('username', user);
+      window.sessionStorage.setItem('password', passwd);
     } else {
       switch (data.SDCERR) {
         case defines.SDCERR.SDCERR_USER_LOGGED:
@@ -185,10 +188,7 @@ function login(user, passwd) {
       }
     }
 
-    //"Username" and "password" are saved for session only
-    window.sessionStorage.setItem('username', user);
     $("#username").val("");
-    window.sessionStorage.setItem('password', passwd);
     $("#password").val("");
   })
   .fail(function (data) {
