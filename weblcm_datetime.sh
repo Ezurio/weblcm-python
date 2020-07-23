@@ -1,5 +1,6 @@
 #!/bin/sh
 
+
 method=${1}
 zone=${2}
 datetime=${3}
@@ -20,24 +21,30 @@ set_timezone(){
 	else
 		ln -sf "${zoneinfo}/${zone}"  "${userZoneinfo}/localtime" || exit_on_error "Failed to set time zone"
 	fi
+	/usr/sbin/hwclock --systohc -l
 }
 
 set_datetime(){
-	date -s "${datetime}" || exit_on_error "Failed to set time"
+	date -s "${datetime}" > /dev/null || exit_on_error "Failed to set time"
+	/usr/sbin/hwclock --systohc -l
 }
 
-case "${method}" in
-	manual)
-		set_timezone
-		set_datetime
-		;;
+if [ "${zone}" ]; then
+	set_timezone
+else
 
-	auto)
-		#Add callback here
-		set_timezone
-		;;
-	check)
-		#Add callback here
-		[ -f "${timeOverrideFile}" ] || exit 1
-		;;
-esac
+	case "${method}" in
+		manual)
+			set_datetime
+			;;
+
+		auto)
+			#Add callback here
+			;;
+		check)
+			#Return date and time
+			date '+%Y-%m-%d %H:%M:%S'
+			[ -f "${timeOverrideFile}" ] || exit 1
+			;;
+	esac
+fi

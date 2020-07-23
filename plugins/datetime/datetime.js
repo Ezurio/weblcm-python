@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Laird
+// Copyright (c) 2020, Laird Connectivity
 // Contact: support@lairdconnect.com
 
 function datetimeAUTORUN(retry) {
@@ -11,8 +11,12 @@ function datetimeAUTORUN(retry) {
     xmlhttpFileUpload('timezone');
   });
 
-  $(document).on("click", "#datetime-config", function(){
+  $(document).on("change", "#datetime-config", function(){
     onChangeDatetimeConfig();
+  });
+
+  $(document).on("click", "#bt-save-timezone", function(){
+    saveTimezone();
   });
 
   $(document).on("click", "#bt-save-datetime", function(){
@@ -91,6 +95,29 @@ function validateTimeString(time){
   return 0;
 }
 
+
+function saveTimezone() {
+  let data = {
+    zone:$("#datetime-timezone").val(),
+  }
+
+  $.ajax({
+    url: "datetime",
+    type: "PUT",
+    data: JSON.stringify(data),
+    contentType: "application/json",
+  })
+  .done(function(data) {
+    SDCERRtoString(data.SDCERR);
+    if (data.SDCERR == defines.SDCERR.SDCERR_SUCCESS){
+      $("#datetime-time").val(data.time)
+    }
+  })
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
+  });
+}
+
 function saveDateTime() {
 
   let datetime =  $("#datetime-time").val().trim().split(" ");
@@ -110,7 +137,6 @@ function saveDateTime() {
   }
 
   data = {
-    zone:$("#datetime-timezone").val(),
     method:$("#datetime-config").val(),
     datetime:$("#datetime-time").val().trim(),
   };
@@ -121,8 +147,11 @@ function saveDateTime() {
     data: JSON.stringify(data),
     contentType: "application/json",
   })
-  .done(function(msg) {
-    SDCERRtoString(msg.SDCERR);
+  .done(function(data) {
+    SDCERRtoString(data.SDCERR);
+    if (data.SDCERR == defines.SDCERR.SDCERR_SUCCESS){
+      $("#datetime-time").val(data.time)
+    }
   })
   .fail(function( xhr, textStatus, errorThrown) {
     httpErrorResponseHandler(xhr, textStatus, errorThrown)
