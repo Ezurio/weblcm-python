@@ -8,6 +8,17 @@ from weblcm_settings import SystemSettingsManage
 @cherrypy.expose
 class DateTimeSetting(object):
 
+	def popenHelper(self, method="", zone="", dt=""):
+
+		proc = Popen(['/usr/sbin/weblcm_datetime.sh', method, zone, dt], stdout=PIPE, stderr=PIPE)
+		try:
+			outs, errs = proc.communicate(timeout=SystemSettingsManage.getInt('user_callback_timeout', 10))
+		except TimeoutExpired:
+			proc.kill()
+			outs, errs = proc.communicate()
+
+		return (proc.returncode, outs, errs)
+
 	def getZoneList(self):
 		zones = []
 
@@ -48,38 +59,36 @@ class DateTimeSetting(object):
 			result['zones'] = self.zones
 			result['zone'] = self.getLocalZone()
 
-		dt = datetime.now()
-		result['time'] = "{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}".format(dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
-
-		proc = Popen(['/usr/sbin/weblcm_datetime.sh', "check", "", ""], stdout=PIPE, stderr=PIPE)
-		outs, errs = proc.communicate(timeout=SystemSettingsManage.getInt('user_callback_timeout', 10))
-
-		if proc.returncode:
+		returncode, outs, errs = self.popenHelper("check", "", "")
+		if returncode:
 			result['method'] = "manual"
 		else:
 			result['method'] = "auto"
-
+		result['time'] = outs.decode("utf-8")
 		result['SDCERR'] = 0
+
 		return result
 
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_in()
 	@cherrypy.tools.json_out()
 	def PUT(self):
-		result = {
-			'SDCERR': 1,
-		}
 
-		zone = cherrypy.request.json['zone']
-		method = cherrypy.request.json['method']
-		dt = cherrypy.request.json['datetime']
+		result = { }
 
-		proc = Popen(['/usr/sbin/weblcm_datetime.sh', method, zone, dt], stdout=PIPE, stderr=PIPE)
-		outs, errs = proc.communicate(timeout=SystemSettingsManage.getInt('user_callback_timeout', 10))
+		zone = cherrypy.request.json.get('zone', "")
+		method = cherrypy.request.json.get('method', "")
+		dt = cherrypy.request.json.get('datetime', "")
 
-		if proc.returncode:
+		returncode, outs, errs = self.popenHelper(method, zone, dt)
+		if returncode:
 			result['message'] = errs.decode("utf-8")
-			result['SDCERR'] = proc.returncode
-		else:
-			result['SDCERR'] = 0
+			result['SDCERR'] = 1
+			return result
+
+		#Python datetime module returns system time only. Extra modules like dateutil etc. are
+		#required to calculate the offset according to the timezone. So just get it from bash.
+		returncode, outs, errs = self.popenHelper("check", "", "")
+		result['time'] = outs.decode("utf-8")
+		result['SDCERR'] = 0
 		return result
