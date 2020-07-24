@@ -1365,7 +1365,7 @@ function addConnection() {
       httpErrorResponseHandler(xhr, textStatus, errorThrown)
     });
   } else {
-    CustomMsg("Connection name can not be empty", true);
+    CustomMsg("ID can not be empty", true);
   }
 }
 
