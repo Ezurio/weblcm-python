@@ -601,24 +601,20 @@ function updateStatus(){
 
         // IPv6
         ipv6 = $("#" + card_id + "-body" + " >.card-body >.ip6config");
+        ipv6.empty();
         if (data.status[interfaceName].ip6config){
-        // Add entries and Display IPv6 addresses
-          if (data.status[interfaceName].ip6config.Addresses){
-            if (data.status[interfaceName].ip6config.Addresses[0])
-              ipv6.children(".address").text(i18nData['IPv6 Address'] + ": " + data.status[interfaceName].ip6config.Addresses[0]);
-            else
-              ipv6.children(".address").text(i18nData['IPv6 Address'] + ":");
-            if (data.status[interfaceName].ip6config.Addresses[1])
-              ipv6.children(".address-2").text(i18nData['IPv6 Address'] + " 2: "  + data.status[interfaceName].ip6config.Addresses[1]);
-            else
-              ipv6.children(".address-2").text(i18nData['IPv6 Address'] + " 2:");
-            if (data.status[interfaceName].ip6config.Addresses[2])
-              ipv6.children(".address-3").text(i18nData['IPv6 Address'] + " 3: " + data.status[interfaceName].ip6config.Addresses[2]);
-            else
-              ipv6.children(".address-3").text(i18nData['IPv6 Address'] + " 3:" );
+          let i = 0;
+          let addresses = data.status[interfaceName].ip6config.Addresses;
+          // Add entries and display IPv6 addresses
+          for (let key in addresses) {
+            ipv6.append('<div class="col-6 text-left mb-3">' + i18nData['IPv6 Address'] + ' ' + i + ': <span>' + addresses[key] + '</span></div>');
+            i += 1;
           }
           // IPv6 Gateway
-          ipv6.children(".gateway").text(i18nData['IPv6 Gateway'] + data.status[interfaceName].ip6config.Gateway);
+          if (data.status[interfaceName].ip6config.Gateway){
+            ipv6.append('<div class="col-6 text-left mb-3">' + i18nData['IPv6 Gateway'] + ': <span>' + data.status[interfaceName].ip6config.Gateway + '</span></div>');
+          }
+          ipv6.removeClass("d-none");
         } else {
           ipv6.addClass("d-none");
         }
