@@ -7,11 +7,12 @@
     "Username": "用户名",
     "Sign in": "登录",
     "Log out": "退出",
-    "Need help": "帮助",
+    "Need Help": "需要帮助?",
 
     "load perm": "加载权限",
     "update perm": "更新权限",
     "delete user": "删除用户",
+    "Special character list": "特殊字符列表:",
 
     "Networking Status": "网络状态",
     "Version": "版本信息",

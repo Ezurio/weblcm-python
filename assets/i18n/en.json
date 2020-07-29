@@ -7,12 +7,13 @@
     "Username": "Username",
     "Sign in": "Sign in",
     "Log out": "Log out",
-    "Need help": "Need help",
+    "Need Help": "Need Help?",
 
 
     "load perm": "load perm",
     "update perm": "update perm",
     "delete user": "delete user",
+    "Special character list": "Special character list:",
 
     "Networking Status": "Status",
     "Version": "System Version",
