@@ -538,6 +538,82 @@ function setIntervalUpdate(functionName, timeout, arg){
   statusUpdateTimerId = setTimeout(functionName, timeout, arg)
 }
 
+function wifi_freq_to_channel(freq){
+
+  /* A band */
+  const a_table = {
+    5035: 7,
+    5040: 8,
+    5045: 9,
+    5055: 11,
+    5060: 12,
+    5080: 16,
+    5170: 34,
+    5180: 36,
+    5190: 38,
+    5200: 40,
+    5210: 42,
+    5220: 44,
+    5230: 46,
+    5240: 48,
+    5250: 50,
+    5260: 52,
+    5280: 56,
+    5290: 58,
+    5300: 60,
+    5320: 64,
+    5500: 100,
+    5520: 104,
+    5540: 108,
+    5560: 112,
+    5580: 116,
+    5600: 120,
+    5620: 124,
+    5640: 128,
+    5660: 132,
+    5680: 136,
+    5700: 140,
+    5720: 144,
+    5745: 149,
+    5760: 152,
+    5765: 153,
+    5785: 157,
+    5800: 160,
+    5805: 161,
+    5825: 165,
+    4915: 183,
+    4920: 184,
+    4925: 185,
+    4935: 187,
+    4945: 188,
+    4960: 192,
+    4980: 196,
+  };
+
+	/* BG band */
+  const bg_table = {
+	2412: 1,
+	2417: 2,
+	2422: 3,
+	2427: 4 ,
+	2432: 5,
+	2437: 6,
+	2442: 7,
+	2447: 8,
+	2452: 9,
+	2457: 10,
+	2462: 11,
+	2467: 12,
+	2472: 13,
+	2484: 14,
+  };
+
+  if (freq > 4900)
+    return a_table[freq] ? a_table[freq] : 0;
+
+  return bg_table[freq] ? bg_table[freq] : 0;
+}
+
 function updateStatus(){
   $.ajax({
     url: "networkStatus",
@@ -628,7 +704,7 @@ function updateStatus(){
           // BSSID
           activeaccesspoint.children(".bssid").text("BSSID:" + data.status[interfaceName].activeaccesspoint.HwAddress);
           // Frequency
-          activeaccesspoint.children(".frequency").text(i18nData['Frequency'] + ": " + data.status[interfaceName].activeaccesspoint.Frequency + "MHz");
+          activeaccesspoint.children(".channel").text(i18nData['Channel'] + ": " + wifi_freq_to_channel(data.status[interfaceName].activeaccesspoint.Frequency));
           // Signal Strength
           activeaccesspoint.children(".strength").text(i18nData['Signal Strength'] + ": " + data.status[interfaceName].activeaccesspoint.Strength + "%");
           // Progress Bar
@@ -660,7 +736,7 @@ function updateStatus(){
           // HW Address
           wireless.children(".hwaddress").text(i18nData['MAC Address'] + ": " + data.status[interfaceName].wireless.HwAddress);
           // Bit Rate
-          wireless.children(".bitrate").text(i18nData['Bit Rate'] + ": " + data.status[interfaceName].wireless.Bitrate + "Kb/s");
+          wireless.children(".bitrate").text(i18nData['Bit Rate'] + ": " + data.status[interfaceName].wireless.Bitrate/1000 + "Mb/s");
         } else {
           wireless.addClass("d-none");
         }
@@ -1378,6 +1454,7 @@ function allowDrop(ev){
 
 function clickScantableRow(row){
   $("#newSSID").val(row.find("td:eq(0)").text())
+  $("#connectionName").val($("#newSSID").val());
   $("#security").val(row.find("td:eq(4)").text());
   $("#security").attr("key-mgmt", row.attr("key-mgmt"));
   $("#connectionNameDisplay").removeClass("has-error");
@@ -1396,6 +1473,7 @@ function dragStart(ev){
 function drop(ev){
   ev.preventDefault();
   $("#newSSID").val(ev.originalEvent.dataTransfer.getData("ssid"));
+  $("#connectionName").val($("#newSSID").val());
   $("#security").val(ev.originalEvent.dataTransfer.getData("security"));
   $("#security").attr("key-mgmt",ev.originalEvent.dataTransfer.getData("key-mgmt"));
   $("#connectionNameDisplay").removeClass("has-error");
