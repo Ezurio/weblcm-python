@@ -1103,11 +1103,12 @@ function prepareEthernetConnection() {
 
 function prepareWirelessConnection() {
 
-  con = {};
-  ws = {};
-  wss = {};
-  wxs = {}
-  settings = {};
+  let v;
+  let con = {};
+  let ws = {};
+  let wss = {};
+  let wxs = {}
+  let settings = {};
 
   con['uuid'] = $("#connection-uuid").val();
   con['id'] = $("#connection-id").val();
@@ -1115,9 +1116,14 @@ function prepareWirelessConnection() {
   con['interface-name'] = $("#interface-name").val();
 
   v = $("#ssid").val().trim();
-  if(!v)
+  if (v == ""){
+    $("#ssid").css('border-color', 'red');
+    $("#ssid").focus();
     return settings;
+  }
+
   ws['ssid'] = v;
+  $("#ssid").css('border-color', '');
 
   v = $("#radio-mode").val();
   ws['mode'] = v;
@@ -1305,30 +1311,38 @@ function prepareIPv4Addresses(){
     let ips = $("#ipv4-addresses").val().split(',');
     for(let i=0; i<ips.length; i++){
       let data = ips[i].split('\/');
-      if(data.length != 2)
+      if(data.length != 2 || !data[0].match(ipFormat) || !data[1].match(prefixFormat)){
+        $("#ipv4-addresses").css('border-color', 'red');
+        $("#ipv4-addresses").focus();
         return result;
-      if(!data[0].match(ipFormat))
-        return result;
-      if(!data[1].match(prefixFormat))
-        return result;
+      }
       result.ipv4['address-data'].push({'address':data[0], 'prefix':data[1]});
     }
+    $("#ipv4-addresses").css('border-color', '');
   }
 
   if ($("#ipv4-gateway").val()){
-    if(!$("#ipv4-gateway").val().match(ipFormat))
+    if(!$("#ipv4-gateway").val().match(ipFormat)){
+      $("#ipv4-gateway").css('border-color', 'red');
+      $("#ipv4-gateway").focus();
       return result;
+    }
     result.ipv4['gateway'] = $("#ipv4-gateway").val();
+    $("#ipv4-gateway").css('border-color', '');
   }
 
   result.ipv4['dns'] = [];
   if($("#ipv4-dns").val()){
     let ips = $("#ipv4-dns").val().split(',');
     for(let i=0; i<ips.length; i++){
-      if(!ips[i].match(ipFormat))
+      if(!ips[i].match(ipFormat)){
+        $("#ipv4-dns").css('border-color', 'red');
+        $("#ipv4-dns").focus();
         return result;
+      }
       result.ipv4['dns'].push(ips[i]);
     }
+    $("#ipv4-dns").css('border-color', '');
   }
 
   result.error = false;
@@ -1354,30 +1368,38 @@ function prepareIPv6Addresses(){
     let ips = $("#ipv6-addresses").val().split(',');
     for(let i=0; i<ips.length; i++){
       let data = ips[0].split('\/');
-      if(data.length != 2)
+      if(data.length != 2 || !data[0].match(ipFormat) || !data[1].match(prefixFormat)){
+        $("#ipv6-addresses").css('border-color', 'red');
+        $("#ipv6-addresses").focus();
         return result;
-      if(!data[0].match(ipFormat))
-        return result;
-      if(!data[1].match(prefixFormat))
-        return result;
+      }
       result.ipv6['address-data'].push({'address':data[0], 'prefix':data[1]});
     }
+    $("#ipv6-addresses").css('border-color', '');
   }
 
   if ($("#ipv6-gateway").val()){
-    if(!$("#ipv6-gateway").val().match(ipFormat))
+    if(!$("#ipv6-gateway").val().match(ipFormat)){
+      $("#ipv6-gateway").css('border-color', 'red');
+      $("#ipv6-gateway").focus();
       return result;
+    }
     result.ipv6['gateway'] = $("#ipv6-gateway").val();
+    $("#ipv6-gateway").css('border-color', '');
   }
 
   result.ipv6['dns'] = [];
   if($("#ipv6-dns").val()){
     let ips = $("#ipv6-dns").val().split(',');
     for(let i=0; i<ips.length; i++){
-      if(ips[i].match(ipFormat))
+      if(ips[i].match(ipFormat)){
+        $("#ipv6-dns").css('border-color', 'red');
+        $("#ipv6-dns").focus();
         return result;
+      }
       result.ipv6['dns'].push(ips[i]);
     }
+    $("#ipv6-dns").css('border-color', '');
   }
 
   result.error = false;
@@ -1387,58 +1409,63 @@ function prepareIPv6Addresses(){
 function addConnection() {
 
   let id = $("#connection-id").val();
-  if (id != ""){
-    let ctype = $("#connection-type").val();
-    switch(ctype){
-      case "802-3-ethernet":
-        new_connection = prepareEthernetConnection();
-        break;
-      case "802-11-wireless":
-        new_connection = prepareWirelessConnection();
-        break;
-      case "ppp":
-      case "modem":
-      case "bluetooth":
-      case "wifi-p2p":
-      case "bridge":
-      default:
-        break;
-    }
-
-    if (!new_connection){
-      CustomMsg("Invalid Settings", true);
-      return;
-    }
-
-    let result = prepareIPv4Addresses();
-    if(result.error){
-      CustomMsg("Invalid ipv4 Settings", true);
-      return;
-    }
-    new_connection['ipv4'] = result.ipv4;
-
-    result = prepareIPv6Addresses();
-    if(result.error){
-      CustomMsg("Invalid ipv6 Settings", true);
-      return;
-    }
-    new_connection['ipv6'] = result.ipv6;
-
-    $.ajax({
-      url: "connection",
-      type: "POST",
-      data: JSON.stringify(new_connection),
-      contentType: "application/json",
-    })
-    .done(function(msg) {
-      SDCERRtoString(msg.SDCERR);
-    })
-    .fail(function( xhr, textStatus, errorThrown) {
-      httpErrorResponseHandler(xhr, textStatus, errorThrown)
-    });
-  } else {
+  if (id == ""){
+    $("#connection-id").css('border-color', 'red');
+    $("#connection-id").focus();
     CustomMsg("ID can not be empty", true);
+    return false;
   }
+
+  $("#connection-id").css('border-color', '');
+
+  let ctype = $("#connection-type").val();
+  switch(ctype){
+    case "802-3-ethernet":
+      new_connection = prepareEthernetConnection();
+      break;
+    case "802-11-wireless":
+      new_connection = prepareWirelessConnection();
+      break;
+    case "ppp":
+    case "modem":
+    case "bluetooth":
+    case "wifi-p2p":
+    case "bridge":
+    default:
+      break;
+  }
+
+  if (!new_connection){
+    CustomMsg("Invalid Settings", true);
+    return;
+  }
+
+  let result = prepareIPv4Addresses();
+  if(result.error){
+    CustomMsg("Invalid ipv4 Settings", true);
+    return;
+  }
+  new_connection['ipv4'] = result.ipv4;
+
+  result = prepareIPv6Addresses();
+  if(result.error){
+    CustomMsg("Invalid ipv6 Settings", true);
+    return;
+  }
+  new_connection['ipv6'] = result.ipv6;
+
+  $.ajax({
+    url: "connection",
+    type: "POST",
+    data: JSON.stringify(new_connection),
+    contentType: "application/json",
+  })
+  .done(function(msg) {
+    SDCERRtoString(msg.SDCERR);
+  })
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
+  });
 }
 
 function addScanConnection(){
@@ -1525,19 +1552,41 @@ function getScan(retry){
     }
     else if($("#scanTable").length > 0){
 
+      let a_set = {};
+      let bg_set = {};
+
       $(document).off("drop", "#form-addWifiConnection");
       $(document).off("dragover", "#form-addWifiConnection");
 
       $("#scanProgressDisplay").addClass("d-none");
-
       $('#scanTable tbody').empty();
+
+      //For each SSID, the channels with best RSSI will be displayed (one for each band)
+      msg["accesspoints"].sort( function (a, b){
+          return a.Ssid == b.Ssid ? (b.Strength - a.Strength) : a.Ssid.localeCompare(b.Ssid);
+      });
+
       for (let ap = 0; ap < msg["accesspoints"].length; ap++){
+        //Skip NULL SSID
+        if (!msg["accesspoints"][ap].Ssid || msg["accesspoints"][ap].Ssid.trim().length === 0)
+          continue;
+
+        //Items are already sorted based on RSSI. Items with lower RSSI won't be displayed.
+        if (msg["accesspoints"][ap].Frequency > 4900) {
+          if(a_set[msg["accesspoints"][ap].Ssid] && a_set[msg["accesspoints"][ap].Ssid] >= msg["accesspoints"][ap].Strength)
+            continue;
+            a_set[msg["accesspoints"][ap].Ssid] = msg["accesspoints"][ap].Strength
+        }
+        else {
+          if(bg_set[msg["accesspoints"][ap].Ssid] && bg_set[msg["accesspoints"][ap].Ssid] >= msg["accesspoints"][ap].Strength)
+            continue;
+           bg_set[msg["accesspoints"][ap].Ssid] = msg["accesspoints"][ap].Strength
+        }
 
         var markup =  "<tr><td>" + msg["accesspoints"][ap].Ssid +
-                      "</td><td>" + msg["accesspoints"][ap].HwAddress +
-                      "</td><td>" + msg["accesspoints"][ap].Frequency +
-                      "</td><td>" + msg["accesspoints"][ap].Strength +
-                      "</td><td>" + msg["accesspoints"][ap].Security + "</td></tr>";
+                    "</td><td>" + wifi_freq_to_channel(msg["accesspoints"][ap].Frequency) +
+                    "</td><td>" + msg["accesspoints"][ap].Strength +
+                    "</td><td>" + msg["accesspoints"][ap].Security + "</td></tr>";
         $('#scanTable tbody').append(markup);
         $("#scanTable tr:last").attr("draggable", true);
         $("#scanTable tr:last").attr("key-mgmt", msg["accesspoints"][ap].Keymgmt);
