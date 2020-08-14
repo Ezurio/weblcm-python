@@ -29,7 +29,7 @@ class LogData(object):
 
 		def streaming():
 			logs = []
-			log_data_streaming_size = SystemSettingsManage.getInt('log_data_streaming_size', 100)
+			log_data_streaming_size = SystemSettingsManage.get_log_data_streaming_size()
 			for entry in reader:
 				logs.append(str(entry.get('__REALTIME_TIMESTAMP', "Undefined")))
 				logs.append(str(entry.get('PRIORITY', 7)))

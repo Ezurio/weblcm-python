@@ -51,8 +51,7 @@ class SWUpdate:
 
 		try:
 			proc = Popen(["/usr/sbin/weblcm_swupdate.sh", "get-update"], stdout=PIPE, stderr=PIPE)
-			outs, errs = proc.communicate(timeout=SystemSettingsManage.getInt('user_callback_timeout', 10))
-
+			outs, errs = proc.communicate(timeout=SystemSettingsManage.get_user_callback_timeout())
 			if proc.returncode:
 				result['message'] = errs.decode("utf-8")
 				result['SDCERR'] = proc.returncode
@@ -87,7 +86,7 @@ class SWUpdate:
 
 		try:
 			proc = Popen(["/usr/sbin/weblcm_swupdate.sh", "pre-update"], stdout=PIPE, stderr=PIPE)
-			outs, errs = proc.communicate(timeout=SystemSettingsManage.getInt('user_callback_timeout', 10))
+			outs, errs = proc.communicate(timeout=SystemSettingsManage.get_user_callback_timeout())
 			if proc.returncode:
 				result['message'] = errs.decode("utf-8")
 				result['SDCERR'] = proc.returncode

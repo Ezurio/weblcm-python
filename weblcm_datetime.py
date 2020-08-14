@@ -12,7 +12,7 @@ class DateTimeSetting(object):
 
 		proc = Popen(['/usr/sbin/weblcm_datetime.sh', method, zone, dt], stdout=PIPE, stderr=PIPE)
 		try:
-			outs, errs = proc.communicate(timeout=SystemSettingsManage.getInt('user_callback_timeout', 10))
+			outs, errs = proc.communicate(timeout=SystemSettingsManage.get_user_callback_timeout())
 		except TimeoutExpired:
 			proc.kill()
 			outs, errs = proc.communicate()
