@@ -100,13 +100,13 @@ class ArchiveFilesManage(object):
 		elif typ == "log":
 			p = subprocess.Popen([
 				'/usr/sbin/weblcm_files.sh', "log", "zip",
-				SystemSettingsManage.get('log_data_dir', "/run/log/journal/"), f, password
+				SystemSettingsManage.get_log_data_dir(), f, password
 			])
 		else:
 			p = subprocess.Popen([
 				'/usr/sbin/weblcm_files.sh', "debug", "zip",
-				' '.join([SystemSettingsManage.get('log_data_dir', "/run/log/journal/"), weblcm_def.FILEDIR_DICT.get('config')]),
-				f, SystemSettingsManage.get('cert_for_file_encryption', "/etc/weblcm-python/ssl/ca.crt")
+				' '.join([SystemSettingsManage.get_log_data_dir(), weblcm_def.FILEDIR_DICT.get('config')]),
+				f, SystemSettingsManage.get_cert_for_file_encryption()
 			])
 		p.wait()
 

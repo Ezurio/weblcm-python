@@ -2,6 +2,7 @@ var defines;
 var i18nData;
 var currUserPermission;
 var currUser;
+var sessTimeoutId = -1;
 
 function consoleLog(message) {
   console.log(message);
@@ -122,8 +123,16 @@ function enterKeyPress(e) {
   }
 }
 
+
+function session_timeout(){
+  logout();
+  setTimeout(function() { alert("Session expired"); }, 0);
+}
+
 function login(user, passwd) {
-  var creds = {
+
+  let ret = false;
+  let creds = {
     username: user,
     password: passwd,
   }
@@ -167,10 +176,14 @@ function login(user, passwd) {
         clickStatusPage();
       }
 
-      //Correct creds are saved, and for session only
-      window.sessionStorage.setItem('username', user);
-      window.sessionStorage.setItem('password', passwd);
-    } else {
+      if(sessTimeoutId != -1){
+        clearTimeout(sessTimeoutId);
+      }
+      sessTimeoutId = setTimeout(session_timeout, defines.SETTINGS.session_timeout * 60 * 1000);
+
+      ret = true;
+
+    } else if(user && passwd){
       switch (data.SDCERR) {
         case defines.SDCERR.SDCERR_USER_LOGGED:
           CustomMsg("User is already logged in", true);
@@ -194,6 +207,8 @@ function login(user, passwd) {
   .fail(function (data) {
     consoleLog("Error, couldn't get login.. retrying");
   });
+
+  return ret;
 }
 
 function logout() {
@@ -205,16 +220,11 @@ function logout() {
   })
   .always(function (data) {
 
-    window.sessionStorage.removeItem('username');
-    window.sessionStorage.removeItem('password');
-
     $("#form-logout").addClass("d-none");
     $("#form-login").removeClass("d-none");
     $(".locked").addClass("d-none");
 
     location.reload();
-
-    clickStatusPage();
   });
 }
 
@@ -273,12 +283,7 @@ $(document).ready( function (){
   .done(function (data) {
     defines = data;
     weblcm_init(data['PLUGINS']);
-    username = window.sessionStorage.getItem('username');
-    password = window.sessionStorage.getItem('password');
-    if (username && password){
-      login(username, password);
-    }
-    else{
+    if (login() == false){
       $("#form-login").removeClass("d-none");
     }
   })
