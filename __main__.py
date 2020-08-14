@@ -10,6 +10,7 @@ from weblcm_users import UserManage, LoginManage, LoginManageHelper
 from weblcm_files import FileManage, ArchiveFilesManage
 from weblcm_advanced import Reboot, FactoryReset
 from weblcm_datetime import DateTimeSetting
+from weblcm_settings import SystemSettingsManage
 
 class Root(object):
 
@@ -18,17 +19,18 @@ class Root(object):
 	@cherrypy.tools.json_out()
 	def definitions(self, *args, **kwargs):
 
-		count = cherrypy.session.get('count', 0) + 1
-		cherrypy.session['count'] = count
-
 		plugins = []
 		for k in cherrypy.request.app.config['plugins']:
 			plugins.append(k)
+
+		settings = {}
+		settings['session_timeout'] = SystemSettingsManage.get_session_timeout()
 
 		return {
 			'SDCERR': weblcm_def.WEBLCM_ERRORS,
 			'PERMISSIONS': weblcm_def.USER_PERMISSION_TYPES,
 			'PLUGINS': plugins,
+			'SETTINGS': settings,
 		}
 
 
@@ -65,8 +67,6 @@ def force_session_checking():
 		url = cherrypy.url().split('/')[-1]
 		if url and ".html" not in url and ".js" not in url and any(path in url for path in paths):
 			raise cherrypy.HTTPError(401)
-	else:
-		LoginManageHelper.update_time()
 
 @cherrypy.tools.register('before_finalize', priority=60)
 def secureheaders():
@@ -115,6 +115,7 @@ if __name__ == '__main__':
 	cherrypy.config.update({
 			'server.ssl_certificate': '{0}{1}'.format(weblcm_def.FILEDIR_DICT.get('cert'), 'server.crt'),
 			'server.ssl_private_key': '{0}{1}'.format(weblcm_def.FILEDIR_DICT.get('cert'), 'server.key'),
+			'tools.sessions.timeout': SystemSettingsManage.get_session_timeout(),
 		})
 
 	cherrypy.quickstart(webapp, '/', config=weblcm_def.WEBLCM_PYTHON_SERVER_CONF_FILE)
