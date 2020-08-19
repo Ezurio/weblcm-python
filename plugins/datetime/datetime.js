@@ -160,7 +160,7 @@ function saveDateTime() {
 
 function getTimezoneList(){
   $.ajax({
-    url: "datetime?zones=1",
+    url: "datetime",
     type: "GET",
     contentType: "application/json",
   })

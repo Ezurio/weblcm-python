@@ -55,9 +55,8 @@ class DateTimeSetting(object):
 
 		result = { }
 
-		if kwargs.get('zones'):
-			result['zones'] = self.zones
-			result['zone'] = self.getLocalZone()
+		result['zones'] = self.zones
+		result['zone'] = self.getLocalZone()
 
 		returncode, outs, errs = self.popenHelper("check", "", "")
 		if returncode:
