@@ -26,7 +26,7 @@ set_timezone(){
 
 set_datetime(){
 	date -s "${datetime}" > /dev/null || exit_on_error "Failed to set time"
-	/usr/sbin/hwclock --systohc -l --adjfile=/data/misc/adjtime
+	/usr/sbin/hwclock --systohc --adjfile=/data/misc/adjtime
 }
 
 if [ "${zone}" ]; then
