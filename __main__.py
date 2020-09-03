@@ -43,7 +43,7 @@ def force_tls():
 def setup_http_server():
 
 	httpServer = cherrypy._cpserver.Server()
-	httpServer.socket_host = "0.0.0.0"
+	httpServer.socket_host = "::"
 	httpServer.socket_port = 80
 	httpServer.thread_pool = 0
 	httpServer.subscribe()
