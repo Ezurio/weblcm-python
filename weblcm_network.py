@@ -75,7 +75,10 @@ class NetworkConnection(object):
 			'SDCERR': 1,
 		}
 		try:
-			uuid = cherrypy.request.json['UUID']
+			uuid = cherrypy.request.json.get('uuid', None)
+			if not uuid:
+				return result
+
 			if cherrypy.request.json['activate'] == 1:
 				connections = NetworkManager.Settings.ListConnections()
 				connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in connections])
@@ -184,7 +187,10 @@ class NetworkConnection(object):
 			'SDCERR': 1,
 		}
 		try:
-			uuid = kwargs.get('uuid')
+			uuid = kwargs.get('uuid', None)
+			if not uuid:
+				return result
+
 			connections = NetworkManager.Settings.ListConnections()
 			connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in connections])
 			settings = connections[uuid].GetSettings()
