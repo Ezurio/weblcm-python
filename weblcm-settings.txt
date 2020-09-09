@@ -6,4 +6,3 @@ user_callback_timeout = 10
 login_retry_times = 3
 tamper_protection_timeout = 60
 session_timeout = 10
-inactive_session_timeout = 300

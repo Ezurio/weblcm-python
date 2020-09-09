@@ -149,7 +149,7 @@
     "TX Power": "TX Power",
     "Radio Band": "Radio Band",
     "Radio Channel": "Radio Channel",
-    "Frequency List": "Frequency List",
+    "Radio Channel List": "Radio Channel List",
     "Scan Policy": "Scan Policy",
     "Enable DFS": "Enable DFS",
     "No": "No",
@@ -162,6 +162,8 @@
     "Dynamic WEP": "Dynamic WEP",
     "Infrastructure WPA-PSK": "Infrastructure WPA-PSK",
     "WPA-Enterprise": "WPA-Enterprise",
+    "Auto Connect": "Auto Connect",
+
 
     "PreShared Key": "PreShared Key",
     "LEAP Username": "LEAP Username",
