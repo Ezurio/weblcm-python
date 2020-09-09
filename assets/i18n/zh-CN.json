@@ -148,7 +148,7 @@
     "TX Power": "发送功率",
     "Radio Band": "频段",
     "Radio Channel": "频道",
-    "Frequency List": "允许频率列表",
+    "Radio Channel List": "允许频道列表",
     "Scan Policy": "无限扫描策略",
     "Enable DFS": "使能DFS",
     "No": "否",
@@ -161,6 +161,7 @@
     "Dynamic WEP": "动态WEP",
     "Infrastructure WPA-PSK": "WPA个人",
     "WPA-Enterprise": "WPA企业",
+    "Auto Connect": "自动连接",
 
     "PreShared Key": "预共享密钥",
     "LEAP Username": "LEAP用户名",

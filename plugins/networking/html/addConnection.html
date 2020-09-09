@@ -17,7 +17,7 @@
 						<div class="input-group-prepend i18n" name="Connection Name">
 							<span class="input-group-text">Connection Name</span>
 						</div>
-						<input type="text" class="form-control" id="connection-id" maxlength="32">
+						<input type="text" class="form-control" id="connection-id">
 					</div>
 					<div class="input-group mb-3">
 						<div class="input-group-prepend i18n" name="Interface">
@@ -29,7 +29,19 @@
 						<div class="input-group-prepend i18n" name="Type">
 							<span class="input-group-text">Type</span>
 						</div>
-						<select class="form-control" id="connection-type"></select>
+						<select class="form-control" id="connection-type">
+							<option value="802-3-ethernet" selected>Ethernet</option>
+							<option value="802-11-wireless">Wireless</option>
+						</select>
+					</div>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Auto Connect">
+							<span class="input-group-text">Auto Connect</span>
+						</div>
+						<select class="form-control" id="autoconnect">
+							<option class="i18n" name="Yes" value=1>Yes</option>
+							<option class="i18n" name="No" value=0 selected>No</option>
+						</select>
 					</div>
 				</div>
 			</div>
@@ -165,7 +177,7 @@
 						<div class="input-group-prepend i18n" name="TX Power">
 							<span class="input-group-text">TX Power</span>
 						</div>
-						<input type="text" class="form-control" id="tx-power" value="Auto">
+						<input type="text" class="form-control" id="tx-power" value="0">
 					</div>
 
 					<div class="input-group mb-3">
@@ -186,18 +198,11 @@
 						<input type="text" class="form-control" id="radio-channel" value="">
 					</div>
 
-					<div class="input-group mb-3" id="frequency-list-display">
-						<div class="input-group-prepend i18n" name="Frequency List">
-							<span class="input-group-text">Frequency List</span>
+					<div class="input-group mb-3" id="radio-channel-list-display">
+						<div class="input-group-prepend i18n" name="Radio Channel List">
+							<span class="input-group-text">Radio Channel List</span>
 						</div>
-						<input type="text" class="form-control" id="frequency-list" value="">
-					</div>
-
-					<div class="input-group mb-3">
-						<div class="input-group-prepend i18n" name="Scan Policy">
-							<span class="input-group-text">Scan Policy</span>
-						</div>
-						<input type="text" class="form-control" id="radio-bgscan" value="" placeholder="laird:<t1>:<threshold-in-dbm>:<t2> Scan t1 seconds below threahold and t2 seconds above">
+						<input type="text" class="form-control" id="radio-channel-list" value="">
 					</div>
 
 					<div class="input-group mb-3">
@@ -358,7 +363,7 @@
 					</div>
 
 					<div class="input-group mb-3 d-none" id="pac-file-password-display">
-						<div class="input-group-prepend i18n" name="PAC Filename">
+						<div class="input-group-prepend i18n" name="PAC File Password">
 							<span class="input-group-text">PAC File Password</span>
 						</div>
 						<input type="password" class="form-control" id="pac-file-password">
@@ -385,13 +390,6 @@
 						</select>
 					</div>
 
-					<div class="input-group mb-3 d-none" id="ca-cert-password-display">
-						<div class="input-group-prepend i18n" name="CA Cert Password">
-							<span class="input-group-text">CA Cert Password</span>
-						</div>
-						<input type="password" class="form-control" id="ca-cert-password">
-					</div>
-
 					<div class="input-group mb-3 d-none" id="client-cert-display">
 						<div class="input-group-prepend i18n" name="Client Cert">
 							<span class="input-group-text">Client Cert</span>
@@ -399,13 +397,6 @@
 						<select class="form-control" id="client-cert">
 							<option value="" selected>None</option>
 						</select>
-					</div>
-
-					<div class="input-group mb-3 d-none" id="client-cert-password-display">
-						<div class="input-group-prepend i18n" name="Client Cert Password">
-							<span class="input-group-text">Client Cert Password</span>
-						</div>
-						<input type="password" class="form-control" id="client-cert-password">
 					</div>
 
 					<div class="input-group mb-3 d-none" id="private-key-display">
@@ -464,13 +455,6 @@
 						</select>
 					</div>
 
-					<div class="input-group mb-3 d-none" id="phase2-ca-cert-password-display">
-						<div class="input-group-prepend i18n" name="CA Cert Password">
-							<span class="input-group-text">CA Cert Password</span>
-						</div>
-						<input type="password" class="form-control" id="phase2-ca-cert-password">
-					</div>
-
 					<div class="input-group mb-3 d-none" id="phase2-client-cert-display">
 						<div class="input-group-prepend i18n" name="Client Cert">
 							<span class="input-group-text">Client Cert</span>
@@ -478,13 +462,6 @@
 						<select class="form-control" id="phase2-client-cert">
 							<option value="" selected>None</option>
 						</select>
-					</div>
-
-					<div class="input-group mb-3 d-none" id="phase2-client-cert-password-display">
-						<div class="input-group-prepend i18n" name="Client Cert Password">
-							<span class="input-group-text">Client Cert Password</span>
-						</div>
-						<input type="password" class="form-control" id="phase2-client-cert-password">
 					</div>
 
 					<div class="input-group mb-3 d-none" id="phase2-private-key-display">
