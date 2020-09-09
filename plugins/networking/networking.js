@@ -51,6 +51,10 @@ function networkingAUTORUN(retry){
     addConnection();
   });
 
+  $(document).on("change", "#interface-name", function(){
+    onChangeNetworkInterface();
+  });
+
   $(document).on("change", "#connection-type", function(){
     onChangeConnectionType();
   });
@@ -238,6 +242,27 @@ function DeviceTypetoString(type) {
   }
 }
 
+//Set default connection type according to the interface
+function onChangeNetworkInterface(){
+
+  let ifrname = $("#interface-name").val();
+  if(-1 != ifrname.indexOf("wlan")){
+    $("#connection-type").val("802-11-wireless");
+    $("#connection-type").change();
+    $('#connection-type').attr('disabled', 'disabled');
+  }
+  else if(-1 != ifrname.indexOf("eth")){
+    $("#connection-type").val("802-3-ethernet");
+    $("#connection-type").change();
+    $('#connection-type').attr('disabled', 'disabled');
+  }
+  else {
+    $('#connection-type').removeAttr('disabled');
+  }
+
+
+}
+
 function onChangeConnectionType(){
 
   $("#connection-wired-settings").addClass("d-none");
@@ -248,7 +273,7 @@ function onChangeConnectionType(){
   $("#connection-bridge-settings").addClass("d-none");
   $("#connection-bluetooth-settings").addClass("d-none");
 
-  var ctype = $("#connection-type").val();
+  let ctype = $("#connection-type").val();
   switch(ctype){
     case "802-3-ethernet":
       $("#connection-wired-settings").removeClass("d-none");
@@ -305,14 +330,8 @@ function clear8021xCredsDisplay(){
   $("#ca-cert-display").addClass("d-none");
   $("#ca-cert").val("");
 
-  $("#ca-cert-password-display").addClass("d-none");
-  $("#ca-cert-password").val("");
-
   $("#client-cert-display").addClass("d-none");
   $("#client-cert").val("");
-
-  $("#client-cert-password-display").addClass("d-none");
-  $("#client-cert-password").val("");
 
   $("#private-key-display").addClass("d-none");
   $("#private-key").val("");
@@ -329,14 +348,8 @@ function clear8021xCredsDisplay(){
   $("#phase2-ca-cert-display").addClass("d-none");
   $("#phase2-ca-cert").val("");
 
-  $("#phase2-ca-cert-password-display").addClass("d-none");
-  $("#phase2-ca-cert-password").val("");
-
   $("#phase2-client-cert-display").addClass("d-none");
   $("#phase2-client-cert").val("");
-
-  $("#phase2-client-cert-password-display").addClass("d-none");
-  $("#phase2-client-cert-password").val("");
 
   $("#phase2-private-key-display").addClass("d-none");
   $("#phase2-private-key").val("");
@@ -385,12 +398,8 @@ function resetPhase2AuthSetting(wxs, method, disabled) {
   if (-1 !== auth.indexOf("tls")) {
     $("#phase2-ca-cert-display").removeClass("d-none");
     $("#phase2-ca-cert").val(parseSettingData(wxs, "phase2-ca-cert", ""));
-    $("#phase2-ca-cert-password-display").removeClass("d-none");
-    $("#phase2-ca-cert-password").val("");
     $("#phase2-client-cert-display").removeClass("d-none");
     $("#phase2-client-cert").val(parseSettingData(wxs, "phase2-client-cert", ""));
-    $("#phase2-client-cert-password-display").removeClass("d-none");
-    $("#phase2-client-cert-password").val("");
     $("#phase2-private-key-display").removeClass("d-none");
     $("#phase2-private-key").val(parseSettingData(wxs, "phase2-private-key", ""));
     $("#phase2-private-key-password-display").removeClass("d-none");
@@ -401,14 +410,8 @@ function resetPhase2AuthSetting(wxs, method, disabled) {
     $("#phase2-ca-cert-display").addClass("d-none");
     $("#phase2-ca-cert").val("");
 
-    $("#phase2-ca-cert-password-display").addClass("d-none");
-    $("#phase2-ca-cert-password").val("");
-
     $("#phase2-client-cert-display").addClass("d-none");
     $("#phase2-client-cert").val("");
-
-    $("#phase2-client-cert-password-display").addClass("d-none");
-    $("#phase2-client-cert-password").val("");
 
     $("#phase2-private-key-display").addClass("d-none");
     $("#phase2-private-key").val("");
@@ -430,12 +433,8 @@ function resetEapSetting(wxs){
 
   $("#ca-cert-display").addClass("d-none");
   $("#ca-cert").val();
-  $("#ca-cert-password-display").addClass("d-none");
-  $("#ca-cert-password").val();
   $("#client-cert-display").addClass("d-none");
   $("#client-cert").val();
-  $("#client-cert-password-display").addClass("d-none");
-  $("#client-cert-password").val();
   $("#private-key-display").addClass("d-none");
   $("#private-key").val();
   $("#private-key-password-display").addClass("d-none");
@@ -462,10 +461,8 @@ function resetEapSetting(wxs){
     case "peap":
       $("#ca-cert-display").removeClass("d-none");
       $("#ca-cert").val(parseSettingData(wxs, "ca-cert", ""));
-      $("#ca-cert-password-display").removeClass("d-none");
       $("#client-cert-display").removeClass("d-none");
       $("#client-cert").val(parseSettingData(wxs, "client-cert", ""));
-      $("#client-cert-password-display").removeClass("d-none");
       $("#private-key-display").removeClass("d-none");
       $("#private-key").val(parseSettingData(wxs, "private-key", ""));
       $("#private-key-password-display").removeClass("d-none");
@@ -538,10 +535,90 @@ function setIntervalUpdate(functionName, timeout, arg){
   statusUpdateTimerId = setTimeout(functionName, timeout, arg)
 }
 
-function wifi_freq_to_channel(freq){
+function wifi_channel_to_freq(channel, band){
 
   /* A band */
-  const a_table = {
+  const a_freq_table = {
+    7: 5035,
+    8: 5040,
+    9: 5045,
+    11: 5055,
+    12: 5060,
+    16: 5080,
+    34: 5170,
+    36: 5180,
+    38: 5190,
+    40: 5200,
+    42: 5210,
+    44: 5220,
+    46: 5230,
+    48: 5240,
+    50: 5250,
+    52: 5260,
+    56: 5280,
+    58: 5290,
+    60: 5300,
+    64: 5320,
+    100: 5500,
+    104: 5520,
+    108: 5540,
+    112: 5560,
+    116: 5580,
+    120: 5600,
+    124: 5620,
+    128: 5640,
+    132: 5660,
+    136: 5680,
+    140: 5700,
+    144: 5720,
+    149: 5745,
+    152: 5760,
+    153: 5765,
+    157: 5785,
+    160: 5800,
+    161: 5805,
+    165: 5825,
+    183: 4915,
+    184: 4920,
+    185: 4925,
+    187: 4935,
+    188: 4945,
+    192: 4960,
+    196: 4980,
+  };
+
+  /* BG band */
+  const bg_freq_table = {
+    1: 2412,
+    2: 2417,
+    3: 2422,
+    4: 2427,
+    5: 2432,
+    6: 2437,
+    7: 2442,
+    8: 2447,
+    9: 2452,
+    10: 2457,
+    11: 2462,
+    12: 2467,
+    13: 2472,
+    14: 2484,
+  };
+
+  if(!band){
+    return bg_freq_table[channel] ? bg_freq_table[channel] : ( a_freq_table[channel] ? a_freq_table[channel] : 0);
+  }
+
+  if(band == "bg")
+    return bg_freq_table[channel] ? bg_freq_table[channel] : 0;
+
+  return a_freq_table[channel] ? a_freq_table[channel] : 0;
+}
+
+function wifi_freq_to_channel(freq, band){
+
+  /* A band */
+  const a_chan_table = {
     5035: 7,
     5040: 8,
     5045: 9,
@@ -590,8 +667,8 @@ function wifi_freq_to_channel(freq){
     4980: 196,
   };
 
-	/* BG band */
-  const bg_table = {
+  /* BG band */
+  const bg_chan_table = {
 	2412: 1,
 	2417: 2,
 	2422: 3,
@@ -608,10 +685,16 @@ function wifi_freq_to_channel(freq){
 	2484: 14,
   };
 
-  if (freq > 4900)
-    return a_table[freq] ? a_table[freq] : 0;
+  if(!band){
+    if (freq > 4900)
+      return a_chan_table[freq] ? a_chan_table[freq] : 0;
+    return bg_chan_table[freq] ? bg_chan_table[freq] : 0;
+  }
 
-  return bg_table[freq] ? bg_table[freq] : 0;
+  if (band == "a")
+    return a_chan_table[freq] ? a_chan_table[freq] : 0;
+
+  return bg_chan_table[freq] ? bg_chan_table[freq] : 0;
 }
 
 function updateStatus(){
@@ -736,7 +819,7 @@ function updateStatus(){
           // HW Address
           wireless.children(".hwaddress").text(i18nData['MAC Address'] + ": " + data.status[interfaceName].wireless.HwAddress);
           // Bit Rate
-          wireless.children(".bitrate").text(i18nData['Bit Rate'] + ": " + data.status[interfaceName].wireless.Bitrate/1000 + "Mb/s");
+          wireless.children(".bitrate").text(i18nData['Bit Rate'] + ": " + data.status[interfaceName].wireless.Bitrate/1000 + "Mbit/s");
         } else {
           wireless.addClass("d-none");
         }
@@ -790,48 +873,52 @@ function newConnection(id, ssid, key_mgmt) {
   $("#connection-uuid").val("");
   $("#connection-id").val(id);
 
-  $("#interface-name option:first").attr('selected','selected');
-  $("#connection-type option:first").attr('selected','selected');
-
   if(ssid){
     $("#interface-name option").each(function(){
+
       if(-1 != $(this).val().indexOf("wlan")){
-        $(this).attr('selected', 'selected');
-        $("#connection-type").val("802-11-wireless");
+        $("#interface-name").val($(this).val());
+        $("#interface-name").change();
         $("#ssid").val(ssid);
         $("#key-mgmt").val(key_mgmt);
         $("#key-mgmt").change();
         return false
       }
+
     });
   }
-
-  $("#connection-type").change();
 }
+
 function getWifiConnection(settings){
 
   $("#connection-uuid").val(parseSettingData(settings['connection'], "uuid", ""));
   $("#connection-id").val(parseSettingData(settings['connection'], "id", ""));
   $("#interface-name").val(parseSettingData(settings['connection'], "interface-name", ""));
-
-  $("#connection-type").val("802-11-wireless");
-  $("#connection-type").change();
-
+  $("#interface-name").change();
+  //"autoconnect" is boolean. Use 1 and 0 so we don't need to do conversion in the backend.
+  if(parseSettingData(settings['connection'], "autoconnect", true))
+    $("#autoconnect").val(1);
+  else
+    $("#autoconnect").val(0);
   $("#ssid").val(parseSettingData(settings['802-11-wireless'], "ssid", ""));
   $("#client-name").val(parseSettingData(settings['802-11-wireless'], "client-name", ""));
 
   txpower = parseSettingData(settings['802-11-wireless'], "tx-power", 0);
-  if (txpower == 0){
-    $("#tx-power").val("Auto");
-  }
-  else {
-    $("#tx-power").val(txpower.toString());
-  }
+  $("#tx-power").val(txpower.toString());
 
   $("#radio-band").val(parseSettingData(settings['802-11-wireless'], "band", "default"));
   $("#radio-channel").val(parseSettingData(settings['802-11-wireless'], "channel", ""));
-  $("#radio-bgscan").val(parseSettingData(settings['802-11-wireless'], "bgscan", ""));
-  $("#frequency-list").val(parseSettingData(settings['802-11-wireless'], "frequency-list", ""));
+
+  //Convert frequency list to channel list
+  let freqlist = parseSettingData(settings['802-11-wireless'], "frequency-list", "").split(" ");
+  let chanlist = "";
+  freqlist.forEach(function (freq) {
+    let iFreq = parseInt(freq) | 0;
+    if(iFreq)
+      chanlist += wifi_freq_to_channel(iFreq).toString() + " ";
+  });
+  $("#radio-channel-list").val(chanlist.trim());
+
   $("#frequency-dfs").val(parseSettingData(settings['802-11-wireless'], "frequency-dfs", 1));
   $("#radio-mode").val(parseSettingData(settings['802-11-wireless'], "mode", "infrastructure"));
   $("#radio-mode").change();
@@ -867,10 +954,12 @@ function getEthernetConnection(settings) {
 
   $("#connection-uuid").val(parseSettingData(settings['connection'], "uuid", ""));
   $("#connection-id").val(parseSettingData(settings['connection'], "id", ""));
+  if(parseSettingData(settings['connection'], "autoconnect", true))
+    $("#autoconnect").val(1);
+  else
+    $("#autoconnect").val(0);
   $("#interface-name").val(parseSettingData(settings['connection'], "interface-name", ""));
-
-  $("#connection-type").val("802-3-ethernet");
-  $("#connection-type").change();
+  $("#interface-name").change();
 }
 
 function getIpv4Settings(settings){
@@ -910,6 +999,7 @@ function getIpv6Settings(settings){
 }
 
 function updateGetConnectionPage(uuid, id, ssid, key_mgmt){
+
   if(uuid == null){
     newConnection(id, ssid, key_mgmt);
     return;
@@ -1002,12 +1092,12 @@ function updateConnectionsPage(){
     if($("#connectionSelect").length > 0){
       var sel = $("#connectionSelect");
       sel.empty();
-      for (var UUID in msg.connections) {
-        if ((msg.connections[UUID]["type"] == "ap") && (-1 == currUserPermission.indexOf("networking_ap_activate")))
+      for (var uuid in msg.connections) {
+        if ((msg.connections[uuid]["type"] == "ap") && (-1 == currUserPermission.indexOf("networking_ap_activate")))
           continue;
-        var activated = msg.connections[UUID]["activated"];
-        var name = msg.connections[UUID]["id"] + "(" + UUID + ")";
-        var option = "<option value=" + UUID + " activated=" + activated + ">" + name + "</option>";
+        var activated = msg.connections[uuid]["activated"];
+        var name = msg.connections[uuid]["id"] + "(" + uuid + ")";
+        var option = "<option value=" + uuid + " activated=" + activated + ">" + name + "</option>";
         sel.append(option);
       }
       onChangeConnections();
@@ -1021,7 +1111,7 @@ function updateConnectionsPage(){
 function activateConnection(){
   var data = {
     activate: $("#connectionSelect option:selected").attr("activated") != 1,
-    UUID: $("#connectionSelect").val(),
+    uuid: $("#connectionSelect").val(),
   }
   $.ajax({
     url: "connection",
@@ -1084,22 +1174,95 @@ function clickConnectionsPage() {
   });
 }
 
-function clickEditConnectionPage() {
+function clickEditConnectionPage(){
   editConnection(null, null, null, "none")
+}
+
+function validate_wireless_channel(val, $sel, band){
+
+  if(val){
+
+    let chan = parseInt(val) | 0;
+    if(!chan || !wifi_channel_to_freq(chan, band)){
+      $sel.css('border-color', 'red');
+      $sel.focus();
+      return false;
+    }
+
+  }
+
+  $sel.css('border-color', '');
+  return true
+}
+
+function get_wireless_channel_list(val, $sel, band){
+
+  let strlist = "";
+  let chlist = val.split(" ");
+
+  for(let i=0; i < chlist.length; i++) {
+
+    let freq = wifi_channel_to_freq(parseInt(chlist[i]) | 0, band);
+    if(!freq){
+        $sel.css('border-color', 'red');
+        $sel.focus();
+        return "";
+      }
+
+      strlist += freq.toString() + " ";
+
+    }
+
+    $sel.css('border-color', '');
+    return strlist.trim();
+}
+
+function validate_number_input(val, $sel){
+
+  if(val){
+
+    if(!/\d+$/.test(val)){
+      $sel.css('border-color', 'red');
+      $sel.focus();
+      return false;
+    }
+  }
+  $sel.css('border-color', '');
+  return true;
+}
+
+function validate_string_input(val, $sel, min, max){
+
+  if (val == "" || (min && val.length < min) || (max && val.length > max)){
+    $sel.css('border-color', 'red');
+    $sel.focus();
+    return false;
+  }
+
+  $sel.css('border-color', '');
+  return true;
 }
 
 function prepareEthernetConnection() {
 
-  con = {};
-  settings = {};
+  let v;
+  let con = {};
+  let settings = {};
 
-  con['uuid'] = $("#connection-uuid").val();
-  con['id'] = $("#connection-id").val();
-  con['type'] = "802-3-ethernet";
-  con['interface-name'] = $("#interface-name").val();
+  con['uuid'] = $("#connection-uuid").val().trim();
+  con['type'] =  $("#connection-type").val().trim();
+  con['interface-name'] = $("#interface-name").val().trim();
+  con['autoconnect'] = parseInt($("#autoconnect").val().trim());
+
+  v = $("#connection-id").val().trim();
+  if(!validate_string_input(v, $("#connection-id"))){
+    return {};
+  }
+  con['id'] = v;
 
   return settings = {'connection': con};
 }
+
 
 function prepareWirelessConnection() {
 
@@ -1110,62 +1273,83 @@ function prepareWirelessConnection() {
   let wxs = {}
   let settings = {};
 
-  con['uuid'] = $("#connection-uuid").val();
-  con['id'] = $("#connection-id").val();
-  con['type'] = "802-11-wireless";
-  con['interface-name'] = $("#interface-name").val();
+  con['uuid'] = $("#connection-uuid").val().trim();
+  con['type'] = $("#connection-type").val().trim();
+  con['interface-name'] = $("#interface-name").val().trim();
+  con['autoconnect'] = parseInt($("#autoconnect").val().trim());
+
+  v = $("#connection-id").val().trim();
+  if(!validate_string_input(v, $("#connection-id"))){
+    return {};
+  }
+  con['id'] = v;
 
   v = $("#ssid").val().trim();
-  if (v == ""){
-    $("#ssid").css('border-color', 'red');
-    $("#ssid").focus();
-    return settings;
+  if(!validate_string_input(v, $("#ssid"))){
+    return {};
   }
-
   ws['ssid'] = v;
-  $("#ssid").css('border-color', '');
 
-  v = $("#radio-mode").val();
-  ws['mode'] = v;
+  v = $("#radio-mode").val().trim();
+  if(v)
+    ws['mode'] = v;
 
   v = $("#client-name").val().trim();
   if(v)
     ws['client-name'] = v;
 
-  v = parseInt($("#tx-power").val().trim()) || 0;
+  v = $("#tx-power").val().trim();
+  if(!validate_number_input(v, $("#tx-power"))){
+    return {};
+  }
   if(v)
-    ws['tx-power'] = v;
+    ws['tx-power'] = parseInt(v);
 
-  v = $("#radio-band").val();
-  if(v != "default")
+  v = $("#radio-band").val().trim();
+  if(v != "default"){
     ws['band'] = v;
+  }
 
+  //"band" should be set to "a" or "bg" to set "radio-channel"
   v = $("#radio-channel").val().trim();
+  if(v && !ws['band']){
+    $("#radio-band").css('border-color', 'red');
+    $("#radio-band").focus();
+    return {};
+  }
+  $("#radio-band").css('border-color', '');
+  if(!validate_number_input(v, $("#radio-channel")) || !validate_wireless_channel(v, $("#radio-channel"), ws['band'])){
+    return {};
+  }
   if(v)
     ws['channel'] = parseInt(v);
 
-  v = $("#radio-bgscan").val().trim();
+  v = $("#radio-channel-list").val().trim();
+  if(v && !ws['band']){
+    $("#radio-band").css('border-color', 'red');
+    $("#radio-band").focus();
+    return {};
+  }
+  $("#radio-band").css('border-color', '');
+  ws['frequency-list'] = get_wireless_channel_list(v, $("#radio-channel-list"),  ws['band']);
+  if(v && !ws['frequency-list'].length){
+    return {};
+  }
+  v = $("#frequency-dfs").val().trim();
   if(v)
-    ws['bgscan'] = v;
+    ws['frequency-dfs'] = parseInt(v);
 
-  v = $("#frequency-list").val().trim();
-  if(v)
-    ws['frequency-list'] = v;
-
-  v = $("#frequency-dfs").val();
-  ws['frequency-dfs'] = parseInt(v);
-
-  v = parseInt($("#powersave").val()) || 0;
+  v = parseInt($("#powersave").val());
   if(v)
     ws['powersave'] = v;
 
-  keymgmt = $("#key-mgmt").val();
+  keymgmt = $("#key-mgmt").val().trim();
   if(keymgmt == "static") {
     wss['key-mgmt'] = "none";
-    wss['auth-alg'] = $("#auth-alg").val();
+    wss['auth-alg'] = $("#auth-alg").val().trim();
   }
   else if(keymgmt == "ieee8021x") {
-    wss['auth-alg'] = $("#auth-alg").val();
+    wss['auth-alg'] = $("#auth-alg").val().trim();
     wss['key-mgmt'] = "ieee8021x";
   }
   else if(keymgmt != "none") {
@@ -1173,52 +1357,66 @@ function prepareWirelessConnection() {
   }
 
   if(keymgmt == "static") {
-    v = parseInt($("#wep-tx-keyidx").val());
+    v = parseInt($("#wep-tx-keyidx").val().trim());
     wss['wep-tx-keyidx'] = v;
 
-    v = $("#wep-key0").val();
+    v = $("#wep-key0").val().trim();
     if(v)
       wss['wep-key0'] = v;
 
-    v = $("#wep-key1").val();
+    v = $("#wep-key1").val().trim();
     if(v)
       wss['wep-key1'] = v;
 
-    v = $("#wep-key2").val();
+    v = $("#wep-key2").val().trim();
     if(v)
       wss['wep-key2'] = v;
 
-    v = $("#wep-key3").val();
+    v = $("#wep-key3").val().trim();
     if(v)
       wss['wep-key3'] = v;
   }
   else if(keymgmt == "ieee8021x") {
-    v = $("#leap-username").val();
-    if(v)
-      wss['leap-username'] = v;
+    v = $("#leap-username").val().trim();
+    if(!validate_string_input(v, $("#leap-username"))){
+      return {};
+    }
+    wss['leap-username'] = v;
 
-    v = $("#leap-password").val();
-    if(v)
-      wss['leap-password'] = v;
+    v = $("#leap-password").val().trim();
+    if(!validate_string_input(v, $("#leap-password"))){
+      return {};
+    }
+    wss['leap-password'] = v;
   }
   else if (keymgmt == "wpa-psk") {
     v = $("#psk").val();
-    if(v)
-      wss['psk'] = v;
+    if(!validate_string_input(v, $("#psk"), 8, 64)){
+      return {};
+    }
+    wss['psk'] = v;
   }
   else if (keymgmt == "wpa-eap") {
-    wxs['eap'] = $("#eap-method").val();
-    wxs['auth-timeout'] = parseInt($("#eap-auth-timeout").val()) || 0;
-    wxs['tls-disable-time-checks'] = $("#tls-disable-time-checks").val();
-    wxs['phase1-fast-provisioning'] = parseInt($("#phase1-fast-provisioning").val());
+    wxs['eap'] = $("#eap-method").val().trim();
+    wxs['tls-disable-time-checks'] = $("#tls-disable-time-checks").val().trim();
+    wxs['phase1-fast-provisioning'] = parseInt($("#phase1-fast-provisioning").val().trim());
 
-    v = $("#eap-identity").val();
+    v = $("#eap-auth-timeout").val().trim();
+    if(!validate_number_input(v, $("#eap-auth-timeout"))) {
+      return {};
+    }
     if(v)
-      wxs['identity'] = v;
+      wxs['auth-timeout'] = parseInt(v);
+
+    v = $("#eap-identity").val().trim();
+    if(!validate_string_input(v, $("#eap-identity"))) {
+      return {};
+    }
+    wxs['identity'] = v;
 
     v = $("#eap-anonymous-identity").val();
     if (v)
-      wxs['anonymous-identity'] = v;
+      wxs['anonymous-identity'] = v.trim();
 
     v = $("#eap-password").val();
     if(v)
@@ -1228,17 +1426,9 @@ function prepareWirelessConnection() {
     if(v)
       wxs['ca-cert'] = v;
 
-    v = $("#ca-cert-password").val();
-    if(v)
-      wxs['ca-cert-password'] = v;
-
     v = $("#client-cert").val();
     if(v)
       wxs['client-cert'] = v;
-
-    v = $("#client-cert-password").val();
-    if(v)
-      wxs['client-cert-password'] = v;
 
     v = $("#private-key").val();
     if(v)
@@ -1260,17 +1450,9 @@ function prepareWirelessConnection() {
     if(v)
       wxs['phase2-ca-cert'] = v;
 
-    v = $("#phase2-ca-cert-password").val();
-    if(v)
-      wxs['phase2-ca-cert-password'] = v;
-
     v = $("#phase2-client-cert").val();
     if(v)
       wxs['phase2-client-cert'] = v;
-
-    v = $("#phase2-client-cert-password").val();
-    if(v)
-      wxs['phase2-client-cert-password'] = v;
 
     v = $("#phase2-private-key").val();
     if(v)
@@ -1288,10 +1470,12 @@ function prepareWirelessConnection() {
     if(v)
       wxs['pac-file-password'] = v;
   }
+
   settings['connection'] = con;
   settings['802-11-wireless'] = ws;
   settings['802-11-wireless-security'] = wss;
   settings['802-1x'] = wxs;
+
   return settings;
 }
 
@@ -1407,16 +1591,6 @@ function prepareIPv6Addresses(){
 }
 
 function addConnection() {
-
-  let id = $("#connection-id").val();
-  if (id == ""){
-    $("#connection-id").css('border-color', 'red');
-    $("#connection-id").focus();
-    CustomMsg("ID can not be empty", true);
-    return false;
-  }
-
-  $("#connection-id").css('border-color', '');
 
   let ctype = $("#connection-type").val();
   switch(ctype){
@@ -1666,13 +1840,22 @@ function getCerts(connection){
 
     for(i=0; i<data.length; i++) {
       var option = "<option value=" + data[i] + ">" + data[i] + "</option>";
+      pos = data[i].lastIndexOf(".");
+      if( -1 == pos){
+        continue;
+      }
+      //".pac" files for FAST authentication
+      if (data[i].substr(pos+1) == "pac"){
+        pac_file.append(option);
+        continue;
+      }
+
       ca.append(option);
       client.append(option);
       pri.append(option);
       phase2_ca.append(option);
       phase2_client.append(option);
       phase2_pri.append(option);
-      pac_file.append(option);
     }
   }
 
@@ -1749,23 +1932,6 @@ function getNetworkInterfaces(){
         let option = "<option value=" + interfaces[iface] + ">" + interfaces[iface] + "</option>";
         sel.append(option);
       }
-
-      sel = $("#connection-type");
-      sel.empty();
-      for (iface in interfaces){
-        if ((interfaces[iface].indexOf("eth") >= 0) || (interfaces[iface].indexOf("usb") >= 0)){
-          let option = '<option value="802-3-ethernet">Ethernet</option>';
-          sel.append(option);
-          break;
-        }
-      }
-      for (iface in interfaces){
-        if (-1 != interfaces[iface].indexOf("wlan")){
-          let option = '<option value="802-11-wireless">Wireless</option>';
-          sel.append(option);
-          break;
-        }
-      }
     }
   })
   .fail(function( xhr, textStatus, errorThrown) {
@@ -1779,12 +1945,14 @@ function onChangeRadioMode(){
 
   switch(mode){
     case "infrastructure":
-      $("#frequency-list-display").removeClass("d-none");
+      $("#radio-channel-list-display").removeClass("d-none");
       $("#radio-channel-display").addClass("d-none");
+      $("#radio-channel").val("");
       break;
     case "ap":
-      $("#frequency-list-display").addClass("d-none");
+      $("#radio-channel-list-display").addClass("d-none");
       $("#radio-channel-display").removeClass("d-none");
+      $("#radio-channel-list").val("");
       break;
     default:
       break;
