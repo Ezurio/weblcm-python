@@ -137,7 +137,7 @@ class SystemSettingsManage(object):
 	@classmethod
 	def get_session_timeout(cls):
 		'Unit: Minute'
-		return int (WeblcmConfigManage.get_key_from_section(cls.section, 'session_timeout', 5))
+		return int (WeblcmConfigManage.get_key_from_section(cls.section, 'session_timeout', 10))
 
 	@classmethod
 	def get_tamper_protection_timeout(cls):
