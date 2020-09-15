@@ -1180,7 +1180,7 @@ function clickEditConnectionPage(){
 
 function validate_wireless_channel(val, $sel, band){
 
-  if(val){
+  if(val.length > 0){
 
     let chan = parseInt(val) | 0;
     if(!chan || !wifi_channel_to_freq(chan, band)){
@@ -1196,30 +1196,31 @@ function validate_wireless_channel(val, $sel, band){
 }
 
 function get_wireless_channel_list(val, $sel, band){
-
   let strlist = "";
-  let chlist = val.split(" ");
 
-  for(let i=0; i < chlist.length; i++) {
+  if(val.length > 0){
+    let chlist = val.split(" ");
 
-    let freq = wifi_channel_to_freq(parseInt(chlist[i]) | 0, band);
-    if(!freq){
+    for(let i=0; i < chlist.length; i++){
+
+      let freq = wifi_channel_to_freq(parseInt(chlist[i]) | 0, band);
+      if(!freq){
         $sel.css('border-color', 'red');
         $sel.focus();
         return "";
       }
 
       strlist += freq.toString() + " ";
-
     }
+  }
 
-    $sel.css('border-color', '');
-    return strlist.trim();
+  $sel.css('border-color', '');
+  return strlist.trim();
 }
 
 function validate_number_input(val, $sel){
 
-  if(val){
+  if(val.length > 0){
 
     if(!/\d+$/.test(val)){
       $sel.css('border-color', 'red');
@@ -1233,7 +1234,7 @@ function validate_number_input(val, $sel){
 
 function validate_string_input(val, $sel, min, max){
 
-  if (val == "" || (min && val.length < min) || (max && val.length > max)){
+  if (val.length == 0 || (min && val.length < min) || (max && val.length > max)){
     $sel.css('border-color', 'red');
     $sel.focus();
     return false;
@@ -1335,6 +1336,7 @@ function prepareWirelessConnection() {
   if(v && !ws['frequency-list'].length){
     return {};
   }
+
   v = $("#frequency-dfs").val().trim();
   if(v)
     ws['frequency-dfs'] = parseInt(v);
@@ -1926,12 +1928,16 @@ function getNetworkInterfaces(){
       return;
     interfaces = data.interfaces;
     if($("#interface-name").length > 0){
+
       let sel = $("#interface-name");
       sel.empty();
+
       for (iface in interfaces){
         let option = "<option value=" + interfaces[iface] + ">" + interfaces[iface] + "</option>";
         sel.append(option);
       }
+      $("#interface-name").prop("selectedIndex", 0);
+      $("#interface-name").change();
     }
   })
   .fail(function( xhr, textStatus, errorThrown) {
