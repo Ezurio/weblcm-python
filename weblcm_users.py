@@ -221,36 +221,43 @@ class LoginManage(object):
 		username = post_data.get('username', "")
 		password = post_data.get('password', "")
 
-		#If default password hasn't been changed, redirect to password update page.
-		default_username = cherrypy.request.app.config['weblcm'].get('default_username', "root")
-		default_password = cherrypy.request.app.config['weblcm'].get('default_password', "summit")
-
-		#If default password is not changed, always redirect to passwd update page.
-		cnt = UserManageHelper.getNumberOfUsers()
-		if cherrypy.session.get('USERNAME', None):
-			if (not cnt) or UserManageHelper.verify(default_username, default_password):
-				result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_SUCCESS')
-				result['REDIRECT'] = 1
-				return result
-		else:
-			if (not cnt) and (username == default_username) and (password == default_password):
-				cherrypy.session['USERNAME'] = username
-				UserManageHelper.addUser(username, password, " ".join(USER_PERMISSION_TYPES['UserPermssionTypes']))
-				result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_SUCCESS')
-				result['REDIRECT'] = 1
-				return result
-			elif cnt and UserManageHelper.verify(username, default_password):
-				result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_SUCCESS')
-				cherrypy.session['USERNAME'] = username
-				result['REDIRECT'] = 1
-				return result
-
-		#If session already exists, return success.
+		#Return if username is blocked
 		if not cherrypy.session.get('USERNAME', None):
-
 			if LoginManageHelper.is_user_blocked(username):
 				result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_USER_BLOCKED')
 				return result
+
+		default_username = cherrypy.request.app.config['weblcm'].get('default_username', "root")
+		default_password = cherrypy.request.app.config['weblcm'].get('default_password', "summit")
+
+		#If default password is not changed, redirect to passwd update page.
+		if ((username == default_username) and (password == default_password)):
+
+			cnt = UserManageHelper.getNumberOfUsers()
+			if not cnt:
+				UserManageHelper.addUser(username, password, " ".join(USER_PERMISSION_TYPES['UserPermssionTypes']))
+
+			if not cnt or UserManageHelper.verify(default_username, default_password):
+
+				LoginManageHelper.login_reset(username)
+				if LoginManageHelper.is_user_logged_in(username):
+					result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_USER_LOGGED')
+					return result
+
+				cherrypy.session['USERNAME'] = username
+				result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+				result['REDIRECT'] = 1
+				return result
+
+		#Session is created, but default password was not changed.
+		if cherrypy.session.get('USERNAME', None) == default_username:
+			if UserManageHelper.verify(default_username, default_password):
+				result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+				result['REDIRECT'] = 1
+				return result
+
+		#If session already exists, return success; otherwise verify login username and password.
+		if not cherrypy.session.get('USERNAME', None):
 
 			if not UserManageHelper.verify(username, password):
 				LoginManageHelper.login_failed(username)
