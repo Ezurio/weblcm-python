@@ -20,20 +20,17 @@ function httpErrorResponseHandler(xhr, textStatus, errorThrown) {
   }
 }
 
-function loadjscssfile(key, filetype) {
-  let jsPath = "plugins/" + key + "/" + key + "." + filetype;
-  if (filetype == "js") {
+function loadjsfile(key) {
+  let jsPath = "plugins/" + key + "/" + key + ".js";
 
-    let fileref = document.createElement('script');
-
-    fileref.setAttribute("type", "text/javascript");
-    fileref.setAttribute("src", jsPath);
-    fileref.onload = function () {
-      window[key + "AUTORUN"](0);
-    }
-
-    document.getElementsByTagName("head")[0].appendChild(fileref);
+  let fileref = document.createElement('script');
+  fileref.setAttribute("type", "text/javascript");
+  fileref.setAttribute("src", jsPath);
+  fileref.onload = function () {
+    window[key + "AUTORUN"](0);
   }
+
+  document.getElementsByTagName("head")[0].appendChild(fileref);
 }
 
 function loadmenu(menu, id){
@@ -54,14 +51,21 @@ function loadmenu(menu, id){
 
 function weblcm_init(plugins) {
   let i, lang;
+  let requests = [];
 
   for (i = 0; i < plugins.length; i++) {
-    loadjscssfile(plugins[i], "js");
+    requests.push(loadjsfile(plugins[i]));
   }
 
-  loadmenu("main_menu.html", "main_menu");
-  loadmenu("mini_menu.html", "mini_menu");
+  requests.push(loadmenu("main_menu.html", "main_menu"));
+  requests.push(loadmenu("mini_menu.html", "mini_menu"));
 
+  $.when.apply($, requests)
+  .done( function() {
+    if (login() == false){
+      $("#form-login").removeClass("d-none");
+    }
+  });
   //"Lang" can be effective even session is closed.
   lang = window.localStorage.getItem("Lang") || window.navigator.userLanguage || window.navigator.language;
   if (lang == "zh" || lang == "zh-CN") {
@@ -283,9 +287,6 @@ $(document).ready( function (){
   .done(function (data) {
     defines = data;
     weblcm_init(data['PLUGINS']);
-    if (login() == false){
-      $("#form-login").removeClass("d-none");
-    }
   })
   .fail(function( xhr, textStatus, errorThrown) {
     httpErrorResponseHandler(xhr, textStatus, errorThrown)
