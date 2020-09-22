@@ -1385,23 +1385,28 @@ function prepareWirelessConnection() {
     }
     wss['leap-username'] = v;
 
-    v = $("#leap-password").val().trim();
-    if(!validate_string_input(v, $("#leap-password"))){
+    v = $("#leap-password").val();
+    if(v && !validate_string_input(v, $("#leap-password"))){
       return {};
     }
-    wss['leap-password'] = v;
+    if(v)
+      wss['leap-password'] = v;
+    $("#leap-password").css('border-color', '');
   }
   else if (keymgmt == "wpa-psk") {
     v = $("#psk").val();
-    if(!validate_string_input(v, $("#psk"), 8, 64)){
+    if(v && !validate_string_input(v, $("#psk"), 8, 64)){
       return {};
     }
-    wss['psk'] = v;
+    if(v)
+      wss['psk'] = v;
+    $("#psk").css('border-color', '');
   }
   else if (keymgmt == "wpa-eap") {
     wxs['eap'] = $("#eap-method").val().trim();
     wxs['tls-disable-time-checks'] = $("#tls-disable-time-checks").val().trim();
-    wxs['phase1-fast-provisioning'] = parseInt($("#phase1-fast-provisioning").val().trim());
+    if (wxs['eap'] == "fast")
+      wxs['phase1-fast-provisioning'] = parseInt($("#phase1-fast-provisioning").val()) || 0;
 
     v = $("#eap-auth-timeout").val().trim();
     if(!validate_number_input(v, $("#eap-auth-timeout"))) {
