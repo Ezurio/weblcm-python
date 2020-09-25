@@ -2,25 +2,30 @@ import os
 
 WEBLCM_PYTHON_VERSION = '1.0.0.0'
 
-WEBLCM_PYTHON_USER_ZONEINFO = '/data/misc/zoneinfo/'
-
-WEBLCM_PYTHON_CONF_DIR = '/data/secret/'
-WEBLCM_PYTHON_TIMEZONE_CONF_FILE = '/data/secret/weblcm-python/zonelist.db'
-WEBLCM_PYTHON_SETTINGS_FILE = '/data/secret/weblcm-python/weblcm-settings.ini'
-
+SYSTEM_CONF_DIR = '/data/'
+NETWORKMANAGER_CONF_DIR = '/data/secret/NetworkManager/'
+WEBLCM_PYTHON_CONF_DIR = '/data/secret/weblcm-python/'
 #weblcm-python.ini is for server config. It should be updated only by software update.
 WEBLCM_PYTHON_SERVER_CONF_FILE = '/etc/weblcm-python/weblcm-python.ini'
+#system settings
+WEBLCM_PYTHON_SETTINGS_FILE = '/data/secret/weblcm-python/weblcm-settings.ini'
+
+#timezone list
+WEBLCM_PYTHON_ZONELIST = '/data/secret/weblcm-python/zonelist.db'
+
+#Default system timezone datebase can be readonly. Save customer files in /data/misc/.
+WEBLCM_PYTHON_ZONEINFO = '/data/misc/zoneinfo/'
 
 WIFI_DRIVER_DEBUG_PARAM = '/sys/module/lrdmwl/parameters/lrd_debug'
-"""Change to ath6kl driver for wb50n"""
+#Change to ath6kl driver for wb50n
 if not os.path.exists(WIFI_DRIVER_DEBUG_PARAM):
 	WIFI_DRIVER_DEBUG_PARAM = "/sys/module/ath6kl_core/parameters/debug_mask"
 
 FILEDIR_DICT = {
-	'cert': '{0}{1}'.format(WEBLCM_PYTHON_CONF_DIR, 'weblcm-python/ssl/'),
-	'profile': '{0}{1}'.format(WEBLCM_PYTHON_CONF_DIR, 'NetworkManager/system-connections/'),
-	'config': WEBLCM_PYTHON_CONF_DIR,
-	'timezone': WEBLCM_PYTHON_USER_ZONEINFO,
+	'cert': '{0}{1}'.format(WEBLCM_PYTHON_CONF_DIR, 'ssl/'),
+	'profile': '{0}{1}'.format(NETWORKMANAGER_CONF_DIR, 'system-connections/'),
+	'config': SYSTEM_CONF_DIR,
+	'timezone': WEBLCM_PYTHON_ZONEINFO,
 }
 
 FILEFMT_DICT = {

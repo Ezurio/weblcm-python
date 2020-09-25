@@ -167,4 +167,4 @@ class SystemSettingsManage(object):
 
 	@classmethod
 	def get_cert_for_file_encryption(cls):
-		return WeblcmConfigManage.get_key_from_section(cls.section, 'cert_for_file_encryption', "/etc/weblcm-python/ssl/ca.crt")
+		return WeblcmConfigManage.get_key_from_section(cls.section, 'cert_for_file_encryption', "/etc/weblcm-python/ssl/server.crt")
