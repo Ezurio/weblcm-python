@@ -113,8 +113,6 @@ if __name__ == '__main__':
 
 	#Server config
 	cherrypy.config.update({
-			'server.ssl_certificate': '{0}{1}'.format(weblcm_def.FILEDIR_DICT.get('cert'), 'server.crt'),
-			'server.ssl_private_key': '{0}{1}'.format(weblcm_def.FILEDIR_DICT.get('cert'), 'server.key'),
 			'tools.sessions.timeout': SystemSettingsManage.get_session_timeout(),
 		})
 
