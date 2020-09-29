@@ -42,7 +42,7 @@ function queryLogData() {
   $("#bt-query-log").val("Querying...");
 
   $.ajax({
-    url: "logData?typ=" + $("#log-type").val() + "&priority=" + parseInt($("#log-level").val()) + "&days=" + parseInt($("#log-date-from").val()),
+    url: "logData?type=" + $("#log-type").val() + "&priority=" + parseInt($("#log-level").val()) + "&days=" + parseInt($("#log-date-from").val()),
     type: "GET",
     cache: false,
   })

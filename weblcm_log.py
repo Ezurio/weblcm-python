@@ -20,7 +20,7 @@ class LogData(object):
 		reader = journal.Reader()
 		priority = int(kwargs.get('priority', 6))
 		reader.log_level(priority)
-		typ = kwargs.get('typ', "All")
+		typ = kwargs.get('type', "All")
 		if typ != "All":
 			reader.add_match(SYSLOG_IDENTIFIER=typ)
 		days = int(kwargs.get('days', 1))

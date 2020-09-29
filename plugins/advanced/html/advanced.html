@@ -1,27 +1,29 @@
-
 <form method="POST" id="form-import-config" enctype="multipart/form-data">
 	<div class="input-group mt-3">
-		<input type="text" class="d-none" name="typ" value="config">
-		<input type="file" class="form-control-file" id="input-file-config" name="fil" accept=".zip"/>
+		 <div class="input-group-prepend i18n" name="Select File">
+			<span class="input-group-text">Select File</span>
+		</div>
+		<input type="text" class="d-none" name="type" value="config">
+		<input type="file" class="form-control" id="input-file-config" name="file" accept=".zip"/>
 	</div>
 	<div class="input-group mt-3">
-		<input type="password" class="form-control i18n" id="config-decrypt-passwd" name="Password" placeholder="password">
+		<input type="password" class="form-control i18n" id="config-encrypt-password" name="password" placeholder="Password">
 		<div class="input-group-append">
-			<button type="button" id="bt-import-config" class="btn btn-primary i18n" name="Import system configuration">Import network configuration</button>
+			<button type="button" id="bt-import-config" class="btn btn-primary i18n" name="Import system configuration">Import system configuration</button>
 		</div>
 	</div>
 </form>
 <br>
 <form>
 	<div class="input-group mt-3">
-		<input type="password" class="form-control i18n" id="config-encrypt-passwd" name="Password" placeholder="password">
+		<input type="password" class="form-control i18n" id="config-decrypt-password" name="password" placeholder="Password">
 		<div class="input-group-append">
-			<button type="button" id="bt-export-config" class="btn btn-primary i18n" name="Export system configuration" >Export network configuration</button>
+			<button type="button" id="bt-export-config" class="btn btn-primary i18n" name="Export system configuration" >Export system configuration</button>
 		</div>
 	</div>
 	<br>
 	<div class="input-group mt-3">
-		<input type="password" class="form-control i18n" id="log-encrypt-passwd" name="Password" placeholder="password">
+		<input type="password" class="form-control i18n" id="log-encrypt-password" name="password" placeholder="Password">
 		<div class="input-group-append">
 			<button type="button" id="bt-export-log" class="btn btn-primary i18n" name="Export system log">Export system log</button>
 		</div>

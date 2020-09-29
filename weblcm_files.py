@@ -5,117 +5,130 @@ import cherrypy
 from cherrypy.lib import static
 import weblcm_def
 import subprocess
+from threading import Lock
 from weblcm_settings import SystemSettingsManage
-
-def save_file(typ, fil):
-	f = os.path.normpath(os.path.join(weblcm_def.FILEDIR_DICT.get(typ), fil.filename))
-	with open(f, 'wb+') as out:
-		while True:
-			data = fil.file.read(8192)
-			if not data:
-				break
-			out.write(data)
-		out.close();
-	return f
 
 @cherrypy.expose
 class FileManage(object):
-	"""
-		Manage regular config/timezone files.
-	"""
-	def POST(self, *args, **kwargs):
-		typ = kwargs.get('typ')
-		fil = kwargs.get('fil')
-		save_file(typ, fil)
-		return;
 
+	_lock = Lock()
 
-	@cherrypy.tools.json_out()
-	def DELETE(self, *args, **kwargs):
-		result = {
-			'SDCERR': 1,
-		}
+	''' File Management '''
 
-		typ = kwargs.get('typ')
-		fil = kwargs.get('fil')
-		f = os.path.normpath(os.path.join(weblcm_def.FILEDIR_DICT.get(typ), fil))
-		if os.path.isfile(f):
-			os.remove(f)
-			result['SDCERR'] = 0;
-		return result
+	def save_file(self, typ, fil):
+		path = os.path.normpath(os.path.join(weblcm_def.FILEDIR_DICT.get(typ), fil.filename))
+		with open(path, 'wb+') as out:
+			while True:
+				data = fil.file.read(8192)
+				if not data:
+					break
+				out.write(data)
+			out.close();
+		return path
 
-	@cherrypy.tools.json_out()
-	def GET(self, *args, **kwargs):
-
-		files = []
-		typ = kwargs.get('typ')
-		with os.scandir(weblcm_def.FILEDIR_DICT.get(typ)) as listOfEntries:
-			for entry in listOfEntries:
-				if entry.is_file():
-					if entry.name.lower().endswith(weblcm_def.FILEFMT_DICT.get(typ)):
-						files.append(entry.name)
-
-		files.sort()
-
-		return files
-
-@cherrypy.expose
-class ArchiveFilesManage(object):
-	"""
-		Manage archive files.
-	"""
 	def POST(self, *args, **kwargs):
 
-		res = 1
+		typ = kwargs.get('type', None)
+		fil = kwargs.get('file', None)
+		if not typ or not fil:
+			raise cherrypy.HTTPError(400) #bad request
 
-		typ = kwargs.get('typ')
-		fil = kwargs.get('fil')
-		password = kwargs.get('Password', "Don't care")
+		with FileManage._lock:
+			f = self.save_file(typ, fil)
+			if os.path.isfile(f):
+				if f.endswith(".zip"):
+					password = kwargs.get('password', "")
+					p = subprocess.Popen([
+						'/usr/sbin/weblcm_files.sh', typ, "unzip", f, weblcm_def.FILEDIR_DICT.get(typ), password
+					])
+					res = p.wait()
+					os.remove(f)
+					if res:
+						raise cherrypy.HTTPError(500) #Internal server error
+				return
 
-		f = save_file(typ, fil)
-
-		if os.path.isfile(f):
-			p = subprocess.Popen([
-				'/usr/sbin/weblcm_files.sh', typ, "unzip",
-				f, weblcm_def.FILEDIR_DICT.get(typ), password
-			])
-			res = p.wait()
-			os.unlink(f)
-
-		if res:
-			raise cherrypy.HTTPError()
+		raise cherrypy.HTTPError(500) #Internal server error
 
 	def GET(self, *args, **kwargs):
 
-		typ = kwargs.get('typ')
-		password = kwargs.get('Password')
+		typ = kwargs.get('type', None)
+		if not typ:
+			raise cherrypy.HTTPError(400)
 
 		fil = '{0}{1}'.format(typ, ".zip")
-		f = '{0}{1}'.format("/tmp/", fil)
+		path = '{0}{1}'.format("/tmp/", fil)
+
 		if typ == "config":
+
+			password = kwargs.get('password', None)
+			if not password:
+				raise cherrypy.HTTPError(400)
 			p = subprocess.Popen([
 				'/usr/sbin/weblcm_files.sh', "config", "zip",
-				weblcm_def.FILEDIR_DICT.get(typ), f, password
+				weblcm_def.FILEDIR_DICT.get(typ), path, password
 			])
+
 		elif typ == "log":
+
+			password = kwargs.get('password', None)
+			if not password:
+				raise cherrypy.HTTPError(400)
 			p = subprocess.Popen([
 				'/usr/sbin/weblcm_files.sh', "log", "zip",
-				SystemSettingsManage.get_log_data_dir(), f, password
+				SystemSettingsManage.get_log_data_dir(), path, password
 			])
+			p.wait()
 		else:
 			p = subprocess.Popen([
 				'/usr/sbin/weblcm_files.sh', "debug", "zip",
 				' '.join([SystemSettingsManage.get_log_data_dir(), weblcm_def.FILEDIR_DICT.get('config')]),
-				f, SystemSettingsManage.get_cert_for_file_encryption()
+				path, SystemSettingsManage.get_cert_for_file_encryption()
 			])
 		p.wait()
 
-		if os.path.isfile(f):
-			objFile = static.serve_file(f, 'application/x-download', 'attachment', fil)
-			os.unlink(f);
+		if os.path.isfile(path):
+			objFile = static.serve_file(path, 'application/x-download', 'attachment', fil)
+			os.unlink(path);
 			return objFile;
 
-		raise cherrypy.HTTPError()
+		raise cherrypy.HTTPError(500)
 
-	def DELETE(self, typ):
-		return
+	@cherrypy.tools.json_in()
+	@cherrypy.tools.accept(media='application/json')
+	@cherrypy.tools.json_out()
+	def DELETE(self, *args, **kwargs):
+		result = { 'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL') }
+
+		typ = kwargs.get('type', None)
+		fil = kwargs.get('file', None)
+		if not typ or not fil:
+			raise cherrypy.HTTPError(400) #bad request
+
+		path = os.path.normpath(os.path.join(weblcm_def.FILEDIR_DICT.get(typ), fil))
+		if os.path.isfile(path):
+			os.remove(path);
+		if not os.path.exists(path):
+			result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+		return result
+
+@cherrypy.expose
+class FilesManage(object):
+
+	@cherrypy.tools.json_in()
+	@cherrypy.tools.accept(media='application/json')
+	@cherrypy.tools.json_out()
+	def GET(self, *args, **kwargs):
+
+		typ = kwargs.get('type', None)
+		if not typ:
+			raise cherrypy.HTTPError(400)
+
+		files = []
+		with os.scandir(weblcm_def.FILEDIR_DICT.get(typ)) as listOfEntries:
+			for entry in listOfEntries:
+				if entry.is_file():
+					strs = entry.name.split('.')
+					if len(strs) == 2 and strs[1] in weblcm_def.FILEFMT_DICT.get(typ):
+						files.append(entry.name)
+		files.sort()
+		return files

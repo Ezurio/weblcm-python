@@ -119,7 +119,7 @@ function createUserList(users) {
     });
 
     row += '<td class="text-center">';
-    row += '<input type="button" class="btn btn-primary" id="bt-del-user-' + name + '" value="' + i18nData['delete user'] + '">';
+    row += '<input type="button" class="btn btn-primary" id="bt-del-user-' + name + '" value="' + i18nData['delete'] + '">';
     row += '</td>';
 
     $(document).on("click", "#bt-del-user-" + name, function(){

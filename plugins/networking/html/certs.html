@@ -1,0 +1,62 @@
+<nav>
+	<div class="nav nav-tabs nav-fill" id="nav-tab-cert-pac" role="tablist">
+		<a class="nav-item nav-link i18n active" id="nav-tab-cert" data-toggle="tab" href="#tab-cert" role="tab" aria-controls="tab-cert" aria-selected="true">Certs Management</a>
+		<a class="nav-item nav-link i18n" id="nav-tab-pac" data-toggle="tab" href="#tab-pac" role="tab" aria-controls="tab-pac" aria-selected="false">PACs Management</a>
+	</div>
+</nav>
+<div class="tab-content">
+	<div class="tab-pane fade show active" id="tab-cert" role="tabpanel" aria-labelledby="nav-tab-cert">
+		<div class="table-responsive mt-3">
+			<table id="table-cert" class="table table-borderless">
+				<thead>
+					<tr>
+						<th scope="col text-center"></th>
+						<th scope="col text-center"></th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+		</div>
+		<form method="POST" id="form-import-cert-2" enctype="multipart/form-data">
+			<div class="input-group mt-3">
+				<div class="input-group-prepend i18n" name="Select File">
+					<span class="input-group-text">Select File</span>
+				</div>
+				<input type="text" class="d-none" name="type" value="cert">
+				<input type="file" class="form-control" id="input-file-cert-2" name="file" accept=".crt, .key, .pem">
+				<div class="input-group-append">
+					<button type="button" id="bt-import-cert-2" class="btn btn-primary i18n" name="Update">Update</button>
+				</div>
+			</div>
+		</form>
+	</div>
+
+	<div class="tab-pane fade" id="tab-pac" role="tabpanel" aria-labelledby="nav-tab-pac">
+		<div class="table-responsive mt-3">
+			<table id="table-pac" class="table table-borderless">
+				<thead>
+					<tr>
+						<th scope="col text-center"></th>
+						<th scope="col text-center"></th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+		</div>
+		<form method="POST" id="form-import-pac-2" enctype="multipart/form-data">
+			<div class="input-group mt-3">
+				<div class="input-group-prepend i18n" name="Select File">
+					<span class="input-group-text">Select File</span>
+				</div>
+				<input type="text" class="d-none" name="type" value="pac">
+				<input type="file" class="form-control" id="input-file-pac-2" name="file" accept=".pac">
+				<div class="input-group-append">
+					<button type="button" id="bt-import-pac-2" class="btn btn-primary i18n" name="Update">Update</button>
+				</div>
+			</div>
+		</form>
+	</div>
+
+</div>
