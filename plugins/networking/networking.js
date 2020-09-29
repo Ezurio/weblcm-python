@@ -15,6 +15,10 @@ function networkingAUTORUN(retry){
     clickEditConnectionPage();
   });
 
+  $(document).on("click", "#networking_certs_mini_menu, #networking_certs_main_menu", function(){
+    clickCertsPage();
+  });
+
   $(document).on("click", "#networking_scan_mini_menu, #networking_scan_main_menu", function(){
     clickScanPage();
   });
@@ -85,6 +89,35 @@ function networkingAUTORUN(retry){
 
   $(document).on("change", "#phase2-autheap", function(){
     onChangePhase2Eap();
+  });
+
+  $(document).on("click", "#bt-import-cert", function(){
+    fileUpload($("#form-import-cert"), $("#input-file-cert"), $("#bt-import-cert"));
+    getFileList('cert', createCertList);
+  });
+
+  $(document).on("click", "#bt-import-pac", function(){
+    fileUpload($("#form-import-pac"), $("#input-file-pac"), $("#bt-import-pac"));
+    getFileList('pac', createPacList);
+  });
+
+  $(document).on("click", "#bt-import-cert-2", function(){
+    fileUpload($("#form-import-cert-2"), $("#input-file-cert-2"), $("#bt-import-cert-2"));
+    getFileList('cert', createCertTable);
+  });
+
+  $(document).on("click", "#bt-import-pac-2", function(){
+    fileUpload($("#form-import-pac-2"), $("#input-file-pac-2"), $("#bt-import-pac-2"));
+    getFileList('pac', createPacTable);
+  });
+
+  $(document).on('show.bs.tab', "#nav-tab-cert-pac a", function(){
+    if($(this).attr("href") == "#tab-pac"){
+      getFileList('pac', createPacTable);
+    }
+    else{
+      getFileList('cert', createCertTable);
+    }
   });
 
   clickStatusPage();
@@ -318,6 +351,9 @@ function clear8021xCredsDisplay(){
   $("#eap-anonymous-identity-display").addClass("d-none");
   $("#eap-anonymous-identity").val("");
 
+  $("#form-import-pac").addClass("d-none");
+  $("#form-import-pac").val('');
+
   $("#pac-file-display").addClass("d-none");
   $("#pac-file").val("");
 
@@ -326,6 +362,9 @@ function clear8021xCredsDisplay(){
 
   $("#phase1-fast-provisioning-display").addClass("d-none");
   $("#phase1-fast-provisioning").val("0");
+
+  $("#form-import-cert").addClass("d-none");
+  $("#form-import-cert").val('');
 
   $("#ca-cert-display").addClass("d-none");
   $("#ca-cert").val("");
@@ -337,7 +376,7 @@ function clear8021xCredsDisplay(){
   $("#private-key").val("");
 
   $("#private-key-password-display").addClass("d-none");
-  $("#private-key-password").val();
+  $("#private-key-password").val("");
 
   $("#phase2-auth-display").addClass("d-none");
   $("#phase2-auth").val("none");
@@ -432,24 +471,30 @@ function onChangePhase2Eap() {
 function resetEapSetting(wxs){
 
   $("#ca-cert-display").addClass("d-none");
-  $("#ca-cert").val();
+  $("#ca-cert").val('');
   $("#client-cert-display").addClass("d-none");
-  $("#client-cert").val();
+  $("#client-cert").val('');
   $("#private-key-display").addClass("d-none");
-  $("#private-key").val();
+  $("#private-key").val('');
   $("#private-key-password-display").addClass("d-none");
   $("#tls-disable-time-checks-display").addClass("d-none");
-  $("#tls-disable-time-checks").val();
+  $("#tls-disable-time-checks").val('');
+  $("#form-import-cert").addClass("d-none");
+  $("#form-import-cert").val('');
 
   $("#pac-file-display").addClass("d-none");
-  $("#pac-file").val();
+  $("#pac-file").val('');
   $("#pac-file-password-display").addClass("d-none");
   $("#phase1-fast-provisioning-display").addClass("d-none");
-  $("#phase1-fast-provisioning").val();
+  $("#phase1-fast-provisioning").val('');
+  $("#form-import-pac").addClass("d-none");
+  $("#form-import-pac").val('');
 
   var eap = $("#eap-method").val();
   switch(eap){
     case "fast":
+      if(-1 == currUserPermission.indexOf("networking_certs_management"))
+        $("#form-import-pac").removeClass("d-none");
       $("#pac-file-display").removeClass("d-none");
       $("#pac-file").val(parseSettingData(wxs, "pac-file", ""));
       $("#pac-file-password-display").removeClass("d-none");
@@ -459,6 +504,8 @@ function resetEapSetting(wxs){
     case "tls":
     case "ttls":
     case "peap":
+      if(-1 == currUserPermission.indexOf("networking_certs_management"))
+        $("#form-import-cert").removeClass("d-none");
       $("#ca-cert-display").removeClass("d-none");
       $("#ca-cert").val(parseSettingData(wxs, "ca-cert", ""));
       $("#client-cert-display").removeClass("d-none");
@@ -1057,7 +1104,7 @@ function editConnection(uuid, id, ssid, key_mgmt) {
     if(-1 == currUserPermission.indexOf("networking_ap_activate"))
       $("#radio-mode-display").addClass("d-none");
 
-    $.when(getNetworkInterfaces(), getCerts()).done( function() {
+    $.when(getNetworkInterfaces(), getFileList('pac', createPacList), getFileList('cert', createCertList)).done(function(interfaces, pacs, certs) {
       updateGetConnectionPage(uuid, id, ssid, key_mgmt);
     });
   })
@@ -1074,10 +1121,10 @@ function selectedConnection(){
 function onChangeConnections(){
   var activated = $("#connectionSelect option:selected").attr("activated");
   if(activated == 1){
-    $("#bt-connection-activate").attr("value", i18nData['Deactivate-connection']);
+    $("#bt-connection-activate").attr("value", i18nData['Deactivate Connection']);
   }
   else {
-    $("#bt-connection-activate").attr("value", i18nData['Activate-connection']);
+    $("#bt-connection-activate").attr("value", i18nData['Activate Connection']);
   }
 }
 
@@ -1404,7 +1451,10 @@ function prepareWirelessConnection() {
   }
   else if (keymgmt == "wpa-eap") {
     wxs['eap'] = $("#eap-method").val().trim();
-    wxs['tls-disable-time-checks'] = $("#tls-disable-time-checks").val().trim();
+
+    if($("#tls-disable-time-checks").val())
+      wxs['tls-disable-time-checks'] = $("#tls-disable-time-checks").val();
+
     if (wxs['eap'] == "fast")
       wxs['phase1-fast-provisioning'] = parseInt($("#phase1-fast-provisioning").val()) || 0;
 
@@ -1825,59 +1875,41 @@ function clickScanPage(){
   });
 }
 
-function getCerts(connection){
+function createfileList(data, $sel){
 
-  function createCertList(data){
-    var ca = $("#ca-cert");
-    var client = $("#client-cert");
-    var pri = $("#private-key");
+  let val = $sel.val();
 
-    var phase2_ca = $("#phase2-ca-cert");
-    var phase2_client = $("#phase2-client-cert");
-    var phase2_pri = $("#phase2-private-key");
+  $sel.empty();
 
-    var pac_file = $("#pac-file");
-
-    ca.empty();
-    client.empty();
-    pri.empty();
-    phase2_ca.empty();
-    phase2_client.empty();
-    phase2_pri.empty();
-
-    for(i=0; i<data.length; i++) {
-      var option = "<option value=" + data[i] + ">" + data[i] + "</option>";
-      pos = data[i].lastIndexOf(".");
-      if( -1 == pos){
-        continue;
-      }
-      //".pac" files for FAST authentication
-      if (data[i].substr(pos+1) == "pac"){
-        pac_file.append(option);
-        continue;
-      }
-
-      ca.append(option);
-      client.append(option);
-      pri.append(option);
-      phase2_ca.append(option);
-      phase2_client.append(option);
-      phase2_pri.append(option);
-    }
+  for(i=0; i<data.length; i++) {
+    let option = "<option value=" + data[i] + ">" + data[i] + "</option>";
+    $sel.append(option);
   }
 
-  return $.ajax({
-    url: "files?typ=cert",
-    type: "GET",
-    cache: false,
-    contentType: "application/json",
-  })
-  .done(function(msg) {
-    createCertList(msg);
-  })
-  .fail(function( xhr, textStatus, errorThrown) {
-    httpErrorResponseHandler(xhr, textStatus, errorThrown)
-  });
+  if(val){
+    $sel.val(val);
+    $sel.change();
+  }
+  else {
+    $sel.val("");
+  }
+}
+
+function createPacList(data){
+
+  createfileList(data, $("#pac-file"));
+
+}
+
+function createCertList(data){
+
+  createfileList(data, $("#ca-cert"));
+  createfileList(data, $("#client-cert"));
+  createfileList(data, $("#private-key"));
+  createfileList(data, $("#phase2-ca-cert"));
+  createfileList(data, $("#phase2-client-cert"));
+  createfileList(data, $("#phase2-private-key"));
+
 }
 
 function getVersion(){
@@ -1922,7 +1954,8 @@ function clickVersionPage(){
 }
 
 function getNetworkInterfaces(){
-  return $.ajax({
+
+  $.ajax({
     url: "networkInterfaces",
     type: "GET",
     cache: false,
@@ -1948,6 +1981,7 @@ function getNetworkInterfaces(){
   .fail(function( xhr, textStatus, errorThrown) {
     httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
+
 }
 
 function onChangeRadioMode(){
@@ -2018,4 +2052,106 @@ function onChangeIpv6Method(){
       $("#ipv6-dns").attr('readonly', true);
       break;
   }
+}
+
+function clickCertsPage() {
+  $.ajax({
+    url: "plugins/networking/html/certs.html",
+    data: {},
+    type: "GET",
+    dataType: "html",
+  })
+  .done(function( data ) {
+    $(".active").removeClass("active");
+    $("#networking_certs_main_menu").addClass("active");
+    $("#networking_certs_mini_menu").addClass("active");
+    $("#main_section").html(data);
+    setLanguage("main_section");
+    clearReturnData();
+    getFileList('cert', createCertTable);
+  })
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
+  });
+}
+
+
+function createCertTable(certs) {
+
+  function delCertFile(e){
+
+    let row = $(this).closest('tr');
+    if(!row.hasClass("bg-info"))
+      return CustomMsg("Please select file first by clicking file name", true);
+
+    let cert = $(this).closest(".btn-del-cert").attr('data-value');
+    fileDelete('cert',  cert);
+    getFileList('cert', createCertTable);
+  }
+
+  let tbody = $("#table-cert > tbody");
+
+  tbody.empty();
+
+  for(let i=0; i<certs.length; i++){
+
+    row = '<tr>';
+    row += '<td class="text-center">';
+    row += certs[i];
+    row += '</td>';
+
+    row += '<td class="text-center">';
+    row += '<input type="button" class="btn btn-primary btn-del-cert" value="' + i18nData['Delete'] + '" data-value="' + certs[i] + '">';
+    row += '</td>';
+
+    row += '</tr>';
+    tbody.append(row);
+  }
+
+  $(document).on("click", ".btn-del-cert", delCertFile);
+
+  $("#table-cert tbody").on("click", "tr td:first-child", function(e){
+    row = $(this).closest('tr');
+    row.addClass('bg-info').siblings().removeClass('bg-info');
+  });
+}
+
+function createPacTable(pacs) {
+
+  function delPacFile(e){
+
+    let row = $(this).closest('tr');
+    if(!row.hasClass("bg-info"))
+      return CustomMsg("Please select file first by clicking file name", true);
+
+    let pac = $(this).closest(".btn-del-pac").attr('data-value');
+    fileDelete('pac',  pac);
+    getFileList('pac', createPacTable);
+  }
+
+  let tbody = $("#table-pac > tbody");
+
+  tbody.empty();
+
+  for(let i=0; i<pacs.length; i++){
+
+    row = '<tr>';
+    row += '<td class="text-center">';
+    row += pacs[i];
+    row += '</td>';
+
+    row += '<td class="text-center">';
+    row += '<input type="button" class="btn btn-primary btn-del-pac" value="' + i18nData['Delete'] + '" data-value="' + pacs[i] + '">';
+    row += '</td>';
+
+    row += '</tr>';
+    tbody.append(row);
+  }
+
+  $(document).on("click", ".btn-del-pac", delPacFile);
+
+  $("#table-pac tbody").on("click", "tr td:first-child", function(e){
+    row = $(this).closest('tr');
+    row.addClass('bg-info').siblings().removeClass('bg-info');
+  });
 }
