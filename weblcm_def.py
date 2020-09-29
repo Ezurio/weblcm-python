@@ -22,15 +22,15 @@ if not os.path.exists(WIFI_DRIVER_DEBUG_PARAM):
 	WIFI_DRIVER_DEBUG_PARAM = "/sys/module/ath6kl_core/parameters/debug_mask"
 
 FILEDIR_DICT = {
-	'cert': '{0}{1}'.format(WEBLCM_PYTHON_CONF_DIR, 'ssl/'),
-	'profile': '{0}{1}'.format(NETWORKMANAGER_CONF_DIR, 'system-connections/'),
+	'cert': '{0}{1}'.format(NETWORKMANAGER_CONF_DIR, 'certs/'),
+	'pac': '{0}{1}'.format(NETWORKMANAGER_CONF_DIR, 'certs/'),
 	'config': SYSTEM_CONF_DIR,
 	'timezone': WEBLCM_PYTHON_ZONEINFO,
 }
 
 FILEFMT_DICT = {
-	'cert' : ('.crt', '.key', '.pem', '.pac', '.bin'),
-	'profile' : ('.nmconnection'),
+	'cert' : ('crt', 'key', 'pem', 'bin'),
+	'pac' : ('pac'),
 }
 
 DBUS_PROP_IFACE = 'org.freedesktop.DBus.Properties'
@@ -55,6 +55,7 @@ USER_PERMISSION_TYPES = {
 		"networking_ap_activate",
 		"networking_delete",
 		"networking_scan",
+		"networking_certs",
 		"logging",
 		"update_password",
 		"swupdate",
@@ -74,6 +75,7 @@ USER_PERMISSION_TYPES = {
 		["Activate AP", "", ""],
 		["Delete Connection", "", ""],
 		["Wifi Scan","", ""],
+		["Certs Management","", ""],
 		["Logging", "", ""],
 		["Update Password", "checked", "disabled"],
 		["Firmware Update", "", ""],

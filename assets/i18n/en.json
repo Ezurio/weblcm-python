@@ -3,7 +3,7 @@
     "Failure": "Failure",
     "Unknown Data": "Unknown Data",
 
-    "Password": "Password",
+    "password": "Password",
     "Username": "Username",
     "Sign in": "Sign in",
     "Log out": "Log out",
@@ -12,7 +12,6 @@
 
     "load perm": "load perm",
     "update perm": "update perm",
-    "delete user": "delete user",
     "Special character list": "Special character list:",
 
     "Networking Status": "Status",
@@ -22,13 +21,14 @@
     "Activate Connection": "Activate Connection",
     "Activate AP": "Activate AP",
     "Delete Connection": "Delete Connection",
+    "Deactivate Connection": "Deactivate Connection",
     "Wifi Scan": "Wifi Scan",
     "Logging": "Logging",
     "Update Password": "Update Password",
     "Firmware Update": "Firmware Update",
     "Advanced": "Advanced Settings",
 
-    "Select config archive": "Select config archive",
+    "Select File": "Select File",
     "Import system configuration": "Import system configuration",
     "Export system configuration": "Export system configuration",
     "Export system log": "Export system log",
@@ -100,8 +100,9 @@
         }
     },
 
+    "Delete": "Delete",
     "Update": "Update",
-    "Select Firmware": "Select Firmware",
+    "Select File": "Select File",
     "Update Status": "Update Status",
     "Please select firmware": "Please select firmware",
 
@@ -133,10 +134,6 @@
     "Speed": "Speed",
     "Security": "Security",
     "Channel": "Channel",
-    "Activate-connection": "Activate",
-    "Deactivate-connection": "Deactivate",
-    "Edit-connection": "Edit",
-    "Delete-connection": "Delete",
     "Randomly generated when connection is added": "Randomly generated when connection is added",
     "Connection Name": "ID",
     "Interface": "Interface",
@@ -210,6 +207,8 @@
     "DHCP": "DHCP",
     "Shared": "Shared",
     "dns": "dns",
+    "Certs Management": "Certs Management",
+    "PACs Management": "PACs Management",
 
     "Unknown": "Unknown",
     "Unmanaged": "Unmanaged",
@@ -245,6 +244,7 @@
     "Only alphanumeric characters are allowed for username": "Only alphanumeric characters are allowed for username",
     "Add user failed": "Add user failed",
     "Please select user first by clicking user name": "Please select user first by clicking user name",
+    "Please select file first by clicking file name": "Please select file first by clicking file name",
     "Delete user failed": "Delete user failed",
     "Invalid ipv4 Settings": "Invalid ipv4 Settings",
     "Invalid ipv6 Settings": "Invalid ipv6 Settings",

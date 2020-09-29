@@ -41,14 +41,17 @@ class DateTimeSetting(object):
 
 	def getLocalZone(self):
 
-		localtime = os.readlink(self.userLocaltime)
-		index = localtime.find(self.zoneinfo)
-		if -1 != index:
-			return localtime[index + len(self.zoneinfo):]
+		try:
+			localtime = os.readlink(self.userLocaltime)
+			index = localtime.find(self.zoneinfo)
+			if -1 != index:
+				return localtime[index + len(self.zoneinfo):]
 
-		index = localtime.find(self.userZoneinfo)
-		if -1 != index:
-			return localtime[index + len(self.userZoneinfo):]
+			index = localtime.find(self.userZoneinfo)
+			if -1 != index:
+				return localtime[index + len(self.userZoneinfo):]
+		except Exception as e:
+			print(e)
 
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):

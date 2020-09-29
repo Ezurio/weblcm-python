@@ -8,7 +8,7 @@ function datetimeAUTORUN(retry) {
   });
 
   $(document).on("click", "#bt-import-timezone", function(){
-    xmlhttpFileUpload('timezone');
+    fileUpload($("#form-import-timezone"), $("#input-file-timezone"), $("#bt-import-timezone"));
   });
 
   $(document).on("change", "#datetime-config", function(){
@@ -197,46 +197,6 @@ function onChangeDatetimeConfig(){
       $("#datetime-time").prop('disabled', true);
       break;
   }
-}
-
-function fileUploadHelper(form, type) {
-
-  var xhr = new XMLHttpRequest();
-
-  xhr.onreadystatechange = function() {
-    if(xhr.readyState === XMLHttpRequest.DONE) {
-      var status = xhr.status;
-      if (status == 0 || (200 <= status && status < 400)) {
-        CustomMsg("Success", false);
-      } else {
-        CustomMsg("Failure", true);
-      }
-      $("#bt-import-"+type).prop("disabled", false);
-    }
-  }
-
-  xhr.open('POST', "archiveFiles", true);
-  xhr.send(form);
-}
-
-function xmlhttpFileUpload(type){
-
-  var file, data;
-
-  clearReturnData();
-
-  files = $("#input-file-"+type)[0].files;
-  if( files.length == 0 )
-  {
-    CustomMsg("Please select the config archive first", true);
-    return;
-  }
-
-  data = new FormData($("#form-import-"+type).get(0));
-
-  $("#bt-import-"+type).prop("disabled", true);
-
-  fileUploadHelper(data, type);
 }
 
 function clickDatetimePage() {
