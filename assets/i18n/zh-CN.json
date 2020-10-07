@@ -27,11 +27,11 @@
     "Firmware Update": "固件更新",
     "Advanced": "高级管理",
 
-    "Select File": "选择配置文件",
-    "Import system configuration": "导入配置",
-    "Export system configuration": "导出配置",
-    "Export system log": "导出日志",
-    "Export debug data": "导出所有",
+    "Select File": "选择文件",
+    "Import System Configuration": "导入配置",
+    "Export System Configuration": "导出配置",
+    "Export System Log": "导出日志",
+    "Export Debug Data": "导出所有",
     "Reboot": "重启",
     "Factory Reset": "恢复出厂值",
     "Advance Settings": "高级管理",
@@ -101,7 +101,7 @@
 
     "Delete": "删除",
     "Update": "更新",
-    "Select File": "选者固件",
+    "Upload": "上传",
     "Update Status": "状态显示",
     "Please select firmware": "请选择固件",
 
@@ -242,7 +242,7 @@
     "Only alphanumeric characters are allowed for username": "用户名只能由字母和数字组成",
     "Add user failed": "创建新用户失败",
     "Please select user first by clicking user name": "请先点击用户名以选择用户",
-    "Please select an item first by clicking the first column": "请先点击文件名以选择文件"
+    "Please select file first by clicking file name": "请先点击文件名以选择文件",
     "Delete user failed": "删除用户失败",
     "Invalid ipv4 Settings": "ipv4设置不正确",
     "Invalid ipv6 Settings": "ipv6设置不正确",
