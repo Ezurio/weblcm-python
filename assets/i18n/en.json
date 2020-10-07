@@ -29,10 +29,10 @@
     "Advanced": "Advanced Settings",
 
     "Select File": "Select File",
-    "Import system configuration": "Import system configuration",
-    "Export system configuration": "Export system configuration",
-    "Export system log": "Export system log",
-    "Export debug data": "Export debug data",
+    "Import System Configuration": "Import System Configuration",
+    "Export System Configuration": "Export System Configuration",
+    "Export System Log": "Export System Log",
+    "Export Debug Data": "Export Debug Data",
     "Reboot": "Reboot",
     "Factory Reset": "Factory Reset",
     "Advance Settings": "Advance Settings",
@@ -102,7 +102,7 @@
 
     "Delete": "Delete",
     "Update": "Update",
-    "Select File": "Select File",
+    "Upload": "Upload",
     "Update Status": "Update Status",
     "Please select firmware": "Please select firmware",
 
@@ -259,7 +259,7 @@
     "Device is busy": "Device is busy",
 
     "Datetime": "Datetime Setting",
-    "Timezone": "Time zone",
+    "Timezone": "Time Zone",
     "Configure": "Configure",
     "Date time setting is invalid": "Date time setting is invalid",
     "Date is invalid": "Date is invalid",

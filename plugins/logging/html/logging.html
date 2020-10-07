@@ -1,9 +1,11 @@
-<ul class="nav nav-tabs" id="tab-log">
-	<li class="nav-item"><a href="#get-log" id="tab-get-log" data-toggle="tab" class="nav-link i18n" name="Show logs">Show Logs</a></li>
-	<li class="nav-item"><a href="#set-log" id="tab-set-log" data-toggle="tab" class="nav-link i18n" name="Set Log Level">Set Log Level</a></li>
-</ul>
+<nav>
+	<div class="nav nav-tabs nav-fill" id="nav-tab-log" role="tablist">
+		<a class="nav-item nav-link i18n active" id="nav-tab-get-log" data-toggle="tab" href="#tab-get-log" role="tab" aria-controls="tab-get-log" aria-selected="true">Show Logs</a>
+		<a class="nav-item nav-link i18n" id="nav-tab-set-log" data-toggle="tab" href="#tab-set-log" role="tab" aria-controls="tab-set-log" aria-selected="false">Set Log Level</a>
+	</div>
+</nav>
 <div class="tab-content">
-	<div class="tab-pane fade show active" role="tabpanel" id="get-log">
+	<div class="tab-pane fade show active" id="tab-get-log" role="tabpanel" aria-labelledby="nav-tab-get-log">
 		<form class="mt-3">
 			<div class="input-group mb-3">
 				<div class="input-group-prepend i18n" name="Log Type">
@@ -68,7 +70,7 @@
 			</div>
 		</form>
 	</div>
-	<div class="tab-pane fade" role="tabpanel" id="set-log">
+	<div class="tab-pane fade" id="tab-set-log" role="tabpanel" aria-labelledby="nav-tab-set-log">
 		<form class="mt-3">
 			<div class="input-group mb-3">
 				<div class="input-group-prepend i18n" name="Supplicant debug level">

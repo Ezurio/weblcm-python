@@ -14,6 +14,12 @@ function loggingAUTORUN(retry){
   $(document).on("click", "#bt-submit-loglevel", function(){
     submitlogSetting();
   });
+
+  $(document).on('show.bs.tab', "#nav-tab-log a", function(){
+    if($(this).attr("href") == "#tab-set-log"){
+      getlogSetting();
+    }
+  });
 }
 
 function submitlogSetting(retry){
@@ -99,7 +105,7 @@ function clickLoggingPage(retry){
     $("#logging_main_menu").addClass("active");
     $("#logging_mini_menu").addClass("active");
     $("#main_section").html(data);
-	  setLanguage("main_section");
+    setLanguage("main_section");
     clearReturnData();
 
     var table = $("#table-log-data").DataTable({
@@ -116,13 +122,6 @@ function clickLoggingPage(retry){
           className: 'dt-left'
         }
       ]
-    });
-
-    $("#tab-log").bind("click", function() {
-      $(this).show();
-      if($("#set-log").length > 0){
-        getlogSetting();
-      }
     });
   })
   .fail(function( xhr, textStatus, errorThrown) {
