@@ -205,6 +205,9 @@ def run_event_listener():
 	for dev in NetworkManager.Device.all():
 		if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_ETHERNET or dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
 			dev.OnStateChanged(dev_statechange)
+		#In case wifi connection is already activated
+		if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI and dev.ActiveAccessPoint:
+			dev.ActiveAccessPoint.OnPropertiesChanged(ap_propchange)
 
 	GLib.MainLoop().run()
 
