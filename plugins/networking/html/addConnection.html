@@ -31,6 +31,7 @@
 						</div>
 						<select class="form-control" id="connection-type">
 							<option value="802-3-ethernet">Ethernet</option>
+							<option value="bridge">Bridge</option>
 							<option value="802-11-wireless" selected>Wireless</option>
 						</select>
 					</div>
@@ -41,6 +42,28 @@
 						<select class="form-control" id="autoconnect">
 							<option class="i18n" name="Yes" value=1>Yes</option>
 							<option class="i18n" name="No" value=0 selected>No</option>
+						</select>
+					</div>
+					<div class="input-group mb-3 d-none" id="connection-zone-display">
+						<div class="input-group-prepend i18n" name="Zone">
+							<span class="input-group-text">Zone</span>
+						</div>
+						<input type="text" class="form-control" id="connection-zone">
+					</div>
+					<div class="input-group mb-3 d-none" id="connection-master-display">
+						<div class="input-group-prepend i18n" name="Master">
+							<span class="input-group-text">Master</span>
+						</div>
+						<select class="form-control" id="connection-master">
+						</select>
+					</div>
+					<div class="input-group mb-3 d-none" id="connection-slave-type-display">
+						<div class="input-group-prepend i18n" name="Slave-type">
+							<span class="input-group-text">Slave-type</span>
+						</div>
+						<select class="form-control" id="connection-slave-type">
+							<option value="" selected></option>
+							<option class="i18n" name="Bridge" value="bridge">Bridge</option>
 						</select>
 					</div>
 				</div>
@@ -518,6 +541,15 @@
 				</div>
 			</div>
 		</div>
+		<div class="card bg-light d-none" id="connection-bridge-settings">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Bridge Settings" href="#connection-bridge-settings-body">Bridge Settings</a>
+			</div>
+			<div id="connection-bridge-settings-body" class="collapse in">
+				<div class="card-body">
+				</div>
+			</div>
+		</div>
 		<div class="card bg-light d-none" id="connection-modem-settings">
 			<div class="card-header">
 				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Modem Settings" href="#connection-modem-settings-body">Modem Settings</a>
@@ -541,15 +573,6 @@
 				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Bluetooth Settings" href="#connection-bluetooth-settings-body">Bluetooth Settings</a>
 			</div>
 			<div id="connection-bluetooth-settings-body" class="collapse in">
-				<div class="card-body">
-				</div>
-			</div>
-		</div>
-		<div class="card bg-light d-none" id="connection-bridge-settings">
-			<div class="card-header">
-				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Bridge Settings" href="#connection-bridge-settings-body">Bridge Settings</a>
-			</div>
-			<div id="connection-bridge-settings-body" class="collapse in">
 				<div class="card-body">
 				</div>
 			</div>

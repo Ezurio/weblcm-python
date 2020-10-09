@@ -160,7 +160,10 @@
     "Infrastructure WPA-PSK": "Infrastructure WPA-PSK",
     "WPA-Enterprise": "WPA-Enterprise",
     "Auto Connect": "Auto Connect",
-
+    "Zone": "Zone",
+    "Master": "Master",
+    "Slave-type": "Slave-type",
+    "Bridge": "Bridge",
 
     "PreShared Key": "PreShared Key",
     "LEAP Username": "LEAP Username",

@@ -14,6 +14,8 @@ from weblcm_settings import SystemSettingsManage
 
 class Root(object):
 
+	_firewalld_disabled = os.system('systemctl is-active --quiet firewalld')
+
 	@cherrypy.expose
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()
@@ -24,6 +26,8 @@ class Root(object):
 			plugins.append(k)
 
 		settings = {}
+		#Whether to display 'zone' on the 'edit connection' page
+		settings['firewalld_disabled'] = Root._firewalld_disabled
 		settings['session_timeout'] = SystemSettingsManage.get_session_timeout()
 
 		return {
