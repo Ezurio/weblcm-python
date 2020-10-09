@@ -35,7 +35,7 @@ function loadjsfile(key) {
 
 function loadmenu(menu, id){
 
-  $.ajax({
+  return $.ajax({
     url: "plugins/" + menu,
     data: {},
     type: "GET",
