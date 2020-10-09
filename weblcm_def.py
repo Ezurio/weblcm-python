@@ -79,7 +79,7 @@ USER_PERMISSION_TYPES = {
 		["Logging", "", ""],
 		["Update Password", "checked", "disabled"],
 		["Firmware Update", "", ""],
-		["Date Time Setting","", ""],
+		["Datetime","", ""],
 		["Advanced", "", ""],
 		#Don't need to display root only permissions
 		["", "", ""],

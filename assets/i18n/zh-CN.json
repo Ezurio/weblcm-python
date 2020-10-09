@@ -159,6 +159,10 @@
     "Infrastructure WPA-PSK": "WPA个人",
     "WPA-Enterprise": "WPA企业",
     "Auto Connect": "自动连接",
+    "Zone": " 区域",
+    "Master": "主连接",
+    "Slave-type": "从连接类型",
+    "Bridge": "桥接",
 
     "PreShared Key": "预共享密钥",
     "LEAP Username": "LEAP用户名",

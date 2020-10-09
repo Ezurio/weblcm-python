@@ -8,15 +8,32 @@ function advancedAUTORUN(retry) {
   });
 
   $(document).on("click", "#bt-import-config", function(){
-    fileUpload($("#form-import-config"), $("#input-file-config"), $("#bt-import-config"), $("#config-encrypt-password").val());
+
+    let passwd = $("#config-encrypt-password").val();
+    if (passwd.length < 8 || passwd.length > 64) {
+      CustomMsg("8-64 characters are required", true);
+      return;
+    }
+
+    fileUpload($("#form-import-config"), $("#input-file-config"), $("#bt-import-config"));
   });
 
   $(document).on("click", "#bt-export-config", function(){
-    fileDownload('config', $("#bt-export-config"), $("#config-decrypt-password").val());
+    let passwd = $("#config-decrypt-password").val();
+    if (passwd.length < 8 || passwd.length > 64) {
+      CustomMsg("8-64 characters are required", true);
+      return;
+    }
+    fileDownload('config', $("#bt-export-config"), passwd);
   });
 
   $(document).on("click", "#bt-export-log", function(){
-    fileDownload('log', $("#bt-export-log"), $("#log-encrypt-password").val());
+    let passwd = $("#log-decrypt-password").val();
+    if (passwd.length < 8 || passwd.length > 64) {
+      CustomMsg("8-64 characters are required", true);
+      return;
+    }
+    fileDownload('log', $("#bt-export-log"), passwd);
   });
 
   $(document).on("click", "#bt-export-debug", function(){

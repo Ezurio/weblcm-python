@@ -19,12 +19,7 @@ function doFileUpload(form, $bt) {
   xhr.send(form);
 }
 
-function fileUpload($form, $file, $bt, passwd) {
-
-  if (passwd && (passwd.length < 8 || passwd.length > 64)) {
-    CustomMsg("8-64 characters are required", true);
-    return;
-  }
+function fileUpload($form, $file, $bt) {
 
   var files = $file[0].files;
   if( files.length == 0 ) {
@@ -99,10 +94,6 @@ function fileDownload(type, $bt, passwd) {
   let url = "file?type=" + type;
 
   if (passwd){
-    if(passwd.length < 8 || passwd.length > 64) {
-      CustomMsg("8-64 characters are required", true);
-      return;
-    }
     url += "&password=" + passwd;
   }
 
