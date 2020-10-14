@@ -154,10 +154,11 @@ class LoginManageHelper(object):
 	def is_user_blocked(cls, username):
 		user = {}
 		with cls._lock:
+			now = datetime.now()
 			user = cls._failed_logins.get(username)
 			#Block username for 'login_block_timeout' seconds if failed consecutively for 'login_retry_times' times
-			if user and user.get('failed', 0) >= SystemSettingsManage.get_login_retry_times():
-				dt = (datetime.now() - user['time']).total_seconds()
+			if user and len(user['time']) >= SystemSettingsManage.get_login_retry_times():
+				dt = abs((now - user['time'][-1]).total_seconds())
 				if dt < SystemSettingsManage.get_tamper_protection_timeout():
 					return True
 				cls._failed_logins.pop(username, None)
@@ -166,15 +167,17 @@ class LoginManageHelper(object):
 	@classmethod
 	def login_failed(cls, username):
 		with cls._lock:
-			user = cls._failed_logins.get(username)
+			now = datetime.now()
+			user = cls._failed_logins.get(username, {})
 			if user:
-				user['failed'] += 1
-				user['time'] = datetime.now()
+				user['time'] = [ dt for dt in user['time'] if abs((now - dt).total_seconds()) < SystemSettingsManage.get_login_retry_window() ]
+				if len(user['time']) >= SystemSettingsManage.get_login_retry_times():
+					user['time'].pop(0, None)
 			else:
-				user = {}
-				user['failed'] = 1
-				user['time'] = datetime.now()
-				cls._failed_logins[username] = user
+				user['time'] = []
+
+			user['time'].append(now)
+			cls._failed_logins[username] = user
 
 	@classmethod
 	def login_reset(cls, username):
