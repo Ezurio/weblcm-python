@@ -11,9 +11,15 @@ from weblcm_settings import SystemSettingsManage
 @cherrypy.expose
 class FileManage(object):
 
+	''' File Management '''
+
 	_lock = Lock()
 
-	''' File Management '''
+	#log will be saved in /var/run/log/journal/ for volatile mode, or /var/log/journal/ for persistent mode
+	#If "/var/run/log/journal/" exists, it should be in volatile mode.
+	_log_data_dir = "/var/run/log/journal/"
+	if not os.path.exists("/var/run/log/journal/"):
+		_log_data_dir = "/var/log/journal/"
 
 	def save_file(self, typ, fil):
 		path = os.path.normpath(os.path.join(weblcm_def.FILEDIR_DICT.get(typ), fil.filename))
@@ -75,13 +81,14 @@ class FileManage(object):
 				raise cherrypy.HTTPError(400)
 			p = subprocess.Popen([
 				'/usr/sbin/weblcm_files.sh', "log", "zip",
-				SystemSettingsManage.get_log_data_dir(), path, password
+				FileManage._log_data_dir, path, password
 			])
 			p.wait()
+
 		else:
 			p = subprocess.Popen([
 				'/usr/sbin/weblcm_files.sh', "debug", "zip",
-				' '.join([SystemSettingsManage.get_log_data_dir(), weblcm_def.FILEDIR_DICT.get('config')]),
+				' '.join([FileManage._log_data_dir, weblcm_def.FILEDIR_DICT.get('config')]),
 				path, SystemSettingsManage.get_cert_for_file_encryption()
 			])
 		p.wait()
