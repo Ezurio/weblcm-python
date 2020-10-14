@@ -1,8 +1,8 @@
 [settings]
 cert_for_file_encryption = /etc/weblcm-python/ssl/ca.crt
-log_data_dir = /run/log/journal/
 log_data_streaming_size = 100
 user_callback_timeout = 10
-login_retry_times = 3
-tamper_protection_timeout = 60
+login_retry_times = 5
+login_retry_window = 600
+tamper_protection_timeout = 600
 session_timeout = 10
