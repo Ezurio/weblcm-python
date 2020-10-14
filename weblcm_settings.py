@@ -162,9 +162,5 @@ class SystemSettingsManage(object):
 		return int (WeblcmConfigManage.get_key_from_section(cls.section, 'log_data_streaming_size', 100))
 
 	@classmethod
-	def get_log_data_dir(cls):
-		return WeblcmConfigManage.get_key_from_section(cls.section, 'log_data_dir', "/run/log/journal/")
-
-	@classmethod
 	def get_cert_for_file_encryption(cls):
 		return WeblcmConfigManage.get_key_from_section(cls.section, 'cert_for_file_encryption', "/etc/weblcm-python/ssl/server.crt")

@@ -71,12 +71,12 @@ function doFileDownload(url, type, $bt) {
           link.get(0).click();
           window.URL.revokeObjectURL(this.href);
         }
+        CustomMsg("Downloaded", false);
       }
       else {
         CustomMsg("Failure", true);
       }
 
-      CustomMsg("Downloaded", false);
       $bt.prop("disabled", false);
     }
   }
