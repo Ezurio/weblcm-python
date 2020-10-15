@@ -60,7 +60,6 @@ function reboot(show) {
 
   $.ajax({
     url: "reboot",
-    data: {},
     type: "PUT",
   })
   .done(function() {
@@ -82,7 +81,6 @@ function factoryReset(){
   $.ajax({
     url: "factoryReset",
     type: "PUT",
-    contentType: "application/json",
   })
   .done(function(msg) {
     SDCERRtoString(msg.SDCERR);
