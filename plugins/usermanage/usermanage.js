@@ -81,9 +81,9 @@ function updatePassword() {
 
   $.ajax({
     url: "users",
-    contentType: "application/json",
-    data: JSON.stringify(creds),
     type: "PUT",
+    data: JSON.stringify(creds),
+    contentType: "application/json",
   })
   .done(function(data) {
 
@@ -158,7 +158,6 @@ function get_user_list() {
     url: "users",
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function(data) {
     createUserList(data);
@@ -223,9 +222,9 @@ function addUser() {
 
   $.ajax({
     url: "users",
-    contentType: "application/json",
-    data: JSON.stringify(creds),
     type: "POST",
+    data: JSON.stringify(creds),
+    contentType: "application/json",
   })
   .done(function(data) {
     if(data['SDCERR'] !== defines.SDCERR.SDCERR_SUCCESS){
@@ -268,9 +267,9 @@ function updatePermission(){
 
   $.ajax({
     url: "users",
-    contentType: "application/json",
-    data: JSON.stringify(creds),
     type: "PUT",
+    data: JSON.stringify(creds),
+    contentType: "application/json",
   })
   .done(function(data) {
     SDCERRtoString(data.SDCERR);
@@ -296,7 +295,6 @@ function delUser(){
 
   $.ajax({
     url: "users?username=" + id.slice(12),
-    contentType: "application/json",
     type: "DELETE",
   })
   .done(function(data) {

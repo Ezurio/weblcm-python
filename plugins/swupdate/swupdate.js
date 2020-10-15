@@ -32,6 +32,8 @@ function upload_one_chunk() {
 
 function updateFirmware() {
 
+  let data = {};
+
   if( $("#fw-name")[0].files.length == 0 ) {
 	CustomMsg("Please select firmware", true);
     return;
@@ -46,7 +48,8 @@ function updateFirmware() {
   $.ajax({
     url: "firmware",
     type: "POST",
-    dataType: "json",
+    data: JSON.stringify(data),
+    contentType: "application/json",
   })
   .done(function(msg) {
 
@@ -104,7 +107,6 @@ function update_end_check(){
     url: "firmware",
     type: "GET",
     cache: false,
-    dataType: "json",
   })
   .done(function(msg) {
     update_end(msg.SDCERR ? i18nData['Update failed!'] : i18nData['Update finished. Please reboot device!']);

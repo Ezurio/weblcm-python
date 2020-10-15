@@ -30,8 +30,8 @@ def octet_stream_in(force=True, debug=False):
 @cherrypy.expose
 class SWUpdate:
 
-	_isUpdating = False
 	_lock = Lock()
+	_isUpdating = False
 	cherrypy.tools.octet_stream_in = cherrypy.Tool('before_request_body', octet_stream_in)
 
 	@cherrypy.config(**{'tools.octet_stream_in.on': True})
@@ -67,6 +67,8 @@ class SWUpdate:
 
 		return result
 
+	@cherrypy.tools.accept(media='application/json')
+	@cherrypy.tools.json_in()
 	@cherrypy.tools.json_out()
 	def POST(self):
 
@@ -77,6 +79,25 @@ class SWUpdate:
 			'message': "Device is busy"
 		}
 
+		def do_swupdate(args, callback=None, timeout=SystemSettingsManage.get_user_callback_timeout()):
+
+			try:
+				proc = Popen(args, stdout=PIPE, stderr=PIPE)
+				outs, errs = proc.communicate(timeout=timeout)
+				if proc.returncode:
+					result['message'] = errs.decode("utf-8")
+					result['SDCERR'] = proc.returncode
+				else:
+					if not callback or callback(dryrun) > 0:
+						result['SDCERR'] = 0
+			except TimeoutExpired:
+				proc.kill()
+				outs, errs = proc.communicate()
+				result['message'] = "Update checking timeout"
+			except Exception as e:
+				result['message'] = "{}".format(e)
+			return
+
 		with SWUpdate._lock:
 			if SWUpdate._isUpdating:
 				return result
@@ -84,21 +105,15 @@ class SWUpdate:
 
 		cherrypy.session['swupdate'] = cherrypy.session.id
 
-		try:
-			proc = Popen(["/usr/sbin/weblcm_swupdate.sh", "pre-update"], stdout=PIPE, stderr=PIPE)
-			outs, errs = proc.communicate(timeout=SystemSettingsManage.get_user_callback_timeout())
-			if proc.returncode:
-				result['message'] = errs.decode("utf-8")
-				result['SDCERR'] = proc.returncode
-			elif swclient.prepare_fw_update(dryrun) > 0:
-				result['SDCERR'] = 0
-
-		except TimeoutExpired:
-			proc.kill()
-			outs, errs = proc.communicate()
-			result['message'] = "Update checking timeout"
-		except Exception as e:
-			result['message'] = "{}".format(e)
+		images = cherrypy.request.json.get('images', None)
+		url = cherrypy.request.json.get('url', None)
+		timeout = cherrypy.request.json.get('timeout', SystemSettingsManage.get_user_callback_timeout())
+		if images and url:
+			do_swupdate(args = ["swupdate", "-e", images, "-d", "-u " + url], timeout = timeout)
+		elif not images and not url:
+			do_swupdate(args = ["/usr/sbin/weblcm_swupdate.sh", "pre-update"], callback = swclient.prepare_fw_update)
+		else:
+			result['message'] = "Bad Request"
 
 		if result['SDCERR']:
 			SWUpdate._isUpdating = False

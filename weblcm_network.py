@@ -9,6 +9,7 @@ import weblcm_def
 
 @cherrypy.expose
 class NetworkConnections(object):
+
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
 		result = {
@@ -45,6 +46,7 @@ class NetworkConnections(object):
 
 @cherrypy.expose
 class NetworkConnection(object):
+
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_in()
 	@cherrypy.tools.json_out()
@@ -295,6 +297,7 @@ class Version(object):
 
 @cherrypy.expose
 class NetworkInterfaces(object):
+
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
 

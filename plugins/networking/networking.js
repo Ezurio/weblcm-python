@@ -765,7 +765,6 @@ function updateStatus(){
     url: "networkStatus",
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function( data ) {
     let card_id_prefix = "network-status-accordion-";
@@ -1091,7 +1090,6 @@ function updateGetConnectionPage(uuid, id, ssid, key_mgmt){
     url: "connection?uuid="+uuid,
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function( msg ) {
     if($("#connection-settings-accordion").length > 0){
@@ -1175,7 +1173,6 @@ function updateConnectionsPage(){
     url: "connections",
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function( msg ) {
     if($("#connectionSelect").length > 0){
@@ -1222,7 +1219,6 @@ function removeConnection(){
   $.ajax({
     url: "connection?uuid="+$("#connectionSelect").val(),
     type: "DELETE",
-    contentType: "application/json",
   })
   .done(function( msg ) {
     SDCERRtoString(msg.SDCERR);
@@ -1375,15 +1371,23 @@ function prepareConnectionConnection(){
     return {};
   }
   con['id'] = v;
-  return settings = {'connection': con};
+  return con;
 }
 
 function prepareEthernetConnection() {
-  return prepareConnectionConnection();
+  let settings = {};
+  con = prepareConnectionConnection();
+  if(con)
+    settings['connection'] = con;
+  return settings;
 }
 
 function prepareBridgeConnection() {
-  return prepareConnectionConnection();
+  let settings = {};
+  con = prepareConnectionConnection();
+  if(con)
+    settings['connection'] = con;
+  return settings;
 }
 
 function prepareWirelessConnection() {
@@ -1459,6 +1463,8 @@ function prepareWirelessConnection() {
     v = parseInt($("#powersave").val());
     if(v)
       ws['powersave'] = v;
+
+    return ws;
   }
 
   function prepareWirelessSecurity(){
@@ -1626,7 +1632,7 @@ function prepareWirelessConnection() {
 
   if (wss['key-mgmt'] == "wpa-eap") {
     wxs = prepareWireless8021x();
-    if(!wxx)
+    if(!wxs)
       return wxs;
   }
 
@@ -1853,7 +1859,6 @@ function requestScan(){
   $.ajax({
     url: "accesspoints",
     type: "PUT",
-    contentType: "application/json",
   })
   .done(function(msg) {
     setIntervalUpdate(getScan, 10000, 0);
@@ -1870,7 +1875,6 @@ function getScan(retry){
     url: "accesspoints",
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function(msg) {
 
@@ -2020,7 +2024,6 @@ function getVersion(){
     url: "version",
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function(msg) {
     $("#driver").text(msg['driver']);
@@ -2062,7 +2065,6 @@ function getNetworkInterfaces(){
     url: "networkInterfaces",
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function(data) {
 

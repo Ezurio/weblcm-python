@@ -81,7 +81,6 @@ function getlogSetting(retry){
     url: "logSetting",
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function(msg) {
     $("#supp-debug-level").val(msg.suppDebugLevel);

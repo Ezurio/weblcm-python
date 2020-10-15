@@ -74,7 +74,6 @@ class LogSetting(object):
 
 		return result
 
-	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
 		result = {

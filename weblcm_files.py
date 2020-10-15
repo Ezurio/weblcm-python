@@ -100,8 +100,6 @@ class FileManage(object):
 
 		raise cherrypy.HTTPError(500)
 
-	@cherrypy.tools.json_in()
-	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()
 	def DELETE(self, *args, **kwargs):
 		result = { 'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL') }
@@ -121,8 +119,6 @@ class FileManage(object):
 @cherrypy.expose
 class FilesManage(object):
 
-	@cherrypy.tools.json_in()
-	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
 

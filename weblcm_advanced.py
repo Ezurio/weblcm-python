@@ -3,6 +3,7 @@ from subprocess import Popen, PIPE
 
 @cherrypy.expose
 class Reboot(object):
+
 	def PUT(self):
 		p = Popen(['systemctl', 'reboot'])
 		p.wait()

@@ -38,7 +38,6 @@ function fileDelete(type, filename) {
   $.ajax({
     type: "DELETE",
     url: "file?type=" + type + "&file=" + filename,
-    contentType: "application/json",
   })
   .done(function(data) {
     if(data['SDCERR'] == 1){
@@ -106,7 +105,6 @@ function getFileList(type, callback) {
     url: "files?type=" + type,
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function(data) {
     if(callback && data){
