@@ -12,11 +12,15 @@ exit_on_error() {
 }
 
 do_zip(){
-	cd ${source} && /usr/bin/zip --password ${passwd} -9 -qqr ${target} * || exit_on_error "Failed to zip files in ${source}"
+
+	#Encrypt the zip file and preserver symlinks
+	cd ${source} && /usr/bin/zip --symlinks --password ${passwd} -9 -qqr ${target} * || exit_on_error "Failed to zip files in ${source}"
 }
 
 do_unzip_config(){
 
+	#zip test: return error if file is not encrypted, or the password is not correct
+	cd ${target} && unzip -P 1234 -qqt ${source} && exit_on_error "File is not encrypted"
 	cd ${target} && unzip -P ${passwd} -qqt ${source} || exit_on_error "Failed to unzip due to wrong password"
 	cd ${target} && rm -fr NetworkManager/ weblcm-python/ && /usr/bin/unzip -P ${passwd} -qqo ${source} || exit_on_error "Failed to unzip(decrypt) files to ${target}"
 }

@@ -7,12 +7,14 @@ from weblcm_network import NetworkInterfaces, NetworkConnections, NetworkConnect
 from weblcm_log import LogData, LogSetting
 from weblcm_swupdate import SWUpdate
 from weblcm_users import UserManage, LoginManage, LoginManageHelper
-from weblcm_files import FileManage, ArchiveFilesManage
+from weblcm_files import FileManage, FilesManage
 from weblcm_advanced import Reboot, FactoryReset
 from weblcm_datetime import DateTimeSetting
 from weblcm_settings import SystemSettingsManage
 
 class Root(object):
+
+	_firewalld_disabled = os.system('systemctl is-active --quiet firewalld')
 
 	@cherrypy.expose
 	@cherrypy.tools.accept(media='application/json')
@@ -24,6 +26,8 @@ class Root(object):
 			plugins.append(k)
 
 		settings = {}
+		#Whether to display 'zone' on the 'edit connection' page
+		settings['firewalld_disabled'] = Root._firewalld_disabled
 		settings['session_timeout'] = SystemSettingsManage.get_session_timeout()
 
 		return {
@@ -59,7 +63,7 @@ def force_session_checking():
 
 	paths = (
 				"connections", "connection", "accesspoints", "networkInterfaces",
-				"archiveFiles", "users", "firmware", "logData",
+				"file", "users", "firmware", "logData",
 				"logSetting", "factoryReset", "reboot", "files", "datetime"
 			)
 
@@ -96,8 +100,8 @@ if __name__ == '__main__':
 	webapp.logSetting = LogSetting()
 
 	webapp.users = UserManage()
-	webapp.files = FileManage()
-	webapp.archiveFiles = ArchiveFilesManage()
+	webapp.file = FileManage()
+	webapp.files = FilesManage()
 
 	webapp.firmware = SWUpdate()
 
@@ -113,8 +117,6 @@ if __name__ == '__main__':
 
 	#Server config
 	cherrypy.config.update({
-			'server.ssl_certificate': '{0}{1}'.format(weblcm_def.FILEDIR_DICT.get('cert'), 'server.crt'),
-			'server.ssl_private_key': '{0}{1}'.format(weblcm_def.FILEDIR_DICT.get('cert'), 'server.key'),
 			'tools.sessions.timeout': SystemSettingsManage.get_session_timeout(),
 		})
 

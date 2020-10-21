@@ -8,19 +8,36 @@ function advancedAUTORUN(retry) {
   });
 
   $(document).on("click", "#bt-import-config", function(){
-    importArchive('config');
+
+    let passwd = $("#config-encrypt-password").val();
+    if (passwd.length < 8 || passwd.length > 64) {
+      CustomMsg("8-64 characters are required", true);
+      return;
+    }
+
+    fileUpload($("#form-import-config"), $("#input-file-config"), $("#bt-import-config"));
   });
 
   $(document).on("click", "#bt-export-config", function(){
-    exportArchive('config');
+    let passwd = $("#config-decrypt-password").val();
+    if (passwd.length < 8 || passwd.length > 64) {
+      CustomMsg("8-64 characters are required", true);
+      return;
+    }
+    fileDownload('config', $("#bt-export-config"), passwd);
   });
 
   $(document).on("click", "#bt-export-log", function(){
-    exportArchive('log');
+    let passwd = $("#log-decrypt-password").val();
+    if (passwd.length < 8 || passwd.length > 64) {
+      CustomMsg("8-64 characters are required", true);
+      return;
+    }
+    fileDownload('log', $("#bt-export-log"), passwd);
   });
 
   $(document).on("click", "#bt-export-debug", function(){
-    exportArchive('debug');
+    fileDownload('debug', $("#bt-export-debug"));
   });
 
   $(document).on("click", "#bt-reboot", function(){
@@ -43,7 +60,6 @@ function reboot(show) {
 
   $.ajax({
     url: "reboot",
-    data: {},
     type: "PUT",
   })
   .done(function() {
@@ -65,7 +81,6 @@ function factoryReset(){
   $.ajax({
     url: "factoryReset",
     type: "PUT",
-    contentType: "application/json",
   })
   .done(function(msg) {
     SDCERRtoString(msg.SDCERR);
@@ -74,121 +89,6 @@ function factoryReset(){
   .fail(function( xhr, textStatus, errorThrown) {
     httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
-}
-
-function doUpload(form, type) {
-
-  var xhr = new XMLHttpRequest();
-
-  xhr.onreadystatechange = function() {
-    if(xhr.readyState === XMLHttpRequest.DONE) {
-      var status = xhr.status;
-      if (status === 0 || (200 <= status && status < 400)) {
-        CustomMsg("Success", false);
-      } else {
-        CustomMsg("Failure", true);
-      }
-      $("#bt-import-"+type).prop("disabled", false);
-    }
-  }
-
-  xhr.open('POST', "archiveFiles", true);
-  xhr.send(form);
-}
-
-function importArchive(type){
-
-  clearReturnData();
-
-  var files = $("#input-file-"+type)[0].files;
-  if( files.length == 0 )
-  {
-    CustomMsg("Please select the config archive first", true);
-    return;
-  }
-
-  var passwd = $("#"+type+"-decrypt-passwd").val();
-  if (passwd.length < 8 || passwd.length > 64){
-    CustomMsg("8-64 characters are required", true);
-    return;
-  }
-
-  var data = new FormData($("#form-import-"+type).get(0));
-
-  $("#bt-import-"+type).prop("disabled", true);
-
-  doUpload(data, type)
-}
-
-function doDelete(type) {
-  $.ajax({
-    url: "archiveFiles?typ="+type,
-    type: "DELETE",
-    dataType: "html",
-  })
-  .done(function(data){
-  })
-  .fail(function( xhr, textStatus, errorThrown) {
-    httpErrorResponseHandler(xhr, textStatus, errorThrown)
-  });
-}
-
-function doDownload(url, type) {
-  var xhr = new XMLHttpRequest();
-
-  xhr.onreadystatechange = function() {
-    if(xhr.readyState == XMLHttpRequest.LOADING){
-        CustomMsg("Downloading...", false);
-    }
-    else if(xhr.readyState === XMLHttpRequest.DONE) {
-      if (xhr.status === 0 || (200 <= xhr.status && xhr.status < 400)) {
-        // IE10+ : (has Blob, but not a[download] or URL)
-        if (navigator.msSaveBlob) {
-          navigator.msSaveBlob(xhr.response, type+".zip");
-        }
-        else {
-          var link = $("#archor-link-export-archive");
-          link.attr("href", window.URL.createObjectURL(xhr.response));
-          link.attr("download", type+".zip");
-          link.get(0).click();
-          window.URL.revokeObjectURL(this.href);
-        }
-      }
-      else {
-        CustomMsg("Failure", true);
-      }
-
-      CustomMsg("Downloaded", false);
-      $("#bt-export-"+type).prop("disabled", false);
-
-      doDelete(type);
-    }
-  }
-
-  CustomMsg("Download start", false);
-  $("#bt-export-"+type).prop("disabled", true);
-
-  xhr.open('GET', url, true);
-  xhr.responseType = 'blob';
-  xhr.send();
-}
-
-
-function exportArchive(type) {
-  var passwd = "";
-
-  clearReturnData();
-
-  if (type != "debug") {
-    passwd = $("#"+type+"-encrypt-passwd").val();
-    if (passwd.length < 8 || passwd.length > 64){
-      CustomMsg("8-64 characters are required", true);
-      return;
-    }
-  }
-
-  var url = "archiveFiles?typ="+type+"&Password="+passwd;
-  doDownload(url, type);
 }
 
 function clickAdvancedPage() {

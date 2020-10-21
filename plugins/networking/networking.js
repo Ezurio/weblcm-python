@@ -15,6 +15,10 @@ function networkingAUTORUN(retry){
     clickEditConnectionPage();
   });
 
+  $(document).on("click", "#networking_certs_mini_menu, #networking_certs_main_menu", function(){
+    clickCertsPage();
+  });
+
   $(document).on("click", "#networking_scan_mini_menu, #networking_scan_main_menu", function(){
     clickScanPage();
   });
@@ -85,6 +89,35 @@ function networkingAUTORUN(retry){
 
   $(document).on("change", "#phase2-autheap", function(){
     onChangePhase2Eap();
+  });
+
+  $(document).on("click", "#bt-import-cert", function(){
+    fileUpload($("#form-import-cert"), $("#input-file-cert"), $("#bt-import-cert"));
+    getFileList('cert', createCertList);
+  });
+
+  $(document).on("click", "#bt-import-pac", function(){
+    fileUpload($("#form-import-pac"), $("#input-file-pac"), $("#bt-import-pac"));
+    getFileList('pac', createPacList);
+  });
+
+  $(document).on("click", "#bt-import-cert-2", function(){
+    fileUpload($("#form-import-cert-2"), $("#input-file-cert-2"), $("#bt-import-cert-2"));
+    getFileList('cert', createCertTable);
+  });
+
+  $(document).on("click", "#bt-import-pac-2", function(){
+    fileUpload($("#form-import-pac-2"), $("#input-file-pac-2"), $("#bt-import-pac-2"));
+    getFileList('pac', createPacTable);
+  });
+
+  $(document).on('show.bs.tab', "#nav-tab-cert-pac a", function(){
+    if($(this).attr("href") == "#tab-pac"){
+      getFileList('pac', createPacTable);
+    }
+    else{
+      getFileList('cert', createCertTable);
+    }
   });
 
   clickStatusPage();
@@ -246,21 +279,25 @@ function DeviceTypetoString(type) {
 function onChangeNetworkInterface(){
 
   let ifrname = $("#interface-name").val();
-  if(-1 != ifrname.indexOf("wlan")){
+
+  if(-1 !== ifrname.indexOf("wlan")){
     $("#connection-type").val("802-11-wireless");
     $("#connection-type").change();
     $('#connection-type').attr('disabled', 'disabled');
   }
-  else if(-1 != ifrname.indexOf("eth")){
+  else if(-1 !== ifrname.indexOf("eth")){
     $("#connection-type").val("802-3-ethernet");
+    $("#connection-type").change();
+    $('#connection-type').attr('disabled', 'disabled');
+  }
+  else if(-1 !== ifrname.indexOf("br")){
+    $("#connection-type").val("bridge");
     $("#connection-type").change();
     $('#connection-type').attr('disabled', 'disabled');
   }
   else {
     $('#connection-type').removeAttr('disabled');
   }
-
-
 }
 
 function onChangeConnectionType(){
@@ -299,6 +336,18 @@ function onChangeConnectionType(){
     default:
       break;
   }
+
+  //If there is no "bridge" device or it is a bridge master, hide "master" and "slave-type"
+  let bridge = checkValueInSelectList($("#interface-name option"), "br");
+  if(bridge.length && ctype != "bridge"){
+    $("#connection-master-display").removeClass("d-none");
+    $("#connection-slave-type-display").removeClass("d-none");
+  }
+  else{
+    $("#connection-master-display").addClass("d-none");
+    $("#connection-slave-type-display").addClass("d-none");
+  }
+
 }
 
 function clear8021xCredsDisplay(){
@@ -318,6 +367,9 @@ function clear8021xCredsDisplay(){
   $("#eap-anonymous-identity-display").addClass("d-none");
   $("#eap-anonymous-identity").val("");
 
+  $("#form-import-pac").addClass("d-none");
+  $("#form-import-pac").val('');
+
   $("#pac-file-display").addClass("d-none");
   $("#pac-file").val("");
 
@@ -326,6 +378,9 @@ function clear8021xCredsDisplay(){
 
   $("#phase1-fast-provisioning-display").addClass("d-none");
   $("#phase1-fast-provisioning").val("0");
+
+  $("#form-import-cert").addClass("d-none");
+  $("#form-import-cert").val('');
 
   $("#ca-cert-display").addClass("d-none");
   $("#ca-cert").val("");
@@ -337,7 +392,7 @@ function clear8021xCredsDisplay(){
   $("#private-key").val("");
 
   $("#private-key-password-display").addClass("d-none");
-  $("#private-key-password").val();
+  $("#private-key-password").val("");
 
   $("#phase2-auth-display").addClass("d-none");
   $("#phase2-auth").val("none");
@@ -432,24 +487,30 @@ function onChangePhase2Eap() {
 function resetEapSetting(wxs){
 
   $("#ca-cert-display").addClass("d-none");
-  $("#ca-cert").val();
+  $("#ca-cert").val('');
   $("#client-cert-display").addClass("d-none");
-  $("#client-cert").val();
+  $("#client-cert").val('');
   $("#private-key-display").addClass("d-none");
-  $("#private-key").val();
+  $("#private-key").val('');
   $("#private-key-password-display").addClass("d-none");
   $("#tls-disable-time-checks-display").addClass("d-none");
-  $("#tls-disable-time-checks").val();
+  $("#tls-disable-time-checks").val('');
+  $("#form-import-cert").addClass("d-none");
+  $("#form-import-cert").val('');
 
   $("#pac-file-display").addClass("d-none");
-  $("#pac-file").val();
+  $("#pac-file").val('');
   $("#pac-file-password-display").addClass("d-none");
   $("#phase1-fast-provisioning-display").addClass("d-none");
-  $("#phase1-fast-provisioning").val();
+  $("#phase1-fast-provisioning").val('');
+  $("#form-import-pac").addClass("d-none");
+  $("#form-import-pac").val('');
 
   var eap = $("#eap-method").val();
   switch(eap){
     case "fast":
+      if(-1 == currUserPermission.indexOf("networking_certs_management"))
+        $("#form-import-pac").removeClass("d-none");
       $("#pac-file-display").removeClass("d-none");
       $("#pac-file").val(parseSettingData(wxs, "pac-file", ""));
       $("#pac-file-password-display").removeClass("d-none");
@@ -459,6 +520,8 @@ function resetEapSetting(wxs){
     case "tls":
     case "ttls":
     case "peap":
+      if(-1 == currUserPermission.indexOf("networking_certs_management"))
+        $("#form-import-cert").removeClass("d-none");
       $("#ca-cert-display").removeClass("d-none");
       $("#ca-cert").val(parseSettingData(wxs, "ca-cert", ""));
       $("#client-cert-display").removeClass("d-none");
@@ -702,7 +765,6 @@ function updateStatus(){
     url: "networkStatus",
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function( data ) {
     let card_id_prefix = "network-status-accordion-";
@@ -868,38 +930,59 @@ function clickStatusPage() {
   });
 }
 
+function checkValueInSelectList($opts, val){
+
+  let v = [];
+
+  $opts.each( function(){
+    if (-1 !== $(this).val().indexOf(val)) {
+      v.push($(this).val());
+    }
+  });
+  return v;
+}
+
 function newConnection(id, ssid, key_mgmt) {
 
   $("#connection-uuid").val("");
   $("#connection-id").val(id);
 
-  if(ssid){
-    $("#interface-name option").each(function(){
-
-      if(-1 != $(this).val().indexOf("wlan")){
-        $("#interface-name").val($(this).val());
-        $("#interface-name").change();
-        $("#ssid").val(ssid);
-        $("#key-mgmt").val(key_mgmt);
-        $("#key-mgmt").change();
-        return false
-      }
-
-    });
+  if(ssid) {
+    let dev = checkValueInSelectList($("#interface-name option"), "wlan");
+    if(dev.length){
+      $("#interface-name").val(dev[0]);
+      $("#interface-name").change();
+      $("#ssid").val(ssid);
+      $("#key-mgmt").val(key_mgmt);
+      $("#key-mgmt").change();
+    }
   }
 }
 
-function getWifiConnection(settings){
+function getConnectionConnection(settings){
 
   $("#connection-uuid").val(parseSettingData(settings['connection'], "uuid", ""));
   $("#connection-id").val(parseSettingData(settings['connection'], "id", ""));
+
+  $("#connection-zone").val(parseSettingData(settings['connection'], "zone", ""))
+  //Needs to be changed according to interface/connection type
+  $("#connection-master").val(parseSettingData(settings['connection'], "master", ""))
+  $("#connection-slave-type").val(parseSettingData(settings['connection'], "slave-type", ""))
+
   $("#interface-name").val(parseSettingData(settings['connection'], "interface-name", ""));
   $("#interface-name").change();
+
   //"autoconnect" is boolean. Use 1 and 0 so we don't need to do conversion in the backend.
   if(parseSettingData(settings['connection'], "autoconnect", true))
     $("#autoconnect").val(1);
   else
     $("#autoconnect").val(0);
+}
+
+function getWifiConnection(settings){
+
+  getConnectionConnection(settings);
+
   $("#ssid").val(parseSettingData(settings['802-11-wireless'], "ssid", ""));
   $("#client-name").val(parseSettingData(settings['802-11-wireless'], "client-name", ""));
 
@@ -952,14 +1035,12 @@ function getWifiConnection(settings){
 
 function getEthernetConnection(settings) {
 
-  $("#connection-uuid").val(parseSettingData(settings['connection'], "uuid", ""));
-  $("#connection-id").val(parseSettingData(settings['connection'], "id", ""));
-  if(parseSettingData(settings['connection'], "autoconnect", true))
-    $("#autoconnect").val(1);
-  else
-    $("#autoconnect").val(0);
-  $("#interface-name").val(parseSettingData(settings['connection'], "interface-name", ""));
-  $("#interface-name").change();
+  getConnectionConnection(settings);
+}
+
+function getBridgeConnection(settings) {
+
+  getConnectionConnection(settings);
 }
 
 function getIpv4Settings(settings){
@@ -1009,7 +1090,6 @@ function updateGetConnectionPage(uuid, id, ssid, key_mgmt){
     url: "connection?uuid="+uuid,
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function( msg ) {
     if($("#connection-settings-accordion").length > 0){
@@ -1021,11 +1101,13 @@ function updateGetConnectionPage(uuid, id, ssid, key_mgmt){
           case "802-11-wireless":
             getWifiConnection(msg.connection);
             break;
+          case "bridge":
+			getBridgeConnection(msg.connection);
+			break;
           case "ppp":
           case "bluetooth":
           case "modem":
           case "wifi-p2p":
-          case "bridge":
           default:
             break;
         }
@@ -1054,10 +1136,15 @@ function editConnection(uuid, id, ssid, key_mgmt) {
     setLanguage("main_section");
     clearReturnData();
 
+    //Hide connection-zone-display if firewalld is not enabled
+    if (!defines.SETTINGS.firewalld_disabled)
+      $("#connection-zone-display").removeClass("d-none");
+
     if(-1 == currUserPermission.indexOf("networking_ap_activate"))
       $("#radio-mode-display").addClass("d-none");
 
-    $.when(getNetworkInterfaces(), getCerts()).done( function() {
+    $.when(getNetworkInterfaces(), getFileList('pac', createPacList), getFileList('cert', createCertList))
+    .done(function() {
       updateGetConnectionPage(uuid, id, ssid, key_mgmt);
     });
   })
@@ -1074,10 +1161,10 @@ function selectedConnection(){
 function onChangeConnections(){
   var activated = $("#connectionSelect option:selected").attr("activated");
   if(activated == 1){
-    $("#bt-connection-activate").attr("value", i18nData['Deactivate-connection']);
+    $("#bt-connection-activate").attr("value", i18nData['Deactivate Connection']);
   }
   else {
-    $("#bt-connection-activate").attr("value", i18nData['Activate-connection']);
+    $("#bt-connection-activate").attr("value", i18nData['Activate Connection']);
   }
 }
 
@@ -1086,7 +1173,6 @@ function updateConnectionsPage(){
     url: "connections",
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function( msg ) {
     if($("#connectionSelect").length > 0){
@@ -1133,7 +1219,6 @@ function removeConnection(){
   $.ajax({
     url: "connection?uuid="+$("#connectionSelect").val(),
     type: "DELETE",
-    contentType: "application/json",
   })
   .done(function( msg ) {
     SDCERRtoString(msg.SDCERR);
@@ -1244,164 +1329,222 @@ function validate_string_input(val, $sel, min, max){
   return true;
 }
 
-function prepareEthernetConnection() {
+function validate_bridge_settings(master, slave, $display){
 
+  //"master" requires "slave-type" to be set, and vice versa
+  if(master && !slave){
+    $display.css('border-color', 'red');
+    return false;
+  }
+
+  if(!master && slave){
+    $display.css('border-color', 'red');
+    return false;
+  }
+
+  //Clear error
+  $display.css('border-color', '');
+  return true;
+}
+
+function prepareConnectionConnection(){
   let v;
   let con = {};
-  let settings = {};
 
   con['uuid'] = $("#connection-uuid").val().trim();
   con['type'] =  $("#connection-type").val().trim();
+
+  con['zone'] =  $("#connection-zone").val().trim();
+
+  if($("#connection-master").val())
+    con['master'] =  $("#connection-master").val();
+  if($("#connection-slave-type").val())
+    con['slave-type'] =  $("#connection-slave-type").val();
+
+  if(!validate_bridge_settings($("#connection-master").val(), $("#connection-slave-type").val(), $("#connection-slave-type")))
+    return {};
+
   con['interface-name'] = $("#interface-name").val().trim();
   con['autoconnect'] = parseInt($("#autoconnect").val().trim());
-
   v = $("#connection-id").val().trim();
   if(!validate_string_input(v, $("#connection-id"))){
     return {};
   }
   con['id'] = v;
-
-  return settings = {'connection': con};
+  return con;
 }
 
+function prepareEthernetConnection() {
+  let settings = {};
+  con = prepareConnectionConnection();
+  if(con)
+    settings['connection'] = con;
+  return settings;
+}
+
+function prepareBridgeConnection() {
+  let settings = {};
+  con = prepareConnectionConnection();
+  if(con)
+    settings['connection'] = con;
+  return settings;
+}
 
 function prepareWirelessConnection() {
 
-  let v;
+
   let con = {};
   let ws = {};
   let wss = {};
   let wxs = {}
   let settings = {};
 
-  con['uuid'] = $("#connection-uuid").val().trim();
-  con['type'] = $("#connection-type").val().trim();
-  con['interface-name'] = $("#interface-name").val().trim();
-  con['autoconnect'] = parseInt($("#autoconnect").val().trim());
+  function prepareWireless(){
 
-  v = $("#connection-id").val().trim();
-  if(!validate_string_input(v, $("#connection-id"))){
-    return {};
-  }
-  con['id'] = v;
+    let v;
+    let ws = {};
 
-  v = $("#ssid").val().trim();
-  if(!validate_string_input(v, $("#ssid"))){
-    return {};
-  }
-  ws['ssid'] = v;
-
-  v = $("#radio-mode").val().trim();
-  if(v)
-    ws['mode'] = v;
-
-  v = $("#client-name").val().trim();
-  if(v)
-    ws['client-name'] = v;
-
-  v = $("#tx-power").val().trim();
-  if(!validate_number_input(v, $("#tx-power"))){
-    return {};
-  }
-  if(v)
-    ws['tx-power'] = parseInt(v);
-
-  v = $("#radio-band").val().trim();
-  if(v != "default"){
-    ws['band'] = v;
-  }
-
-  //"band" should be set to "a" or "bg" to set "radio-channel"
-  v = $("#radio-channel").val().trim();
-  if(v && !ws['band']){
-    $("#radio-band").css('border-color', 'red');
-    $("#radio-band").focus();
-    return {};
-  }
-  $("#radio-band").css('border-color', '');
-  if(!validate_number_input(v, $("#radio-channel")) || !validate_wireless_channel(v, $("#radio-channel"), ws['band'])){
-    return {};
-  }
-  if(v)
-    ws['channel'] = parseInt(v);
-
-  v = $("#radio-channel-list").val().trim();
-  if(v && !ws['band']){
-    $("#radio-band").css('border-color', 'red');
-    $("#radio-band").focus();
-    return {};
-  }
-  $("#radio-band").css('border-color', '');
-  ws['frequency-list'] = get_wireless_channel_list(v, $("#radio-channel-list"),  ws['band']);
-  if(v && !ws['frequency-list'].length){
-    return {};
-  }
-
-  v = $("#frequency-dfs").val().trim();
-  if(v)
-    ws['frequency-dfs'] = parseInt(v);
-
-  v = parseInt($("#powersave").val());
-  if(v)
-    ws['powersave'] = v;
-
-  keymgmt = $("#key-mgmt").val().trim();
-  if(keymgmt == "static") {
-    wss['key-mgmt'] = "none";
-    wss['auth-alg'] = $("#auth-alg").val().trim();
-  }
-  else if(keymgmt == "ieee8021x") {
-    wss['auth-alg'] = $("#auth-alg").val().trim();
-    wss['key-mgmt'] = "ieee8021x";
-  }
-  else if(keymgmt != "none") {
-    wss['key-mgmt'] = keymgmt;
-  }
-
-  if(keymgmt == "static") {
-    v = parseInt($("#wep-tx-keyidx").val().trim());
-    wss['wep-tx-keyidx'] = v;
-
-    v = $("#wep-key0").val().trim();
-    if(v)
-      wss['wep-key0'] = v;
-
-    v = $("#wep-key1").val().trim();
-    if(v)
-      wss['wep-key1'] = v;
-
-    v = $("#wep-key2").val().trim();
-    if(v)
-      wss['wep-key2'] = v;
-
-    v = $("#wep-key3").val().trim();
-    if(v)
-      wss['wep-key3'] = v;
-  }
-  else if(keymgmt == "ieee8021x") {
-    v = $("#leap-username").val().trim();
-    if(!validate_string_input(v, $("#leap-username"))){
+    v = $("#ssid").val().trim();
+    if(!validate_string_input(v, $("#ssid"))){
       return {};
     }
-    wss['leap-username'] = v;
+    ws['ssid'] = v;
 
-    v = $("#leap-password").val().trim();
-    if(!validate_string_input(v, $("#leap-password"))){
+    v = $("#radio-mode").val().trim();
+    if(v)
+      ws['mode'] = v;
+
+    v = $("#client-name").val().trim();
+    if(v)
+      ws['client-name'] = v;
+
+    v = $("#tx-power").val().trim();
+    if(!validate_number_input(v, $("#tx-power"))){
       return {};
     }
-    wss['leap-password'] = v;
-  }
-  else if (keymgmt == "wpa-psk") {
-    v = $("#psk").val();
-    if(!validate_string_input(v, $("#psk"), 8, 64)){
+    if(v)
+      ws['tx-power'] = parseInt(v);
+
+    v = $("#radio-band").val().trim();
+    if(v != "default"){
+      ws['band'] = v;
+    }
+
+    //"band" should be set to "a" or "bg" to set "radio-channel"
+    v = $("#radio-channel").val().trim();
+    if(v && !ws['band']){
+      $("#radio-band").css('border-color', 'red');
+      $("#radio-band").focus();
       return {};
     }
-    wss['psk'] = v;
+    $("#radio-band").css('border-color', '');
+    if(!validate_number_input(v, $("#radio-channel")) || !validate_wireless_channel(v, $("#radio-channel"), ws['band'])){
+      return {};
+    }
+    if(v)
+      ws['channel'] = parseInt(v);
+
+    v = $("#radio-channel-list").val().trim();
+    if(v && !ws['band']){
+      $("#radio-band").css('border-color', 'red');
+      $("#radio-band").focus();
+      return {};
+    }
+    $("#radio-band").css('border-color', '');
+    ws['frequency-list'] = get_wireless_channel_list(v, $("#radio-channel-list"),  ws['band']);
+    if(v && !ws['frequency-list'].length){
+      return {};
+    }
+
+    v = $("#frequency-dfs").val().trim();
+    if(v)
+      ws['frequency-dfs'] = parseInt(v);
+
+    v = parseInt($("#powersave").val());
+    if(v)
+      ws['powersave'] = v;
+
+    return ws;
   }
-  else if (keymgmt == "wpa-eap") {
+
+  function prepareWirelessSecurity(){
+
+    let v;
+    let wss = {};
+    let keymgmt = $("#key-mgmt").val().trim();
+
+    if(keymgmt == "static") {
+      wss['key-mgmt'] = "none";
+      wss['auth-alg'] = $("#auth-alg").val().trim();
+    }
+    else if(keymgmt == "ieee8021x") {
+      wss['auth-alg'] = $("#auth-alg").val().trim();
+      wss['key-mgmt'] = "ieee8021x";
+    }
+    else if(keymgmt != "none") {
+      wss['key-mgmt'] = keymgmt;
+    }
+
+    if(keymgmt == "static") {
+      v = parseInt($("#wep-tx-keyidx").val().trim());
+      wss['wep-tx-keyidx'] = v;
+
+      v = $("#wep-key0").val().trim();
+      if(v)
+        wss['wep-key0'] = v;
+
+      v = $("#wep-key1").val().trim();
+      if(v)
+        wss['wep-key1'] = v;
+
+      v = $("#wep-key2").val().trim();
+      if(v)
+        wss['wep-key2'] = v;
+
+      v = $("#wep-key3").val().trim();
+      if(v)
+        wss['wep-key3'] = v;
+    }
+    else if(keymgmt == "ieee8021x") {
+      v = $("#leap-username").val().trim();
+      if(!validate_string_input(v, $("#leap-username"))){
+        return {};
+      }
+      wss['leap-username'] = v;
+
+      v = $("#leap-password").val();
+      if(v && !validate_string_input(v, $("#leap-password"))){
+        return {};
+      }
+      if(v)
+        wss['leap-password'] = v;
+      $("#leap-password").css('border-color', '');
+    }
+    else if (keymgmt == "wpa-psk") {
+      v = $("#psk").val();
+      if(v && !validate_string_input(v, $("#psk"), 8, 64)){
+        return {};
+      }
+      if(v)
+        wss['psk'] = v;
+      $("#psk").css('border-color', '');
+    }
+
+    return wss
+  }
+
+  function prepareWireless8021x(){
+
+    let v;
+    let wxs = {};
+
     wxs['eap'] = $("#eap-method").val().trim();
-    wxs['tls-disable-time-checks'] = $("#tls-disable-time-checks").val().trim();
-    wxs['phase1-fast-provisioning'] = parseInt($("#phase1-fast-provisioning").val().trim());
+
+    if($("#tls-disable-time-checks").val())
+      wxs['tls-disable-time-checks'] = $("#tls-disable-time-checks").val();
+
+    if (wxs['eap'] == "fast")
+      wxs['phase1-fast-provisioning'] = parseInt($("#phase1-fast-provisioning").val()) || 0;
 
     v = $("#eap-auth-timeout").val().trim();
     if(!validate_number_input(v, $("#eap-auth-timeout"))) {
@@ -1471,6 +1614,26 @@ function prepareWirelessConnection() {
     v = $("#pac-file-password").val();
     if(v)
       wxs['pac-file-password'] = v;
+
+    return wxs;
+  }
+
+  con = prepareConnectionConnection();
+  if(!con)
+    return con;
+
+  ws = prepareWireless();
+  if(!ws)
+    return ws;
+
+  wss = prepareWirelessSecurity();
+  if(!wss)
+    return wss
+
+  if (wss['key-mgmt'] == "wpa-eap") {
+    wxs = prepareWireless8021x();
+    if(!wxs)
+      return wxs;
   }
 
   settings['connection'] = con;
@@ -1607,6 +1770,7 @@ function addConnection() {
     case "bluetooth":
     case "wifi-p2p":
     case "bridge":
+      new_connection = prepareBridgeConnection();
     default:
       break;
   }
@@ -1695,7 +1859,6 @@ function requestScan(){
   $.ajax({
     url: "accesspoints",
     type: "PUT",
-    contentType: "application/json",
   })
   .done(function(msg) {
     setIntervalUpdate(getScan, 10000, 0);
@@ -1712,7 +1875,6 @@ function getScan(retry){
     url: "accesspoints",
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function(msg) {
 
@@ -1820,59 +1982,41 @@ function clickScanPage(){
   });
 }
 
-function getCerts(connection){
+function createfileList(data, $sel){
 
-  function createCertList(data){
-    var ca = $("#ca-cert");
-    var client = $("#client-cert");
-    var pri = $("#private-key");
+  let val = $sel.val();
 
-    var phase2_ca = $("#phase2-ca-cert");
-    var phase2_client = $("#phase2-client-cert");
-    var phase2_pri = $("#phase2-private-key");
+  $sel.empty();
 
-    var pac_file = $("#pac-file");
-
-    ca.empty();
-    client.empty();
-    pri.empty();
-    phase2_ca.empty();
-    phase2_client.empty();
-    phase2_pri.empty();
-
-    for(i=0; i<data.length; i++) {
-      var option = "<option value=" + data[i] + ">" + data[i] + "</option>";
-      pos = data[i].lastIndexOf(".");
-      if( -1 == pos){
-        continue;
-      }
-      //".pac" files for FAST authentication
-      if (data[i].substr(pos+1) == "pac"){
-        pac_file.append(option);
-        continue;
-      }
-
-      ca.append(option);
-      client.append(option);
-      pri.append(option);
-      phase2_ca.append(option);
-      phase2_client.append(option);
-      phase2_pri.append(option);
-    }
+  for(i=0; i<data.length; i++) {
+    let option = "<option value=" + data[i] + ">" + data[i] + "</option>";
+    $sel.append(option);
   }
 
-  return $.ajax({
-    url: "files?typ=cert",
-    type: "GET",
-    cache: false,
-    contentType: "application/json",
-  })
-  .done(function(msg) {
-    createCertList(msg);
-  })
-  .fail(function( xhr, textStatus, errorThrown) {
-    httpErrorResponseHandler(xhr, textStatus, errorThrown)
-  });
+  if(val){
+    $sel.val(val);
+    $sel.change();
+  }
+  else {
+    $sel.val("");
+  }
+}
+
+function createPacList(data){
+
+  createfileList(data, $("#pac-file"));
+
+}
+
+function createCertList(data){
+
+  createfileList(data, $("#ca-cert"));
+  createfileList(data, $("#client-cert"));
+  createfileList(data, $("#private-key"));
+  createfileList(data, $("#phase2-ca-cert"));
+  createfileList(data, $("#phase2-client-cert"));
+  createfileList(data, $("#phase2-private-key"));
+
 }
 
 function getVersion(){
@@ -1880,7 +2024,6 @@ function getVersion(){
     url: "version",
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function(msg) {
     $("#driver").text(msg['driver']);
@@ -1917,15 +2060,17 @@ function clickVersionPage(){
 }
 
 function getNetworkInterfaces(){
+
   return $.ajax({
     url: "networkInterfaces",
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function(data) {
+
     if (data.SDCERR == defines.SDCERR.SDCERR_FAIL)
       return;
+
     interfaces = data.interfaces;
     if($("#interface-name").length > 0){
 
@@ -1939,10 +2084,26 @@ function getNetworkInterfaces(){
       $("#interface-name").prop("selectedIndex", 0);
       $("#interface-name").change();
     }
+
+    interfaces = checkValueInSelectList($("#interface-name option"), "br");
+    if(interfaces.length > 0){
+      let sel = $("#connection-master");
+      let option = '<option value=""></option>';
+
+      sel.empty();
+      sel.append(option);
+
+      for (iface in interfaces){
+        option = "<option value=" + interfaces[iface] + ">" + interfaces[iface] + "</option>";
+        sel.append(option);
+      }
+      $("#connection-master").prop("selectedIndex", 0);
+    }
   })
   .fail(function( xhr, textStatus, errorThrown) {
     httpErrorResponseHandler(xhr, textStatus, errorThrown)
   });
+
 }
 
 function onChangeRadioMode(){
@@ -2013,4 +2174,106 @@ function onChangeIpv6Method(){
       $("#ipv6-dns").attr('readonly', true);
       break;
   }
+}
+
+function clickCertsPage() {
+  $.ajax({
+    url: "plugins/networking/html/certs.html",
+    data: {},
+    type: "GET",
+    dataType: "html",
+  })
+  .done(function( data ) {
+    $(".active").removeClass("active");
+    $("#networking_certs_main_menu").addClass("active");
+    $("#networking_certs_mini_menu").addClass("active");
+    $("#main_section").html(data);
+    setLanguage("main_section");
+    clearReturnData();
+    getFileList('cert', createCertTable);
+  })
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
+  });
+}
+
+
+function createCertTable(certs) {
+
+  function delCertFile(e){
+
+    let row = $(this).closest('tr');
+    if(!row.hasClass("bg-info"))
+      return CustomMsg("Please select file first by clicking file name", true);
+
+    let cert = $(this).closest(".btn-del-cert").attr('data-value');
+    fileDelete('cert',  cert);
+    getFileList('cert', createCertTable);
+  }
+
+  let tbody = $("#table-cert > tbody");
+
+  tbody.empty();
+
+  for(let i=0; i<certs.length; i++){
+
+    row = '<tr>';
+    row += '<td class="text-center">';
+    row += certs[i];
+    row += '</td>';
+
+    row += '<td class="text-center">';
+    row += '<input type="button" class="btn btn-primary btn-del-cert" value="' + i18nData['Delete'] + '" data-value="' + certs[i] + '">';
+    row += '</td>';
+
+    row += '</tr>';
+    tbody.append(row);
+  }
+
+  $(document).on("click", ".btn-del-cert", delCertFile);
+
+  $("#table-cert tbody").on("click", "tr td:first-child", function(e){
+    row = $(this).closest('tr');
+    row.addClass('bg-info').siblings().removeClass('bg-info');
+  });
+}
+
+function createPacTable(pacs) {
+
+  function delPacFile(e){
+
+    let row = $(this).closest('tr');
+    if(!row.hasClass("bg-info"))
+      return CustomMsg("Please select file first by clicking file name", true);
+
+    let pac = $(this).closest(".btn-del-pac").attr('data-value');
+    fileDelete('pac',  pac);
+    getFileList('pac', createPacTable);
+  }
+
+  let tbody = $("#table-pac > tbody");
+
+  tbody.empty();
+
+  for(let i=0; i<pacs.length; i++){
+
+    row = '<tr>';
+    row += '<td class="text-center">';
+    row += pacs[i];
+    row += '</td>';
+
+    row += '<td class="text-center">';
+    row += '<input type="button" class="btn btn-primary btn-del-pac" value="' + i18nData['Delete'] + '" data-value="' + pacs[i] + '">';
+    row += '</td>';
+
+    row += '</tr>';
+    tbody.append(row);
+  }
+
+  $(document).on("click", ".btn-del-pac", delPacFile);
+
+  $("#table-pac tbody").on("click", "tr td:first-child", function(e){
+    row = $(this).closest('tr');
+    row.addClass('bg-info').siblings().removeClass('bg-info');
+  });
 }

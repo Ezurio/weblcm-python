@@ -1,5 +1,5 @@
 
-<form>
+<div class="mt-3">
 	<div class="accordion mt-3" id="basic-settings-accordion">
 		<div class="card bg-light">
 			<div class="card-header">
@@ -31,6 +31,7 @@
 						</div>
 						<select class="form-control" id="connection-type">
 							<option value="802-3-ethernet">Ethernet</option>
+							<option value="bridge">Bridge</option>
 							<option value="802-11-wireless" selected>Wireless</option>
 						</select>
 					</div>
@@ -41,6 +42,28 @@
 						<select class="form-control" id="autoconnect">
 							<option class="i18n" name="Yes" value=1>Yes</option>
 							<option class="i18n" name="No" value=0 selected>No</option>
+						</select>
+					</div>
+					<div class="input-group mb-3 d-none" id="connection-zone-display">
+						<div class="input-group-prepend i18n" name="Zone">
+							<span class="input-group-text">Zone</span>
+						</div>
+						<input type="text" class="form-control" id="connection-zone">
+					</div>
+					<div class="input-group mb-3 d-none" id="connection-master-display">
+						<div class="input-group-prepend i18n" name="Master">
+							<span class="input-group-text">Master</span>
+						</div>
+						<select class="form-control" id="connection-master">
+						</select>
+					</div>
+					<div class="input-group mb-3 d-none" id="connection-slave-type-display">
+						<div class="input-group-prepend i18n" name="Slave-type">
+							<span class="input-group-text">Slave-type</span>
+						</div>
+						<select class="form-control" id="connection-slave-type">
+							<option value="" selected></option>
+							<option class="i18n" name="Bridge" value="bridge">Bridge</option>
 						</select>
 					</div>
 				</div>
@@ -348,11 +371,24 @@
 					</div>
 
 					<div class="input-group mb-3 d-none" id="eap-password-display">
-						<div class="input-group-prepend i18n" name="Password">
+						<div class="input-group-prepend i18n" name="password">
 							<span class="input-group-text">Password</span>
 						</div>
 						<input type="password" class="form-control" id="eap-password">
 					</div>
+
+					<form method="POST" id="form-import-pac" class="d-none" enctype="multipart/form-data">
+						<div class="input-group mb-3">
+							 <div class="input-group-prepend i18n" name="Select File">
+								<span class="input-group-text">Select File</span>
+							</div>
+							<input type="text" class="d-none" name="type" value="pac">
+							<input type="file" class="form-control" id="input-file-pac" name="file" accept=".pac">
+							<div class="input-group-append">
+								<button type="button" id="bt-import-pac" class="btn btn-primary i18n" name="Upload">Upload</button>
+							</div>
+						</div>
+					</form>
 
 					<div class="input-group mb-3 d-none" id="pac-file-display">
 						<div class="input-group-prepend i18n" name="PAC Filename">
@@ -380,6 +416,19 @@
 							<option class="i18n" name="Both" value="3">Both</option>
 						</select>
 					</div>
+
+					<form method="POST" id="form-import-cert" class="d-none" enctype="multipart/form-data">
+						<div class="input-group mb-3">
+							 <div class="input-group-prepend i18n" name="Select File">
+								<span class="input-group-text">Select File</span>
+							</div>
+							<input type="text" class="d-none" name="type" value="cert">
+							<input type="file" class="form-control" id="input-file-cert" name="file" accept=".crt, .key, .pem">
+							<div class="input-group-append">
+								<button type="button" id="bt-import-cert" class="btn btn-primary i18n" name="Upload">Upload</button>
+							</div>
+						</div>
+					</form>
 
 					<div class="input-group mb-3 d-none" id="ca-cert-display">
 						<div class="input-group-prepend i18n" name="CA Cert">
@@ -492,6 +541,15 @@
 				</div>
 			</div>
 		</div>
+		<div class="card bg-light d-none" id="connection-bridge-settings">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Bridge Settings" href="#connection-bridge-settings-body">Bridge Settings</a>
+			</div>
+			<div id="connection-bridge-settings-body" class="collapse in">
+				<div class="card-body">
+				</div>
+			</div>
+		</div>
 		<div class="card bg-light d-none" id="connection-modem-settings">
 			<div class="card-header">
 				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Modem Settings" href="#connection-modem-settings-body">Modem Settings</a>
@@ -519,15 +577,6 @@
 				</div>
 			</div>
 		</div>
-		<div class="card bg-light d-none" id="connection-bridge-settings">
-			<div class="card-header">
-				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Bridge Settings" href="#connection-bridge-settings-body">Bridge Settings</a>
-			</div>
-			<div id="connection-bridge-settings-body" class="collapse in">
-				<div class="card-body">
-				</div>
-			</div>
-		</div>
 		<div class="card bg-light d-none" id="connection-wifi-p2p-settings">
 			<div class="card-header">
 				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="WIFI-P2P Settings" href="#connection-wifi-p2p-settings-body">WIFI-P2P Settings</a>
@@ -541,5 +590,4 @@
 	<div class="text-center mt-3">
 		<button type="button" id="addNewConnection" class="btn btn-primary">Save</button>
 	</div>
-</form>
-
+</div>

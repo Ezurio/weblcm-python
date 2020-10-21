@@ -7,32 +7,9 @@ import subprocess
 import NetworkManager
 import weblcm_def
 
-def filter_connection_by_dev(dev):
-
-	#Don't return connections with unmanaged interfaces
-	if dev.State == NetworkManager.NM_DEVICE_STATE_UNMANAGED:
-		return False
-
-	#Don't return connections with type disabled in the configure file
-	if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_ETHERNET:
-		return cherrypy.request.app.config['weblcm'].get('enable_connection_wired', True)
-	if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
-		return cherrypy.request.app.config['weblcm'].get('enable_connection_wifi', True)
-
-	return True
-
-def filter_connection_by_type(typ):
-
-	#Don't return connections with type disabled in the configure file
-	if typ == "802-3-ethernet":
-		return cherrypy.request.app.config['weblcm'].get('enable_connection_wired', True)
-	if typ == "802-11-wireless":
-		return cherrypy.request.app.config['weblcm'].get('enable_connection_wifi', True)
-
-	return True
-
 @cherrypy.expose
 class NetworkConnections(object):
+
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
 		result = {
@@ -40,10 +17,12 @@ class NetworkConnections(object):
 			'connections': {},
 		}
 
+		unmanaged_devices = cherrypy.request.app.config['weblcm'].get('unmanaged_hardware_devices', '').split()
+
 		for conn in NetworkManager.Settings.ListConnections():
 			s_all = conn.GetSettings()
 			s_conn = s_all.get('connection')
-			if not filter_connection_by_type(s_conn.get('type')):
+			if unmanaged_devices and s_conn.get('interface-name') in unmanaged_devices:
 				continue;
 
 			t = {}
@@ -67,13 +46,14 @@ class NetworkConnections(object):
 
 @cherrypy.expose
 class NetworkConnection(object):
+
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_in()
 	@cherrypy.tools.json_out()
 	def PUT(self):
-		result = {
-			'SDCERR': 1,
-		}
+
+		result = { 'SDCERR': 1 }
+
 		try:
 			uuid = cherrypy.request.json.get('uuid', None)
 			if not uuid:
@@ -83,12 +63,16 @@ class NetworkConnection(object):
 				connections = NetworkManager.Settings.ListConnections()
 				connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in connections])
 				conn = connections[uuid]
-				interface_name = conn.GetSettings()['connection']['interface-name']
-				for dev in NetworkManager.Device.all():
-					if dev.Interface == interface_name:
-						NetworkManager.NetworkManager.ActivateConnection(conn, dev, "/")
+				if conn.GetSettings()['connection']['type'] == "bridge":
+					if NetworkManager.NetworkManager.ActivateConnection(conn, "/", "/"):
 						result['SDCERR'] = 0
-						break;
+				else:
+					interface_name = conn.GetSettings()['connection']['interface-name']
+					for dev in NetworkManager.Device.all():
+						if dev.Interface == interface_name:
+							if NetworkManager.NetworkManager.ActivateConnection(conn, dev, "/"):
+								result['SDCERR'] = 0
+								break;
 			else:
 				for conn in NetworkManager.NetworkManager.ActiveConnections:
 					if uuid == conn.Connection.GetSettings()['connection']['uuid']:
@@ -236,9 +220,8 @@ class NetworkAccessPoints(object):
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
 
-		"""
-			Get Cached AP list
-		"""
+		'''Get Cached AP list'''
+
 		result = {
 			'SDCERR': 1,
 			'accesspoints': [],
@@ -314,16 +297,27 @@ class Version(object):
 
 @cherrypy.expose
 class NetworkInterfaces(object):
+
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
-		result = {
-			'SDCERR': 1,
-		}
+
+		result = { 'SDCERR': 1 }
+		interfaces = []
+
 		try:
-			interfaces = []
+			managed_devices = cherrypy.request.app.config['weblcm'].get('managed_software_devices', '').split()
+			unmanaged_devices = cherrypy.request.app.config['weblcm'].get('unmanaged_hardware_devices', '').split()
 			for dev in NetworkManager.NetworkManager.GetDevices():
-				if filter_connection_by_dev(dev):
-					interfaces.append(dev.Interface + " ")
+				#Don't return connections with unmanaged interfaces
+				if dev.State == NetworkManager.NM_DEVICE_STATE_UNMANAGED:
+					continue
+				if dev.Interface in unmanaged_devices:
+					continue
+				interfaces.append(dev.Interface)
+
+			for dev in managed_devices:
+				if dev not in interfaces:
+					interfaces.append(dev)
 
 			result['SDCERR'] = 0
 			result['interfaces'] = interfaces

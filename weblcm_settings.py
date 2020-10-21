@@ -142,7 +142,7 @@ class SystemSettingsManage(object):
 	@classmethod
 	def get_tamper_protection_timeout(cls):
 		'Unit: Second'
-		return int (WeblcmConfigManage.get_key_from_section(cls.section, 'tamper_protection_timeout', 60))
+		return int (WeblcmConfigManage.get_key_from_section(cls.section, 'tamper_protection_timeout', 600))
 
 	@classmethod
 	def get_max_web_clients(cls):
@@ -155,16 +155,16 @@ class SystemSettingsManage(object):
 
 	@classmethod
 	def get_login_retry_times(cls):
-		return int (WeblcmConfigManage.get_key_from_section(cls.section, 'login_retry_times', 3))
+		return int (WeblcmConfigManage.get_key_from_section(cls.section, 'login_retry_times', 5))
+
+	@classmethod
+	def get_login_retry_window(cls):
+		return int (WeblcmConfigManage.get_key_from_section(cls.section, 'login_retry_window', 600))
 
 	@classmethod
 	def get_log_data_streaming_size(cls):
 		return int (WeblcmConfigManage.get_key_from_section(cls.section, 'log_data_streaming_size', 100))
 
 	@classmethod
-	def get_log_data_dir(cls):
-		return WeblcmConfigManage.get_key_from_section(cls.section, 'log_data_dir', "/run/log/journal/")
-
-	@classmethod
 	def get_cert_for_file_encryption(cls):
-		return WeblcmConfigManage.get_key_from_section(cls.section, 'cert_for_file_encryption', "/etc/weblcm-python/ssl/ca.crt")
+		return WeblcmConfigManage.get_key_from_section(cls.section, 'cert_for_file_encryption', "/etc/weblcm-python/ssl/server.crt")

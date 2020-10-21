@@ -22,7 +22,7 @@ class DateTimeSetting(object):
 	def getZoneList(self):
 		zones = []
 
-		with open(weblcm_def.WEBLCM_PYTHON_TIMEZONE_CONF_FILE, 'r') as fp:
+		with open(weblcm_def.WEBLCM_PYTHON_ZONELIST, 'r') as fp:
 			line = fp.readline()
 			while line:
 				zones.append(line.strip())
@@ -35,20 +35,23 @@ class DateTimeSetting(object):
 
 		self.localtime = "/etc/localtime"
 		self.zoneinfo = "/usr/share/zoneinfo/"
-		self.userZoneinfo = weblcm_def.WEBLCM_PYTHON_USER_ZONEINFO
+		self.userZoneinfo = weblcm_def.WEBLCM_PYTHON_ZONEINFO
 		self.userLocaltime = self.userZoneinfo + "localtime"
 		self.zones = self.getZoneList()
 
 	def getLocalZone(self):
 
-		localtime = os.readlink(self.userLocaltime)
-		index = localtime.find(self.zoneinfo)
-		if -1 != index:
-			return localtime[index + len(self.zoneinfo):]
+		try:
+			localtime = os.readlink(self.userLocaltime)
+			index = localtime.find(self.zoneinfo)
+			if -1 != index:
+				return localtime[index + len(self.zoneinfo):]
 
-		index = localtime.find(self.userZoneinfo)
-		if -1 != index:
-			return localtime[index + len(self.userZoneinfo):]
+			index = localtime.find(self.userZoneinfo)
+			if -1 != index:
+				return localtime[index + len(self.userZoneinfo):]
+		except Exception as e:
+			print(e)
 
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):

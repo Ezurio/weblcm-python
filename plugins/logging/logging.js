@@ -14,6 +14,12 @@ function loggingAUTORUN(retry){
   $(document).on("click", "#bt-submit-loglevel", function(){
     submitlogSetting();
   });
+
+  $(document).on('show.bs.tab', "#nav-tab-log a", function(){
+    if($(this).attr("href") == "#tab-set-log"){
+      getlogSetting();
+    }
+  });
 }
 
 function submitlogSetting(retry){
@@ -42,7 +48,7 @@ function queryLogData() {
   $("#bt-query-log").val("Querying...");
 
   $.ajax({
-    url: "logData?typ=" + $("#log-type").val() + "&priority=" + parseInt($("#log-level").val()) + "&days=" + parseInt($("#log-date-from").val()),
+    url: "logData?type=" + $("#log-type").val() + "&priority=" + parseInt($("#log-level").val()) + "&days=" + parseInt($("#log-date-from").val()),
     type: "GET",
     cache: false,
   })
@@ -75,7 +81,6 @@ function getlogSetting(retry){
     url: "logSetting",
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function(msg) {
     $("#supp-debug-level").val(msg.suppDebugLevel);
@@ -99,7 +104,7 @@ function clickLoggingPage(retry){
     $("#logging_main_menu").addClass("active");
     $("#logging_mini_menu").addClass("active");
     $("#main_section").html(data);
-	  setLanguage("main_section");
+    setLanguage("main_section");
     clearReturnData();
 
     var table = $("#table-log-data").DataTable({
@@ -116,13 +121,6 @@ function clickLoggingPage(retry){
           className: 'dt-left'
         }
       ]
-    });
-
-    $("#tab-log").bind("click", function() {
-      $(this).show();
-      if($("#set-log").length > 0){
-        getlogSetting();
-      }
     });
   })
   .fail(function( xhr, textStatus, errorThrown) {

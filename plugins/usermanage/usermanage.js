@@ -27,12 +27,16 @@ function validatePassword(passwd) {
     return "8-64 characters are required for password";
   }
 
+  if(passwd.match(/[a-zA-Z]/g) == null) {
+    return "Minimally one character is required";
+  }
+
   if(passwd.match(/[0-9]/g) == null) {
     return "Minimally one number is required";
   }
 
-  if(passwd.match(/\W+/g) == null) {
-    return "Minimally one special charcter is required";
+  if(passwd.match(/[^a-zA-Z0-9]/g) == null) {
+    return "Minimally one special character is required";
   }
   return;
 }
@@ -54,14 +58,19 @@ function updatePassword() {
   new_password = $("#upm-password").val();
   err = validatePassword(new_password);
   if(err){
-	CustomMsg(err, true);
-	return;
+    CustomMsg(err, true);
+    return;
   }
 
   confirm_password = $("#confirm-password").val();
   if (new_password !== confirm_password){
-	CustomMsg("Password and confirmation password do not match", true);
-	return;
+    CustomMsg("Password and confirmation password don't match", true);
+    return;
+  }
+
+  if (current_password == new_password){
+    CustomMsg("New password must be different from the old one", true);
+    return;
   }
 
   var creds = {
@@ -72,16 +81,21 @@ function updatePassword() {
 
   $.ajax({
     url: "users",
-    contentType: "application/json",
-    data: JSON.stringify(creds),
     type: "PUT",
+    data: JSON.stringify(creds),
+    contentType: "application/json",
   })
   .done(function(data) {
-    SDCERRtoString(data.SDCERR);
 
-    if (data.REDIRECT == 1){
-      login(currUser, new_password);
-	}
+    if(data.SDCERR !== defines.SDCERR.SDCERR_SUCCESS){
+	  CustomMsg("Password incorrect", true);
+    }
+    else {
+      SDCERRtoString(data.SDCERR);
+      if (data.REDIRECT == 1){
+        login(currUser, new_password);
+      }
+    }
   })
   .fail(function( xhr, textStatus, errorThrown) {
     httpErrorResponseHandler(xhr, textStatus, errorThrown)
@@ -119,7 +133,7 @@ function createUserList(users) {
     });
 
     row += '<td class="text-center">';
-    row += '<input type="button" class="btn btn-primary" id="bt-del-user-' + name + '" value="' + i18nData['delete user'] + '">';
+    row += '<input type="button" class="btn btn-primary" id="bt-del-user-' + name + '" value="' + i18nData['Delete'] + '">';
     row += '</td>';
 
     $(document).on("click", "#bt-del-user-" + name, function(){
@@ -144,7 +158,6 @@ function get_user_list() {
     url: "users",
     type: "GET",
     cache: false,
-    contentType: "application/json",
   })
   .done(function(data) {
     createUserList(data);
@@ -209,12 +222,12 @@ function addUser() {
 
   $.ajax({
     url: "users",
-    contentType: "application/json",
-    data: JSON.stringify(creds),
     type: "POST",
+    data: JSON.stringify(creds),
+    contentType: "application/json",
   })
   .done(function(data) {
-    if(data['SDCERR'] == 1){
+    if(data['SDCERR'] !== defines.SDCERR.SDCERR_SUCCESS){
       CustomMsg("Add user failed", true);
     }
     else{
@@ -254,13 +267,13 @@ function updatePermission(){
 
   $.ajax({
     url: "users",
-    contentType: "application/json",
-    data: JSON.stringify(creds),
     type: "PUT",
+    data: JSON.stringify(creds),
+    contentType: "application/json",
   })
   .done(function(data) {
     SDCERRtoString(data.SDCERR);
-    if(data['SDCERR'] == 0){
+    if(data['SDCERR'] == defines.SDCERR.SDCERR_SUCCESS){
       row.attr("permission", perm);
       setPerm(perm);
     }
@@ -282,11 +295,10 @@ function delUser(){
 
   $.ajax({
     url: "users?username=" + id.slice(12),
-    contentType: "application/json",
     type: "DELETE",
   })
   .done(function(data) {
-    if(data['SDCERR'] == 1){
+    if(data['SDCERR'] !== defines.SDCERR.SDCERR_SUCCESS){
       CustomMsg("Delete user failed", true);
     }
     else{
@@ -303,7 +315,6 @@ function createPermissionsTable(){
   var types = defines.PERMISSIONS.UserPermssionTypes;
   var attrs = defines.PERMISSIONS.UserPermssionAttrs;
   var j = 0;
-
 
   var tbody = $("#table-user-permission > tbody");
   tbody.empty()
