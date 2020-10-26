@@ -282,14 +282,8 @@ class LoginManage(object):
 		result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 		return result
 
-	@cherrypy.tools.json_in()
-	@cherrypy.tools.accept(media='application/json')
-	@cherrypy.tools.json_out()
 	def DELETE(self):
-		result = {
-			'SDCERR': WEBLCM_ERRORS.get('SDCERR_SUCCESS'),
-		}
 		username = cherrypy.session.pop('USERNAME', None)
-		LoginManageHelper.delete(username)
+		if username:
+			LoginManageHelper.delete(username)
 		cherrypy.lib.sessions.expire()
-		return result

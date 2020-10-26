@@ -218,11 +218,9 @@ function login(user, passwd) {
 function logout() {
   $.ajax({
     url: "login",
-    data: {},
     type: "DELETE",
-    contentType: "application/json",
   })
-  .always(function (data) {
+  .always(function () {
 
     $("#form-logout").addClass("d-none");
     $("#form-login").removeClass("d-none");
