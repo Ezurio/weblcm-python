@@ -9,7 +9,9 @@ from subprocess import Popen, PIPE, TimeoutExpired
 from weblcm_settings import SystemSettingsManage
 
 def octet_stream_in(force=True, debug=False):
+
 	request = cherrypy.serving.request
+
 	def octet_stream_processor(entity):
 		#Read application/octet-stream data into request.json.
 		if not entity.headers.get("Content-Length", ""):
@@ -21,6 +23,7 @@ def octet_stream_in(force=True, debug=False):
 				raise cherrypy.HTTPError(500)
 		except OSError as err:
 			raise err
+
 	if force:
 		request.body.processors.clear()
 		request.body.default_proc = cherrypy.HTTPError(
@@ -79,6 +82,19 @@ class SWUpdate:
 			'message': "Device is busy"
 		}
 
+		def get_default_imageset_for_update():
+
+			'''Parse /proc/cmdline to get bootside info'''
+
+			imageset = None
+
+			with open('/proc/cmdline','r') as f:
+				cmd = f.read()
+				imageset = "stable,main-b" if "block=0,1" in cmd else "stable,main-a"
+				f.close()
+
+			return imageset
+
 		def do_swupdate(args, callback=None, timeout=SystemSettingsManage.get_user_callback_timeout()):
 
 			try:
@@ -105,15 +121,14 @@ class SWUpdate:
 
 		cherrypy.session['swupdate'] = cherrypy.session.id
 
-		images = cherrypy.request.json.get('images', None)
 		url = cherrypy.request.json.get('url', None)
-		timeout = cherrypy.request.json.get('timeout', SystemSettingsManage.get_user_callback_timeout())
-		if images and url:
-			do_swupdate(args = ["swupdate", "-e", images, "-d", "-u " + url], timeout = timeout)
-		elif not images and not url:
-			do_swupdate(args = ["/usr/sbin/weblcm_swupdate.sh", "pre-update"], callback = swclient.prepare_fw_update)
+		imageset = cherrypy.request.json.get('images', get_default_imageset_for_update())
+		timeout = cherrypy.request.json.get('timeout', 30)
+		if url:
+			if imageset:
+				do_swupdate(args=["swupdate", "-e", imageset, "-d", "-u " + url], timeout=timeout)
 		else:
-			result['message'] = "Bad Request"
+			do_swupdate(args = ["/usr/sbin/weblcm_swupdate.sh", "pre-update"], callback = swclient.prepare_fw_update)
 
 		if result['SDCERR']:
 			SWUpdate._isUpdating = False
