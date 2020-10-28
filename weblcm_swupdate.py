@@ -52,13 +52,16 @@ class SWUpdate:
 		if not cherrypy.session.get('swupdate', None):
 			return result
 
+		mode = kwargs.get('mode', 0)
+
 		try:
-			proc = Popen(["/usr/sbin/weblcm_swupdate.sh", "get-update"], stdout=PIPE, stderr=PIPE)
+			proc = Popen(["/usr/sbin/weblcm_swupdate.sh", "get-update", str(mode)], stdout=PIPE, stderr=PIPE)
 			outs, errs = proc.communicate(timeout=SystemSettingsManage.get_user_callback_timeout())
 			if proc.returncode:
 				result['message'] = errs.decode("utf-8")
 				result['SDCERR'] = proc.returncode
 			else:
+				result['message'] = "Updated"
 				result['SDCERR'] = 0
 
 		except TimeoutExpired:
@@ -82,7 +85,7 @@ class SWUpdate:
 			'message': "Device is busy"
 		}
 
-		def get_default_imageset_for_update():
+		def get_imageset_for_update(image):
 
 			'''Parse /proc/cmdline to get bootside info'''
 
@@ -90,7 +93,7 @@ class SWUpdate:
 
 			with open('/proc/cmdline','r') as f:
 				cmd = f.read()
-				imageset = "stable,main-b" if "block=0,1" in cmd else "stable,main-a"
+				imageset = "stable,"+image+"-b" if "block=0,1" in cmd else "stable,"+image+"-a"
 				f.close()
 
 			return imageset
@@ -119,20 +122,20 @@ class SWUpdate:
 				return result
 			SWUpdate._isUpdating = True
 
-		cherrypy.session['swupdate'] = cherrypy.session.id
-
 		url = cherrypy.request.json.get('url', None)
-		imageset = cherrypy.request.json.get('images', get_default_imageset_for_update())
-		timeout = cherrypy.request.json.get('timeout', 30)
-		if url:
-			if imageset:
-				do_swupdate(args=["swupdate", "-e", imageset, "-d", "-u " + url], timeout=timeout)
-		else:
-			do_swupdate(args = ["/usr/sbin/weblcm_swupdate.sh", "pre-update"], callback = swclient.prepare_fw_update)
+		image = cherrypy.request.json.get('image', "main")
+		imageset = get_imageset_for_update(image)
+
+		if imageset:
+			if url:
+				do_swupdate(args=["/usr/sbin/weblcm_swupdate.sh", "do-update", imageset, url])
+			else:
+				do_swupdate(args=["/usr/sbin/weblcm_swupdate.sh", "pre-update", imageset], callback=swclient.prepare_fw_update)
 
 		if result['SDCERR']:
 			SWUpdate._isUpdating = False
 
+		cherrypy.session['swupdate'] = cherrypy.session.id
 		return result
 
 	def DELETE(self):
