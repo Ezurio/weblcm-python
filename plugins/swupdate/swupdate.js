@@ -32,7 +32,9 @@ function upload_one_chunk() {
 
 function updateFirmware() {
 
-  let data = {};
+  let data = {
+    "image": $("#select-image").val()
+  };
 
   if( $("#fw-name")[0].files.length == 0 ) {
 	CustomMsg("Please select firmware", true);
@@ -87,7 +89,7 @@ function updateFirmware() {
         if(fw_start < fw_total_bytes)
           upload_one_chunk();
         else
-          update_end_check();
+          setTimeout(update_end_check, 6000);
       }
       else {
         update_end(i18nData['Update failed!']);
@@ -104,7 +106,7 @@ function updateFirmware() {
 
 function update_end_check(){
   $.ajax({
-    url: "firmware",
+    url: "firmware?mode=0", //For swupdate client update
     type: "GET",
     cache: false,
   })
