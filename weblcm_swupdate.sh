@@ -9,21 +9,30 @@ exit_on_error() {
 
 pre_update() {
 
+	#Prepare arguments for swupdate throuth EnviromentFile
+	rm -f /tmp/.swupdate.conf
+	echo "IMAGESET=-e $1" > /tmp/.swupdate.conf
+	if [ $# -eq 2 ]; then
+		echo "URL=-d '-u $2'" >> /tmp/.swupdate.conf
+	fi
 	systemctl restart swupdate
-	systemctl -q is-active swupdate || exit_on_error 1 "Failed to start swupdate service"
 
-	#Wait until swupdate is ready or timeout
+	#Wait until swupdate is ready or killed by caller due to timeout
 	FILE=/tmp/sockinstctrl
-	x=0
-	while [ ${x} -lt 5 ]
+	while [ ! -S ${FILE} ]
 	do
-		[[ -S ${FILE} ]] && break || sleep 1
-		x=$(( ${x} + 1 ))
+		sleep 1
 	done
-	[[ ${x} == 5 ]] && exit_on_error 1 "Failed to run swupdate service"
+
+	systemctl -q is-active swupdate || exit_on_error 1 "Failed to start swupdate service"
 }
 
 get_update() {
+
+	# For "download" update, we have to check whether swupdate exists first
+	if [ x"$1" == x"1" ]; then
+		systemctl -q is-active swupdate && exit_on_error 5 "Updating..."
+	fi
 
 	# Find our running ubiblock
 	set -- $(cat /proc/cmdline)
@@ -35,23 +44,17 @@ get_update() {
 		esac
 	done
 
-	x=0
-	while [ ${x} -lt 5 ]
-	do
-		bootside=`fw_printenv bootside -n`
+	bootside=`fw_printenv bootside -n`
 
-		if [ -z "$BLOCK" ] && [ ${bootside} == 'a' ]; then
-			break;
-		elif [ "$BLOCK" == 1 ] && [ ${bootside} == 'b' ]; then
-			break;
-		elif [ "$BLOCK" == 4 ] && [ ${bootside} == 'a' ]; then
-			break;
-		fi
+	if [ -z "$BLOCK" ] && [ ${bootside} == 'a' ]; then
+		exit 0;
+	elif [ "$BLOCK" == 1 ] && [ ${bootside} == 'b' ]; then
+		exit 0;
+	elif [ "$BLOCK" == 4 ] && [ ${bootside} == 'a' ]; then
+		exit 0;
+	fi
 
-		sleep 1
-		x=$(( ${x} + 1 ))
-	done
-	[[ ${x} == 5 ]] && exit_on_error 1 "Bootside is not updated"
+	exit_on_error 1 "Bootside is not updated"
 }
 
 post_update() {
@@ -60,14 +63,17 @@ post_update() {
 
 case $1 in
 	pre-update)
-		pre_update
+		pre_update $2
+		#Success
+		exit 0
+		;;
+	do-update)
+		pre_update $2 $3
 		#Success
 		exit 0
 		;;
 	get-update)
-		get_update
-		#Success
-		exit 0
+		get_update $2
 		;;
 	post-update)
 		post_update
