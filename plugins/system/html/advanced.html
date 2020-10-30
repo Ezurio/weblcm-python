@@ -7,7 +7,7 @@
 		<input type="file" class="form-control" id="input-file-config" name="file" accept=".zip"/>
 	</div>
 	<div class="input-group mt-3">
-		<input type="password" class="form-control i18n" id="config-encrypt-password" name="password" placeholder="Password">
+		<input type="password" class="form-control i18n" id="config-encrypt-password" name="password" placeholder="8-64 characters are required for password">
 		<div class="input-group-append">
 			<button type="button" id="bt-import-config" class="btn btn-primary i18n" name="Import System Configuration">Import system configuration</button>
 		</div>
@@ -16,14 +16,14 @@
 <br>
 <form>
 	<div class="input-group mt-3">
-		<input type="password" class="form-control i18n" id="config-decrypt-password" name="password" placeholder="Password">
+		<input type="password" class="form-control i18n" id="config-decrypt-password" name="password" placeholder="8-64 characters are required for password">
 		<div class="input-group-append">
 			<button type="button" id="bt-export-config" class="btn btn-primary i18n" name="Export System Configuration" >Export system configuration</button>
 		</div>
 	</div>
 	<br>
 	<div class="input-group mt-3">
-		<input type="password" class="form-control i18n" id="log-decrypt-password" name="password" placeholder="Password">
+		<input type="password" class="form-control i18n" id="log-decrypt-password" name="password" placeholder="8-64 characters are required for password">
 		<div class="input-group-append">
 			<button type="button" id="bt-export-log" class="btn btn-primary i18n" name="Export System Log">Export system log</button>
 		</div>
@@ -32,10 +32,6 @@
 		<span class="input-group-btn">
 			<button type="button" id="bt-export-debug" class="btn btn-primary i18n" name="Export Debug Data">Export debug data</button>
 		</span>
-	</div>
-	<div class="input-group mt-3">
-		<button type="button" id="bt-reboot" class=" col btn btn-warning i18n" name="Reboot">Reboot</button>
-		<button type="button" id="bt-factory-reset" class="col btn btn-danger i18n" name="Factory Reset">Factory Reset</button>
 	</div>
 	<a class="btn d-none" id="archor-link-export-archive" role="button" href="#"></a>
 </form>
