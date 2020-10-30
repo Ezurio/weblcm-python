@@ -275,9 +275,9 @@ class LoginManage(object):
 			cherrypy.session['USERNAME'] = username
 
 		result['PERMISSION'] = UserManageHelper.getPermission(cherrypy.session.get('USERNAME', None))
-		#Don't display "add_del_user" page for single user mode
+		#Don't display "system_user" page for single user mode
 		if SystemSettingsManage.get_max_web_clients() == 1:
-			result['PERMISSION'] = result['PERMISSION'].replace("add_del_user", "")
+			result['PERMISSION'] = result['PERMISSION'].replace("system_user", "")
 
 		result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 		return result

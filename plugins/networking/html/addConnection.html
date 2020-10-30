@@ -48,7 +48,17 @@
 						<div class="input-group-prepend i18n" name="Zone">
 							<span class="input-group-text">Zone</span>
 						</div>
-						<input type="text" class="form-control" id="connection-zone">
+						<select class="form-control" id="connection-zone">
+							<option value="trusted" selected>trusted</option>
+							<option value="internal">internal</option>
+							<option value="home">home</option>
+							<option value="work">work</option>
+							<option value="dmz">dmz</option>
+							<option value="external">external</option>
+							<option value="public">public</option>
+							<option value="block">block</option>
+							<option value="drop">drop</option>
+						</select>
 					</div>
 					<div class="input-group mb-3 d-none" id="connection-master-display">
 						<div class="input-group-prepend i18n" name="Master">
