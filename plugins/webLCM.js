@@ -1,8 +1,8 @@
-var defines;
-var i18nData;
-var currUserPermission;
-var currUser;
-var sessTimeoutId = -1;
+var g_defines;
+var g_i18nData;
+var g_curr_user_permission;
+var g_curr_user;
+var g_sess_timeout_id = -1;
 
 function consoleLog(message) {
   console.log(message);
@@ -89,15 +89,15 @@ function setReturnData(alerttype, message) {
   $("#alert-msg-mini").append('<div id="alert-msg-mini-subdiv" class="alert ' + alerttype + '"><a class="close" data-dismiss="alert">×</a><span>' + message + '</span></div>')
 }
 
-function CustomMsg(message, err) {
+function customMsg(message, err) {
 
   clearReturnData()
 
   if (err) {
-    setReturnData("alert-danger", i18nData[message] ? i18nData[message] : message);
+    setReturnData("alert-danger", g_i18nData[message] ? g_i18nData[message] : message);
   }
   else {
-    setReturnData("alert-success", i18nData[message] ? i18nData[message] : message);
+    setReturnData("alert-success", g_i18nData[message] ? g_i18nData[message] : message);
   }
 }
 
@@ -106,14 +106,14 @@ function SDCERRtoString(SDCERR) {
   clearReturnData()
 
   switch (parseInt(SDCERR)) {
-    case defines.SDCERR.SDCERR_SUCCESS:
-      setReturnData("alert-success", i18nData['Success'] ? i18nData['Success'] : "Success");
+    case g_defines.SDCERR.SDCERR_SUCCESS:
+      setReturnData("alert-success", g_i18nData['Success'] ? g_i18nData['Success'] : "Success");
       break;
-    case defines.SDCERR.SDCERR_FAIL:
-      setReturnData("alert-danger", i18nData['Failure'] ? i18nData['Failure'] : "Failure");
+    case g_defines.SDCERR.SDCERR_FAIL:
+      setReturnData("alert-danger", g_i18nData['Failure'] ? g_i18nData['Failure'] : "Failure");
       break;
     default:
-      setReturnData("alert-danger", i18nData['Unknown Data'] ? i18nData['Unknown Data'] : "Unknown Data");
+      setReturnData("alert-danger", g_i18nData['Unknown Data'] ? g_i18nData['Unknown Data'] : "Unknown Data");
       break;
   }
 }
@@ -151,56 +151,58 @@ function login(user, passwd) {
     contentType: "application/json",
   })
   .done(function (data) {
-    if (data.SDCERR == defines.SDCERR.SDCERR_SUCCESS) {
+    if (data.SDCERR == g_defines.SDCERR.SDCERR_SUCCESS) {
       $("#form-login").addClass("d-none");
       $("#form-logout").removeClass("d-none");
 
       clearReturnData();
 
-      currUser = creds.username;
-      currUserPermission = data.PERMISSION;
+      g_curr_user = creds.username;
+      g_curr_user_permission = data.PERMISSION;
 
       if (data.REDIRECT == 1) {
-        $("#networking_main_menu").addClass("d-none");
-        $("#networking_mini_menu").addClass("d-none");
+        $("#status_main_menu").addClass("d-none");
+        $("#status_mini_menu").addClass("d-none");
+        $("#help_main_menu").addClass("d-none");
+        $("#help_mini_menu").addClass("d-none");
         clickUpdatePassword();
       }
       else {
         const MENU_ID_TYPE_OFFSET = 10; //"_main_menu"
         $(".locked").each(function () {
           let id = $(this).attr('id');
-          if (-1 !== currUserPermission.indexOf(id.slice(0, id.length - MENU_ID_TYPE_OFFSET))) {
+          if (-1 !== g_curr_user_permission.indexOf(id.slice(0, id.length - MENU_ID_TYPE_OFFSET))) {
             $(this).removeClass("d-none");
           }
         });
         $("#networking_main_menu").removeClass("d-none");
         $("#networking_mini_menu").removeClass("d-none");
-        $("#usermanage_main_menu").removeClass("d-none");
-        $("#usermanage_mini_menu").removeClass("d-none");
+        $("#system_main_menu").removeClass("d-none");
+        $("#system_mini_menu").removeClass("d-none");
         clickStatusPage();
       }
 
-      if(sessTimeoutId != -1){
-        clearTimeout(sessTimeoutId);
+      if(g_sess_timeout_id != -1){
+        clearTimeout(g_sess_timeout_id);
       }
-      sessTimeoutId = setTimeout(session_timeout, defines.SETTINGS.session_timeout * 60 * 1000);
+      g_sess_timeout_id = setTimeout(session_timeout, g_defines.SETTINGS.session_timeout * 60 * 1000);
 
       ret = true;
 
     } else if(user && passwd){
       switch (data.SDCERR) {
-        case defines.SDCERR.SDCERR_USER_LOGGED:
-          CustomMsg("User is already logged in", true);
+        case g_defines.SDCERR.SDCERR_USER_LOGGED:
+          customMsg("User is already logged in", true);
           break;
-        case defines.SDCERR.SDCERR_USER_BLOCKED:
-          CustomMsg("User is temporarily blocked", true);
+        case g_defines.SDCERR.SDCERR_USER_BLOCKED:
+          customMsg("User is temporarily blocked", true);
           break;
-        case defines.SDCERR.SDCERR_SESSION_CHECK_FAILED:
-          CustomMsg("User is not allowed for the session");
+        case g_defines.SDCERR.SDCERR_SESSION_CHECK_FAILED:
+          customMsg("User is not allowed for the session");
           break;
-        case defines.SDCERR.SDCERR_FAIL:
+        case g_defines.SDCERR.SDCERR_FAIL:
         default:
-          CustomMsg("Credentials are invalid", true);
+          customMsg("Credentials are invalid", true);
           break;
       }
     }
@@ -235,17 +237,17 @@ function setLanguage(id) {
     value = $(this).attr('name');
     if (this.tagName.toLowerCase() === 'input') {
       if ($(this).attr("placeholder")) {
-        $(this).attr("placeholder", i18nData[value]);
+        $(this).attr("placeholder", g_i18nData[$(this).attr("placeholder")]);
       }
       if ($(this).attr("value")) {
-        $(this).attr("value", i18nData[value]);
+        $(this).attr("value", g_i18nData[value]);
       }
     } else if (this.tagName.toLowerCase() === 'option') {
       if ($(this).text()) {
-        $(this).text(i18nData[value]);
+        $(this).text(g_i18nData[value]);
         }
     } else {
-      $(this).html(i18nData[value]);
+      $(this).html(g_i18nData[value]);
     }
   });
 }
@@ -256,7 +258,7 @@ function onChangeLanguageType() {
     url: 'assets/i18n/' + lang + '.json',
     dataType: 'json',
     success: function (data) {
-      i18nData = data;
+      g_i18nData = data;
       setLanguage("main_menu");
       setLanguage("navbar_menu");
       setLanguage("main_section");
@@ -283,7 +285,7 @@ $(document).ready( function (){
     contentType: "application/json",
   })
   .done(function (data) {
-    defines = data;
+    g_defines = data;
     weblcm_init(data['PLUGINS']);
   })
   .fail(function( xhr, textStatus, errorThrown) {

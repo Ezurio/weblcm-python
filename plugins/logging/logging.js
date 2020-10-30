@@ -108,7 +108,7 @@ function clickLoggingPage(retry){
     clearReturnData();
 
     var table = $("#table-log-data").DataTable({
-      "language": i18nData["dtLang"],
+      "language": g_i18nData["dtLang"],
       ordering: false,
       responsive: true,
       bAutoWidth: false,
