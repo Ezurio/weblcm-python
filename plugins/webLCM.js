@@ -123,7 +123,14 @@ function enterKeyPress(e) {
   //'Enter' key
   if (e.keyCode === 13) {
     e.preventDefault();
-    $("#bt-login").trigger("click");
+    // Login button
+    if (!$("#form-login").hasClass("d-none")){
+      $("#bt-login").trigger("click");
+    }
+    // Update password
+    else if ($("#system_password_main_menu").hasClass("active")){
+      $("#bt-update-password").trigger("click");
+    }
   }
 }
 
@@ -276,6 +283,7 @@ $(document).ready( function (){
   });
   $(document).on("click", "#bt-logout", logout);
   $(document).on("keypress", "#password", enterKeyPress);
+  $(document).on("keypress", "#password-confirm-password", enterKeyPress);
   $(document).on("change", "#language", onChangeLanguageType);
 
   $.ajax({

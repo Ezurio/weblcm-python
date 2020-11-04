@@ -36,3 +36,7 @@
 .sticky-offset {
   top: 50px;
 }
+
+.no-overlap {
+  z-index: 1019;
+}
