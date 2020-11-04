@@ -5,6 +5,15 @@
 			<span class="input-group-text">Select File</span>
 		</div>
 		<input type="file" class="form-control" id="fw-name" accept=".swu">
+	</div>
+	<div class="input-group mt-3">
+		<div class="input-group-prepend i18n" name="Select Image">
+			<span class="input-group-text">Select Image</span>
+		</div>
+		<select class="custom-select" id="select-image">
+			<option value="main" selected>Main</option>
+			<option value="full">Full</option>
+		</select>
 		<div class="input-group-append">
 			<button type="button" id="bt-firmware-update" class="btn btn-primary i18n" name="Update">Update</button>
 		</div>
@@ -13,6 +22,6 @@
 		<label for="fw-update-status" id="fw-update-status" class="i18n" name="Update Status" >Update Status</label>
 	</div>
 	<div class="progress mt-3">
-		<div id="swupdateProgressDisplay" class="progress-bar progress-bar-striped w-0" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+		<div id="swupdate-progress-display" class="progress-bar progress-bar-striped w-0" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
 	</div>
 </form>

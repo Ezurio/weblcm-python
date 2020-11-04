@@ -7,9 +7,9 @@ function doFileUpload(form, $bt) {
     if(xhr.readyState === XMLHttpRequest.DONE) {
       var status = xhr.status;
       if (status === 0 || (200 <= status && status < 400)) {
-        CustomMsg("Success", false);
+        customMsg("Success", false);
       } else {
-        CustomMsg("Failure", true);
+        customMsg("Failure", true);
       }
       $bt.prop("disabled", false);
     }
@@ -23,7 +23,7 @@ function fileUpload($form, $file, $bt) {
 
   var files = $file[0].files;
   if( files.length == 0 ) {
-    CustomMsg("Please select the config archive first", true);
+    customMsg("Please select the config archive first", true);
     return;
   }
 
@@ -41,7 +41,7 @@ function fileDelete(type, filename) {
   })
   .done(function(data) {
     if(data['SDCERR'] == 1){
-      CustomMsg("Delete File Failed", true);
+      customMsg("Delete File Failed", true);
     }
   })
   .fail(function( xhr, textStatus, errorThrown) {
@@ -55,7 +55,7 @@ function doFileDownload(url, type, $bt) {
 
   xhr.onreadystatechange = function() {
     if(xhr.readyState == XMLHttpRequest.LOADING){
-        CustomMsg("Downloading...", false);
+        customMsg("Downloading...", false);
     }
     else if(xhr.readyState === XMLHttpRequest.DONE) {
       if (xhr.status === 0 || (200 <= xhr.status && xhr.status < 400)) {
@@ -70,17 +70,17 @@ function doFileDownload(url, type, $bt) {
           link.get(0).click();
           window.URL.revokeObjectURL(this.href);
         }
-        CustomMsg("Downloaded", false);
+        customMsg("Downloaded", false);
       }
       else {
-        CustomMsg("Failure", true);
+        customMsg("Failure", true);
       }
 
       $bt.prop("disabled", false);
     }
   }
 
-  CustomMsg("Download start", false);
+  customMsg("Download start", false);
   $bt.prop("disabled", true);
 
   xhr.open('GET', url, true);

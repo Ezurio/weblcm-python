@@ -1,7 +1,7 @@
 <nav>
 	<div class="nav nav-tabs nav-fill" id="nav-tab-log" role="tablist">
-		<a class="nav-item nav-link i18n active" id="nav-tab-get-log" data-toggle="tab" href="#tab-get-log" role="tab" aria-controls="tab-get-log" aria-selected="true">Show Logs</a>
-		<a class="nav-item nav-link i18n" id="nav-tab-set-log" data-toggle="tab" href="#tab-set-log" role="tab" aria-controls="tab-set-log" aria-selected="false">Set Log Level</a>
+		<a class="nav-item nav-link i18n active" id="nav-tab-get-log" data-toggle="tab" href="#tab-get-log" role="tab" aria-controls="tab-get-log" aria-selected="true" name="Log Display" >Log Display</a>
+		<a class="nav-item nav-link i18n" id="nav-tab-set-log" data-toggle="tab" href="#tab-set-log" role="tab" aria-controls="tab-set-log" aria-selected="false" name="Log Setting">Log Setting</a>
 	</div>
 </nav>
 <div class="tab-content">
@@ -11,7 +11,7 @@
 				<div class="input-group-prepend i18n" name="Log Type">
 					<span class="input-group-text">Log Type</span>
 				</div>
-				<select id="log-type" class="form-control">
+				<select id="log-type" class="custom-select">
 					<option class="i18n" name="kernel" value="kernel" selected>Kernel</option>
 					<option class="i18n" name="NetworkManager" value="NetworkManager">Network Manager</option>
 					<option class="i18n" name="Web server"  value="python">Web server</option>
@@ -23,7 +23,7 @@
 				<div class="input-group-prepend i18n" name="Log Level">
 					<span class="input-group-text">Log Level</span>
 				</div>
-				<select id="log-level" class="form-control">
+				<select id="log-level" class="custom-select">
 					<option class="i18n" name="All" value=7>All</option>
 					<option class="i18n" name="Info" value=6 selected>Info</option>
 					<option class="i18n" name="Notice" value=5>Notice</option>
@@ -39,7 +39,7 @@
 				<div class="input-group-prepend i18n" name="Since">
 					  <span class="input-group-text">Since</span>
 				</div>
-				<select id="log-date-from" class="form-control">
+				<select id="log-date-from" class="custom-select">
 					<option class="i18n" name="last day" value=1 selected>last day</option>
 					<option class="i18n" name="last 2 days" value=2>last 2 days</option>
 					<option class="i18n" name="last week" value=7>last week</option>
@@ -76,7 +76,7 @@
 				<div class="input-group-prepend i18n" name="Supplicant debug level">
 					  <span class="input-group-text">Supplicant debug level</span>
 				</div>
-				<select class="form-control" id="supp-debug-level">
+				<select class="custom-select" id="supp-debug-level">
 					<option class="i18n" name="None" value="none" selected>None</option>
 					<option class="i18n" name="Error" value="error">Error</option>
 					<option class="i18n" name="Warning" value="warning">Warning</option>
@@ -91,7 +91,7 @@
 				<div class="input-group-prepend i18n" name="Driver debug level">
 					  <span class="input-group-text">Driver debug level</span>
 				</div>
-				<select class="form-control" id="driver-debug-level">
+				<select class="custom-select" id="driver-debug-level">
 					<option class="i18n" name="Off" value="0" selected>Off</option>
 					<option class="i18n" name="On" value="1">On</option>
 				</select>

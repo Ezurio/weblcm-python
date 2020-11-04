@@ -43,12 +43,12 @@ WEBLCM_ERRORS = {
 	'SDCERR_USER_LOGGED': 2,
 	'SDCERR_USER_BLOCKED': 3,
 	'SDCERR_SESSION_CHECK_FAILED': 4,
+	'SDCERR_FIRMWARE_UPDATING': 5,
 }
 
 USER_PERMISSION_TYPES = {
 	'UserPermssionTypes':[
-		"networking_status",
-		"networking_version",
+		"status_networking",
 		"networking_connections",
 		"networking_edit",
 		"networking_activate",
@@ -57,30 +57,33 @@ USER_PERMISSION_TYPES = {
 		"networking_scan",
 		"networking_certs",
 		"logging",
-		"update_password",
-		"swupdate",
-		"datetime",
-		"advanced",
+		"help_version",
+		"system_datetime",
+		"system_swupdate",
+		"system_password",
+		"system_advanced",
+		"system_reboot",
 		#Root only permissions
-		"add_del_user",
+		"system_user",
 	],
 
 	#Attributes to be displayed on the web
 	'UserPermssionAttrs':[
 		["Networking Status", "checked", "disabled"],
-		["Version", "checked", "disabled"],
 		["View Connections", "checked", "disabled"],
 		["Edit Connection","", ""],
 		["Activate Connection", "", ""],
 		["Activate AP", "", ""],
 		["Delete Connection", "", ""],
 		["Wifi Scan","", ""],
-		["Certs Management","", ""],
+		["Manage Certs","", ""],
 		["Logging", "", ""],
-		["Update Password", "checked", "disabled"],
+		["Version", "checked", "disabled"],
+		["Date & time","", ""],
 		["Firmware Update", "", ""],
-		["Datetime","", ""],
-		["Advanced", "", ""],
+		["Update Password", "checked", "disabled"],
+		["Advance Setting", "", ""],
+		["Reboot", "", ""],
 		#Don't need to display root only permissions
 		["", "", ""],
 	],

@@ -1,22 +1,33 @@
-<li id="networking_main_menu" class="locked nav-item">
+<li id="status_main_menu" class="locked nav-item">
+	<a name="Status Monitoring" class="nav-link i18n" href="#" data-toggle="collapse" data-target="#status_main_submenu" aria-expanded="false">Status Monitoring &blacktriangledown;</a>
+	<ul class="collapse show" id="status_main_submenu" role="menu" aria-labelledby="status_main_menu">
+		<li id="status_networking_main_menu" class="nav-link"><a class="i18n" name="Networking Status" href="#">Networking Status</a></li>
+	</ul>
+</li>
+<li id="networking_main_menu" class="locked d-none nav-item">
 	<a name="Networking" class="nav-link i18n" href="#" data-toggle="collapse" data-target="#networking_main_submenu" aria-expanded="false">Network Settings &blacktriangledown;</a>
-	<ul class="collapse show" id="networking_main_submenu" role="menu" aria-labelledby="networking_main_menu">
-		<li id="networking_status_main_menu" class="nav-link"><a class="i18n" name="Networking Status" href="#">Status</a></li>
+	<ul class="collapse in" id="networking_main_submenu" role="menu" aria-labelledby="networking_main_menu">
 		<li id="networking_connections_main_menu" class="locked d-none nav-link"><a class="i18n" name="View Connections" href="#">Manage Connections</a></li>
 		<li id="networking_edit_main_menu" class="locked d-none nav-link"><a class="i18n" name="Edit Connection" href="#">Edit Connection</a></li>
-		<li id="networking_certs_main_menu" class="locked d-none nav-link"><a class="i18n" name="Certs Management" href="#">Certs Management</a></li>
+		<li id="networking_certs_main_menu" class="locked d-none nav-link"><a class="i18n" name="Manage Certs" href="#">Manage Certs</a></li>
 		<li id="networking_scan_main_menu" class="locked d-none nav-link"><a class="i18n" name="Wifi Scan" href="#">Wifi Scan</a></li>
-		<li id="networking_version_main_menu" class="nav-link"><a class="i18n" name="Version" href="#">System Version</a></li>
+	</ul>
+</li>
+<li id="system_main_menu" class="locked d-none nav-item">
+	<a href="#" class="nav-link i18n" name="System Settings" data-toggle="collapse" data-target="#system_submenu" aria-expanded="false">System Settings &blacktriangledown;</a>
+	<ul class="collapse in" id="system_submenu" role="menu" aria-labelledby="system_main_menu">
+		<li id="system_user_main_menu" class="locked d-none nav-link"><a class="i18n" name="Manage User" href="#">Manage User</a></li>
+		<li id="system_password_main_menu" class="locked nav-link"><a class="i18n" name="Update Password" href="#">Update Password</a></li>
+		<li id="system_datetime_main_menu" class="locked d-none nav-link"><a class="i18n" name="Date & Time" href="#">Date & Time</a></li>
+		<li id="system_swupdate_main_menu" class="locked d-none nav-link"><a class="i18n" name="Update Firmware" href="#">Update Firmware</a></li>
+		<li id="system_advanced_main_menu" class="locked d-none nav-link"><a class="i18n" name="Advance Setting" href="#">Advance Setting</a></li>
+		<li id="system_reboot_main_menu" class="locked d-none nav-link"><a class="i18n" name="Reboot" href="#">Reboot</a></li>
 	</ul>
 </li>
 <li id="logging_main_menu" class="locked d-none nav-link"><a class="i18n" name="Logging" href="#">Logging</a></li>
-<li id="swupdate_main_menu" class="locked d-none nav-link"><a class="i18n" name="Firmware Update" href="#">Firmware Update</a></li>
-<li id="usermanage_main_menu" class="locked d-none nav-item">
-	<a href="#" class="nav-link i18n" name="Manage Users" data-toggle="collapse" data-target="#usermanage_main_submenu" aria-expanded="false">Manage Users ▼</a>
-	<ul class="collapse in" id="usermanage_main_submenu" role="menu" aria-labelledby="usermanage_main_menu">
-		<li id="add_del_user_main_menu" class="locked d-none nav-link"><a class="i18n" name="Add Del User" href="#">Add/Del User</a></li>
-		<li id="update_password_main_menu" class="locked d-none nav-link"><a class="i18n" name="Update Password" href="#">Update Password</a></li>
+<li id="help_main_menu" class="locked nav-item">
+	<a href="#" class="nav-link i18n" name="Help" data-toggle="collapse" data-target="#help_main_submenu" aria-expanded="false">Help &blacktriangledown;</a>
+	<ul class="collapse in" id="help_main_submenu" role="menu" aria-labelledby="help_main_menu">
+		<li id="help_version_main_menu" class="nav-link"><a class="i18n" name="Version" href="#">Version</a></li>
 	</ul>
 </li>
-<li id="advanced_main_menu" class="locked d-none nav-link"><a class="i18n" name="Advanced" href="#">Advanced Settings</a></li>
-<li id="datetime_main_menu" class="locked d-none nav-link"><a class="i18n" name="Datetime" href="#">Datetime Settings</a></li>

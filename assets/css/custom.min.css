@@ -15,6 +15,10 @@
   align-items:center;
 }
 
+.input-group .custom-select {
+  background-image: url("../img/arrow.png")
+}
+
 .input-group .input-group-prepend {
   flex: 0 0 20%;
   background-color:transparent;

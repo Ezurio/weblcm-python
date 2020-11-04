@@ -23,13 +23,13 @@
 						<div class="input-group-prepend i18n" name="Interface">
 							<span class="input-group-text">Interface</span>
 						</div>
-						<select class="form-control" id="interface-name"></select>
+						<select class="custom-select" id="interface-name"></select>
 					</div>
 					<div class="input-group mb-3">
 						<div class="input-group-prepend i18n" name="Type">
 							<span class="input-group-text">Type</span>
 						</div>
-						<select class="form-control" id="connection-type">
+						<select class="custom-select" id="connection-type">
 							<option value="802-3-ethernet">Ethernet</option>
 							<option value="bridge">Bridge</option>
 							<option value="802-11-wireless" selected>Wireless</option>
@@ -39,7 +39,7 @@
 						<div class="input-group-prepend i18n" name="Auto Connect">
 							<span class="input-group-text">Auto Connect</span>
 						</div>
-						<select class="form-control" id="autoconnect">
+						<select class="custom-select" id="autoconnect">
 							<option class="i18n" name="Yes" value=1>Yes</option>
 							<option class="i18n" name="No" value=0 selected>No</option>
 						</select>
@@ -48,20 +48,30 @@
 						<div class="input-group-prepend i18n" name="Zone">
 							<span class="input-group-text">Zone</span>
 						</div>
-						<input type="text" class="form-control" id="connection-zone">
+						<select class="custom-select" id="connection-zone">
+							<option value="trusted" selected>trusted</option>
+							<option value="internal">internal</option>
+							<option value="home">home</option>
+							<option value="work">work</option>
+							<option value="dmz">dmz</option>
+							<option value="external">external</option>
+							<option value="public">public</option>
+							<option value="block">block</option>
+							<option value="drop">drop</option>
+						</select>
 					</div>
 					<div class="input-group mb-3 d-none" id="connection-master-display">
 						<div class="input-group-prepend i18n" name="Master">
 							<span class="input-group-text">Master</span>
 						</div>
-						<select class="form-control" id="connection-master">
+						<select class="custom-select" id="connection-master">
 						</select>
 					</div>
 					<div class="input-group mb-3 d-none" id="connection-slave-type-display">
 						<div class="input-group-prepend i18n" name="Slave-type">
 							<span class="input-group-text">Slave-type</span>
 						</div>
-						<select class="form-control" id="connection-slave-type">
+						<select class="custom-select" id="connection-slave-type">
 							<option value="" selected></option>
 							<option class="i18n" name="Bridge" value="bridge">Bridge</option>
 						</select>
@@ -81,7 +91,7 @@
 						<div class="input-group-prepend i18n" name="Method">
 							<span class="input-group-text">Method</span>
 						</div>
-						<select class="form-control" id="ipv4-method">
+						<select class="custom-select" id="ipv4-method">
 							<option class="i18n" name="Auto" value="auto" selected>Auto</option>
 							<option class="i18n" name="Manual" value="manual">Manual</option>
 							<option class="i18n" name="Shared" value="shared">Shared</option>
@@ -122,7 +132,7 @@
 						<div class="input-group-prepend i18n" name="Method">
 							<span class="input-group-text">Method</span>
 						</div>
-						<select class="form-control" id="ipv6-method">
+						<select class="custom-select" id="ipv6-method">
 							<option class="i18n" name="Auto" value="auto" selected>Auto</option>
 							<option class="i18n" name="Manual" value="manual">Manual</option>
 							<option class="i18n" name="DHCP" value="dhcp">DHCP</option>
@@ -183,7 +193,7 @@
 						<div class="input-group-prepend i18n" name="Radio Mode">
 							<span class="input-group-text">Radio Mode</span>
 						</div>
-						<select class="form-control" id="radio-mode">
+						<select class="custom-select" id="radio-mode">
 							<option class="i18n" name="Infrastructure" value="infrastructure" selected>Infrastructure</option>
 							<option class="i18n" name="Accesspoint" value="ap">AP</option>
 						</select>
@@ -207,7 +217,7 @@
 						<div class="input-group-prepend i18n" name="Radio Band">
 							<span class="input-group-text">Radio Band</span>
 						</div>
-						<select class="form-control" id="radio-band">
+						<select class="custom-select" id="radio-band">
 							<option value="default">Default</option>
 							<option value="a">A</option>
 							<option value="bg">BG</option>
@@ -232,7 +242,7 @@
 						<div class="input-group-prepend i18n" name="Enable DFS">
 							<span class="input-group-text">Enable DFS</span>
 						</div>
-						<select class="form-control" id="frequency-dfs">
+						<select class="custom-select" id="frequency-dfs">
 							<option class="i18n" name="No" value=0>No</option>
 							<option class="i18n" name="Yes" value=1 selected>Yes</option>
 						</select>
@@ -242,7 +252,7 @@
 						<div class="input-group-prepend i18n" name="Power Save">
 							<span class="input-group-text">Power Save</span>
 						</div>
-						<select class="form-control" id="powersave">
+						<select class="custom-select" id="powersave">
 							<option class="i18n" name="Default" value="0" selected>Default</option>
 							<option class="i18n" name="Ignore" value="1">Ignore</option>
 							<option class="i18n" name="Disable" value="2">Disable</option>
@@ -254,7 +264,7 @@
 						<div class="input-group-prepend i18n" name="WEP Type">
 							<span class="input-group-text">WEP Type</span>
 						</div>
-						<select class="form-control" id="key-mgmt">
+						<select class="custom-select" id="key-mgmt">
 							<option class="i18n" name="None" value="none" selected>None</option>
 							<option class="i18n" name="Static WEP" value="static">Static WEP</option>
 							<option class="i18n" name="Dynamic WEP" value="ieee8021x">Dynamic WEP</option>
@@ -267,7 +277,7 @@
 						<div class="input-group-prepend i18n" name="Authentication Algorithm">
 							<span class="input-group-text">Authentication Algorithm</span>
 						</div>
-						<select class="form-control" id="auth-alg">
+						<select class="custom-select" id="auth-alg">
 							<option value="open" selected>Open</option>
 							<option value="shared">Shared</option>
 							<option value="leap">LEAP</option>
@@ -278,7 +288,7 @@
 						<div class="input-group-prepend i18n" name="WEP Key Index">
 							<span class="input-group-text">WEP Key Index</span>
 						</div>
-						<select class="form-control" id="wep-tx-keyidx">
+						<select class="custom-select" id="wep-tx-keyidx">
 							<option value="0" selected>0</option>
 							<option value="1">1</option>
 							<option value="2">2</option>
@@ -341,7 +351,7 @@
 						<div class="input-group-prepend i18n" name="EAP Method">
 							<span class="input-group-text">EAP Method</span>
 						</div>
-						<select class="form-control" id="eap-method">
+						<select class="custom-select" id="eap-method">
 							<option value="tls">TLS</option>
 							<option value="peap" selected>PEAP</option>
 							<option value="ttls">TTLS</option>
@@ -394,7 +404,7 @@
 						<div class="input-group-prepend i18n" name="PAC Filename">
 							<span class="input-group-text">PAC Filename</span>
 						</div>
-						<select class="form-control" id="pac-file">
+						<select class="custom-select" id="pac-file">
 						</select>
 					</div>
 
@@ -409,7 +419,7 @@
 						<div class="input-group-prepend i18n" name="Fast Provisioning">
 							<span class="input-group-text">Fast Provisioning</span>
 						</div>
-						<select class="form-control" id="phase1-fast-provisioning">
+						<select class="custom-select" id="phase1-fast-provisioning">
 							<option class="i18n" name="Disable" value="0" selected>Disable</option>
 							<option class="Allow Unauthenticated Provisioning" name="Disable" value="1">Allow Unauthenticated Provisioning</option>
 							<option class="i18n" name="Allow Authenticated Provisioning" value="2">Allow Authenticated Provisioning</option>
@@ -434,7 +444,7 @@
 						<div class="input-group-prepend i18n" name="CA Cert">
 							<span class="input-group-text">CA Cert</span>
 						</div>
-						<select class="form-control" id="ca-cert">
+						<select class="custom-select" id="ca-cert">
 							<option value="" selected>None</option>
 						</select>
 					</div>
@@ -443,7 +453,7 @@
 						<div class="input-group-prepend i18n" name="Client Cert">
 							<span class="input-group-text">Client Cert</span>
 						</div>
-						<select class="form-control" id="client-cert">
+						<select class="custom-select" id="client-cert">
 							<option value="" selected>None</option>
 						</select>
 					</div>
@@ -452,7 +462,7 @@
 						<div class="input-group-prepend i18n" name="Private Cert">
 							<span class="input-group-text">Private Cert</span>
 						</div>
-						<select class="form-control" id="private-key">
+						<select class="custom-select" id="private-key">
 							<option value="" selected>None</option>
 						</select>
 					</div>
@@ -468,7 +478,7 @@
 						<div class="input-group-prepend i18n" name="Phase 2 non-EAP METHOD">
 							<span class="input-group-text">Phase 2 non-EAP METHOD</span>
 						</div>
-						<select class="form-control" multiple id="phase2-auth">
+						<select class="custom-select" multiple id="phase2-auth">
 							<option value="none" selected>None</option>
 							<option value="pap">PAP</option>
 							<option value="chap">CHAP</option>
@@ -485,7 +495,7 @@
 						<div class="input-group-prepend i18n" name="Phase 2 EAP METHOD">
 							<span class="input-group-text">Phase 2 EAP METHOD</span>
 						</div>
-						<select class="form-control" multiple id="phase2-autheap">
+						<select class="custom-select" multiple id="phase2-autheap">
 							<option value="none" selected>None</option>
 							<option value="mschapv2">MSCHAPv2</option>
 							<option value="gtc">GTC</option>
@@ -499,7 +509,7 @@
 						<div class="input-group-prepend i18n" name="CA Cert">
 							<span class="input-group-text">CA Cert</span>
 						</div>
-						<select class="form-control" id="phase2-ca-cert">
+						<select class="custom-select" id="phase2-ca-cert">
 							<option value="" selected>None</option>
 						</select>
 					</div>
@@ -508,7 +518,7 @@
 						<div class="input-group-prepend i18n" name="Client Cert">
 							<span class="input-group-text">Client Cert</span>
 						</div>
-						<select class="form-control" id="phase2-client-cert">
+						<select class="custom-select" id="phase2-client-cert">
 							<option value="" selected>None</option>
 						</select>
 					</div>
@@ -517,7 +527,7 @@
 						<div class="input-group-prepend i18n" name="Private Cert">
 							<span class="input-group-text">Private Cert</span>
 						</div>
-						<select class="form-control" id="phase2-private-key">
+						<select class="custom-select" id="phase2-private-key">
 							<option value="" selected>None</option>
 						</select>
 					</div>
@@ -533,7 +543,7 @@
 						<div class="input-group-prepend i18n" name="Disable TLS Time Check">
 							<span class="input-group-text">Disable TLS Time Check</span>
 						</div>
-						<select class="form-control" id="tls-disable-time-checks">
+						<select class="custom-select" id="tls-disable-time-checks">
 							<option value="0">No</option>
 							<option value="1" selected>Yes</option>
 						</select>
