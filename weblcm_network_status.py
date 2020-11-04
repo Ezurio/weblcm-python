@@ -24,6 +24,8 @@ class NetworkStatusHelper(object):
 	def get_ipv4_properties(cls, ipv4):
 
 		ip4Properties = {}
+		if not ipv4:
+			return ip4Properties
 
 		addresses = {}
 		i = 0
@@ -54,6 +56,8 @@ class NetworkStatusHelper(object):
 	def get_ipv6_properties(cls, ipv6):
 
 		ip6Properties = {}
+		if not ipv6:
+			return ip6Properties
 
 		addresses = {}
 		i = 0
@@ -82,6 +86,7 @@ class NetworkStatusHelper(object):
 
 	@classmethod
 	def get_ap_properties(cls, ap, mode):
+
 		apProperties = {}
 		apProperties['Ssid'] = ap.Ssid
 		apProperties['HwAddress'] = ap.HwAddress
