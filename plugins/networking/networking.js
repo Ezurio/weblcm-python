@@ -347,7 +347,7 @@ function resetEapSetting(wxs){
   var eap = $("#eap-method").val();
   switch(eap){
     case "fast":
-      if(-1 == g_curr_user_permission.indexOf("networking_certs"))
+      if(-1 !== g_curr_user_permission.indexOf("networking_certs"))
         $("#form-import-pac").removeClass("d-none");
       $("#pac-file-display").removeClass("d-none");
       $("#pac-file").val(parseSettingData(wxs, "pac-file", ""));
@@ -358,7 +358,7 @@ function resetEapSetting(wxs){
     case "tls":
     case "ttls":
     case "peap":
-      if(-1 == g_curr_user_permission.indexOf("networking_certs"))
+      if(-1 !== g_curr_user_permission.indexOf("networking_certs"))
         $("#form-import-cert").removeClass("d-none");
       $("#ca-cert-display").removeClass("d-none");
       $("#ca-cert").val(parseSettingData(wxs, "ca-cert", ""));
