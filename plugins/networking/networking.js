@@ -1701,6 +1701,8 @@ function createfileList(data, $sel){
 
   $sel.empty();
 
+  let empty_option = "<option>" + "None" + "</option>";
+  $sel.append(empty_option);
   for(i=0; i<data.length; i++) {
     let option = "<option value=" + data[i] + ">" + data[i] + "</option>";
     $sel.append(option);
