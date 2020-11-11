@@ -32,6 +32,7 @@ def octet_stream_in(force=True, debug=False):
 
 @cherrypy.expose
 class SWUpdate:
+	SWUPDATE_SCRIPT='/etc/weblcm-python/scripts/weblcm_swupdate.sh'
 
 	_lock = Lock()
 	_isUpdating = False
@@ -55,7 +56,7 @@ class SWUpdate:
 		mode = kwargs.get('mode', 0)
 
 		try:
-			proc = Popen(["/usr/sbin/weblcm_swupdate.sh", "get-update", str(mode)], stdout=PIPE, stderr=PIPE)
+			proc = Popen([SWUpdate.SWUPDATE_SCRIPT, "get-update", str(mode)], stdout=PIPE, stderr=PIPE)
 			outs, errs = proc.communicate(timeout=SystemSettingsManage.get_user_callback_timeout())
 			if proc.returncode:
 				result['message'] = errs.decode("utf-8")
@@ -128,9 +129,9 @@ class SWUpdate:
 
 		if imageset:
 			if url:
-				do_swupdate(args=["/usr/sbin/weblcm_swupdate.sh", "do-update", imageset, url])
+				do_swupdate(args=[SWUpdate.SWUPDATE_SCRIPT, "do-update", imageset, url])
 			else:
-				do_swupdate(args=["/usr/sbin/weblcm_swupdate.sh", "pre-update", imageset], callback=swclient.prepare_fw_update)
+				do_swupdate(args=[SWUpdate.SWUPDATE_SCRIPT, "pre-update", imageset], callback=swclient.prepare_fw_update)
 
 		if result['SDCERR']:
 			SWUpdate._isUpdating = False
@@ -142,7 +143,7 @@ class SWUpdate:
 
 		if cherrypy.session.get('swupdate', None) == cherrypy.session.id:
 			swclient.end_fw_update()
-			proc = Popen(["/usr/sbin/weblcm_swupdate.sh", "post-update"], stdout=PIPE, stderr=PIPE)
+			proc = Popen([SWUpdate.SWUPDATE_SCRIPT, "post-update"], stdout=PIPE, stderr=PIPE)
 			proc.wait()
 			SWUpdate._isUpdating = False
 			cherrypy.session.pop('swupdate', None)

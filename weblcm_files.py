@@ -14,6 +14,7 @@ class FileManage(object):
 	''' File Management '''
 
 	_lock = Lock()
+	FILE_MANAGE_SCRIPT='/etc/weblcm-python/scripts/weblcm_files.sh'
 
 	#log will be saved in /var/run/log/journal/ for volatile mode, or /var/log/journal/ for persistent mode
 	#If "/var/run/log/journal/" exists, it should be in volatile mode.
@@ -45,7 +46,7 @@ class FileManage(object):
 				if f.endswith(".zip"):
 					password = kwargs.get('password', "")
 					p = subprocess.Popen([
-						'/usr/sbin/weblcm_files.sh', typ, "unzip", f, weblcm_def.FILEDIR_DICT.get(typ), password
+						FileManage.FILE_MANAGE_SCRIPT, typ, "unzip", f, weblcm_def.FILEDIR_DICT.get(typ), password
 					])
 					res = p.wait()
 					os.remove(f)
@@ -70,7 +71,7 @@ class FileManage(object):
 			if not password:
 				raise cherrypy.HTTPError(400)
 			p = subprocess.Popen([
-				'/usr/sbin/weblcm_files.sh', "config", "zip",
+				FileManage.FILE_MANAGE_SCRIPT, "config", "zip",
 				weblcm_def.FILEDIR_DICT.get(typ), path, password
 			])
 
@@ -80,14 +81,14 @@ class FileManage(object):
 			if not password:
 				raise cherrypy.HTTPError(400)
 			p = subprocess.Popen([
-				'/usr/sbin/weblcm_files.sh', "log", "zip",
+				FileManage.FILE_MANAGE_SCRIPT, "log", "zip",
 				FileManage._log_data_dir, path, password
 			])
 			p.wait()
 
 		else:
 			p = subprocess.Popen([
-				'/usr/sbin/weblcm_files.sh', "debug", "zip",
+				FileManage.FILE_MANAGE_SCRIPT, "debug", "zip",
 				' '.join([FileManage._log_data_dir, weblcm_def.FILEDIR_DICT.get('config')]),
 				path, SystemSettingsManage.get_cert_for_file_encryption()
 			])
