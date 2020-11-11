@@ -17,6 +17,12 @@ pre_update() {
 	fi
 	systemctl restart swupdate
 
+	#Provide way for customer scripts to inject logic into the update process
+	PRECHECK_SCRIPT=/etc/weblcm-python/scripts/swupdate_custom_precheck.sh
+	if [ -x $PRECHECK_SCRIPT ] ; then
+		error_msg=`$PRECHECK_SCRIPT` || exit_on_error 1 "$error_msg"
+	fi
+
 	#Wait until swupdate is ready or killed by caller due to timeout
 	FILE=/tmp/sockinstctrl
 	while [ ! -S ${FILE} ]
