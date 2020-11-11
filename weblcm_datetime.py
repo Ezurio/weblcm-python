@@ -7,10 +7,11 @@ from weblcm_settings import SystemSettingsManage
 
 @cherrypy.expose
 class DateTimeSetting(object):
+	DATE_TIME_SCRIPT='/etc/weblcm-python/scripts/weblcm_datetime.sh'
 
 	def popenHelper(self, method="", zone="", dt=""):
 
-		proc = Popen(['/usr/sbin/weblcm_datetime.sh', method, zone, dt], stdout=PIPE, stderr=PIPE)
+		proc = Popen([DateTimeSetting.DATE_TIME_SCRIPT, method, zone, dt], stdout=PIPE, stderr=PIPE)
 		try:
 			outs, errs = proc.communicate(timeout=SystemSettingsManage.get_user_callback_timeout())
 		except TimeoutExpired:
