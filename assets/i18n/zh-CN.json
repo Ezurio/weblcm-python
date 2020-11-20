@@ -173,7 +173,7 @@
     "Anonymous Identity": "匿名身份",
     "PAC Filename": "PAC文件名",
     "PAC File Password": "PAC文件密码",
-    "Fast Provisioning": "快速配置",
+    "Auto PAC Provisioning": "自动PAC配置",
     "Allow Authenticated Provisioning": "允许认证后快速配置",
     "Both": "全部",
     "Allow Unauthenticated Provisioning": "允许不经认证的快速配置",
@@ -213,6 +213,9 @@
     "dns": "域名服务器",
     "Manage Certs": "证书管理",
     "Manage PACs": "保护访问凭证管理",
+    "Group Cipher": "Group 加密方法",
+    "Pairwise Cipher": "Pairwise 加密方法",
+    "Proto Version": "Proto 版本",
 
     "Unknown": "未知",
     "Unmanaged": "未管理",
