@@ -83,6 +83,10 @@ function networkingAUTORUN(retry){
     onChangePhase2Eap();
   });
 
+  $(document).on("change", "#phase1-fast-provisioning", function(){
+    onChangePhase1FastProvisioning();
+  });
+
   $(document).on("click", "#bt-import-cert", function(){
     fileUpload($("#form-import-cert"), $("#input-file-cert"), $("#bt-import-cert"));
     getFileList('cert', createCertList);
@@ -111,6 +115,22 @@ function networkingAUTORUN(retry){
       getFileList('cert', createCertTable);
     }
   });
+}
+
+function onChangePhase1FastProvisioning(){
+  v = $("#phase1-fast-provisioning").val();
+  if(v == "0"){
+    $("#form-import-pac").removeClass("d-none");
+    $("#pac-file-display").removeClass("d-none");
+    $("#pac-file-password-display").removeClass("d-none");
+  }
+  else{
+    $("#form-import-pac").addClass("d-none");
+    $("#pac-file-display").addClass("d-none")
+    $("#pac-file").val("");
+    $("#pac-file-password-display").addClass("d-none")
+    $("#pac-file-password").val("");
+  }
 }
 
 //Set default connection type according to the interface
@@ -256,6 +276,14 @@ function clear8021xCredsDisplay(){
 
 function clearWifiSecurityCredsDisplay() {
 
+
+  $("#proto-version-display").addClass("d-none");
+  $("#proto-version").val("");
+  $("#group-cipher-display").addClass("d-none");
+  $("#group-cipher").val("");
+  $("#pairwise-cipher-display").addClass("d-none");
+  $("#pairwise-cipher").val("");
+
   $("#auth-alg-display").addClass("d-none");
   $("#auth-alg").val("open");
 
@@ -339,8 +367,9 @@ function resetEapSetting(wxs){
   $("#pac-file-display").addClass("d-none");
   $("#pac-file").val('');
   $("#pac-file-password-display").addClass("d-none");
+  $("#pac-file-password").val('');
   $("#phase1-fast-provisioning-display").addClass("d-none");
-  $("#phase1-fast-provisioning").val('');
+  $("#phase1-fast-provisioning").val('0');
   $("#form-import-pac").addClass("d-none");
   $("#form-import-pac").val('');
 
@@ -354,6 +383,7 @@ function resetEapSetting(wxs){
       $("#pac-file-password-display").removeClass("d-none");
       $("#phase1-fast-provisioning-display").removeClass("d-none");
       $("#phase1-fast-provisioning").val(parseSettingData(wxs, "phase1-fast-provisioning", "0"));
+      $("#phase1-fast-provisioning").change();
       break;
     case "tls":
     case "ttls":
@@ -401,10 +431,22 @@ function resetWirelessSecuritySettings(wss, wxs){
       $("#leap-username").val(parseSettingData(wss, "leap-username", ""));
       break;
     case "wpa-psk":
+      $("#proto-version-display").removeClass("d-none");
+      $("#proto-version").val(parseSettingData(wss, "proto", ""));
+      $("#group-cipher-display").removeClass("d-none");
+      $("#group-cipher").val(parseSettingData(wss, "group", ""));
+      $("#pairwise-cipher-display").removeClass("d-none");
+      $("#pairwise-cipher").val(parseSettingData(wss, "pairwise", ""));
       $("#psk-display").removeClass("d-none");
       $("#psk").val(parseSettingData(wss, "psk", ""));
       break;
     case "wpa-eap":
+      $("#proto-version-display").removeClass("d-none");
+      $("#proto-version").val(parseSettingData(wss, "proto", ""));
+      $("#group-cipher-display").removeClass("d-none");
+      $("#group-cipher").val(parseSettingData(wss, "group", ""));
+      $("#pairwise-cipher-display").removeClass("d-none");
+      $("#pairwise-cipher").val(parseSettingData(wss, "pairwise", ""));
       $("#eap-method-display").removeClass("d-none");
       $("#eap-method").val(parseSettingData(wxs, "eap", "peap"));
       resetEapSetting(wxs)
@@ -425,6 +467,7 @@ function resetWirelessSecuritySettings(wss, wxs){
     default:
       break;
   }
+
 }
 
 function onChangeKeymgmt(){
@@ -1146,6 +1189,16 @@ function prepareWirelessConnection() {
     }
     else if(keymgmt != "none") {
       wss['key-mgmt'] = keymgmt;
+
+      v = $("#proto-version").val();
+      if(v)
+        wss['proto'] = v;
+      v = $("#group-cipher").val();
+      if(v)
+        wss['group'] = v;
+      v = $("#pairwise-cipher").val();
+      if(v)
+        wss['pairwise'] = v;
     }
 
     if(keymgmt == "static") {
@@ -1193,10 +1246,11 @@ function prepareWirelessConnection() {
       $("#psk").css('border-color', '');
     }
 
+
     return wss
   }
 
-  function prepareWireless8021x(){
+  function prepareWireless8021x(id, ssid){
 
     let v;
     let wxs = {};
@@ -1273,6 +1327,8 @@ function prepareWirelessConnection() {
     v = $("#pac-file").val();
     if(v)
       wxs['pac-file'] = v;
+    else if("phase1-fast-provisioning" in wxs && wxs['phase1-fast-provisioning'])
+      wxs['pac-file'] = "/tmp/" + id + '-' + ssid + ".pac";
 
     v = $("#pac-file-password").val();
     if(v)
@@ -1294,7 +1350,7 @@ function prepareWirelessConnection() {
     return wss
 
   if (wss['key-mgmt'] == "wpa-eap") {
-    wxs = prepareWireless8021x();
+    wxs = prepareWireless8021x(con['id'], ws['ssid']);
     if(!wxs)
       return wxs;
   }
