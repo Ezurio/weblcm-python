@@ -273,6 +273,41 @@
 						</select>
 					</div>
 
+					<div class="input-group mb-3 d-none" id="proto-version-display">
+						<div class="input-group-prepend i18n" name="Proto Version">
+							<span class="input-group-text">Proto Version</span>
+						</div>
+						<select class="custom-select" id="proto-version">
+							<option value="" selected>None</option>
+							<option value="rsn">RSN</option>
+							<option value="wpa">WPA</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="group-cipher-display">
+						<div class="input-group-prepend i18n" name="Group Cipher">
+							<span class="input-group-text">Group Cipher</span>
+						</div>
+						<select class="custom-select" id="group-cipher">
+							<option value="" selected>None</option>
+							<option value="ccmp">CCMP</option>
+							<option value="tkip">TKIP</option>
+							<option value="wep40">WEP40</option>
+							<option value="wep104">WEP104</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="pairwise-cipher-display">
+						<div class="input-group-prepend i18n" name="Pairwise Cipher">
+							<span class="input-group-text">Pairwise Cipher</span>
+						</div>
+						<select class="custom-select" id="pairwise-cipher">
+							<option value="" selected>None</option>
+							<option value="ccmp">CCMP</option>
+							<option value="tkip">TKIP</option>
+						</select>
+					</div>
+
 					<div class="input-group mb-3 d-none" id="auth-alg-display">
 						<div class="input-group-prepend i18n" name="Authentication Algorithm">
 							<span class="input-group-text">Authentication Algorithm</span>
@@ -416,12 +451,12 @@
 					</div>
 
 					<div class="input-group mb-3 d-none" id="phase1-fast-provisioning-display">
-						<div class="input-group-prepend i18n" name="Fast Provisioning">
-							<span class="input-group-text">Fast Provisioning</span>
+						<div class="input-group-prepend i18n" name="Auto PAC Provisioning">
+							<span class="input-group-text">Auto PAC Provisioning</span>
 						</div>
 						<select class="custom-select" id="phase1-fast-provisioning">
 							<option class="i18n" name="Disable" value="0" selected>Disable</option>
-							<option class="Allow Unauthenticated Provisioning" name="Disable" value="1">Allow Unauthenticated Provisioning</option>
+							<option class="i18n" name="Allow Unauthenticated Provisioning" value="1">Allow Unauthenticated Provisioning</option>
 							<option class="i18n" name="Allow Authenticated Provisioning" value="2">Allow Authenticated Provisioning</option>
 							<option class="i18n" name="Both" value="3">Both</option>
 						</select>

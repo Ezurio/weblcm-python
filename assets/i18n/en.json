@@ -173,7 +173,7 @@
     "Anonymous Identity": "Anonymous Identity",
     "PAC Filename": "PAC Filename",
     "PAC File Password": "PAC File Password",
-    "Fast Provisioning": "Fast Provisioning",
+    "Auto PAC Provisioning": "Auto PAC Provisioning",
     "Allow Authenticated Provisioning": "Allow Authenticated Provisioning",
     "Both": "Both",
     "Allow Unauthenticated Provisioning": "Allow Unauthenticated Provisioning",
@@ -212,6 +212,9 @@
     "dns": "dns",
     "Manage Certs": "Manage Certs",
     "Manage PACs": "Manage PACs",
+    "Group Cipher": "Group Cipher",
+    "Pairwise Cipher": "Pairwise Cipher",
+    "Proto Version": "Proto Version",
 
     "Unknown": "Unknown",
     "Unmanaged": "Unmanaged",
