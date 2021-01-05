@@ -692,9 +692,6 @@ function getWifiConnection(settings){
   $("#ssid").val(parseSettingData(settings['802-11-wireless'], "ssid", ""));
   $("#client-name").val(parseSettingData(settings['802-11-wireless'], "client-name", ""));
 
-  txpower = parseSettingData(settings['802-11-wireless'], "tx-power", 0);
-  $("#tx-power").val(txpower.toString());
-
   $("#radio-band").val(parseSettingData(settings['802-11-wireless'], "band", "default"));
   $("#radio-channel").val(parseSettingData(settings['802-11-wireless'], "channel", ""));
 
@@ -1123,13 +1120,6 @@ function prepareWirelessConnection() {
     v = $("#client-name").val().trim();
     if(v)
       ws['client-name'] = v;
-
-    v = $("#tx-power").val().trim();
-    if(!validate_number_input(v, $("#tx-power"))){
-      return {};
-    }
-    if(v)
-      ws['tx-power'] = parseInt(v);
 
     v = $("#radio-band").val().trim();
     if(v != "default"){
