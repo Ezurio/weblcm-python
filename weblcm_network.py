@@ -127,6 +127,9 @@ class NetworkConnection(object):
 							if new_settings['802-1x'].get('phase2-private-key'):
 								new_settings['802-1x']['phase2-private-key'] = weblcm_def.FILEDIR_DICT.get('cert') + new_settings['802-1x'].get('phase2-private-key');
 
+				if post_data.get('gsm'):
+					new_settings['gsm'] = post_data.get('gsm');
+
 				new_settings['ipv4'] = post_data.get('ipv4');
 				new_settings['ipv6'] = post_data.get('ipv6');
 

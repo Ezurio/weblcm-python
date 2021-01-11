@@ -33,6 +33,7 @@
 							<option value="802-3-ethernet">Ethernet</option>
 							<option value="bridge">Bridge</option>
 							<option value="802-11-wireless" selected>Wireless</option>
+							<option value="gsm">GSM</option>
 						</select>
 					</div>
 					<div class="input-group mb-3">
@@ -588,12 +589,18 @@
 				</div>
 			</div>
 		</div>
-		<div class="card bg-light d-none" id="connection-modem-settings">
+		<div class="card bg-light d-none" id="connection-gsm-settings">
 			<div class="card-header">
-				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Modem Settings" href="#connection-modem-settings-body">Modem Settings</a>
+				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="GSM Settings" href="#connection-gsm-settings-body">GSM Settings</a>
 			</div>
-			<div id="connection-modem-settings-body" class="collapse in">
+			<div id="connection-gsm-settings-body" class="collapse in">
 				<div class="card-body">
+					<div class="input-group mb-3" id="apn-display">
+						<div class="input-group-prepend i18n" name="APN">
+							<span class="input-group-text">APN</span>
+						</div>
+						<input type="text" class="form-control" id="apn">
+					</div>
 				</div>
 			</div>
 		</div>

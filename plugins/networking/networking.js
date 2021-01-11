@@ -163,7 +163,7 @@ function onChangeConnectionType(){
   $("#connection-wired-settings").addClass("d-none");
   $("#connection-wifi-settings").addClass("d-none");
   $("#connection-ppp-settings").addClass("d-none");
-  $("#connection-modem-settings").addClass("d-none");
+  $("#connection-gsm-settings").addClass("d-none");
   $("#connection-wifi-p2p-settings").addClass("d-none");
   $("#connection-bridge-settings").addClass("d-none");
   $("#connection-bluetooth-settings").addClass("d-none");
@@ -179,8 +179,8 @@ function onChangeConnectionType(){
     case "ppp":
       $("#connection-ppp-settings").removeClass("d-none");
       break;
-    case "modem":
-      $("#connection-modem-settings").removeClass("d-none");
+    case "gsm":
+      $("#connection-gsm-settings").removeClass("d-none");
       break;
     case "bluetooth":
       $("#connection-bluetooth-settings").removeClass("d-none");
@@ -676,7 +676,9 @@ function getConnectionConnection(settings){
   $("#connection-slave-type").val(parseSettingData(settings['connection'], "slave-type", ""))
 
   $("#interface-name").val(parseSettingData(settings['connection'], "interface-name", ""));
-  $("#interface-name").change();
+
+  $("#connection-type").val(parseSettingData(settings['connection'], "type", ""));
+  $("#connection-type").change();
 
   //"autoconnect" is boolean. Use 1 and 0 so we don't need to do conversion in the backend.
   if(parseSettingData(settings['connection'], "autoconnect", true))
@@ -746,6 +748,12 @@ function getBridgeConnection(settings) {
   getConnectionConnection(settings);
 }
 
+function getGsmConnection(settings) {
+
+  getConnectionConnection(settings);
+  $("#apn").val(parseSettingData(settings['gsm'], "apn", ""));
+}
+
 function getIpv4Settings(settings){
 
   let ipv4 = [];
@@ -807,9 +815,11 @@ function updateGetConnectionPage(uuid, id, ssid, key_mgmt){
           case "bridge":
 			getBridgeConnection(msg.connection);
 			break;
+          case "gsm":
+			getGsmConnection(msg.connection);
+			break;
           case "ppp":
           case "bluetooth":
-          case "modem":
           case "wifi-p2p":
           default:
             break;
@@ -1057,7 +1067,8 @@ function prepareConnectionConnection(){
   con['uuid'] = $("#connection-uuid").val().trim();
   con['type'] =  $("#connection-type").val().trim();
 
-  con['zone'] =  $("#connection-zone").val().trim();
+  if($("#connection-zone").val())
+    con['zone'] =  $("#connection-zone").val().trim();
 
   if($("#connection-master").val())
     con['master'] =  $("#connection-master").val();
@@ -1092,6 +1103,20 @@ function prepareBridgeConnection() {
     settings['connection'] = con;
   return settings;
 }
+
+function prepareGsmConnection() {
+  let settings = {};
+  let gsm = {};
+
+  con = prepareConnectionConnection();
+  if(!con)
+	return settings;
+  settings['connection'] = con;
+  gsm['apn'] = $("#apn").val().trim();
+  settings['gsm'] = gsm;
+  return settings;
+}
+
 
 function prepareWirelessConnection() {
 
@@ -1474,12 +1499,15 @@ function addConnection() {
     case "802-11-wireless":
       new_connection = prepareWirelessConnection();
       break;
-    case "ppp":
-    case "modem":
-    case "bluetooth":
-    case "wifi-p2p":
     case "bridge":
       new_connection = prepareBridgeConnection();
+      break;
+    case "gsm":
+      new_connection = prepareGsmConnection();
+      break;
+    case "ppp":
+    case "bluetooth":
+    case "wifi-p2p":
     default:
       break;
   }

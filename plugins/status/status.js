@@ -112,7 +112,7 @@ function DeviceTypetoString(type) {
     case NMDeviceType.NM_DEVICE_TYPE_WIMAX:
       return "WiMAX";
     case NMDeviceType.NM_DEVICE_TYPE_MODEM:
-      return "Modem";
+      return "GSM";
     case NMDeviceType.NM_DEVICE_TYPE_INFINIBAND:
       return "Infiniband";
     case NMDeviceType.NM_DEVICE_TYPE_BOND:
