@@ -208,7 +208,7 @@ def run_event_listener():
 
 	# Listen for added and removed access points
 	for dev in NetworkManager.Device.all():
-		if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_ETHERNET or dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
+		if dev.DeviceType in (NetworkManager.NM_DEVICE_TYPE_ETHERNET, NetworkManager.NM_DEVICE_TYPE_WIFI, NetworkManager.NM_DEVICE_TYPE_MODEM):
 			dev.OnStateChanged(dev_statechange)
 		#In case wifi connection is already activated
 		if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI and dev.ActiveAccessPoint:
@@ -227,12 +227,15 @@ class NetworkStatus(object):
 
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
-		result = {}
+		result = { 'SDCERR': 0 }
 
-		result['SDCERR'] = 1
 		with NetworkStatusHelper._lock:
-			result['devices'] = len(NetworkStatusHelper._network_status)
 			result['status'] = NetworkStatusHelper._network_status
-			result['SDCERR'] = 0
 
+		unmanaged_devices = cherrypy.request.app.config['weblcm'].get('unmanaged_hardware_devices', '').split()
+		for dev in unmanaged_devices:
+			if dev in result['status']:
+				del result['status'][dev]
+
+		result['devices'] = len(result['status'])
 		return result
