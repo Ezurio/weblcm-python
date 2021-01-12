@@ -58,6 +58,9 @@ function rebootAUTORUN(retry) {
   $(document).on("click", "#bt-reboot", function(){
     reboot(true);
   });
+  $(document).on("click", "#bt-reboot-firmwareupdate", function(){
+    reboot(true);
+  });
 
   $(document).on("click", "#bt-factory-reset", function(){
     factoryReset();
@@ -71,6 +74,7 @@ function reboot(show) {
     if (r == false)
       return;
   }
+  $("#bt-reboot-display").addClass("d-none");
 
   $.ajax({
     url: "reboot",
@@ -429,6 +433,7 @@ function updateFirmware() {
     fw_total_bytes = $("#fw-name")[0].files[0].size;
 
     $("#fw-update-status").text(g_i18nData['Updating...']);
+    $("#bt-reboot-display").addClass("d-none");
 
     fw_reader = new FileReader();
     fw_xhr = new XMLHttpRequest();
@@ -469,6 +474,11 @@ function updateFirmware() {
   });
 }
 
+function reboot_device() {
+  g_i18nData['Update finished. Please reboot device!'];
+  $("#bt-reboot-display").removeClass("d-none");
+}
+
 function update_end_check(){
   $.ajax({
     url: "firmware?mode=0", //For swupdate client update
@@ -476,7 +486,7 @@ function update_end_check(){
     cache: false,
   })
   .done(function(msg) {
-    update_end(msg.SDCERR ? g_i18nData['Update failed!'] : g_i18nData['Update finished. Please reboot device!']);
+    update_end(msg.SDCERR ? g_i18nData['Update failed!'] : reboot_device());
   })
   .fail(function( xhr, textStatus, errorThrown) {
     httpErrorResponseHandler(xhr, textStatus, errorThrown)
