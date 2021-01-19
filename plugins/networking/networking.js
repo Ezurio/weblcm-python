@@ -161,6 +161,7 @@ function onChangeNetworkInterface(){
 function onChangeConnectionType(){
 
   $("#connection-wired-settings").addClass("d-none");
+  $("#connection-advanced-settings").addClass("d-none");
   $("#connection-wifi-settings").addClass("d-none");
   $("#connection-ppp-settings").addClass("d-none");
   $("#connection-gsm-settings").addClass("d-none");
@@ -175,6 +176,7 @@ function onChangeConnectionType(){
       break;
     case "802-11-wireless":
       $("#connection-wifi-settings").removeClass("d-none");
+      $("#connection-advanced-settings").removeClass("d-none");
       break;
     case "ppp":
       $("#connection-ppp-settings").removeClass("d-none");
@@ -384,8 +386,24 @@ function resetEapSetting(wxs){
       $("#phase1-fast-provisioning-display").removeClass("d-none");
       $("#phase1-fast-provisioning").val(parseSettingData(wxs, "phase1-fast-provisioning", "0"));
       $("#phase1-fast-provisioning").change();
+      $("#phase2-auth-display").removeClass("d-none");
+      $("#phase2-autheap-display").removeClass("d-none");
       break;
     case "tls":
+      if(-1 !== g_curr_user_permission.indexOf("networking_certs"))
+        $("#form-import-cert").removeClass("d-none");
+      $("#ca-cert-display").removeClass("d-none");
+      $("#ca-cert").val(parseSettingData(wxs, "ca-cert", ""));
+      $("#client-cert-display").removeClass("d-none");
+      $("#client-cert").val(parseSettingData(wxs, "client-cert", ""));
+      $("#private-key-display").removeClass("d-none");
+      $("#private-key").val(parseSettingData(wxs, "private-key", ""));
+      $("#private-key-password-display").removeClass("d-none");
+      $("#phase2-auth-display").addClass("d-none");
+      $("#phase2-autheap-display").addClass("d-none");
+      $("#tls-disable-time-checks-display").removeClass("d-none");
+      $("#tls-disable-time-checks").val(parseSettingData(wxs, "tls-disable-time-checks", "1"));
+      break;
     case "ttls":
     case "peap":
       if(-1 !== g_curr_user_permission.indexOf("networking_certs"))
@@ -397,6 +415,8 @@ function resetEapSetting(wxs){
       $("#private-key-display").removeClass("d-none");
       $("#private-key").val(parseSettingData(wxs, "private-key", ""));
       $("#private-key-password-display").removeClass("d-none");
+      $("#phase2-auth-display").removeClass("d-none");
+      $("#phase2-autheap-display").removeClass("d-none");
       $("#tls-disable-time-checks-display").removeClass("d-none");
       $("#tls-disable-time-checks").val(parseSettingData(wxs, "tls-disable-time-checks", "1"));
       break;

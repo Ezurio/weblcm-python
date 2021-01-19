@@ -200,7 +200,7 @@
     "Index 2": "静态WEP密码 2",
     "Index 3": "静态WEP密码 3",
     "Power Save": "低功耗模式",
-    "WEP Type": "WEP认证类型",
+    "Encryption Type": "Encryption认证类型",
     "Authentication Algorithm": "认证方式",
 
     "Method": "方法",
