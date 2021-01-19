@@ -200,13 +200,6 @@
 						</select>
 					</div>
 
-					<div class="input-group mb-3" id="client-name-display">
-						<div class="input-group-prepend i18n" name="Client Name">
-							<span class="input-group-text">Client Name</span>
-						</div>
-						<input type="text" class="form-control" id="client-name" maxlength="16">
-					</div>
-
 					<div class="input-group mb-3" id="radio-band-display">
 						<div class="input-group-prepend i18n" name="Radio Band">
 							<span class="input-group-text">Radio Band</span>
@@ -232,15 +225,6 @@
 						<input type="text" class="form-control" id="radio-channel-list" value="">
 					</div>
 
-					<div class="input-group mb-3" id="frequency-dfs-display">
-						<div class="input-group-prepend i18n" name="Enable DFS">
-							<span class="input-group-text">Enable DFS</span>
-						</div>
-						<select class="custom-select" id="frequency-dfs">
-							<option class="i18n" name="No" value=0>No</option>
-							<option class="i18n" name="Yes" value=1 selected>Yes</option>
-						</select>
-					</div>
 
 					<div class="input-group mb-3" id="powersave-display">
 						<div class="input-group-prepend i18n" name="Power Save">
@@ -255,8 +239,8 @@
 					</div>
 
 					<div class="input-group mb-3" id="key-mgmt-display">
-						<div class="input-group-prepend i18n" name="WEP Type">
-							<span class="input-group-text">WEP Type</span>
+						<div class="input-group-prepend i18n" name="Encryption Type">
+							<span class="input-group-text">Encryption Type</span>
 						</div>
 						<select class="custom-select" id="key-mgmt">
 							<option class="i18n" name="None" value="none" selected>None</option>
@@ -264,41 +248,6 @@
 							<option class="i18n" name="Dynamic WEP" value="ieee8021x">Dynamic WEP</option>
 							<option class="i18n" name="Infrastructure WPA-PSK" value="wpa-psk">Infrastructure WPA-PSK</option>
 							<option class="i18n" name="WPA-Enterprise" value="wpa-eap">WPA-Enterprise</option>
-						</select>
-					</div>
-
-					<div class="input-group mb-3 d-none" id="proto-version-display">
-						<div class="input-group-prepend i18n" name="Proto Version">
-							<span class="input-group-text">Proto Version</span>
-						</div>
-						<select class="custom-select" id="proto-version">
-							<option value="" selected>None</option>
-							<option value="rsn">RSN</option>
-							<option value="wpa">WPA</option>
-						</select>
-					</div>
-
-					<div class="input-group mb-3 d-none" id="group-cipher-display">
-						<div class="input-group-prepend i18n" name="Group Cipher">
-							<span class="input-group-text">Group Cipher</span>
-						</div>
-						<select class="custom-select" id="group-cipher">
-							<option value="" selected>None</option>
-							<option value="ccmp">CCMP</option>
-							<option value="tkip">TKIP</option>
-							<option value="wep40">WEP40</option>
-							<option value="wep104">WEP104</option>
-						</select>
-					</div>
-
-					<div class="input-group mb-3 d-none" id="pairwise-cipher-display">
-						<div class="input-group-prepend i18n" name="Pairwise Cipher">
-							<span class="input-group-text">Pairwise Cipher</span>
-						</div>
-						<select class="custom-select" id="pairwise-cipher">
-							<option value="" selected>None</option>
-							<option value="ccmp">CCMP</option>
-							<option value="tkip">TKIP</option>
 						</select>
 					</div>
 
@@ -402,13 +351,6 @@
 						<input type="text" class="form-control" id="eap-identity">
 					</div>
 
-					<div class="input-group mb-3 d-none" id="eap-anonymous-identity-display">
-						<div class="input-group-prepend i18n" name="Anonymous Identity">
-							<span class="input-group-text">Anonymous Identity</span>
-						</div>
-						<input type="text" class="form-control" id="eap-anonymous-identity">
-					</div>
-
 					<div class="input-group mb-3 d-none" id="eap-password-display">
 						<div class="input-group-prepend i18n" name="password">
 							<span class="input-group-text">Password</span>
@@ -503,6 +445,127 @@
 						<input type="password" class="form-control" id="private-key-password">
 					</div>
 
+				</div>
+			</div>
+		</div>
+		<div class="card bg-light d-none" id="connection-bridge-settings">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Bridge Settings" href="#connection-bridge-settings-body">Bridge Settings</a>
+			</div>
+			<div id="connection-bridge-settings-body" class="collapse in">
+				<div class="card-body">
+				</div>
+			</div>
+		</div>
+		<div class="card bg-light d-none" id="connection-gsm-settings">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="GSM Settings" href="#connection-gsm-settings-body">GSM Settings</a>
+			</div>
+			<div id="connection-gsm-settings-body" class="collapse in">
+				<div class="card-body">
+					<div class="input-group mb-3" id="apn-display">
+						<div class="input-group-prepend i18n" name="APN">
+							<span class="input-group-text">APN</span>
+						</div>
+						<input type="text" class="form-control" id="apn">
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="card bg-light d-none" id="connection-ppp-settings">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="PPP Settings" href="#connection-ppp-settings-body">PPP Settings</a>
+			</div>
+			<div id="connection-ppp-settings-body" class="collapse in">
+				<div class="card-body">
+				</div>
+			</div>
+		</div>
+		<div class="card bg-light d-none" id="connection-bluetooth-settings">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Bluetooth Settings" href="#connection-bluetooth-settings-body">Bluetooth Settings</a>
+			</div>
+			<div id="connection-bluetooth-settings-body" class="collapse in">
+				<div class="card-body">
+				</div>
+			</div>
+		</div>
+		<div class="card bg-light d-none" id="connection-wifi-p2p-settings">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="WIFI-P2P Settings" href="#connection-wifi-p2p-settings-body">WIFI-P2P Settings</a>
+			</div>
+			<div id="connection-wifi-p2p-settings-body" class="collapse in">
+				<div class="card-body">
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="accordion mt-3" id="connection-settings-accordion">
+		<div class="card bg-light d-none" id="connection-advanced-settings">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Advanced Settings" href="#connection-advanced-settings-body">Advanced Settings</a>
+			</div>
+			<div id="connection-advanced-settings-body" class="collapse in">
+				<div class="card-body">
+					<div class="input-group mb-3" id="client-name-display">
+						<div class="input-group-prepend i18n" name="Client Name">
+							<span class="input-group-text">Client Name</span>
+						</div>
+						<input type="text" class="form-control" id="client-name" maxlength="16">
+					</div>
+
+					<div class="input-group mb-3" id="frequency-dfs-display">
+						<div class="input-group-prepend i18n" name="Enable DFS">
+							<span class="input-group-text">Enable DFS</span>
+						</div>
+						<select class="custom-select" id="frequency-dfs">
+							<option class="i18n" name="No" value=0>No</option>
+							<option class="i18n" name="Yes" value=1 selected>Yes</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="eap-anonymous-identity-display">
+						<div class="input-group-prepend i18n" name="Anonymous Identity">
+							<span class="input-group-text">Anonymous Identity</span>
+						</div>
+						<input type="text" class="form-control" id="eap-anonymous-identity">
+					</div>
+
+					<div class="input-group mb-3 d-none" id="proto-version-display">
+						<div class="input-group-prepend i18n" name="Proto Version">
+							<span class="input-group-text">Proto Version</span>
+						</div>
+						<select class="custom-select" id="proto-version">
+							<option value="" selected>None</option>
+							<option value="rsn">RSN</option>
+							<option value="wpa">WPA</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="group-cipher-display">
+						<div class="input-group-prepend i18n" name="Group Cipher">
+							<span class="input-group-text">Group Cipher</span>
+						</div>
+						<select class="custom-select" id="group-cipher">
+							<option value="" selected>None</option>
+							<option value="ccmp">CCMP</option>
+							<option value="tkip">TKIP</option>
+							<option value="wep40">WEP40</option>
+							<option value="wep104">WEP104</option>
+						</select>
+					</div>
+
+					<div class="input-group mb-3 d-none" id="pairwise-cipher-display">
+						<div class="input-group-prepend i18n" name="Pairwise Cipher">
+							<span class="input-group-text">Pairwise Cipher</span>
+						</div>
+						<select class="custom-select" id="pairwise-cipher">
+							<option value="" selected>None</option>
+							<option value="ccmp">CCMP</option>
+							<option value="tkip">TKIP</option>
+						</select>
+					</div>
 					<div class="input-group mb-3 d-none" id="phase2-auth-display">
 						<div class="input-group-prepend i18n" name="Phase2 non-EAP Method">
 							<span class="input-group-text">Phase2 non-EAP Method</span>
@@ -580,58 +643,8 @@
 				</div>
 			</div>
 		</div>
-		<div class="card bg-light d-none" id="connection-bridge-settings">
-			<div class="card-header">
-				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Bridge Settings" href="#connection-bridge-settings-body">Bridge Settings</a>
-			</div>
-			<div id="connection-bridge-settings-body" class="collapse in">
-				<div class="card-body">
-				</div>
-			</div>
-		</div>
-		<div class="card bg-light d-none" id="connection-gsm-settings">
-			<div class="card-header">
-				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="GSM Settings" href="#connection-gsm-settings-body">GSM Settings</a>
-			</div>
-			<div id="connection-gsm-settings-body" class="collapse in">
-				<div class="card-body">
-					<div class="input-group mb-3" id="apn-display">
-						<div class="input-group-prepend i18n" name="APN">
-							<span class="input-group-text">APN</span>
-						</div>
-						<input type="text" class="form-control" id="apn">
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="card bg-light d-none" id="connection-ppp-settings">
-			<div class="card-header">
-				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="PPP Settings" href="#connection-ppp-settings-body">PPP Settings</a>
-			</div>
-			<div id="connection-ppp-settings-body" class="collapse in">
-				<div class="card-body">
-				</div>
-			</div>
-		</div>
-		<div class="card bg-light d-none" id="connection-bluetooth-settings">
-			<div class="card-header">
-				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="Bluetooth Settings" href="#connection-bluetooth-settings-body">Bluetooth Settings</a>
-			</div>
-			<div id="connection-bluetooth-settings-body" class="collapse in">
-				<div class="card-body">
-				</div>
-			</div>
-		</div>
-		<div class="card bg-light d-none" id="connection-wifi-p2p-settings">
-			<div class="card-header">
-				<a data-toggle="collapse" data-parent="#connection-settings-accordion" class="i18n" name="WIFI-P2P Settings" href="#connection-wifi-p2p-settings-body">WIFI-P2P Settings</a>
-			</div>
-			<div id="connection-wifi-p2p-settings-body" class="collapse in">
-				<div class="card-body">
-				</div>
-			</div>
-		</div>
 	</div>
+
 	<div class="text-center mt-3">
 		<button type="button" id="addNewConnection" class="btn btn-primary">Save</button>
 	</div>
