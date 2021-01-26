@@ -25,6 +25,7 @@
     "Wifi Scan": "无线扫描",
     "Logging": "日志管理",
     "Update Password": "密码管理",
+    "Update User Info": "更新用户资讯",
     "Update Firmware": "固件更新",
 
     "Select File": "选择文件",
@@ -114,6 +115,9 @@
     "User List": "用户列表",
     "User Permission": "用户权限",
     "Add User": "增加",
+    "Current Username": "当前用户",
+    "New Username": "新用户",
+    "Confirm Username": "确认用户",
 
     "UUID": "UUID",
     "SSID": "SSID",

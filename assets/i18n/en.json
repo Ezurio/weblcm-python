@@ -26,6 +26,7 @@
     "Wifi Scan": "Wifi Scan",
     "Logging": "Logging",
     "Update Password": "Update Password",
+    "Update User Info": "Update User info",
     "Update Firmware": "Update Firmware",
     "Advance Setting": "Advance Setting",
 
@@ -114,6 +115,9 @@
     "User List": "User List",
     "User Permission": "User Permission",
     "Add User": "Add User",
+    "Current Username": "Current Username",
+    "New Username": "New Username",
+    "Confirm Username": "Confirm Username",
 
     "UUID": "UUID",
     "SSID": "SSID",
@@ -251,7 +255,7 @@
     "At least one digit is required for password": "At least one digit is required for password",
     "At least one letter is required for password": "At least one letter is required for password",
     "At least one special character is required for password": "At least one special character is required for password",
-    "Username requirements": "The new username must consit of 4-64 alphanumeric characters",
+    "Username requirements": "The new username must consist of 4-64 alphanumeric characters",
     "4-64 characters are required for username": "4-64 characters are required for username",
     "Only alphanumeric characters are allowed for username": "Only alphanumeric characters are allowed for username",
     "Add user failed": "Add user failed",
