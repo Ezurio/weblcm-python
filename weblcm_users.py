@@ -46,6 +46,20 @@ class UserManageHelper(object):
 		return False
 
 	@classmethod
+	def updateUsername(cls, username, new_username, password, permission=None):
+		permission = UserManageHelper.getPermission(username)
+		if WeblcmConfigManage.remove_section(username):
+			if WeblcmConfigManage.add_section(new_username):
+				salt = uuid.uuid4().hex
+				WeblcmConfigManage.upadte_key_from_section(new_username, 'salt', salt)
+				WeblcmConfigManage.upadte_key_from_section(new_username, 'password', hashlib.sha256(salt.encode() + password.encode()).hexdigest())
+				if permission:
+					WeblcmConfigManage.upadte_key_from_section(new_username, 'permission', permission)
+				return WeblcmConfigManage.save()
+			return False
+		return False
+
+	@classmethod
 	def getPermission(cls, username):
 		return WeblcmConfigManage.get_key_from_section(username, 'permission', None)
 
@@ -88,6 +102,7 @@ class UserManage(object):
 		post_data = cherrypy.request.json
 		username = post_data.get('username', None)
 		new_password = post_data.get('new_password', None)
+		new_username = post_data.get('new_username', None)
 		if new_password:
 			current_password = post_data.get('current_password', None)
 			if UserManageHelper.verify(username, current_password):
@@ -97,6 +112,17 @@ class UserManage(object):
 					default_username = cherrypy.request.app.config['weblcm'].get('default_username', "root")
 					default_password = cherrypy.request.app.config['weblcm'].get('default_password', "summit")
 					if current_password == default_password and username == default_username:
+						result['REDIRECT'] = 1
+		elif new_username:
+			current_username = post_data.get('current_username', None)
+			current_password = post_data.get('current_password', None)
+			if UserManageHelper.verify(current_username, current_password):
+				if UserManageHelper.updateUsername(current_username, new_username, current_password):
+					result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+					#Redirect is required when the default username is updated
+					default_username = cherrypy.request.app.config['weblcm'].get('default_username', "root")
+					default_password = cherrypy.request.app.config['weblcm'].get('default_password', "summit")
+					if current_password == default_password and current_username == default_username:
 						result['REDIRECT'] = 1
 		else:
 			permission = post_data.get('permission', None)
@@ -277,7 +303,8 @@ class LoginManage(object):
 		result['PERMISSION'] = UserManageHelper.getPermission(cherrypy.session.get('USERNAME', None))
 		#Don't display "system_user" page for single user mode
 		if SystemSettingsManage.get_max_web_clients() == 1:
-			result['PERMISSION'] = result['PERMISSION'].replace("system_user", "")
+			if result['PERMISSION'] != None:
+				result['PERMISSION'] = result['PERMISSION'].replace("system_user", "")
 
 		result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 		return result
