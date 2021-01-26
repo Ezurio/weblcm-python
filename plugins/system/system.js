@@ -544,6 +544,14 @@ function usermanageAUTORUN(retry) {
     updatePassword();
   });
 
+  $(document).on("click", "#bt-update-username", function(){
+    updateUsername();
+  });
+
+  $(document).on("click", "#bt-update-all", function(){
+    updateAll();
+  });
+
   $(document).on("click", "#bt-add-user", function(){
     addUser();
   });
@@ -631,6 +639,106 @@ function updatePassword() {
   });
 }
 
+function updateUsername() {
+  let curr_username = $("#username-current-username").val();
+  let new_username = $("#username-new-username").val();
+  let curr_password = $("#username-current-password").val();
+
+  let err = validateUsername(new_username);
+  if(err){
+    customMsg(err, true);
+    return;
+  }
+
+  confirm_username = $("#username-confirm-username").val();
+  if (new_username !== confirm_username){
+    customMsg("Username and confirmation username don't match", true);
+    return;
+  }
+
+  if (curr_username == new_username){
+    customMsg("New username must be different from the old one", true);
+    return;
+  }
+
+  let creds = {
+    current_username: curr_username,
+    new_username: new_username,
+    current_password: curr_password,
+  }
+
+  $.ajax({
+    url: "users",
+    type: "PUT",
+    data: JSON.stringify(creds),
+    contentType: "application/json",
+  })
+  .done(function(data) {
+
+    if(data.SDCERR !== g_defines.SDCERR.SDCERR_SUCCESS){
+    customMsg("Username incorrect", true);
+    }
+    else {
+      g_curr_user = new_username
+      SDCERRtoString(data.SDCERR);
+      if (data.REDIRECT == 1){
+        login(g_curr_user, new_username);
+      }
+    }
+  })
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
+  });
+}
+
+function updateAll() {
+  let curr_username = $("#username-current-username").val();
+  let new_username = $("#username-new-username").val();
+  let curr_password = $("#password-current-password").val();
+
+  let err = validateUsername(new_username);
+  if(err){
+    customMsg(err, true);
+    return;
+  }
+
+  confirm_username = $("#username-confirm-username").val();
+  if (new_username !== confirm_username){
+    customMsg("Username and confirmation username don't match", true);
+    return;
+  }
+
+  if (curr_username == new_username){
+    customMsg("New username must be different from the old one", true);
+    return;
+  }
+
+  let creds = {
+    current_username: curr_username,
+    new_username: new_username,
+    current_password: curr_password,
+  }
+
+  $.ajax({
+    url: "users",
+    type: "PUT",
+    data: JSON.stringify(creds),
+    contentType: "application/json",
+  })
+  .done(function(data) {
+
+    if(data.SDCERR !== g_defines.SDCERR.SDCERR_SUCCESS){
+      customMsg("Username incorrect", true);
+    }
+    else {
+      g_curr_user = new_username
+      updatePassword()
+    }
+  })
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
+  });
+}
 
 function createUserList(users) {
 
