@@ -31,6 +31,9 @@
     "Advance Setting": "Advance Setting",
 
     "Select File": "Select File",
+    "Select New Firmware File": "Select New Firmware File",
+    "Select Saved Configuration File": "Select Saved Configuration File",
+    "Select Date Time File": "Select Date Time File",
     "Import System Configuration": "Import System Configuration",
     "Export System Configuration": "Export System Configuration",
     "Export System Log": "Export System Log",
