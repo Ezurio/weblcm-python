@@ -115,6 +115,17 @@ function networkingAUTORUN(retry){
       getFileList('cert', createCertTable);
     }
   });
+
+  $(document).on("change", "#ipv6-addr-gen-mode", function(){
+    onChangeIPv6AddrGenMode();
+  });
+}
+
+function onChangeIPv6AddrGenMode() {
+  let v = $("#ipv6-addr-gen-mode").val();
+  //Token must not be set for stable-privacy mode
+  if (v == 1)
+      $("#ipv6-token").val("");
 }
 
 function onChangePhase1FastProvisioning(){
@@ -808,6 +819,8 @@ function getIpv6Settings(settings){
     $("#ipv6-gateway").val(parseSettingData(settings['ipv6'], "gateway", ""));
     $("#ipv6-dns").val(parseSettingData(settings['ipv6'], "dns", ""));
   });
+  $("#ipv6-addr-gen-mode").val(parseSettingData(settings['ipv6'], "addr-gen-mode", 1));
+  $("#ipv6-token").val(parseSettingData(settings['ipv6'], "token", ""));
 }
 
 function updateGetConnectionPage(uuid, id, ssid, key_mgmt){
@@ -1460,9 +1473,26 @@ function prepareIPv6Addresses(){
 
   var ipFormat = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
   var prefixFormat = /^(1[01][0-9]|12[0-8]|[0-9]?[0-9])$/;
+  var tokenFormat = /^::([0-9a-fA-F]{1,4}:){3}[0-9a-fA-F]{1,4}$/;
+
+  result.ipv6['addr-gen-mode'] = parseInt($("#ipv6-addr-gen-mode").val());
+
+  if(!result.ipv6['addr-gen-mode']) {
+    if(!$("#ipv6-token").val().match(tokenFormat)){
+      $("#ipv6-token").css('border-color', 'red');
+      $("#ipv6-token").focus();
+      return result;
+    }
+    result.ipv6['token'] = $("#ipv6-token").val();
+  }
+  else if($("#ipv6-token").val().trim()) {
+      $("#ipv6-token").css('border-color', 'red');
+      $("#ipv6-token").focus();
+      return result;
+  }
+  $("#ipv6-token").css('border-color', '');
 
   result.ipv6['method'] = $("#ipv6-method").val();
-
   if(result.ipv6['method'] == "manual" && $("#ipv6-addresses").val()=="")
     return result;
 

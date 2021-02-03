@@ -134,6 +134,8 @@
     "IPv4 Gateway": "IPv4网关",
     "IPv6 Address": "IPv6地址",
     "IPv6 Gateway": "IPv6网关",
+    "Address Generate Mode": "地址生成模式",
+    "Token": "令牌",
     "Signal Strength" : "信号强度",
     "Frequency": "频率",
     "MAC Address": "MAC地址",
