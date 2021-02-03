@@ -134,6 +134,8 @@
     "IPv4 Gateway": "IPv4 Gateway",
     "IPv6 Address": "IPv6 Address",
     "IPv6 Gateway": "IPv6 Gateway",
+    "Address Generate Mode": "Address Generate Mode",
+    "Token": "Token",
     "Signal Strength" : "Signal Strength",
     "Frequency": "Frequency",
     "MAC Address": "MAC Address",
