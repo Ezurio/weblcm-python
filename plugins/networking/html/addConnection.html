@@ -161,6 +161,21 @@
 						</div>
 						<input type="text" class="form-control" id="ipv6-dns" placeholder="0000:0000:0000:0000:0000:0000:0000:0000" readonly>
 					</div>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Address Generate Mode">
+							<span class="input-group-text">Address Generate Mode</span>
+						</div>
+						<select class="custom-select" id="ipv6-addr-gen-mode">
+							<option value=0>eui64</option>
+							<option value=1 selected>stable-privacy</option>
+						</select>
+					</div>
+					<div class="input-group mb-3">
+						<div class="input-group-prepend i18n" name="Token">
+							<span class="input-group-text">Token</span>
+						</div>
+						<input type="text" class="form-control" id="ipv6-token" placeholder="::0000:0000:0000:0000 for eui64 mode only">
+					</div>
 				</div>
 			</div>
 		</div>

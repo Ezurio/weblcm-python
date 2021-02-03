@@ -146,9 +146,8 @@ class NetworkStatusHelper(object):
 				#Get Wifi specific items
 				if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
 					cls._network_status[interface_name]['wireless'] = cls.get_wifi_properties(dev)
-
-				if (dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI and dev.State == NetworkManager.NM_DEVICE_STATE_ACTIVATED):
-					cls._network_status[interface_name]['activeaccesspoint'] = cls.get_ap_properties(dev.ActiveAccessPoint, dev.Mode)
+					if (dev.State == NetworkManager.NM_DEVICE_STATE_ACTIVATED):
+						cls._network_status[interface_name]['activeaccesspoint'] = cls.get_ap_properties(dev.ActiveAccessPoint, dev.Mode)
 
 
 def dev_added(nm, interface, signal, device_path):
@@ -169,6 +168,9 @@ def ap_propchange(ap, interface, signal, properties):
 							NetworkStatusHelper._network_status[k]['activeaccesspoint']['Strength'] = properties['Strength']
 
 def dev_statechange(dev, interface, signal, new_state, old_state, reason):
+	if dev.Interface not in NetworkStatusHelper._network_status:
+		NetworkStatusHelper._network_status[dev.Interface] = {}
+
 	with NetworkStatusHelper._lock:
 		if new_state == NetworkManager.NM_DEVICE_STATE_ACTIVATED:
 			NetworkStatusHelper._network_status[dev.Interface]['status'] = NetworkStatusHelper.get_dev_status(dev)
@@ -199,6 +201,7 @@ def dev_statechange(dev, interface, signal, new_state, old_state, reason):
 		NetworkStatusHelper._network_status[dev.Interface]['status']['State'] = new_state
 
 def run_event_listener():
+
 	dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
 	NetworkStatusHelper.network_status_query()
@@ -206,7 +209,6 @@ def run_event_listener():
 	NetworkManager.NetworkManager.OnDeviceAdded(dev_added)
 	NetworkManager.NetworkManager.OnDeviceRemoved(dev_removed)
 
-	# Listen for added and removed access points
 	for dev in NetworkManager.Device.all():
 		if dev.DeviceType in (NetworkManager.NM_DEVICE_TYPE_ETHERNET, NetworkManager.NM_DEVICE_TYPE_WIFI, NetworkManager.NM_DEVICE_TYPE_MODEM):
 			dev.OnStateChanged(dev_statechange)
@@ -215,8 +217,6 @@ def run_event_listener():
 			dev.ActiveAccessPoint.OnPropertiesChanged(ap_propchange)
 
 	GLib.MainLoop().run()
-
-
 
 @cherrypy.expose
 class NetworkStatus(object):
