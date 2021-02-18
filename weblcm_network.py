@@ -6,7 +6,6 @@ import cherrypy
 import subprocess
 import NetworkManager
 import weblcm_def
-from subprocess import Popen, PIPE, TimeoutExpired
 
 @cherrypy.expose
 class NetworkConnections(object):
@@ -327,43 +326,5 @@ class NetworkInterfaces(object):
 			result['interfaces'] = interfaces
 		except Exception as e:
 			print(e)
-
-		return result
-
-@cherrypy.expose
-class WifiACS(object):
-
-	ACS_SCRIPT='/etc/weblcm-python/scripts/acs.sh'
-
-	@cherrypy.tools.json_in()
-	@cherrypy.tools.json_out()
-	def PUT(self):
-
-		result = {
-			'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL'),
-			'message': "Unknow Error",
-			'channel': 0,
-		}
-
-		band = cherrypy.request.json.get('band', "bg")
-		timeout = cherrypy.request.json.get('timeout', 30)
-
-		try:
-			proc = Popen([WifiACS.ACS_SCRIPT, band], stdout=PIPE, stderr=PIPE)
-			outs, errs = proc.communicate(timeout=timeout)
-			if proc.returncode:
-				result['message'] = "Scan failed"
-				result['SDCERR'] = proc.returncode
-			else:
-				result['message'] = "Done"
-				result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
-				result['channel'] = outs.decode("utf-8")
-
-		except TimeoutExpired:
-			proc.kill()
-			outs, errs = proc.communicate()
-			result['message'] = "Timeout"
-		except Exception as e:
-			result['message'] = "{}".format(e)
 
 		return result

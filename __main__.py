@@ -3,7 +3,7 @@ import cherrypy
 import weblcm_def
 import logging
 from weblcm_network_status import NetworkStatus
-from weblcm_network import NetworkInterfaces, NetworkConnections, NetworkConnection, NetworkAccessPoints, Version, WifiACS
+from weblcm_network import NetworkInterfaces, NetworkConnections, NetworkConnection, NetworkAccessPoints, Version
 from weblcm_log import LogData, LogSetting
 from weblcm_swupdate import SWUpdate
 from weblcm_users import UserManage, LoginManage, LoginManageHelper
@@ -108,8 +108,6 @@ if __name__ == '__main__':
 	webapp.reboot = Reboot()
 	webapp.factoryReset = FactoryReset()
 	webapp.datetime = DateTimeSetting()
-
-	webapp.acs = WifiACS()
 
 	setup_http_server()
 

@@ -6,14 +6,15 @@
 
 
 wlan="wlan0"
-acs_db="/tmp/regulatory-for-acs.db"
+reg_db="/tmp/regulatory-for-acs.db"
 
-BG_CHANNELS="1 2 3 4 5 6 7 8 9 10 11 12 13 14"
-BG_FREQUENCIES="2412 2417 2422 2427 2432 2437 2442 2447 2452 2457 2462 2467 2472 2484"
+BG_CHANNELS="1 6 11 14"
+BG_FREQUENCIES="2412 2437 2462 2484"
 #2_4g channels utilisation initialization
 for ch in $BG_CHANNELS
 do
   eval bg_channel_"$ch"=0
+  eval count_bg_channel_"$ch"=0
 done
 
 
@@ -23,15 +24,21 @@ A_CHANNELS="36 40 44 48 52 56 60 64 100 104 108 112 116 \
 A_FREQUENCIES="5180 5200 5220 5240 5260 5280 5300 5320 5500 5520 5540 5560 5580 \
 			   5600 5620 5640 5660 5680 5700 5720 5745 5765 5785 5805 5845"
 
-#5g channels utilisation initialization
+#5g channels utilisation/count initialization
 for ch in $A_CHANNELS
 do
   eval a_channel_"$ch"=0
+  eval count_a_channel_"$ch"=0
 done
 
 #Valid channel list for the band per regulatory domain/country
 a_channel_list=""
 bg_channel_list=""
+min_utilisation=0
+quietest_channel=0
+bssid_count=0
+bssload_count=0
+
 
 function make_valid_bg_channel_list(){
 
@@ -65,12 +72,12 @@ function make_valid_a_channel_list() {
 
 function make_valid_channel_list(){
 
-  if [ $3 -lt 3000 ] && [ $1 == "bg" ]
+  if [ $2 -lt 3000 ]
   then
-    make_valid_bg_channel_list $2 $3 $4
-  elif [ $2 -gt 3000 ] && [ $1 == "a" ]
+    make_valid_bg_channel_list $1 $2
+  elif [ $1 -gt 3000 ]
   then
-    make_valid_a_channel_list $2 $3 $4
+    make_valid_a_channel_list $1 $2
   fi
 }
 
@@ -99,92 +106,157 @@ function get_valid_channel_list() {
         __start=`echo $line | awk '{ print $1 }'`
         __start=${__start:1}
         __end=`echo $line | awk '{ print $3 }'`
-        __width=`echo $line | awk '{ print $5 }'`
-        __width=${__width::-2}
-        make_valid_channel_list $1 $__start $__end $__width
+        make_valid_channel_list $__start $__end
       fi
     fi
-  done 3<"$acs_db"
+  done 3<"$reg_db"
 
 }
 
-#Adjust channel utilisation based on a look-up table of signal strength.
-function adjust_utilisation(){
+#Adjust channel utilization/count based on a look-up table of signal strength.
+function adjust_weight(){
 
-  local  __weigh=0
+  local  __weight=0
 
   if [ $1 -gt -30 ]
   then
-    __weigh=10
+    __weight=10
   elif [ $1 -gt -50 ]
   then
-    __weigh=8
+    __weight=8
   elif [ $1 -gt -60 ]
   then
-    __weigh=7
+    __weight=7
   elif [ $1 -gt -67 ]
   then
-    __weigh=6
+    __weight=6
   elif [ $1 -gt -70 ]
   then
-    __weigh=4
+    __weight=4
   elif [ $1 -gt -80 ]
   then
-    __weigh=2
+    __weight=2
   elif [ $1 -gt -90 ]
   then
-    __weigh=1
+    __weight=1
   fi
 
-  return $__weigh
+  return $__weight
 }
 
 #Parameters:
 #  $1: freq
-#  S2: signal
-#  $3: channel utilisation
+#  $2: adjusted weight
+function cal_bssid_count(){
+
+  case $1 in
+    2412)
+      count_bg_channel_1=$(($count_bg_channel_1+$2))
+      ;;
+    2437)
+      count_bg_channel_6=$(($count_bg_channel_6+$2))
+      ;;
+    2462)
+      count_bg_channel_11=$(($count_bg_channel_11+$2))
+      ;;
+    2484)
+      count_bg_channel_14=$(($count_bg_channel_14+$2))
+      ;;
+    5180)
+      count_a_channel_36=$(($count_a_channel_36+$2))
+      ;;
+    5200)
+      count_a_channel_40=$(($count_a_channel_40+$2))
+      ;;
+    5220)
+      count_a_channel_44=$(($count_a_channel_44+$2))
+      ;;
+    5240)
+      count_a_channel_48=$(($count_a_channel_48+$2))
+      ;;
+    5260)
+      count_a_channel_52=$(($count_a_channel_52+$2))
+      ;;
+    5280)
+      count_a_channel_56=$(($count_a_channel_56+$2))
+      ;;
+    5300)
+      count_a_channel_60=$(($count_a_channel_60+$2))
+      ;;
+    5320)
+      count_a_channel_64=$(($count_a_channel_64+$2))
+      ;;
+    5500)
+      count_a_channel_100=$(($count_a_channel_100+$2))
+      ;;
+    5520)
+      count_a_channel_104=$(($count_a_channel_104+$2))
+      ;;
+    5540)
+      count_a_channel_108=$(($count_a_channel_108+$2))
+      ;;
+    5560)
+      count_a_channel_112=$(($count_a_channel_112+$2))
+      ;;
+    5580)
+      count_a_channel_116=$(($count_a_channel_116+$2))
+      ;;
+    5600)
+      count_a_channel_120=$(($count_a_channel_120+$2))
+      ;;
+    5620)
+      count_a_channel_124=$(($count_a_channel_124+$2))
+      ;;
+    5640)
+      count_a_channel_128=$(($count_a_channel_128+$2))
+      ;;
+    5660)
+      count_a_channel_132=$(($count_a_channel_132+$2))
+      ;;
+    5680)
+      count_a_channel_136=$(($count_a_channel_136+$2))
+      ;;
+    5700)
+      count_a_channel_140=$(($count_a_channel_140+$2))
+      ;;
+    5720)
+      count_a_channel_144=$(($count_a_channel_144+$2))
+      ;;
+    5745)
+      count_a_channel_149=$(($count_a_channel_149+$2))
+      ;;
+    5765)
+      count_a_channel_153=$(($count_a_channel_153+$2))
+      ;;
+    5785)
+      count_a_channel_157=$(($count_a_channel_157+$2))
+      ;;
+    5805)
+      count_a_channel_161=$(($count_a_channel_161+$2))
+      ;;
+    5825)
+      count_a_channel_165=$(($count_a_channel_165+$2))
+      ;;
+    *)
+      ;;
+  esac
+}
+
+#Parameters:
+#  $1: freq
+#  $2: adjusted channel utilisation
 function cal_channel_utilization(){
 
 
   case $1 in
-	2412)
+    2412)
       bg_channel_1=$(($bg_channel_1+$2))
-      ;;
-    2417)
-      bg_channel_2=$(($bg_channel_2+$2))
-      ;;
-    2422)
-      bg_channel_3=$(($bg_channel_3+$2))
-      ;;
-    2427)
-      bg_channel_4=$(($bg_channel_4+$2))
-      ;;
-    2432)
-      bg_channel_5=$(($bg_channel_5+$2))
       ;;
     2437)
       bg_channel_6=$(($bg_channel_6+$2))
       ;;
-    2442)
-      bg_channel_7=$(($bg_channel_7+$2))
-      ;;
-    2447)
-      bg_channel_8=$(($bg_channel_8+$2))
-      ;;
-    2452)
-      bg_channel_9=$(($bg_channel_9+$2))
-      ;;
-    2457)
-      bg_channel_10=$(($bg_channel_10+$2))
-      ;;
     2462)
       bg_channel_11=$(($bg_channel_11+$2))
-      ;;
-    2467)
-      bg_channel_12=$(($bg_channel_12+$2))
-      ;;
-    2472)
-      bg_channel_13=$(($bg_channel_13+$2))
       ;;
     2484)
       bg_channel_14=$(($bg_channel_14+$2))
@@ -269,64 +341,45 @@ function cal_channel_utilization(){
   esac
 }
 
-function find_quietest_channel(){
+function find_quietest_channel_by_bssload(){
 
-  local __quietest_channel=0
-  local __min_utilisation=-1
-
-  #If scanning_channels is not set, just use the generated valid channel list for the band;
-  #If scanning_channels is set, need to check whether channels are valid for the band
-  if [ x"$band" == x"bg" ]
-  then
-    if [ -z "$scanning_channels" ]
-    then
-      scanning_channels=$bg_channel_list
-    else
-      __tmp=""
-      for c in $bg_channel_list
-      do
-        for k in $scanning_channels
-        do
-           if [ $c == $k ]
-           then
-             __tmp="$__tmp $c"
-           fi
-         done
-      done
-      scanning_channels=$__tmp
-    fi
-  else
-    if [ -z "$scanning_channels" ]
-    then
-      scanning_channels=$a_channel_list
-    else
-      __tmp=""
-      for c in $a_channel_list
-      do
-        for k in $scanning_channels
-        do
-           if [ $c == $k ]
-           then
-             __tmp="$tmp $c"
-           fi
-         done
-      done
-      scanning_channels=$__tmp
-    fi
-  fi
-
-  for i in $scanning_channels
+  __clist=`eval echo "$""$1"_channel_list`
+  for i in $__clist
   do
-    __ch=`eval echo "$""$band"_channel_"$i"`
-    utilisation=$__ch
-    if [ $__quietest_channel -eq 0 ] || [ $__min_utilisation -gt $utilisation ]
+    __utilisation=`eval echo "$""$1"_channel_"$i"`
+    if [ $quietest_channel -eq 0 ] || [ $min_utilisation -gt $__utilisation ]
     then
-       __min_utilisation=$utilisation
-       __quietest_channel=$i
+       min_utilisation=$__utilisation
+       quietest_channel=$i
     fi
   done
+}
 
-  return $__quietest_channel
+function find_quietest_channel_by_bssid_counting(){
+
+  __clist=`eval echo "$""$1"_channel_list`
+  for i in $__clist
+  do
+    __bssid_count=`eval echo "$"count_"$1"_channel_"$i"`
+    if [ $quietest_channel -eq 0 ] || [ $min_utilisation -gt $__bssid_count ]
+    then
+       min_utilisation=$__bssid_count
+       quietest_channel=$i
+    fi
+  done
+}
+
+function print_statistics() {
+  log="/tmp/acs.log"
+
+  echo "BAND $1" >> $log
+  __clist=`eval echo "$""$1"_channel_list`
+  for i in $__clist
+  do
+    c1=`eval echo "$""$1"_channel_"$i"`
+    c2=`eval echo "$"count_"$1"_channel_"$i"`
+    echo "channel $i utilization $c1 count $c2" >> $log
+  done
 }
 
 #In each data frame returned by iw scan, "freq" always comes first, and then "signal".
@@ -335,7 +388,7 @@ function do_scan() {
 
   iw $wlan scan | grep -E "freq|channel utilisation|signal" | {
   #For testing, we can save the result of `iw scan` first and then 'cat' it
-  #cat aps | grep -E "freq|channel utilisation|signal" | {
+  #cat ap_list.db | grep -E "freq|channel utilisation|signal" | {
     while read line
     do
       __first=`echo "$line" | awk '{ print $1 }'`
@@ -343,64 +396,83 @@ function do_scan() {
       if [ "$__first" == "signal:" ]
       then
         __signal=`echo $line | awk '{ print $2 }' | awk '{ split($0, a,"."); print a[1] }'`
+		adjust_weight $__signal
+        __weight=$?
+        cal_bssid_count $__freq $__weight
+        bssid_count=$(($bssid_count+1))
       elif [ "$__first" == "freq:" ]
       then
         __freq=$__second
       elif [ "$__second" == "channel" ]
       then
         __utilisation=`echo "$line" | awk '{ print $4 }' | awk '{ split($0, a,"/"); print a[1] }'`
-        adjust_utilisation $__signal
-        __adjusted_utilisation=$(($?*$__utilisation))
-        __adjacent_utilisation=$((85*${__adjusted_utilisation}/100))
-        __next_adjacent_utilisation=$((${__adjusted_utilisation}/2))
-
-        cal_channel_utilization $(($__freq-10)) $__next_adjacent_utilisation
-        cal_channel_utilization $(($__freq-5)) $__adjacent_utilisation
+        __adjusted_utilisation=$(($__weight*$__utilisation))
         cal_channel_utilization $__freq $__adjusted_utilisation
-        cal_channel_utilization $(($__freq+5)) $__adjacent_utilisation
-        cal_channel_utilization $(($__freq+10)) $__next_adjacent_utilisation
+        bssload_count=$(($bssload_count+1))
       fi
     done
 
-    #No valid BSS load found
-    if [ -z ${__utilisation+x} ]
-    then
-        exit 255
-    fi
+    #Debug
+    #print_statistics "a"
+    #print_statistics "bg"
 
-    find_quietest_channel
-    return $?
+    bssid_count=$(($bssid_count-$bssload_count))
+
+    if [ $bssid_count -gt $bssload_count  ]
+    then
+        if [ -z "${band##*bg*}" ]
+        then
+            find_quietest_channel_by_bssid_counting "bg"
+        fi
+
+        if [ -z "${band##*a*}" ]
+        then
+            find_quietest_channel_by_bssid_counting "a"
+        fi
+    else
+        if [ -z "${band##*bg*}" ]
+        then
+            find_quietest_channel_by_bssload "bg"
+        fi
+
+        if [ -z "${band##*a*}" ]
+        then
+            find_quietest_channel_by_bssload "a"
+		fi
+    fi
+    return $quietest_channel
   }
 }
 
 function help(){
-  echo 'Help: you have to specify the band[a|bg], and/or a scanning channel list if needed'
-  echo './acs bg'
-  echo './acs bg "1 6 11"'
-  echo './acs a "32 52 100 112 161"'
-  echo 'It will return the first channel with min utilisation.'
-  exit 0
+	echo 'Help: you have to specify the band[a|bg|abg]'
+	echo './acs bg'
+	echo './acs a'
+	echo './acs abg'
+	echo 'It will return the first channel with min utilisation.'
+	exit 0
 }
 
 if [ $# -eq 0 ]
 then
-  help
+	band="abg"
+else
+	band=$1
 fi
 
-band=$1
-if [ $band != "a" ] && [ $band != "bg" ]
+if [ "$band" != "a" ] && [ "$band" != "bg" ] && [ "$band" != "abg" ]
 then
-  help
+	echo 0
+	exit 0
 fi
 
-scanning_channels=$2
 
-iw reg get > $acs_db
+iw reg get > $reg_db
+get_valid_channel_list
+rm -f $reg_db
 
-get_valid_channel_list $1
 do_scan
-
-#Pipe it to weblcm
+#Send the result to script ACS
 echo $?
 
 exit 0
