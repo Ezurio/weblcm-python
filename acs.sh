@@ -8,8 +8,8 @@
 wlan="wlan0"
 reg_db="/tmp/regulatory-for-acs.db"
 
-BG_CHANNELS="1 6 11 14"
-BG_FREQUENCIES="2412 2437 2462 2484"
+BG_CHANNELS="1 6 11"
+BG_FREQUENCIES="2412 2437 2462"
 #2_4g channels utilisation initialization
 for ch in $BG_CHANNELS
 do
@@ -159,9 +159,6 @@ function cal_bssid_count(){
     2462)
       count_bg_channel_11=$(($count_bg_channel_11+$2))
       ;;
-    2484)
-      count_bg_channel_14=$(($count_bg_channel_14+$2))
-      ;;
     5180)
       count_a_channel_36=$(($count_a_channel_36+$2))
       ;;
@@ -257,9 +254,6 @@ function cal_channel_utilization(){
       ;;
     2462)
       bg_channel_11=$(($bg_channel_11+$2))
-      ;;
-    2484)
-      bg_channel_14=$(($bg_channel_14+$2))
       ;;
     5180)
       a_channel_36=$(($a_channel_36+$2))
