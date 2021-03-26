@@ -7,7 +7,7 @@ from weblcm_network import NetworkInterfaces, NetworkConnections, NetworkConnect
 from weblcm_log import LogData, LogSetting
 from weblcm_swupdate import SWUpdate
 from weblcm_users import UserManage, LoginManage, LoginManageHelper
-from weblcm_files import FileManage, FilesManage
+from weblcm_files import FileManage, FilesManage, AWMCfgManage
 from weblcm_advanced import Reboot, FactoryReset
 from weblcm_datetime import DateTimeSetting
 from weblcm_settings import SystemSettingsManage
@@ -63,7 +63,7 @@ def force_session_checking():
 
 	paths = (
 				"connections", "connection", "accesspoints", "networkInterfaces",
-				"file", "users", "firmware", "logData",
+				"file", "users", "firmware", "logData", "awm",
 				"logSetting", "factoryReset", "reboot", "files", "datetime"
 			)
 
@@ -102,6 +102,7 @@ if __name__ == '__main__':
 	webapp.users = UserManage()
 	webapp.file = FileManage()
 	webapp.files = FilesManage()
+	webapp.awm = AWMCfgManage()
 
 	webapp.firmware = SWUpdate()
 

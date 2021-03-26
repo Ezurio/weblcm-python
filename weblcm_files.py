@@ -5,6 +5,8 @@ import cherrypy
 from cherrypy.lib import static
 import weblcm_def
 import subprocess
+from pathlib import Path
+from pylibconfig import Config
 from threading import Lock
 from weblcm_settings import SystemSettingsManage
 
@@ -136,3 +138,50 @@ class FilesManage(object):
 						files.append(entry.name)
 		files.sort()
 		return files
+
+@cherrypy.expose
+class AWMCfgManage(object):
+
+	_lock = Lock()
+
+	@cherrypy.tools.json_out()
+	def GET(self, *args, **kwargs):
+
+		result = { 'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS') }
+		result['scan_attempts'] = -1
+
+		f = cherrypy.request.app.config['weblcm'].get('awm_cfg', None);
+		if not os.path.isfile(f):
+			return result
+
+		config = Config()
+		with AWMCfgManage._lock:
+			config.readFile (f)
+			if config.exists("scan_attempts"):
+				result['scan_attempts'] = config.value("scan_attempts")[0]
+
+		return result
+
+	@cherrypy.tools.accept(media='application/json')
+	@cherrypy.tools.json_in()
+	@cherrypy.tools.json_out()
+	def PUT(self):
+
+		result = { 'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS') }
+
+		f = cherrypy.request.app.config['weblcm'].get('awm_cfg', None);
+		d = Path(os.path.dirname(f))
+		d.mkdir(exist_ok=True)
+
+		scan_attempts = cherrypy.request.json.get('scan_attempts', -1)
+
+		config = Config()
+		with AWMCfgManage._lock:
+			if os.path.isfile(f):
+				config.readFile (f)
+			if not config.exists("scan_attempts"):
+				config.addInteger( "", "scan_attempts")
+			config.setValue("scan_attempts", scan_attempts)
+			config.writeFile(f)
+
+		return result
