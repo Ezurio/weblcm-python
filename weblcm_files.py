@@ -148,6 +148,7 @@ class AWMCfgManage(object):
 	def GET(self, *args, **kwargs):
 
 		result = { 'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS') }
+		#Infinite geo-location checks by default
 		result['scan_attempts'] = -1
 
 		f = cherrypy.request.app.config['weblcm'].get('awm_cfg', None);
@@ -156,7 +157,7 @@ class AWMCfgManage(object):
 
 		config = Config()
 		with AWMCfgManage._lock:
-			config.readFile (f)
+			config.readFile(f)
 			if config.exists("scan_attempts"):
 				result['scan_attempts'] = config.value("scan_attempts")[0]
 
@@ -178,10 +179,16 @@ class AWMCfgManage(object):
 		config = Config()
 		with AWMCfgManage._lock:
 			if os.path.isfile(f):
-				config.readFile (f)
-			if not config.exists("scan_attempts"):
-				config.addInteger( "", "scan_attempts")
-			config.setValue("scan_attempts", scan_attempts)
-			config.writeFile(f)
+				config.readFile(f)
+			if scan_attempts == -1:
+				#Remove "scan_attempts" if it is set to default
+				if config.exists("scan_attempts"):
+					config.remove("", "scan_attempts")
+					config.writeFile(f)
+			else:
+				if not config.exists("scan_attempts"):
+					config.addInteger("", "scan_attempts")
+				config.setValue("scan_attempts", scan_attempts)
+				config.writeFile(f)
 
 		return result
