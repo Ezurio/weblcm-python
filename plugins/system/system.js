@@ -48,6 +48,47 @@ function advancedAUTORUN(retry) {
     fileDownload('debug', $("#bt-export-debug"));
   });
 
+  $(document).on("click", "#switch-awm-geolocation-scanning", function(){
+    if ($("#switch-awm-geolocation-scanning").is(":checked") == true)
+      toggleAWMGeolocationScannig(1);
+    else
+      toggleAWMGeolocationScannig(0);
+  });
+}
+
+function toggleAWMGeolocationScannig(enable) {
+  let data = {
+    geolocation_scanning_enable: enable,
+  }
+
+  $.ajax({
+    url: "awm",
+    type: "PUT",
+    data: JSON.stringify(data),
+    contentType: "application/json",
+  })
+  .done(function(data) {
+    SDCERRtoString(data.SDCERR);
+    $("#switch-awm-geolocation-scanning").prop('checked', data.geolocation_scanning_enable);
+  })
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
+  });
+}
+
+function getAWMGeolocationScannig() {
+  $.ajax({
+    url: "awm",
+    type: "GET",
+    contentType: "application/json",
+  })
+  .done(function(data) {
+    SDCERRtoString(data.SDCERR);
+    $("#switch-awm-geolocation-scanning").prop('checked', data.geolocation_scanning_enable);
+  })
+  .fail(function( xhr, textStatus, errorThrown) {
+    httpErrorResponseHandler(xhr, textStatus, errorThrown)
+  });
 }
 
 function rebootAUTORUN(retry) {
@@ -143,6 +184,7 @@ function clickAdvancedPage() {
     $("#main_section").html(data);
     setLanguage("main_section");
     clearReturnData();
+    getAWMGeolocationScannig();
   })
   .fail(function( xhr, textStatus, errorThrown) {
     httpErrorResponseHandler(xhr, textStatus, errorThrown)

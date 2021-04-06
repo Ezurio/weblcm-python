@@ -742,6 +742,7 @@ function getWifiConnection(settings){
   $("#radio-mode").val(parseSettingData(settings['802-11-wireless'], "mode", "infrastructure"));
   $("#radio-mode").change();
   $("#powersave").val(parseSettingData(settings['802-11-wireless'], "powersave", "0"));
+  $("#auto-channel-selection").val(parseSettingData(settings['802-11-wireless'], "acs", 0));
 
   keymgmt = parseSettingData(settings['802-11-wireless-security'], "key-mgmt", "undefined");
   if(keymgmt == "undefined") {
@@ -1034,7 +1035,7 @@ function get_wireless_channel_list(val, $sel, band){
 
     for(let i=0; i < chlist.length; i++){
 
-      let freq = wifi_channel_to_freq(parseInt(chlist[i]) | 0, band);
+      let freq = wifi_channel_to_freq(parseInt(chlist[i]) | 0);
       if(!freq){
         $sel.css('border-color', 'red');
         $sel.focus();
@@ -1045,7 +1046,6 @@ function get_wireless_channel_list(val, $sel, band){
     }
   }
 
-  $sel.css('border-color', '');
   return strlist.trim();
 }
 
@@ -1179,35 +1179,41 @@ function prepareWirelessConnection() {
     if(v)
       ws['client-name'] = v;
 
-    v = $("#radio-band").val().trim();
-    if(v != "default"){
-      ws['band'] = v;
-    }
-
-    //"band" should be set to "a" or "bg" to set "radio-channel"
-    v = $("#radio-channel").val().trim();
-    if(v && !ws['band']){
-      $("#radio-band").css('border-color', 'red');
-      $("#radio-band").focus();
-      return {};
-    }
-    $("#radio-band").css('border-color', '');
-    if(!validate_number_input(v, $("#radio-channel")) || !validate_wireless_channel(v, $("#radio-channel"), ws['band'])){
-      return {};
-    }
-    if(v)
-      ws['channel'] = parseInt(v);
-
+    //radio-channel-list overrides radio-band and radio-channel
     v = $("#radio-channel-list").val().trim();
-    if(v && !ws['band']){
-      $("#radio-band").css('border-color', 'red');
-      $("#radio-band").focus();
-      return {};
+    if(v) {
+      ws['frequency-list'] = get_wireless_channel_list(v, $("#radio-channel-list"));
+	  if(!ws['frequency-list'].length){
+        $("##radio-channel-list").css('border-color', 'red');
+        $("##radio-channel-list").focus();
+        return {};
+      }
+      $("#radio-channel-list").css('border-color', '');
+
+      //reset band and channel
+      $("#radio-band").val("default");
+      $("#radio-band").css('border-color', '');
+      $("#radio-channel").val("");
+      $("#radio-channel").css('border-color', '');
     }
-    $("#radio-band").css('border-color', '');
-    ws['frequency-list'] = get_wireless_channel_list(v, $("#radio-channel-list"),  ws['band']);
-    if(v && !ws['frequency-list'].length){
-      return {};
+    else {
+      v = $("#radio-band").val().trim();
+      if(v != "default"){
+        ws['band'] = v;
+      }
+      //"band" should be set to "a" or "bg" to set "radio-channel"
+      v = $("#radio-channel").val().trim();
+      if(v && !ws['band']){
+        $("#radio-band").css('border-color', 'red');
+        $("#radio-band").focus();
+        return {};
+      }
+      $("#radio-band").css('border-color', '');
+      if(!validate_number_input(v, $("#radio-channel")) || !validate_wireless_channel(v, $("#radio-channel"), ws['band'])){
+        return {};
+      }
+      if(v)
+        ws['channel'] = parseInt(v);
     }
 
     v = $("#frequency-dfs").val().trim();
@@ -1217,6 +1223,11 @@ function prepareWirelessConnection() {
     v = parseInt($("#powersave").val());
     if(v)
       ws['powersave'] = v;
+
+
+    v = $("#auto-channel-selection").val().trim();
+    if(v)
+      ws['acs'] = parseInt(v);
 
     return ws;
   }
@@ -1855,14 +1866,12 @@ function onChangeRadioMode(){
 
   switch(mode){
     case "infrastructure":
-      $("#radio-channel-list-display").removeClass("d-none");
-      $("#radio-channel-display").addClass("d-none");
-      $("#radio-channel").val("");
+      $("#auto-channel-selection-display").addClass("d-none");
+      $("#auto-channel-selection").val(0);
       break;
     case "ap":
-      $("#radio-channel-list-display").addClass("d-none");
-      $("#radio-channel-display").removeClass("d-none");
-      $("#radio-channel-list").val("");
+      $("#auto-channel-selection-display").removeClass("d-none");
+      $("#auto-channel-selection").val(0);
       break;
     default:
       break;
