@@ -1,37 +1,67 @@
-<form method="POST" id="form-import-config" enctype="multipart/form-data">
-	<div class="input-group mt-3">
-		 <div class="input-group-prepend i18n" name="Select Saved Configuration File">
-			<span class="input-group-text">Select Saved Configuration File</span>
+
+<div class="mt-3">
+	<div class="accordion mt-3" id="system-file-management-accordion">
+		<div class="card bg-light">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#system-file-management-accordion" class="i18n" name="System File Management" href="#system-file-management">System File Management</a>
+			</div>
+			<div id="system-file-management" class="collapse show">
+				<div class="card-body">
+					<form method="POST" id="form-import-config" enctype="multipart/form-data">
+						<div class="input-group mt-3">
+		 					<div class="input-group-prepend i18n" name="Select Saved Configuration File">
+								<span class="input-group-text">Select Saved Configuration File</span>
+							</div>
+							<input type="text" class="d-none" name="type" value="config">
+							<input type="file" class="form-control" id="input-file-config" name="file" accept=".zip"/>
+						</div>
+						<div class="input-group mt-3">
+						<input type="password" class="form-control i18n" id="config-encrypt-password" name="password" placeholder="8-64 characters are required for password">
+							<div class="input-group-append">
+								<button type="button" id="bt-import-config" class="btn btn-primary i18n" name="Import System Configuration">Import system configuration</button>
+							</div>
+						</div>
+						</form>
+					<br>
+					<form>
+						<div class="input-group mt-3">
+							<input type="password" class="form-control i18n" id="config-decrypt-password" name="password" placeholder="8-64 characters are required for password">
+							<div class="input-group-append">
+								<button type="button" id="bt-export-config" class="btn btn-primary i18n" name="Export System Configuration" >Export system configuration</button>
+							</div>
+						</div>
+						<br>
+						<div class="input-group mt-3">
+							<input type="password" class="form-control i18n" id="log-decrypt-password" name="password" placeholder="8-64 characters are required for password">
+							<div class="input-group-append">
+								<button type="button" id="bt-export-log" class="btn btn-primary i18n" name="Export System Log">Export system log</button>
+							</div>
+						</div>
+						<div class="input-group justify-content-end mt-3">
+							<span class="input-group-btn">
+								<button type="button" id="bt-export-debug" class="btn btn-primary i18n" name="Export Debug Data">Export debug data</button>
+							</span>
+						</div>
+						<a class="btn d-none" id="archor-link-export-archive" role="button" href="#"></a>
+					</form>
+				</div>
+			</div>
 		</div>
-		<input type="text" class="d-none" name="type" value="config">
-		<input type="file" class="form-control" id="input-file-config" name="file" accept=".zip"/>
 	</div>
-	<div class="input-group mt-3">
-		<input type="password" class="form-control i18n" id="config-encrypt-password" name="password" placeholder="8-64 characters are required for password">
-		<div class="input-group-append">
-			<button type="button" id="bt-import-config" class="btn btn-primary i18n" name="Import System Configuration">Import system configuration</button>
+
+	<div class="accordion mt-3" id="advanced-settings-accordion">
+		<div class="card bg-light">
+			<div class="card-header">
+				<a data-toggle="collapse" data-parent="#advanced-settings-accordion" class="i18n" name="Advanced Settings" href="#advanced-settings">Advanced Settings</a>
+			</div>
+			<div id="advanced-settings" class="collapse show">
+				<div class="card-body">
+					<div class="mt-3 custom-control custom-switch">
+						<input type="checkbox" class="custom-control-input" id="switch-awm-geolocation-scanning">
+						<label class="custom-control-label i18n" for="switch-awm-geolocation-scanning" name="WIFI Geolocation Scanning" >WIFI Geolocation Scanning</label>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
-</form>
-<br>
-<form>
-	<div class="input-group mt-3">
-		<input type="password" class="form-control i18n" id="config-decrypt-password" name="password" placeholder="8-64 characters are required for password">
-		<div class="input-group-append">
-			<button type="button" id="bt-export-config" class="btn btn-primary i18n" name="Export System Configuration" >Export system configuration</button>
-		</div>
-	</div>
-	<br>
-	<div class="input-group mt-3">
-		<input type="password" class="form-control i18n" id="log-decrypt-password" name="password" placeholder="8-64 characters are required for password">
-		<div class="input-group-append">
-			<button type="button" id="bt-export-log" class="btn btn-primary i18n" name="Export System Log">Export system log</button>
-		</div>
-	</div>
-	<div class="input-group justify-content-end mt-3">
-		<span class="input-group-btn">
-			<button type="button" id="bt-export-debug" class="btn btn-primary i18n" name="Export Debug Data">Export debug data</button>
-		</span>
-	</div>
-	<a class="btn d-none" id="archor-link-export-archive" role="button" href="#"></a>
-</form>
+</div>

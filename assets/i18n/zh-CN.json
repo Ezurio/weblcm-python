@@ -169,6 +169,7 @@
     "Infrastructure WPA-PSK": "WPA个人",
     "WPA-Enterprise": "WPA企业",
     "Auto Connect": "自动连接",
+    "WIFI Geolocation Scanning": "无线定位扫描",
     "Zone": " 区域",
     "Master": "主连接",
     "Slave-type": "从连接类型",
@@ -226,7 +227,8 @@
     "Group Cipher": "Group 加密方法",
     "Pairwise Cipher": "Pairwise 加密方法",
     "Proto Version": "Proto 版本",
-
+    "Auto Channel Selection": "频道自动选择",
+    "System File Management": "系统文件管理",
     "Unknown": "未知",
     "Unmanaged": "未管理",
     "Unavailable": "不可获取",

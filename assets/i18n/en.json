@@ -225,7 +225,9 @@
     "Group Cipher": "Group Cipher",
     "Pairwise Cipher": "Pairwise Cipher",
     "Proto Version": "Proto Version",
-
+    "Auto Channel Selection": "Auto Channel Selection",
+    "WIFI Geolocation Scanning": "WIFI Geolocation Scanning",
+    "System File Management": "System File Management",
     "Unknown": "Unknown",
     "Unmanaged": "Unmanaged",
     "Unavailable": "Unavailable",
