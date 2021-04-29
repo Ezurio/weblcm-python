@@ -171,10 +171,8 @@ function login(user, passwd) {
         const MENU_ID_TYPE_OFFSET = 10; //"_main_menu"
         $(".locked").each(function () {
           let id = $(this).attr('id');
-          if (g_curr_user_permission) {
-            if (-1 !== g_curr_user_permission.indexOf(id.slice(0, id.length - MENU_ID_TYPE_OFFSET))) {
-              $(this).removeClass("d-none");
-            }
+          if (-1 !== g_curr_user_permission.indexOf(id.slice(0, id.length - MENU_ID_TYPE_OFFSET))) {
+            $(this).removeClass("d-none");
           }
         });
         $("#networking_main_menu").removeClass("d-none");
