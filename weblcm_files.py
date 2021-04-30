@@ -147,16 +147,13 @@ class AWMCfgManage(object):
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
 
-		result = { 'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL') }
-		result['geolocation_scanning_enable'] = 0
+		#Infinite geo-location checks by default
+		result = { 'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS') }
+		result['geolocation_scanning_enable'] = 1
 
 		f = cherrypy.request.app.config['weblcm'].get('awm_cfg', None);
 		if not f:
 			return result
-
-		#Infinite geo-location checks by default
-		result['geolocation_scanning_enable'] = 1
-		result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 
 		if not os.path.isfile(f):
 			return result
@@ -179,7 +176,7 @@ class AWMCfgManage(object):
 		#others: enable geolocation scanning
 
 		result = { 'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL') }
-		result['geolocation_scanning_enable'] = 0
+		result['geolocation_scanning_enable'] = 1
 
 		f = cherrypy.request.app.config['weblcm'].get('awm_cfg', None);
 		if not f:
