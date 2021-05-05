@@ -46,6 +46,7 @@
     "kernel": "kernel",
     "NetworkManager": "Network Manager",
     "Web server": "Web server",
+    "AWM": "AWM",
     "All": "All",
     "Log Level": "Log Level",
     "Info": "Info",
