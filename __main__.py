@@ -67,7 +67,9 @@ def force_session_checking():
 				"logSetting", "factoryReset", "reboot", "files", "datetime"
 			)
 
-	if not cherrypy.session.get('USERNAME', None):
+	#With the `get` method the session id will be saved which could result in session fixation vulnerability.
+	#Session ids will be destroyed periodically so we have to check 'USERNAME' to make sure the session is not valid after logout.
+	if not cherrypy.session._exists() or not cherrypy.session.get('USERNAME', None):
 		url = cherrypy.url().split('/')[-1]
 		if url and ".html" not in url and ".js" not in url and any(path in url for path in paths):
 			raise cherrypy.HTTPError(401)
