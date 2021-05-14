@@ -140,6 +140,7 @@
     "Speed": "Speed",
     "Security": "Security",
     "Channel": "Channel",
+    "Regulatory Domain": "Regulatory Domain",
     "Randomly generated when connection is added": "Randomly generated when connection is added",
     "Connection Name": "ID",
     "Interface": "Interface",

@@ -140,6 +140,7 @@
     "Speed": "速度",
     "Security": "安全协议",
     "Channel": "频道",
+    "Regulatory Domain": "监管域",
     "Randomly generated when connection is added": "创建连接时自动生成",
     "Connection Name": "连接名",
     "Interface": "接口",
