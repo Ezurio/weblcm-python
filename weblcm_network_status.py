@@ -5,12 +5,64 @@ import dbus.mainloop.glib
 from gi.repository import GLib
 import NetworkManager
 from threading import Thread, Lock
-
+from weblcm_settings import SystemSettingsManage
+from syslog import syslog
+from subprocess import Popen, PIPE, TimeoutExpired
+import re
 
 class NetworkStatusHelper(object):
 
 	_network_status = {}
 	_lock = Lock()
+	_IW_PATH = "/usr/sbin/iw"
+
+	@classmethod
+	def get_reg_domain_info(cls):
+		if not os.path.exists(NetworkStatusHelper._IW_PATH):
+			return "WW"
+
+		try:
+			proc = Popen(["iw", "reg", "get"], stdout=PIPE, stderr=PIPE)
+			outs, errs = proc.communicate(timeout=SystemSettingsManage.get_user_callback_timeout())
+			if not proc.returncode:
+				s = re.split('phy#', outs.decode("utf-8"))
+				#Return regulatory domain of phy#0
+				m = re.search('country [A-Z][A-Z]', s[1] if len(s) > 1 else s[0])
+				if m:
+					return m.group(0)[8:10]
+		except TimeoutExpired:
+			proc.kill()
+			outs, errs = proc.communicate()
+			syslog(LOG_ERR, "Call 'iw reg get' timeout")
+		except Exception as e:
+			syslog(LOG_ERR, "Call 'iw reg get' failed")
+
+		return "WW"
+
+	@classmethod
+	def get_frequency_info(cls, interface, frequency):
+		if not os.path.exists(NetworkStatusHelper._IW_PATH):
+			return frequency
+		try:
+			proc = Popen(["iw", "dev"], stdout=PIPE, stderr=PIPE)
+			outs, errs = proc.communicate(timeout=SystemSettingsManage.get_user_callback_timeout())
+			if not proc.returncode:
+				ifces = re.split('Interface', outs.decode("utf-8"))
+				for ifce in ifces:
+					lines = ifce.splitlines()
+					if (lines[0].strip() != interface) or (len(lines) < 7):
+						continue
+					m = re.search('[2|5][0-9]{3}', lines[6])
+					if m:
+						return m.group(0)
+		except TimeoutExpired:
+			proc.kill()
+			outs, errs = proc.communicate()
+			syslog(LOG_ERR, "Call 'iw dev' timeout")
+		except Exception as e:
+			syslog(LOG_ERR, "Call 'iw dev' failed")
+
+		return frequency
 
 	@classmethod
 	def get_dev_status(cls, dev):
@@ -85,17 +137,22 @@ class NetworkStatusHelper(object):
 		return ip6Properties
 
 	@classmethod
-	def get_ap_properties(cls, ap, mode):
+	def get_ap_properties(cls, ap, dev):
 
 		apProperties = {}
 		apProperties['Ssid'] = ap.Ssid
 		apProperties['HwAddress'] = ap.HwAddress
-		apProperties['Strength'] = 100 if mode == NetworkManager.NM_802_11_MODE_AP else ap.Strength
 		apProperties['Maxbitrate'] = ap.MaxBitrate
-		apProperties['Frequency'] = ap.Frequency
 		apProperties['Flags'] = ap.Flags
 		apProperties['Wpaflags'] = ap.WpaFlags
 		apProperties['Rsnflags'] = ap.RsnFlags
+		#Use iw dev to get channel/frequency info for AP mode
+		if dev.Mode == NetworkManager.NM_802_11_MODE_AP:
+			apProperties['Strength'] = 100
+			apProperties['Frequency'] = cls.get_frequency_info(dev.Interface, ap.Frequency)
+		else:
+			apProperties['Strength'] = ap.Strength
+			apProperties['Frequency'] = ap.Frequency
 		return apProperties
 
 	@classmethod
@@ -147,7 +204,7 @@ class NetworkStatusHelper(object):
 				if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
 					cls._network_status[interface_name]['wireless'] = cls.get_wifi_properties(dev)
 					if (dev.State == NetworkManager.NM_DEVICE_STATE_ACTIVATED):
-						cls._network_status[interface_name]['activeaccesspoint'] = cls.get_ap_properties(dev.ActiveAccessPoint, dev.Mode)
+						cls._network_status[interface_name]['activeaccesspoint'] = cls.get_ap_properties(dev.ActiveAccessPoint, dev)
 
 
 def dev_added(nm, interface, signal, device_path):
@@ -182,7 +239,7 @@ def dev_statechange(dev, interface, signal, new_state, old_state, reason):
 				NetworkStatusHelper._network_status[dev.Interface]['wired'] = NetworkStatusHelper.get_wired_properties(dev)
 			if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
 				NetworkStatusHelper._network_status[dev.Interface]['wireless'] = NetworkStatusHelper.get_wifi_properties(dev)
-				NetworkStatusHelper._network_status[dev.Interface]['activeaccesspoint'] = NetworkStatusHelper.get_ap_properties(dev.ActiveAccessPoint, dev.Mode)
+				NetworkStatusHelper._network_status[dev.Interface]['activeaccesspoint'] = NetworkStatusHelper.get_ap_properties(dev.ActiveAccessPoint, dev)
 				dev.ActiveAccessPoint.OnPropertiesChanged(ap_propchange)
 		elif new_state == NetworkManager.NM_DEVICE_STATE_DISCONNECTED:
 			if 'ip4config' in NetworkStatusHelper._network_status[dev.Interface]:
@@ -232,10 +289,14 @@ class NetworkStatus(object):
 		with NetworkStatusHelper._lock:
 			result['status'] = NetworkStatusHelper._network_status
 
+		devices = NetworkManager.NetworkManager.GetDevices()
+		for dev in devices:
+			if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
+				result['status'][dev.Interface]['RegDomain'] = NetworkStatusHelper.get_reg_domain_info();
+
 		unmanaged_devices = cherrypy.request.app.config['weblcm'].get('unmanaged_hardware_devices', '').split()
 		for dev in unmanaged_devices:
 			if dev in result['status']:
 				del result['status'][dev]
-
 		result['devices'] = len(result['status'])
 		return result

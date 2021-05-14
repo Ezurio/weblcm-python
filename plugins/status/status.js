@@ -286,6 +286,8 @@ function updateStatus(){
           wireless.children(".hwaddress").text(g_i18nData['MAC Address'] + ": " + data.status[interfaceName].wireless.HwAddress);
           // Bit Rate
           wireless.children(".bitrate").text(g_i18nData['Bit Rate'] + ": " + data.status[interfaceName].wireless.Bitrate/1000 + "Mbit/s");
+          // Regulatory Domain
+          wireless.children(".regdomain").text(g_i18nData['Regulatory Domain'] + ": " + data.status[interfaceName].RegDomain);
         } else {
           wireless.addClass("d-none");
         }
