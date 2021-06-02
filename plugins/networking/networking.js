@@ -647,6 +647,11 @@ function getWifiConnection(settings){
   getConnectionConnection(settings);
 
   $("#ssid").val(parseSettingData(settings['802-11-wireless'], "ssid", ""));
+  if(parseSettingData(settings['802-11-wireless'], "hidden", 0))
+    $("#hidden").val(1);
+  else
+    $("#hidden").val(0);
+
   $("#client-name").val(parseSettingData(settings['802-11-wireless'], "client-name", ""));
 
   txpower = parseSettingData(settings['802-11-wireless'], "tx-power", 0);
@@ -1072,6 +1077,9 @@ function prepareWirelessConnection() {
       return {};
     }
     ws['ssid'] = v;
+
+    v = $("#hidden").val();
+    ws['hidden'] = parseInt(v);
 
     v = $("#radio-mode").val().trim();
     if(v)
