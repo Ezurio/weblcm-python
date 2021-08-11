@@ -13,6 +13,7 @@ from weblcm_datetime import DateTimeSetting
 from weblcm_settings import SystemSettingsManage
 from weblcm_modem import PositioningSwitch, Positioning
 from weblcm_advanced import Fips
+from weblcm_bluetooth import Bluetooth
 
 class Root(object):
 
@@ -66,7 +67,7 @@ def force_session_checking():
 	paths = (
 				"connections", "connection", "accesspoints", "networkInterfaces",
 				"file", "users", "firmware", "logData", "awm", "positioning", "positioningSwitch",
-				"logSetting", "factoryReset", "reboot", "files", "datetime", "fips"
+				"logSetting", "factoryReset", "reboot", "files", "datetime", "fips", "bluetooth"
 			)
 
 	#With the `get` method the session id will be saved which could result in session fixation vulnerability.
@@ -116,6 +117,8 @@ if __name__ == '__main__':
 
 	webapp.positioningSwitch = PositioningSwitch()
 	webapp.positioning = Positioning()
+
+	webapp.bluetooth = Bluetooth()
 
 	webapp.fips = Fips()
 
