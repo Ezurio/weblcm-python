@@ -19,6 +19,7 @@ GATT_MANAGER_IFACE = "org.bluez.GattManager1"
 ADAPTER_IFACE = "org.bluez.Adapter1"
 DEVICE_IFACE = "org.bluez.Device1"
 BLUEZ_PATH_PREPEND = "/org/bluez/"
+AGENT_PATH = "/com/lairdconnectivity/agent"
 
 
 def python_to_dbus(data, datatype = None):
@@ -30,7 +31,42 @@ def python_to_dbus(data, datatype = None):
         data = dbus.Boolean(data)
     elif datatype is int or datatype is dbus.Int64:
         data = dbus.Int64(data)
+    elif datatype is bytes or datatype is bytearray or datatype is dbus.ByteArray:
+        data = dbus.ByteArray(data)
+    elif isinstance(data, bytes):
+        data = [python_to_dbus(value) for value in data]
+    elif isinstance(data, bytearray):
+        data = [python_to_dbus(value) for value in data]
 
+    return data
+
+def dbus_to_python_ex(data, datatype = None):
+    # Convert dbus data types to python native data types
+    if not datatype:
+        datatype = type(data)
+
+    if datatype is dbus.String:
+        data = str(data)
+    elif datatype is dbus.Boolean:
+        data = bool(data)
+    elif datatype is dbus.Int64:
+        data = int(data)
+    elif datatype is dbus.Byte:
+        data = int(data)
+    elif datatype is dbus.UInt32:
+        data = int(data)
+    elif datatype is dbus.Double:
+        data = float(data)
+    elif datatype is bytes or datatype is bytearray or datatype is dbus.ByteArray:
+        data = bytearray(data)
+    elif datatype is dbus.Array:
+        data = [dbus_to_python_ex(value) for value in data]
+    elif datatype is dbus.Dictionary:
+        new_data = dict()
+        for key in data.keys():
+            new_key = dbus_to_python_ex(key)
+            new_data[str(new_key)] = dbus_to_python_ex(data[key])
+        data = new_data
     return data
 
 def controller_pretty_name(name: str):
@@ -125,7 +161,34 @@ class Rejected(dbus.DBusException):
     _dbus_error_name = "org.bluez.Error.Rejected"
 
 
-class Agent(dbus.service.Object):
+class AgentSingleton:
+    __instance = None
+
+    @staticmethod
+    def get_instance():
+        """ Static access method. """
+        if AgentSingleton.__instance is None:
+            AgentSingleton()
+        return AgentSingleton.__instance
+
+    def __init__(self):
+        """ Virtually private constructor. """
+        self.passkeys = {}
+        if AgentSingleton.__instance is None:
+            AgentSingleton.__instance = self
+
+            cherrypy.log("Registering agent for auto-pairing...")
+            # get the system bus
+            bus = dbus.SystemBus()
+            agent = AuthenticationAgent(bus, AGENT_PATH)
+
+            obj = bus.get_object(BLUEZ_SERVICE_NAME, "/org/bluez")
+
+            agent_manager = dbus.Interface(obj, "org.bluez.AgentManager1")
+            agent_manager.RegisterAgent(AGENT_PATH, "NoInputNoOutput")
+
+
+class AuthenticationAgent(dbus.service.Object):
     exit_on_release = True
 
     def set_exit_on_release(self, exit_on_release):
@@ -133,49 +196,56 @@ class Agent(dbus.service.Object):
 
     @dbus.service.method(AGENT_IFACE, in_signature="", out_signature="")
     def Release(self):
-        cherrypy.log("Release")
+        cherrypy.log("AuthenticationAgent Release")
 
     @dbus.service.method(AGENT_IFACE, in_signature="os", out_signature="")
     def AuthorizeService(self, device, uuid):
-        cherrypy.log("AuthorizeService (%s, %s)" % (device, uuid))
+        cherrypy.log("AuthenticationAgent AuthorizeService (%s, %s)" % (device, uuid))
         return
 
     @dbus.service.method(AGENT_IFACE, in_signature="o", out_signature="s")
     def RequestPinCode(self, device):
-        cherrypy.log("RequestPinCode (%s)" % (device))
+        cherrypy.log("AuthenticationAgent RequestPinCode (%s)" % (device))
         set_trusted(device)
         return "000000"
 
-    ''' TODO
-    @dbus.service.method(AGENT_INTERFACE, in_signature="o", out_signature="u")
+    @dbus.service.method(AGENT_IFACE, in_signature="o", out_signature="u")
     def RequestPasskey(self, device):
-        cherrypy.log("RequestPasskey (%s)" % (device))
+        cherrypy.log("AuthenticationAgent RequestPasskey (%s)" % (device))
         set_trusted(device)
-        passkey = ask("Enter passkey: ")
+        # passkey = ask("Enter passkey: ")
+        # TODO: Implement with RESTful set
+        passkey = 0
+        agent_instance = AgentSingleton.get_instance()
+        if agent_instance:
+            if device in agent_instance.passkeys:
+                passkey = agent_instance.passkeys[device]
         return dbus.UInt32(passkey)
-    '''
 
     @dbus.service.method(AGENT_IFACE, in_signature="ouq", out_signature="")
     def DisplayPasskey(self, device, passkey, entered):
-        cherrypy.log("DisplayPasskey (%s, %06u entered %u)" % (device, passkey, entered))
+        cherrypy.log("AuthenticationAgent DisplayPasskey (%s, %06u entered %u)" % (device, passkey, entered))
 
     @dbus.service.method(AGENT_IFACE, in_signature="os", out_signature="")
     def DisplayPinCode(self, device, pincode):
-        cherrypy.log("DisplayPinCode (%s, %s)" % (device, pincode))
+        cherrypy.log("AuthenticationAgent DisplayPinCode (%s, %s)" % (device, pincode))
 
     @dbus.service.method(AGENT_IFACE, in_signature="ou", out_signature="")
     def RequestConfirmation(self, device, passkey):
-        cherrypy.log("RequestConfirmation (%s, %06d)" % (device, passkey))
+        cherrypy.log("AuthenticationAgent RequestConfirmation (%s, %06d)" % (device, passkey))
         # TODO:  Check if provided passkey matches customer-preset passkey.
         set_trusted(device)
         return
 
     # Alcon Smart Remote utilizes RequestAuthorization
+    # "used for requesting authorization for pairing requests which would otherwise not trigger any action for the user
+    # The main situation where this would occur is an incoming SSP pairing request that would trigger the just-works
+    # model."
     @dbus.service.method(AGENT_IFACE, in_signature="o", out_signature="")
     def RequestAuthorization(self, device):
-        cherrypy.log("RequestAuthorization (%s)" % (device))
+        cherrypy.log("AuthenticationAgent RequestAuthorization (%s)" % (device))
         return
 
     @dbus.service.method(AGENT_IFACE, in_signature="", out_signature="")
     def Cancel(self):
-        cherrypy.log("Cancel")
+        cherrypy.log("AuthenticationAgent Cancel")
