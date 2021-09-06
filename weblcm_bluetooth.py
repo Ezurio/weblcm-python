@@ -17,6 +17,14 @@ from weblcm_ble import (
 )
 
 # TODO: USER_PERMISSION_TYPES for Bluetooth
+VSP_PORT_MIN: int = 1000
+# Keep away from dynamic ports, 49152 to 65535
+VSP_PORT_MAX: int = 49152 - 1
+FIREWALLD_TIMEOUT_SECONDS = 20
+FIREWALLD_SERVICE_NAME = 'org.fedoraproject.FirewallD1'
+FIREWALLD_OBJECT_PATH = '/org/fedoraproject/FirewallD1'
+FIREWALLD_ZONE_INTERFACE = 'org.fedoraproject.FirewallD1.zone'
+FIREWALLD_ZONE = 'internal'
 
 PAIR_TIMEOUT_SECONDS = 60
 
@@ -44,10 +52,35 @@ def GetControllerObj(name: str = None):
     return bus, controller_obj
 
 
+def firewalld_open_port(port):
+    try:
+        bus = dbus.SystemBus()
+        bus.call_blocking(bus_name=FIREWALLD_SERVICE_NAME, object_path=FIREWALLD_OBJECT_PATH,
+                          dbus_interface=FIREWALLD_ZONE_INTERFACE,
+                          method='addPort', signature='sssi', args=[dbus.String(FIREWALLD_ZONE), dbus.String(port),
+                                                                    dbus.String('tcp'), dbus.Int32(0)],
+                          timeout=FIREWALLD_TIMEOUT_SECONDS)
+    except dbus.exceptions.DBusException as e:
+        cherrypy.log("firewalld_open_port: Exception: " + str(e))
+
+
+def firewalld_close_port(port):
+    try:
+        bus = dbus.SystemBus()
+        bus.call_blocking(bus_name=FIREWALLD_SERVICE_NAME, object_path=FIREWALLD_OBJECT_PATH,
+                          dbus_interface=FIREWALLD_ZONE_INTERFACE,
+                          method='removePort', signature='sss', args=[dbus.String(FIREWALLD_ZONE), dbus.String(port),
+                                                                      dbus.String('tcp')],
+                          timeout=FIREWALLD_TIMEOUT_SECONDS)
+    except dbus.exceptions.DBusException as e:
+        cherrypy.log("firewalld_close_port: Exception: " + str(e))
+
+
 class VspConnection(object):
     """Represent a VSP connection with GATT read and write characteristics to a device, and an associated TCP socket
     connection.
     """
+
     def __init__(self):
         self._tcp_connection = None
         self.recent_error: Optional[str] = None
@@ -59,6 +92,15 @@ class VspConnection(object):
         self.tx_complete = False
         self.tx_error = False
         self.port: Optional[int] = None
+
+    @staticmethod
+    def validate_port(port: int) -> bool:
+        """
+        :rtype: bool
+        :param port: port number to validate
+        :return: true if port falls within valid range; false otherwise
+        """
+        return VSP_PORT_MIN <= int(port) <= VSP_PORT_MAX
 
     def process_chrc(self, chrc_path, vsp_read_chr_uuid, vsp_write_chr_uuid):
         bus = dbus.SystemBus()
@@ -97,6 +139,7 @@ class VspConnection(object):
             self.gatt_vsp_read_val_cb(value)
 
     @staticmethod
+    # TODO: Remove
     def gatt_vsp_notify_cb():
         return
 
@@ -127,6 +170,7 @@ class VspConnection(object):
 
     def start_client(self):
         # Subscribe to VSP read value notifications.
+        # TODO: Remove
         self.vsp_read_chrc[0].StartNotify(reply_handler=self.gatt_vsp_notify_cb,
                                           error_handler=self.generic_val_error_cb,
                                           dbus_interface=GATT_CHRC_IFACE)
@@ -218,15 +262,20 @@ class VspConnection(object):
             return self.recent_error
 
         if 'tcpPort' in params:
+            port = params['tcpPort']
+            if not self.validate_port(int(port)):
+                return f"port {port} not valid"
             host = GATT_TCP_SOCKET_HOST  # cherrypy.server.socket_host
             sock = self.vsp_tcp_server(host, params)
             if sock:
-                threading.Thread(target=self.vsp_tcp_server_thread, args=(sock,)).start()
+                threading.Thread(target=self.vsp_tcp_server_thread, args=(sock, port)).start()
             device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
             device_iface = dbus.Interface(device_obj, DBUS_PROP_IFACE)
             device_iface.connect_to_signal("PropertiesChanged", self.device_prop_changed_cb)
 
-    def vsp_tcp_server_thread(self, sock):
+    def vsp_tcp_server_thread(self, sock, port=None):
+        if port:
+            firewalld_open_port(port)
         try:
             while True:
                 # Consider for easy service termination, https://stackoverflow.com/a/63265381
@@ -263,6 +312,8 @@ class VspConnection(object):
         finally:
             # TODO: Consider flagging to manager thread for vsp_connections.pop(str(device))
             sock.close()
+            if port:
+                firewalld_close_port(port)
 
 
 @cherrypy.expose
@@ -449,7 +500,7 @@ class Bluetooth(object):
                 bus = dbus.SystemBus()
                 bus.call_blocking(bus_name=BLUEZ_SERVICE_NAME, object_path=device_obj.object_path,
                                   dbus_interface=DEVICE_IFACE,
-                                  method="Pair", signature='', args={},
+                                  method="Pair", signature='', args=[],
                                   timeout=PAIR_TIMEOUT_SECONDS)
         elif paired == 0:
             adapter_methods.get_dbus_method("RemoveDevice", ADAPTER_IFACE)(device_obj)
