@@ -3,3 +3,11 @@ html_sendall
 /hostapd/hostapd.conf
 /hostapd/hostapd_light.conf
 .kate*
+.files-list.txt
+.stamp_built
+.stamp_configured
+.stamp_rsynced
+.stamp_target_installed
+build/
+dist/
+weblcm_python.egg-info/
