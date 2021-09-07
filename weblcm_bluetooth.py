@@ -39,17 +39,19 @@ PASS_ADAPTER_PROPS = ["Discovering", "Powered", "Discoverable"]
 
 
 def GetControllerObj(name: str = None):
+    result = {}
     # get the system bus
     bus = dbus.SystemBus()
     # get the ble controller
     controller = find_controller(bus, name)
     if not controller:
-        cherrypy.log("GetControllerObj: GattManager1 interface not found")
+        result['error_message'] = f"Controller {controller_pretty_name(name)} not found."
+        result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
         controller_obj = None
     else:
         controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
 
-    return bus, controller_obj
+    return bus, controller_obj, result
 
 
 def firewalld_open_port(port):
@@ -139,8 +141,11 @@ class VspConnection(object):
             self.gatt_vsp_read_val_cb(value)
 
     @staticmethod
-    # TODO: Remove
     def gatt_vsp_notify_cb():
+        '''
+        gatt_vsp_notify_cb performs no operation at present, but should be supplied to StartNotify,
+        which is necessary to begin receiving PropertiesChanged signals on the VSP data read.
+        '''
         return
 
     def gatt_vsp_read_val_cb(self, value):
@@ -170,7 +175,6 @@ class VspConnection(object):
 
     def start_client(self):
         # Subscribe to VSP read value notifications.
-        # TODO: Remove
         self.vsp_read_chrc[0].StartNotify(reply_handler=self.gatt_vsp_notify_cb,
                                           error_handler=self.generic_val_error_cb,
                                           dbus_interface=GATT_CHRC_IFACE)
@@ -184,7 +188,6 @@ class VspConnection(object):
         self._tcp_connection.sendall("{\"Connected\": 0}\n".encode())
 
     def vsp_tcp_server(self, host, params) -> socket.socket:
-        vsp_svc_uuid = params['vspSvcUuid']
         # Create a TCP/IP socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         port = int(params['tcpPort'])
@@ -413,19 +416,10 @@ class Bluetooth(object):
         else:
             device_uuid = None
 
-        # get the system bus
-        bus = dbus.SystemBus()
-        # get the ble controller
-        if controller_name is not None:
-            controller = find_controller(bus, controller_name)
-            if not controller:
-                result['error_message'] = f"Controller {controller_pretty_name(controller_name)} not found."
-                return result
-        else:
-            controller = find_controller(bus)
-
         post_data = cherrypy.request.json
-        bus, adapter_obj = GetControllerObj()
+        bus, adapter_obj, get_controller_result = GetControllerObj(controller_name)
+
+        result.update(get_controller_result)
 
         if not adapter_obj:
             return result
