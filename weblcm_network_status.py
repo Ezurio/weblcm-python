@@ -10,6 +10,53 @@ from syslog import syslog
 from subprocess import Popen, PIPE, TimeoutExpired
 import re
 
+# values from https://developer-old.gnome.org/NetworkManager/stable/nm-dbus-types.html
+devtypes = { 0: "Unknown",
+             1: "Ethernet",
+             2: "Wi-Fi",
+             5: "Bluetooth",
+             6: "OLPC",
+             7: "WiMAX",
+             8: "Modem",
+             9: "InfiniBand",
+             10: "Bond",
+             11: "VLAN",
+             12: "ADSL",
+             13: "Bridge Master",
+             14: "Generic",
+             15: "Team Master",
+             16: "TUN/TAP",
+             17: "IP Tunnel",
+             18: "MACVLAN",
+             19: "VXLAN",
+             20: "VETH",
+             21: "MACsec",
+             22: "dummy",
+             23: "PPP",
+             24: "Open vSwitch interface",
+             25: "Open vSwitch port",
+             26: "Open vSwitch bridge",
+             27: "WPAN",
+             28: "6LoWPAN",
+             29: "WireGuard",
+             30: "WiFi P2P",
+             31: "VRF" }
+
+# values from https://developer-old.gnome.org/NetworkManager/stable/nm-dbus-types.html
+states = { 0: "Unknown",
+           10: "Unmanaged",
+           20: "Unavailable",
+           30: "Disconnected",
+           40: "Prepare",
+           50: "Config",
+           60: "Need Auth",
+           70: "IP Config",
+           80: "IP Check",
+           90: "Secondaries",
+           100: "Activated",
+           110: "Deactivating",
+           120: "Failed" }
+
 class NetworkStatusHelper(object):
 
 	_network_status = {}
@@ -68,8 +115,18 @@ class NetworkStatusHelper(object):
 	def get_dev_status(cls, dev):
 		status = {}
 		status['State'] = dev.State
+		try:
+			status['StateText'] = states[dev.State]
+		except:
+			status['StateText'] = "Unknown"
+			syslog("unknown device state value %d.  See https://developer-old.gnome.org/NetworkManager/stable/nm-dbus-types.html" % dev.State)
 		status['Mtu'] = dev.Mtu
 		status['DeviceType'] = dev.DeviceType
+		try:
+			status['DeviceTypeText'] = devtypes[dev.DeviceType]
+		except:
+			status['DeviceTypeText'] = "Unknown"
+			syslog("unknown device type value %d.  See https://developer-old.gnome.org/NetworkManager/stable/nm-dbus-types.html" % dev.DeviceType)
 		return status
 
 	@classmethod
