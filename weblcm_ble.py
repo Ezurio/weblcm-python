@@ -142,7 +142,6 @@ def find_device(bus, uuid):
     return None, None
 
 
-
 def set_trusted(path):
     bus = dbus.SystemBus()
     props = dbus.Interface(
@@ -150,6 +149,12 @@ def set_trusted(path):
     )
     props.Set("org.bluez.Device1", "Trusted", True)
 
+
+def device_is_connected(bus, device):
+    device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
+    device_properties = dbus.Interface(device_obj, "org.freedesktop.DBus.Properties")
+    connected_state = device_properties.Get(DEVICE_IFACE, "Connected")
+    return connected_state
 
 def dev_connect(path):
     bus = dbus.SystemBus()
