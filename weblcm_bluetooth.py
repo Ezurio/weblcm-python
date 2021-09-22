@@ -444,8 +444,8 @@ class Bluetooth(object):
                 device_methods = dbus.Interface(device_obj, "org.freedesktop.DBus.Methods")
                 device_properties = dbus.Interface(device_obj, "org.freedesktop.DBus.Properties")
 
-                if 'command' in cherrypy.request.params:
-                    command = cherrypy.request.params['command']
+                if 'command' in post_data:
+                    command = post_data['command']
                     result.update(self.execute_device_command(bus, command, device))
                     return result
                 else:
@@ -524,13 +524,14 @@ class Bluetooth(object):
     def execute_device_command(self, bus, command, device):
         result = {}
         error_message = None
+        post_data = cherrypy.request.json
         if command == 'gatt_connect':
             if str(device) in self.vsp_connections:
                 error_message = f'device {str(device)} already has vsp connection on port ' \
                                 f'{self.vsp_connections[device].port}'
             else:
                 vsp_connection = VspConnection()
-                error_message = vsp_connection.gatt_connect(bus, device, cherrypy.request.params)
+                error_message = vsp_connection.gatt_connect(bus, device, post_data)
             if not error_message:
                 self.vsp_connections[str(device)] = vsp_connection
         if error_message:
