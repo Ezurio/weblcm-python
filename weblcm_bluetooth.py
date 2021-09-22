@@ -211,15 +211,17 @@ class VspConnection(object):
         uuid = service_props['UUID']
 
         if uuid != vsp_svc_uuid:
-            return False
+            return None
 
         # Process the characteristics.
         for chrc_path in chrc_paths:
             self.process_chrc(chrc_path, vsp_read_chr_uuid, vsp_write_chr_uuid)
 
-        vsp_service = (service, service_props, service_path)
-
-        return vsp_service
+        if self.vsp_read_chrc and self.vsp_write_chrc:
+            vsp_service = (service, service_props, service_path)
+            return vsp_service
+        else:
+            return None
 
     def gatt_connect(self, bus, device: str = None, params=None):
         if 'vspSvcUuid' not in params:
@@ -250,7 +252,7 @@ class VspConnection(object):
                                                        vsp_read_chr_uuid=params[
                                                            'vspReadChrUuid'],
                                                        vsp_write_chr_uuid=params['vspWriteChrUuid'])
-                if vsp_service is not None:
+                if vsp_service:
                     break
 
         if not vsp_service:
