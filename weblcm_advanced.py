@@ -65,7 +65,7 @@ class Fips(object):
 			proc = Popen([Fips.FIPS_SCRIPT, fips], stdout=PIPE, stderr=PIPE)
 		except Exception as e:
 			syslog("FIPS SET exception: %s" % e)
-			result['ErrorMsg'] = 'FIPS SET exception: {}'.format(e)
+			result['ErrorMsg'] = 'Not a FIPS image'
 			return result
 
 		try:
@@ -97,7 +97,7 @@ class Fips(object):
 			proc = Popen([Fips.FIPS_SCRIPT, 'status'], stdout=PIPE, stderr=PIPE)
 		except Exception as e:
 			syslog("FIPS get exception: %s" % e)
-			result['ErrorMsg'] = 'FIPS GET exception: {}'.format(e)
+			result['ErrorMsg'] = 'Not a FIPS image'
 			return result
 
 		try:
