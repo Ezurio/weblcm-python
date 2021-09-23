@@ -330,6 +330,7 @@ class Bluetooth(object):
     def GET(self, *args, **kwargs):
         result = {
             'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1),
+            'ErrorMsg':'',
         }
 
         filters: Optional[List[str]] = None
@@ -353,7 +354,7 @@ class Bluetooth(object):
             controller = find_controller(bus, controller_name)
             controllers = [controller]
             if not controller:
-                result['error_message'] = f"Controller {controller_pretty_name(controller_name)} not found."
+                result['ErrorMsg'] = f"Controller {controller_pretty_name(controller_name)} not found."
                 return result
         else:
             controllers = find_controllers(bus)
@@ -364,7 +365,7 @@ class Bluetooth(object):
             controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
 
             if not controller_obj:
-                result['error_message'] = f"Controller {controller_pretty_name(controller_name)} not found."
+                result['ErrorMsg'] = f"Controller {controller_pretty_name(controller_name)} not found."
                 return result
 
             try:
@@ -385,7 +386,7 @@ class Bluetooth(object):
 
                     device, device_props = find_device(bus, device_uuid)
                     if not device:
-                        result['error_message'] = 'Device not found'
+                        result['ErrorMsg'] = 'Device not found'
                         return result
 
                     result.update(device_props)
@@ -393,7 +394,7 @@ class Bluetooth(object):
                 result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 
             except Exception as e:
-                result['error_message'] = str(e)
+                result['ErrorMsg'] = str(e)
                 cherrypy.log(str(e))
 
             return result
@@ -404,6 +405,7 @@ class Bluetooth(object):
     def PUT(self, *args, **kwargs):
         result = {
             'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1),
+            'ErrorMsg': '',
         }
 
         if 'controller' in cherrypy.request.params:
@@ -434,7 +436,7 @@ class Bluetooth(object):
                 # device_uuid specified
                 device, device_props = find_device(bus, device_uuid)
                 if device is None:
-                    result['error_message'] = 'Device not found'
+                    result['ErrorMsg'] = 'Device not found'
                     return result
 
                 device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
@@ -452,7 +454,7 @@ class Bluetooth(object):
 
         except Exception as e:
             result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
-            result['error_message'] = str(e)
+            result['ErrorMsg'] = str(e)
             cherrypy.log(str(e))
 
         return result
@@ -533,7 +535,7 @@ class Bluetooth(object):
                 self.vsp_connections[str(device)] = vsp_connection
         if error_message:
             result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
-            result['error_message'] = error_message
+            result['ErrorMsg'] = error_message
         else:
             result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 

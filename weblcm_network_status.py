@@ -342,7 +342,8 @@ class NetworkStatus(object):
 
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
-		result = { 'SDCERR': 0 }
+		result = { 'SDCERR': 0,
+		           'ErrorMsg': ''}
 
 		with NetworkStatusHelper._lock:
 			result['status'] = NetworkStatusHelper._network_status
