@@ -10,7 +10,7 @@ import weblcm_bluetooth_plugin
 import weblcm_def
 from weblcm_ble import (
     find_controller, find_controllers, controller_pretty_name, find_device, find_devices,
-    DEVICE_IFACE, ADAPTER_IFACE, python_to_dbus, AgentSingleton, BLUEZ_SERVICE_NAME
+    DEVICE_IFACE, ADAPTER_IFACE, python_to_dbus, AgentSingleton, BLUEZ_SERVICE_NAME, uri_to_uuid
 )
 
 # TODO: USER_PERMISSION_TYPES for Bluetooth
@@ -76,7 +76,7 @@ class Bluetooth(object):
             controller_name = None
 
         if 'device' in cherrypy.request.params:
-            device_uuid = cherrypy.request.params['device'].upper()
+            device_uuid = uri_to_uuid(cherrypy.request.params['device'])
         else:
             device_uuid = None
 
@@ -154,7 +154,7 @@ class Bluetooth(object):
             controller_name = None
 
         if 'device' in cherrypy.request.params:
-            device_uuid = cherrypy.request.params['device'].upper()
+            device_uuid = uri_to_uuid(cherrypy.request.params['device'])
         else:
             device_uuid = None
 
