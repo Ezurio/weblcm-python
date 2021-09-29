@@ -75,6 +75,13 @@ def controller_pretty_name(name: str):
 def controller_bus_name(pretty_name: str):
     return pretty_name.replace("controller", "hci")
 
+def uri_to_uuid(uri_uuid: str) -> str:
+    """
+    Standardize a device UUID (MAC address) from URI format (xx_xx_xx_xx_xx_xx) to conventional
+    format (XX:XX:XX:XX:XX:XX)
+    """
+    return uri_uuid.upper().replace('_', ':')
+
 def find_controllers(bus):
     """
     Returns objects that have the bluez service and a GattManager1 interface
