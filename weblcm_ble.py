@@ -37,6 +37,14 @@ def python_to_dbus(data, datatype = None):
         data = [python_to_dbus(value) for value in data]
     elif isinstance(data, bytearray):
         data = [python_to_dbus(value) for value in data]
+    elif datatype is str:
+        data = dbus.String(data)
+    elif datatype is dict:
+        new_data = dbus.Dictionary()
+        for key in data.keys():
+            new_key = python_to_dbus(key)
+            new_data[new_key] = python_to_dbus(data[key])
+        data = new_data
 
     return data
 
@@ -65,7 +73,7 @@ def dbus_to_python_ex(data, datatype = None):
         new_data = dict()
         for key in data.keys():
             new_key = dbus_to_python_ex(key)
-            new_data[str(new_key)] = dbus_to_python_ex(data[key])
+            new_data[new_key] = dbus_to_python_ex(data[key])
         data = new_data
     return data
 
