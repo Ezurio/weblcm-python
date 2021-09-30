@@ -102,9 +102,11 @@ class Bluetooth(object):
                 return result
 
             try:
+                matched_filter = False
                 if not device_uuid:
                     if not filters or 'bluetoothDevices' in filters:
                         controller_result['bluetoothDevices'] = find_devices(bus)
+                        matched_filter = True
 
                     adapter_props = dbus.Interface(controller_obj, "org.freedesktop.DBus.Properties")
                     adapter_methods = dbus.Interface(controller_obj, "org.freedesktop.DBus.Methods")
@@ -112,8 +114,13 @@ class Bluetooth(object):
                     for pass_property in PASS_ADAPTER_PROPS:
                         if not filters or pass_property.lower() in filters:
                             controller_result[pass_property.lower()] = adapter_props.Get(ADAPTER_IFACE, pass_property)
+                            matched_filter = True
 
                     result[controller_friendly_name] = controller_result
+                    if filters and not matched_filter:
+                        result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
+                        result['ErrorMsg'] = f"filters {filters} not matched"
+                        return result
                 else:
                     result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
 
