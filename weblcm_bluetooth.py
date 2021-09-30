@@ -59,6 +59,9 @@ def GetControllerObj(name: str = None):
 @cherrypy.expose
 @cherrypy.popargs('controller', 'device')
 class Bluetooth(object):
+    def __init__(self):
+        self.controller_state = {}
+
     @cherrypy.tools.json_out()
     def GET(self, *args, **kwargs):
         result = {
@@ -110,6 +113,11 @@ class Bluetooth(object):
 
                     adapter_props = dbus.Interface(controller_obj, "org.freedesktop.DBus.Properties")
                     adapter_methods = dbus.Interface(controller_obj, "org.freedesktop.DBus.Methods")
+
+                    if not filters or 'transportFilter' in filters:
+                        controller_result['transportFilter'] = self.get_adapter_transport_filter(
+                            controller_name)
+                        matched_filter = True
 
                     for pass_property in PASS_ADAPTER_PROPS:
                         if not filters or pass_property.lower() in filters:
@@ -171,7 +179,8 @@ class Bluetooth(object):
             adapter_methods = dbus.Interface(adapter_obj, "org.freedesktop.DBus.Methods")
 
             if not device_uuid:
-                result.update(self.set_adapter_properties(adapter_methods, adapter_props, post_data))
+                result.update(self.set_adapter_properties(adapter_methods, adapter_props,
+                                                          controller_name, post_data))
             else:
                 # device_uuid specified
                 device, device_props = find_device(bus, device_uuid)
@@ -199,16 +208,20 @@ class Bluetooth(object):
 
         return result
 
-    def set_adapter_properties(self, adapter_methods, adapter_props, post_data):
+    def set_adapter_properties(self, adapter_methods, adapter_props, controller_name, post_data):
         """Set properties on an adapter (controller)"""
         result = {}
         powered = post_data.get('powered', None)
         discovering = post_data.get('discovering', None)
         discoverable = post_data.get('discoverable', None)
+        transport_filter = post_data.get('transportFilter', None)
         if powered is not None:
             adapter_props.Set(ADAPTER_IFACE, "Powered", dbus.Boolean(powered))
         if discoverable is not None:
             adapter_props.Set(ADAPTER_IFACE, "Discoverable", dbus.Boolean(discoverable))
+        if transport_filter is not None:
+            result.update(self.set_adapter_transport_filter(adapter_methods, controller_name,
+                                                  transport_filter))
         if discovering is not None:
             discovering_state = adapter_props.Get(ADAPTER_IFACE, "Discovering")
             if discovering_state != discovering:
@@ -216,8 +229,35 @@ class Bluetooth(object):
                     adapter_methods.get_dbus_method("StartDiscovery", ADAPTER_IFACE)()
                 else:
                     adapter_methods.get_dbus_method("StopDiscovery", ADAPTER_IFACE)()
-        result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 
+        if 'SDCERR' not in result:
+            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+
+        return result
+
+    def get_adapter_transport_filter(self, controller_name):
+        if controller_name in self.controller_state and 'Transport' in self.controller_state[
+            controller_name]:
+            return self.controller_state[controller_name]['Transport']
+        else:
+            return None
+
+    def set_adapter_transport_filter(self, adapter_methods, controller_name, transport_filter):
+        """ Set a transport filter on the controller.  Note that "When multiple clients call
+        SetDiscoveryFilter, their filters are internally merged" """
+        result = {}
+        discovery_filters = { 'Transport': transport_filter }
+        discovery_filters_dbus = python_to_dbus(discovery_filters)
+        try:
+            adapter_methods.get_dbus_method("SetDiscoveryFilter", ADAPTER_IFACE)(discovery_filters_dbus)
+        except dbus.DBusException as e:
+            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
+            result['ErrorMsg'] = f"Transport filter {transport_filter} not accepted"
+            return result
+
+        if not controller_name in self.controller_state:
+            self.controller_state[controller_name] = { }
+        self.controller_state[controller_name]['Transport'] = transport_filter
         return result
 
     def set_device_properties(self, adapter_methods, device_methods, device_obj, device_properties, post_data):
