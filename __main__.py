@@ -85,7 +85,8 @@ def force_session_checking():
 	#Session ids will be destroyed periodically so we have to check 'USERNAME' to make sure the session is not valid after logout.
 	if not cherrypy.session._exists() or not cherrypy.session.get('USERNAME', None):
 		url = cherrypy.url().split('/')[-1]
-		if url and ".html" not in url and ".js" not in url and any(path in url for path in paths):
+		path_root = cherrypy.request.path_info.split('/')[1]
+		if url and ".html" not in url and ".js" not in url and path_root in paths:
 			raise cherrypy.HTTPError(401)
 
 @cherrypy.tools.register('before_finalize', priority=60)
