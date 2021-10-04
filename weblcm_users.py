@@ -9,6 +9,7 @@ from datetime import datetime
 import time
 from weblcm_def import WEBLCM_ERRORS, USER_PERMISSION_TYPES
 from weblcm_settings import WeblcmConfigManage, SystemSettingsManage
+from syslog import syslog
 
 class UserManageHelper(object):
 
@@ -89,6 +90,7 @@ class UserManage(object):
 		post_data = cherrypy.request.json
 		username = post_data.get('username', None)
 		new_password = post_data.get('new_password', None)
+
 		if new_password:
 			current_password = post_data.get('current_password', None)
 			if UserManageHelper.verify(username, current_password):
@@ -103,7 +105,7 @@ class UserManage(object):
 				else:
 					result['ErrorMsg'] = 'unable to update password'
 			else:
-				result['ErrorMsg'] = 'unknown user'
+				result['ErrorMsg'] = 'incorrect current password'
 		else:
 			permission = post_data.get('permission', None)
 			if permission:
@@ -114,7 +116,6 @@ class UserManage(object):
 					result['ErrorMsg'] = 'could not update session'
 			else:
 				result['ErrorMsg'] = 'invalid session'
-
 		return result
 
 	@cherrypy.tools.accept(media='application/json')
@@ -243,6 +244,7 @@ class LoginManage(object):
 		post_data = cherrypy.request.json
 		username = post_data.get('username', "")
 		password = post_data.get('password', "")
+		syslog(f"Attempt to login user {username}")
 
 		#Return if username is blocked
 		if not cherrypy.session.get('USERNAME', None):
@@ -273,6 +275,7 @@ class LoginManage(object):
 				result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 				result['REDIRECT'] = 1
 				result['ErrorMsg'] = 'Password change required'
+				syslog(f"User {username} logged in")
 				return result
 
 		#Session is created, but default password was not changed.
@@ -281,6 +284,7 @@ class LoginManage(object):
 				result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 				result['REDIRECT'] = 1
 				result['ErrorMsg'] = 'Password change required'
+				syslog(f"User {username} logged in")
 				return result
 
 		#If session already exists, return success; otherwise verify login username and password.
@@ -307,10 +311,23 @@ class LoginManage(object):
 
 		result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 		result['ErrorMsg'] = 'User logged in'
+		syslog(f"user {username} logged in")
 		return result
 
+	@cherrypy.tools.json_out()
 	def DELETE(self):
+		result = {
+			'SDCERR': WEBLCM_ERRORS.get('SDCERR_FAIL', 1),
+			'ErrorMsg': '',
+		}
 		username = cherrypy.session.pop('USERNAME', None)
 		if username:
 			LoginManageHelper.delete(username)
+			result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+			result['ErrorMsg']= f"user {username} logged out"
+			syslog(f"logout user {username}")
+		else:
+			result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_FAIL')
+			result['ErrorMsg']= f"user {username} not found"
 		cherrypy.lib.sessions.expire()
+		return result
