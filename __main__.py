@@ -49,6 +49,7 @@ class Root(object):
 			'PERMISSIONS': weblcm_def.USER_PERMISSION_TYPES,
 			'PLUGINS': plugins,
 			'SETTINGS': settings,
+			'ErrorMsg': ''
 		}
 
 
