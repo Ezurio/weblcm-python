@@ -1,6 +1,7 @@
 import sys
 import os
 import time
+import re
 import cherrypy
 from cherrypy.lib import static
 import weblcm_def
@@ -182,14 +183,17 @@ class AWMCfgManage(object):
 	def GET(self, *args, **kwargs):
 
 		#Infinite geo-location checks by default
-		result = { 'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS') }
-		result['geolocation_scanning_enable'] = 0
-		result['ErrorMsg'] = 'AWM unsupported'
+		result = {
+			'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS'),
+			'ErrorMsg': 'AWM configuration only supported in LITE mode',
+			'geolocation_scanning_enable': 1,
+			}
 
+		# check if there is a configuration file which contains a "scan_attempts:0" entry
+		# if configuration file does not exist, scan_attempts is not disabled
 		f = cherrypy.request.app.config['weblcm'].get('awm_cfg', None)
 		if not f:
 			return result
-
 		if not os.path.isfile(f):
 			return result
 
@@ -207,13 +211,33 @@ class AWMCfgManage(object):
 	@cherrypy.tools.json_out()
 	def PUT(self):
 
-		#Enable/disable geolocation scanning
-		#0: disable geolocation scanning
-		#others: enable geolocation scanning
+		# Enable/disable geolocation scanning
+		# 0: disable geolocation scanning
+		# others: enable geolocation scanning
+		result = {
+			'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL'),
+			'ErrorMsg': "AWM's geolocation scanning configuration only supported in LITE mode",
+			'geolocation_scanning_enable': 1,
+			}
 
-		result = { 'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL') }
-		result['geolocation_scanning_enable'] = 0
-		result['ErrorMsg'] = 'AWM unsupported'
+		# determine if in LITE mode
+		litemode = False
+		try:
+			file = open("/etc/default/adaptive_ww","r")
+			for line in file:
+				if re.search('LITE', line):
+					litemode = True
+					break
+		except Exception as e:
+			print(e)
+
+		if not litemode:
+			return result
+
+		#prep for next error condition
+		result['ErrorMsg'] = 'No writable configuration file found'
+		# check if there is a configuration file which contains a "scan_attempts:0" entry
+		# if writable configuration file does not exist, scan_attempts can not be modified
 
 		fp = cherrypy.request.app.config['weblcm'].get('awm_cfg', None);
 		if not fp:
@@ -240,5 +264,5 @@ class AWMCfgManage(object):
 
 		result['geolocation_scanning_enable'] = geolocation_scanning_enable
 		result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
-		result['ErrorMsg']= ''
+		result['ErrorMsg'] = ''
 		return result
