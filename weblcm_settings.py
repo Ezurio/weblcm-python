@@ -24,6 +24,13 @@ class WeblcmConfigManage(object):
 		_parser.read(_filename)
 
 	@classmethod
+	def verify_section(cls, section):
+		with cls._lock:
+			if cls._parser.has_section(section):
+				return True
+		return False
+
+	@classmethod
 	def add_section(cls, section):
 		with cls._lock:
 			if not cls._parser.has_section(section):
