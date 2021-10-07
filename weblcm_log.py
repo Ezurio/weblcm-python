@@ -25,7 +25,14 @@ class LogData(object):
 		if not priority in range(0, 7, 1):
 			return '{"SDCERR":1, "ErrorMsg": "Priority must be an int between 0-7"}'
 		reader.log_level(priority)
-		typ = kwargs.get('type', "All")
+		# use .title() to ensure incoming type has proper case
+		typ = kwargs.get('type', "All").title()
+		# TODO - documentation says 'python' is lower case while others are upper case.  Is that correct?
+		if typ == 'Python':
+			typ = 'python'
+		types = {'Kernel', 'NetworkManager', 'python', 'All'}
+		if not typ in types:
+			return '{"SDCERR":1, "ErrorMsg": "supplied type parameter must be one of %s"}' % types
 		if typ != "All":
 			reader.add_match(SYSLOG_IDENTIFIER=typ)
 		try:
@@ -74,7 +81,7 @@ class LogSetting(object):
 			return result
 
 		levels = {'none', 'error', 'warning', 'info', 'debug', 'msgdump', 'excessive'}
-		supp_level = post_data.get('suppDebugLevel')
+		supp_level = post_data.get('suppDebugLevel').lower()
 		if not supp_level in levels:
 			result['ErrorMsg'] = f'suppDebugLevel must be one of {levels}'
 			return result
@@ -89,8 +96,12 @@ class LogSetting(object):
 			return result
 
 		drv_level=post_data.get('driverDebugLevel')
-		print(f'type of drv_level: {type(drv_level)}')
-		print(f'drv_level={drv_level}')
+		try:
+			drv_level=int(drv_level)
+		except Exception as e:
+			result['ErrorMsg'] = 'driverDebugLevel must be 0 or 1'
+			return result
+
 		if not (drv_level == 0 or drv_level == 1):
 			result['ErrorMsg'] = 'driverDebugLevel must be 0 or 1'
 			return result
