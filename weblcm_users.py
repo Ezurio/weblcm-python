@@ -21,6 +21,10 @@ class UserManageHelper(object):
 		return False
 
 	@classmethod
+	def user_exists(cls, username):
+		return WeblcmConfigManage.verify_section(username)
+
+	@classmethod
 	def delUser(cls, username):
 		if WeblcmConfigManage.remove_section(username):
 			return WeblcmConfigManage.save()
@@ -70,6 +74,8 @@ class UserManageHelper(object):
 			userlist.pop(default_username, None)
 		return userlist
 
+
+
 @cherrypy.expose
 class UserManage(object):
 
@@ -90,6 +96,10 @@ class UserManage(object):
 		post_data = cherrypy.request.json
 		username = post_data.get('username', None)
 		new_password = post_data.get('new_password', None)
+
+		if not UserManageHelper.user_exists(username):
+			result['ErrorMsg'] = f'user {username} not found'
+			return result
 
 		if new_password:
 			current_password = post_data.get('current_password', None)
@@ -132,6 +142,10 @@ class UserManage(object):
 		password = post_data.get('password')
 		permission = post_data.get('permission')
 
+		if UserManageHelper.user_exists(username):
+			result['ErrorMsg'] = f'user {username} already exists'
+			return result
+
 		if not username or not password or not permission:
 			result['ErrorMsg'] = 'Missing user name, password, or permission'
 			return result
@@ -154,7 +168,11 @@ class UserManage(object):
 			'ErrorMsg': 'unable to delete user',
 		}
 
-		if UserManageHelper.delUser(username):
+		if username == 'root':
+			result['ErrorMsg'] = 'unable to remove root user'
+		elif not UserManageHelper.user_exists(username):
+			result['ErrorMsg'] = f'user {username} not found'
+		elif UserManageHelper.delUser(username):
 			result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 			result['ErrorMsg'] = 'User deleted'
 
