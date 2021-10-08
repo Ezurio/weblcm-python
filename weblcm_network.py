@@ -16,7 +16,7 @@ class NetworkConnections(object):
 		result = {
 			'SDCERR': 0,
 			'connections': {},
-			'ErrorMsg': ''
+			'InfoMsg': ''
 		}
 
 		unmanaged_devices = cherrypy.request.app.config['weblcm'].get('unmanaged_hardware_devices', '').split()
@@ -63,42 +63,42 @@ class NetworkConnection(object):
 	def PUT(self):
 
 		result = { 'SDCERR': 1,
-					'ErrorMsg': 'unable to set connection'}
+					'InfoMsg': 'unable to set connection'}
 		try:
 			uuid = cherrypy.request.json.get('uuid', None)
 			if not uuid:
-				result['ErrorMsg'] = 'Missing UUID'
+				result['InfoMsg'] = 'Missing UUID'
 				return result
 
 			conn = self.get_connection_from_uuid(uuid)
 			if conn == None:
-				result['ErrorMsg']='UUID not found'
+				result['InfoMsg']='UUID not found'
 				return result
 
 			if cherrypy.request.json['activate'] == 1 or cherrypy.request.json['activate'] == '1':
 				if conn.GetSettings()['connection']['type'] == "bridge":
 					if NetworkManager.NetworkManager.ActivateConnection(conn, "/", "/"):
 						result['SDCERR'] = 0
-						result['ErrorMsg'] ='Bridge activated'
+						result['InfoMsg'] ='Bridge activated'
 				else:
 					interface_name = conn.GetSettings()['connection']['interface-name']
 					for dev in NetworkManager.Device.all():
 						if dev.Interface == interface_name:
 							if NetworkManager.NetworkManager.ActivateConnection(conn, dev, "/"):
 								result['SDCERR'] = 0
-								result['ErrorMsg'] = 'Connection Activated'
+								result['InfoMsg'] = 'Connection Activated'
 								break;
 			else:
 				result['SDCERR'] = 0
 				for conn in NetworkManager.NetworkManager.ActiveConnections:
 					if uuid == conn.Connection.GetSettings()['connection']['uuid']:
 						NetworkManager.NetworkManager.DeactivateConnection(conn)
-						result['ErrorMsg'] = 'Connection Deactivated'
+						result['InfoMsg'] = 'Connection Deactivated'
 						return result
-				result['ErrorMsg'] = 'Already inactive. No action taken'
+				result['InfoMsg'] = 'Already inactive. No action taken'
 		except Exception as e:
 			syslog (f'exception during NetworkConnection PUT: {e}')
-			result['ErrorMsg'] = f'Internal error - exception from NeworkManger: {e}'
+			result['InfoMsg'] = f'Internal error - exception from NeworkManger: {e}'
 		return result
 
 	@cherrypy.tools.accept(media='application/json')
@@ -108,7 +108,7 @@ class NetworkConnection(object):
 
 		result = {
 			'SDCERR': 1,
-			'ErrorMsg': ''
+			'InfoMsg': ''
 		}
 
 		try:
@@ -162,7 +162,7 @@ class NetworkConnection(object):
 
 		except Exception as e:
 			print(e)
-			result['ErrorMsg'] = f'Connection POST experienced an exception: {e}'
+			result['InfoMsg'] = f'Connection POST experienced an exception: {e}'
 
 		return result
 
@@ -170,7 +170,7 @@ class NetworkConnection(object):
 	def DELETE(self, uuid):
 		result = {
 			'SDCERR': 1,
-			'ErrorMsg': ''
+			'InfoMsg': ''
 		}
 		try:
 			connections = NetworkManager.Settings.ListConnections()
@@ -179,7 +179,7 @@ class NetworkConnection(object):
 			result['SDCERR'] = 0
 		except Exception as e:
 			print(e)
-			result['ErrorMsg'] = f'Unable to delete connection'
+			result['InfoMsg'] = f'Unable to delete connection'
 
 		return result
 
@@ -195,12 +195,12 @@ class NetworkConnection(object):
 
 		result = {
 			'SDCERR': 1,
-			'ErrorMsg': ''
+			'InfoMsg': ''
 		}
 		try:
 			uuid = kwargs.get('uuid', None)
 			if not uuid:
-				result['ErrorMsg'] = 'no UUID provided'
+				result['InfoMsg'] = 'no UUID provided'
 				return result
 
 			connections = NetworkManager.Settings.ListConnections()
@@ -216,7 +216,7 @@ class NetworkConnection(object):
 			result['connection'] = settings
 			result['SDCERR'] = 0
 		except Exception as e:
-			result['ErrorMsg'] = 'Invalid UUID'
+			result['InfoMsg'] = 'Invalid UUID'
 
 		return result
 
@@ -230,7 +230,7 @@ class NetworkAccessPoints(object):
 		"""
 		result = {
 			'SDCERR': 1,
-			'ErrorMsg': ''
+			'InfoMsg': ''
 		}
 
 		try:
@@ -240,11 +240,11 @@ class NetworkAccessPoints(object):
 					dev.RequestScan(options)
 
 			result['SDCERR'] = 0
-			result['ErrorMsg'] = 'Scan requested'
+			result['InfoMsg'] = 'Scan requested'
 
 		except Exception as e:
 			print(e)
-			result['ErrorMsg'] = 'Unable to start scan request'
+			result['InfoMsg'] = 'Unable to start scan request'
 
 		return result
 
@@ -255,7 +255,7 @@ class NetworkAccessPoints(object):
 
 		result = {
 			'SDCERR': 1,
-			'ErrorMsg': '',
+			'InfoMsg': '',
 			'accesspoints': [],
 		}
 
@@ -301,7 +301,7 @@ class NetworkAccessPoints(object):
 
 		except Exception as e:
 			print(e)
-			result['ErrorMsg'] = 'Unable to get access point list'
+			result['InfoMsg'] = 'Unable to get access point list'
 			syslog(f'NetworkAccessPoints GET exception: {e}')
 
 		return result
@@ -313,7 +313,7 @@ class Version(object):
 
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
-		#TODO should we add SDCERR and ErrorMsg entries?
+		#TODO should we add SDCERR and InfoMsg entries?
 		try:
 			if not Version._version:
 				Version._version['nm_version'] = NetworkManager.NetworkManager.Version
@@ -337,7 +337,7 @@ class NetworkInterfaces(object):
 	def GET(self, *args, **kwargs):
 
 		result = { 'SDCERR': 1,
-				   'ErrorMsg': '',}
+				   'InfoMsg': '',}
 		interfaces = []
 
 		try:
@@ -359,7 +359,7 @@ class NetworkInterfaces(object):
 			result['interfaces'] = interfaces
 		except Exception as e:
 			print(e)
-			result['ErrorMsg'] = 'Exception getting list of interfaces'
+			result['InfoMsg'] = 'Exception getting list of interfaces'
 			syslog(f'NetworkInterfaces GET exception: {e}')
 
 		return result
