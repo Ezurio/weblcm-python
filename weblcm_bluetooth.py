@@ -47,7 +47,7 @@ def GetControllerObj(name: str = None):
     # get the ble controller
     controller = find_controller(bus, name)
     if not controller:
-        result['ErrorMsg'] = f"Controller {controller_pretty_name(name)} not found."
+        result['InfoMsg'] = f"Controller {controller_pretty_name(name)} not found."
         result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
         controller_obj = None
     else:
@@ -66,7 +66,7 @@ class Bluetooth(object):
     def GET(self, *args, **kwargs):
         result = {
             'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1),
-            'ErrorMsg':'',
+            'InfoMsg':'',
         }
 
         filters: Optional[List[str]] = None
@@ -90,7 +90,7 @@ class Bluetooth(object):
             controller = find_controller(bus, controller_name)
             controllers = [controller]
             if not controller:
-                result['ErrorMsg'] = f"Controller {controller_pretty_name(controller_name)} not found."
+                result['InfoMsg'] = f"Controller {controller_pretty_name(controller_name)} not found."
                 return result
         else:
             controllers = find_controllers(bus)
@@ -101,7 +101,7 @@ class Bluetooth(object):
             controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
 
             if not controller_obj:
-                result['ErrorMsg'] = f"Controller {controller_pretty_name(controller_name)} not found."
+                result['InfoMsg'] = f"Controller {controller_pretty_name(controller_name)} not found."
                 return result
 
             try:
@@ -127,14 +127,14 @@ class Bluetooth(object):
                     result[controller_friendly_name] = controller_result
                     if filters and not matched_filter:
                         result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
-                        result['ErrorMsg'] = f"filters {filters} not matched"
+                        result['InfoMsg'] = f"filters {filters} not matched"
                         return result
                 else:
                     result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
 
                     device, device_props = find_device(bus, device_uuid)
                     if not device:
-                        result['ErrorMsg'] = 'Device not found'
+                        result['InfoMsg'] = 'Device not found'
                         return result
 
                     result.update(device_props)
@@ -142,7 +142,7 @@ class Bluetooth(object):
                 result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 
             except Exception as e:
-                result['ErrorMsg'] = str(e)
+                result['InfoMsg'] = str(e)
                 cherrypy.log(str(e))
 
             return result
@@ -153,7 +153,7 @@ class Bluetooth(object):
     def PUT(self, *args, **kwargs):
         result = {
             'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1),
-            'ErrorMsg': '',
+            'InfoMsg': '',
         }
 
         if 'controller' in cherrypy.request.params:
@@ -185,7 +185,7 @@ class Bluetooth(object):
                 # device_uuid specified
                 device, device_props = find_device(bus, device_uuid)
                 if device is None:
-                    result['ErrorMsg'] = 'Device not found'
+                    result['InfoMsg'] = 'Device not found'
                     return result
 
                 device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
@@ -203,7 +203,7 @@ class Bluetooth(object):
 
         except Exception as e:
             result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
-            result['ErrorMsg'] = str(e)
+            result['InfoMsg'] = str(e)
             cherrypy.log(str(e))
 
         return result
@@ -252,7 +252,7 @@ class Bluetooth(object):
             adapter_methods.get_dbus_method("SetDiscoveryFilter", ADAPTER_IFACE)(discovery_filters_dbus)
         except dbus.DBusException as e:
             result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
-            result['ErrorMsg'] = f"Transport filter {transport_filter} not accepted"
+            result['InfoMsg'] = f"Transport filter {transport_filter} not accepted"
             return result
 
         if not controller_name in self.controller_state:
@@ -319,10 +319,10 @@ class Bluetooth(object):
 
         if not processed:
             result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
-            result['ErrorMsg'] = f"Unrecognized command {command}"
+            result['InfoMsg'] = f"Unrecognized command {command}"
         elif error_message:
             result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
-            result['ErrorMsg'] = error_message
+            result['InfoMsg'] = error_message
         else:
             result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 

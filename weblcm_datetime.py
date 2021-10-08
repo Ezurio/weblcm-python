@@ -69,7 +69,7 @@ class DateTimeSetting(object):
 			result['method'] = "auto"
 		result['time'] = outs.decode("utf-8")
 		result['SDCERR'] = 0
-		result['ErrorMsg'] = ''
+		result['InfoMsg'] = ''
 
 		return result
 
@@ -87,7 +87,7 @@ class DateTimeSetting(object):
 		returncode, outs, errs = self.popenHelper(method, zone, dt)
 		if returncode:
 			result['message'] = errs.decode("utf-8")
-			result['ErrorMsg'] = errs.decode("utf-8")
+			result['InfoMsg'] = errs.decode("utf-8")
 			result['SDCERR'] = 1
 			return result
 
@@ -96,5 +96,5 @@ class DateTimeSetting(object):
 		returncode, outs, errs = self.popenHelper("check", "", "")
 		result['time'] = outs.decode("utf-8")
 		result['SDCERR'] = 0
-		result['ErrorMsg'] = ''
+		result['InfoMsg'] = ''
 		return result
