@@ -128,7 +128,7 @@ class FileManage(object):
 	def DELETE(self, *args, **kwargs):
 		result = { 
 			'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL'),
-			'ErrorMsg': 'Unable to delete file'
+			'InfoMsg': 'Unable to delete file'
 			}
 
 		typ = kwargs.get('type', None)
@@ -145,7 +145,7 @@ class FileManage(object):
 			os.remove(path);
 			if not os.path.exists(path):
 				result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
-				result['ErrorMsg'] = f'file {file} deleted'
+				result['InfoMsg'] = f'file {file} deleted'
 				syslog(f'file {file} deleted')
 			else:
 				syslog(f'Attempt to remove file {path} did not succeed')
@@ -185,7 +185,7 @@ class AWMCfgManage(object):
 		#Infinite geo-location checks by default
 		result = {
 			'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS'),
-			'ErrorMsg': 'AWM configuration only supported in LITE mode',
+			'InfoMsg': 'AWM configuration only supported in LITE mode',
 			'geolocation_scanning_enable': 1,
 			}
 
@@ -216,7 +216,7 @@ class AWMCfgManage(object):
 		# others: enable geolocation scanning
 		result = {
 			'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL'),
-			'ErrorMsg': "AWM's geolocation scanning configuration only supported in LITE mode",
+			'InfoMsg': "AWM's geolocation scanning configuration only supported in LITE mode",
 			'geolocation_scanning_enable': 1,
 			}
 
@@ -235,7 +235,7 @@ class AWMCfgManage(object):
 			return result
 
 		#prep for next error condition
-		result['ErrorMsg'] = 'No writable configuration file found'
+		result['InfoMsg'] = 'No writable configuration file found'
 		# check if there is a configuration file which contains a "scan_attempts:0" entry
 		# if writable configuration file does not exist, scan_attempts can not be modified
 
@@ -264,5 +264,5 @@ class AWMCfgManage(object):
 
 		result['geolocation_scanning_enable'] = geolocation_scanning_enable
 		result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
-		result['ErrorMsg'] = ''
+		result['InfoMsg'] = ''
 		return result

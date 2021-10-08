@@ -21,9 +21,9 @@ class LogData(object):
 		try:
 			priority = int(kwargs.get('priority', 6))
 		except Exception as e:
-			return '{"SDCERR":1, "ErrorMsg": "Priority must be an int between 0-7"}'
+			return '{"SDCERR":1, "InfoMsg": "Priority must be an int between 0-7"}'
 		if not priority in range(0, 7, 1):
-			return '{"SDCERR":1, "ErrorMsg": "Priority must be an int between 0-7"}'
+			return '{"SDCERR":1, "InfoMsg": "Priority must be an int between 0-7"}'
 		reader.log_level(priority)
 		# use .title() to ensure incoming type has proper case
 		typ = kwargs.get('type', "All").title()
@@ -32,13 +32,13 @@ class LogData(object):
 			typ = 'python'
 		types = {'Kernel', 'NetworkManager', 'python', 'All'}
 		if not typ in types:
-			return '{"SDCERR":1, "ErrorMsg": "supplied type parameter must be one of %s"}' % types
+			return '{"SDCERR":1, "InfoMsg": "supplied type parameter must be one of %s"}' % types
 		if typ != "All":
 			reader.add_match(SYSLOG_IDENTIFIER=typ)
 		try:
 			days = int(kwargs.get('days', 1))
 		except Exception as e:
-			return '{"SDCERR":1, "ErrorMsg": "days must be an int"}'
+			return '{"SDCERR":1, "InfoMsg": "days must be an int"}'
 		if days > 0:
 			reader.seek_realtime(time.time() - days * 86400)
 
@@ -69,21 +69,21 @@ class LogSetting(object):
 	def POST(self):
 		result = {
 			'SDCERR': 1,
-			'ErrorMsg': ''
+			'InfoMsg': ''
 		}
 		post_data = cherrypy.request.json
 
 		if not 'suppDebugLevel' in post_data:
-			result['ErrorMsg'] = 'suppDebugLevel missing from JSON data'
+			result['InfoMsg'] = 'suppDebugLevel missing from JSON data'
 			return result
 		if not 'driverDebugLevel' in post_data:
-			result['ErrorMsg'] = 'driverDebugLevel missing from JSON data'
+			result['InfoMsg'] = 'driverDebugLevel missing from JSON data'
 			return result
 
 		levels = {'none', 'error', 'warning', 'info', 'debug', 'msgdump', 'excessive'}
 		supp_level = post_data.get('suppDebugLevel').lower()
 		if not supp_level in levels:
-			result['ErrorMsg'] = f'suppDebugLevel must be one of {levels}'
+			result['InfoMsg'] = f'suppDebugLevel must be one of {levels}'
 			return result
 
 		try:
@@ -92,18 +92,18 @@ class LogSetting(object):
 			wpas = dbus.Interface(proxy, weblcm_def.DBUS_PROP_IFACE)
 			wpas.Set(weblcm_def.WPA_IFACE, "DebugLevel", supp_level)
 		except Exception as e:
-			result['ErrorMsg'] = 'unable to set supplicant debug level'
+			result['InfoMsg'] = 'unable to set supplicant debug level'
 			return result
 
 		drv_level=post_data.get('driverDebugLevel')
 		try:
 			drv_level=int(drv_level)
 		except Exception as e:
-			result['ErrorMsg'] = 'driverDebugLevel must be 0 or 1'
+			result['InfoMsg'] = 'driverDebugLevel must be 0 or 1'
 			return result
 
 		if not (drv_level == 0 or drv_level == 1):
-			result['ErrorMsg'] = 'driverDebugLevel must be 0 or 1'
+			result['InfoMsg'] = 'driverDebugLevel must be 0 or 1'
 			return result
 
 		try:
@@ -111,7 +111,7 @@ class LogSetting(object):
 			if driver_debug_file.mode == 'w':
 				driver_debug_file.write(str(drv_level))
 		except Exception as e:
-			result['ErrorMsg'] = 'unable to set driver debug level'
+			result['InfoMsg'] = 'unable to set driver debug level'
 			return result
 
 		result['SDCERR'] = 0
@@ -122,7 +122,7 @@ class LogSetting(object):
 	def GET(self, *args, **kwargs):
 		result = {
 			'SDCERR': 0,
-			'ErrorMsg': ''
+			'InfoMsg': ''
 		}
 
 		try:

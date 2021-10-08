@@ -13,7 +13,7 @@ class Reboot(object):
 		p.wait()
 		result = {
 			'SDCERR': WEBLCM_ERRORS.get('SDCERR_SUCCESS'),
-			'ErrorMsg': 'Reboot initiated',
+			'InfoMsg': 'Reboot initiated',
 		}
 		syslog("reboot initiated")
 
@@ -32,9 +32,9 @@ class FactoryReset(object):
 		result['SDCERR'] = p.wait()
 		syslog("Factory Reset requested")
 		if result.get('SDCERR') == 0:
-			result['ErrorMsg'] = 'Reboot required'
+			result['InfoMsg'] = 'Reboot required'
 		else:
-			result['ErrorMsg'] = 'Error running factory reset'
+			result['InfoMsg'] = 'Error running factory reset'
 			syslog("FactoryReset's p.wait() returned %s" % result.get('SDCERR'))
 
 		return result
@@ -50,7 +50,7 @@ class Fips(object):
 	def PUT(self):
 		result = {
 			'SDCERR': WEBLCM_ERRORS.get('SDCERR_FAIL'),
-			'ErrorMsg': 'Reboot required',
+			'InfoMsg': 'Reboot required',
 		}
 
 		setOptions = ['unset', 'fips', 'fips-wifi']
@@ -58,14 +58,14 @@ class Fips(object):
 		post_data = cherrypy.request.json
 		fips = post_data.get('fips', 'no option provided')
 		if fips not in setOptions:
-			result['ErrorMsg'] = 'Invalid option: {}'.format(fips)
+			result['InfoMsg'] = 'Invalid option: {}'.format(fips)
 			return result
 
 		try:
 			proc = Popen([Fips.FIPS_SCRIPT, fips], stdout=PIPE, stderr=PIPE)
 		except Exception as e:
 			syslog("FIPS SET exception: %s" % e)
-			result['ErrorMsg'] = 'Not a FIPS image'
+			result['InfoMsg'] = 'Not a FIPS image'
 			return result
 
 		try:
@@ -74,30 +74,30 @@ class Fips(object):
 			proc.kill()
 			outs, errs = proc.communicate()
 			syslog("FIPS SET timeout: %s" % e)
-			result['ErrorMsg'] = 'FIPS SET timeout'
+			result['InfoMsg'] = 'FIPS SET timeout'
 		except Exception as e:
 			syslog("FIPS set exception: %s" % e)
-			result['ErrorMsg'] = 'FIPS SET exception: {}'.format(e)
+			result['InfoMsg'] = 'FIPS SET exception: {}'.format(e)
 
 		if not proc.returncode:
 			result['SDCERR'] = WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 		else:
 			syslog("FIPS set error: %s" % e)
-			result['ErrorMsg'] = 'FIPS SET error'
+			result['InfoMsg'] = 'FIPS SET error'
 		return result
 
 	@cherrypy.tools.json_out()
 	def GET(self,  *args, **kwargs):
 		result = {
 			'SDCERR': WEBLCM_ERRORS.get('SDCERR_SUCCESS'),
-			'ErrorMsg': '',
+			'InfoMsg': '',
 			'status': "unset"
 		}
 		try:
 			proc = Popen([Fips.FIPS_SCRIPT, 'status'], stdout=PIPE, stderr=PIPE)
 		except Exception as e:
 			syslog("FIPS get exception: %s" % e)
-			result['ErrorMsg'] = 'Not a FIPS image'
+			result['InfoMsg'] = 'Not a FIPS image'
 			return result
 
 		try:
@@ -106,10 +106,10 @@ class Fips(object):
 			proc.kill()
 			outs, errs = proc.communicate()
 			syslog("FIPS get timeout: %s" % e)
-			result['ErrorMsg'] = 'FIPS GET timeout'
+			result['InfoMsg'] = 'FIPS GET timeout'
 		except Exception as e:
 			syslog("FIPS get exception: %s" % e)
-			result['ErrorMsg'] = 'FIPS GET exception: {}'.format(e)
+			result['InfoMsg'] = 'FIPS GET exception: {}'.format(e)
 
 		if not proc.returncode:
 			try:
@@ -118,6 +118,6 @@ class Fips(object):
 				syslog('FIPS GET exception: %s' % e)
 		else:
 			syslog("FIPS GET error: %d" % proc.returncode)
-			result['ErrorMsg'] = 'FIPS GET error'
+			result['InfoMsg'] = 'FIPS GET error'
 
 		return result
