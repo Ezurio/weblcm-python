@@ -5,6 +5,7 @@ import os,errno
 import uuid
 import time
 import swclient
+from syslog import syslog
 from subprocess import Popen, PIPE, TimeoutExpired
 from weblcm_settings import SystemSettingsManage
 
@@ -20,7 +21,8 @@ def octet_stream_in(force=True, debug=False):
 			data = entity.read()
 			rc = swclient.do_fw_update(data)
 			if rc < 0:
-				raise cherrypy.HTTPError(500)
+				syslog(f'swclient.do_firmware_update returned {rc} while processing octect_stream')
+				raise cherrypy.HTTPError(500, f'Software Update received error: {rc} while updating')
 		except OSError as err:
 			raise err
 
@@ -47,30 +49,33 @@ class SWUpdate:
 
 		result = {
 			'SDCERR': 1,
-			'message': "Device is busy"
+			'InfoMsg': "Device is busy"
 		}
 
 		if not cherrypy.session.get('swupdate', None):
 			return result
 
-		mode = kwargs.get('mode', 0)
-
+		try:
+			mode = int(kwargs.get('mode', 0))
+		except Exception as e:
+			resutt['InfoMsg'] = 'Mode must be 0 (block/block mode) or 1 '
+			return result
 		try:
 			proc = Popen([SWUpdate.SWUPDATE_SCRIPT, "get-update", str(mode)], stdout=PIPE, stderr=PIPE)
 			outs, errs = proc.communicate(timeout=SystemSettingsManage.get_user_callback_timeout())
 			if proc.returncode:
-				result['message'] = errs.decode("utf-8")
+				result['InfoMsg'] = errs.decode("utf-8")
 				result['SDCERR'] = proc.returncode
 			else:
-				result['message'] = "Updated"
+				result['InfoMsg'] = "Updated"
 				result['SDCERR'] = 0
 
 		except TimeoutExpired:
 			proc.kill()
 			outs, errs = proc.communicate()
-			result['message'] = "Update checking timeout"
+			result['InfoMsg'] = "Update checking timeout"
 		except Exception as e:
-			result['message'] = "{}".format(e)
+			result['InfoMsg'] = "{}".format(e)
 
 		return result
 
@@ -83,7 +88,7 @@ class SWUpdate:
 
 		result = {
 			'SDCERR': 1,
-			'message': "Device is busy"
+			'InfoMsg': "Device is busy"
 		}
 
 		def get_imageset_for_update(image):
@@ -105,7 +110,7 @@ class SWUpdate:
 				proc = Popen(args, stdout=PIPE, stderr=PIPE)
 				outs, errs = proc.communicate(timeout=timeout)
 				if proc.returncode:
-					result['message'] = errs.decode("utf-8")
+					result['InfoMsg'] = errs.decode("utf-8")
 					result['SDCERR'] = proc.returncode
 				else:
 					if not callback or callback(dryrun) > 0:
@@ -113,9 +118,9 @@ class SWUpdate:
 			except TimeoutExpired:
 				proc.kill()
 				outs, errs = proc.communicate()
-				result['message'] = "Update checking timeout"
+				result['InfoMsg'] = "Update checking timeout"
 			except Exception as e:
-				result['message'] = "{}".format(e)
+				result['InfoMsg'] = "{}".format(e)
 			return
 
 		with SWUpdate._lock:
