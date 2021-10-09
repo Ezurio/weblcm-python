@@ -19,7 +19,7 @@ class LogData(object):
 
 		reader = journal.Reader()
 		try:
-			priority = int(kwargs.get('priority', 6))
+			priority = int(kwargs.get('priority', 7))
 		except Exception as e:
 			return '{"SDCERR":1, "InfoMsg": "Priority must be an int between 0-7"}'
 		if not priority in range(0, 7, 1):
