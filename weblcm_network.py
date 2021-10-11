@@ -6,6 +6,7 @@ import cherrypy
 import subprocess
 import NetworkManager
 import weblcm_def
+from syslog import syslog
 
 @cherrypy.expose
 class NetworkConnections(object):
@@ -13,8 +14,9 @@ class NetworkConnections(object):
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
 		result = {
-			'SDCERR': 1,
+			'SDCERR': 0,
 			'connections': {},
+			'InfoMsg': ''
 		}
 
 		unmanaged_devices = cherrypy.request.app.config['weblcm'].get('unmanaged_hardware_devices', '').split()
@@ -41,47 +43,62 @@ class NetworkConnections(object):
 				result['connections'][uuid]['activated'] = 1
 
 		result['length'] = len(result['connections'])
-		result['SDCERR'] = 0
 		return result
 
 @cherrypy.expose
 class NetworkConnection(object):
+
+	def get_connection_from_uuid(self, uuid):
+		connections = NetworkManager.Settings.ListConnections()
+		connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in connections])
+		try:
+			conn = connections[uuid]
+		except Exception as e:
+			conn = None
+		return conn
 
 	@cherrypy.tools.accept(media='application/json')
 	@cherrypy.tools.json_in()
 	@cherrypy.tools.json_out()
 	def PUT(self):
 
-		result = { 'SDCERR': 1 }
-
+		result = { 'SDCERR': 1,
+					'InfoMsg': 'unable to set connection'}
 		try:
 			uuid = cherrypy.request.json.get('uuid', None)
 			if not uuid:
+				result['InfoMsg'] = 'Missing UUID'
 				return result
 
-			if cherrypy.request.json['activate'] == 1:
-				connections = NetworkManager.Settings.ListConnections()
-				connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in connections])
-				conn = connections[uuid]
+			conn = self.get_connection_from_uuid(uuid)
+			if conn == None:
+				result['InfoMsg']='UUID not found'
+				return result
+
+			if cherrypy.request.json['activate'] == 1 or cherrypy.request.json['activate'] == '1':
 				if conn.GetSettings()['connection']['type'] == "bridge":
 					if NetworkManager.NetworkManager.ActivateConnection(conn, "/", "/"):
 						result['SDCERR'] = 0
+						result['InfoMsg'] ='Bridge activated'
 				else:
 					interface_name = conn.GetSettings()['connection']['interface-name']
 					for dev in NetworkManager.Device.all():
 						if dev.Interface == interface_name:
 							if NetworkManager.NetworkManager.ActivateConnection(conn, dev, "/"):
 								result['SDCERR'] = 0
+								result['InfoMsg'] = 'Connection Activated'
 								break;
 			else:
+				result['SDCERR'] = 0
 				for conn in NetworkManager.NetworkManager.ActiveConnections:
 					if uuid == conn.Connection.GetSettings()['connection']['uuid']:
 						NetworkManager.NetworkManager.DeactivateConnection(conn)
-						break;
-				result['SDCERR'] = 0
+						result['InfoMsg'] = 'Connection Deactivated'
+						return result
+				result['InfoMsg'] = 'Already inactive. No action taken'
 		except Exception as e:
-			print(e)
-
+			syslog (f'exception during NetworkConnection PUT: {e}')
+			result['InfoMsg'] = f'Internal error - exception from NeworkManger: {e}'
 		return result
 
 	@cherrypy.tools.accept(media='application/json')
@@ -91,6 +108,7 @@ class NetworkConnection(object):
 
 		result = {
 			'SDCERR': 1,
+			'InfoMsg': ''
 		}
 
 		try:
@@ -129,8 +147,10 @@ class NetworkConnection(object):
 				if post_data.get('gsm'):
 					new_settings['gsm'] = post_data.get('gsm');
 
-				new_settings['ipv4'] = post_data.get('ipv4');
-				new_settings['ipv6'] = post_data.get('ipv6');
+				if post_data.get('ipv4'):
+					new_settings['ipv4'] = post_data.get('ipv4');
+				if post_data.get('ipv6'):
+					new_settings['ipv6'] = post_data.get('ipv6');
 
 				connections = NetworkManager.Settings.ListConnections()
 				connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in connections])
@@ -142,6 +162,7 @@ class NetworkConnection(object):
 
 		except Exception as e:
 			print(e)
+			result['InfoMsg'] = f'Connection POST experienced an exception: {e}'
 
 		return result
 
@@ -149,6 +170,7 @@ class NetworkConnection(object):
 	def DELETE(self, uuid):
 		result = {
 			'SDCERR': 1,
+			'InfoMsg': ''
 		}
 		try:
 			connections = NetworkManager.Settings.ListConnections()
@@ -157,6 +179,7 @@ class NetworkConnection(object):
 			result['SDCERR'] = 0
 		except Exception as e:
 			print(e)
+			result['InfoMsg'] = f'Unable to delete connection'
 
 		return result
 
@@ -172,10 +195,12 @@ class NetworkConnection(object):
 
 		result = {
 			'SDCERR': 1,
+			'InfoMsg': ''
 		}
 		try:
 			uuid = kwargs.get('uuid', None)
 			if not uuid:
+				result['InfoMsg'] = 'no UUID provided'
 				return result
 
 			connections = NetworkManager.Settings.ListConnections()
@@ -191,7 +216,7 @@ class NetworkConnection(object):
 			result['connection'] = settings
 			result['SDCERR'] = 0
 		except Exception as e:
-			print(e)
+			result['InfoMsg'] = 'Invalid UUID'
 
 		return result
 
@@ -205,6 +230,7 @@ class NetworkAccessPoints(object):
 		"""
 		result = {
 			'SDCERR': 1,
+			'InfoMsg': ''
 		}
 
 		try:
@@ -214,9 +240,11 @@ class NetworkAccessPoints(object):
 					dev.RequestScan(options)
 
 			result['SDCERR'] = 0
+			result['InfoMsg'] = 'Scan requested'
 
 		except Exception as e:
 			print(e)
+			result['InfoMsg'] = 'Unable to start scan request'
 
 		return result
 
@@ -227,6 +255,7 @@ class NetworkAccessPoints(object):
 
 		result = {
 			'SDCERR': 1,
+			'InfoMsg': '',
 			'accesspoints': [],
 		}
 
@@ -253,7 +282,7 @@ class NetworkAccessPoints(object):
 					keymgmt = 'wpa-psk'
 
 				ap_data = {
-					'Ssid': ap.Ssid,
+					'SSID': ap.Ssid,
 					'HwAddress': ap.HwAddress,
 					'Strength': ap.Strength,
 					'MaxBitrate': ap.MaxBitrate,
@@ -272,6 +301,8 @@ class NetworkAccessPoints(object):
 
 		except Exception as e:
 			print(e)
+			result['InfoMsg'] = 'Unable to get access point list'
+			syslog(f'NetworkAccessPoints GET exception: {e}')
 
 		return result
 
@@ -282,6 +313,7 @@ class Version(object):
 
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
+		#TODO should we add SDCERR and InfoMsg entries?
 		try:
 			if not Version._version:
 				Version._version['nm_version'] = NetworkManager.NetworkManager.Version
@@ -304,7 +336,8 @@ class NetworkInterfaces(object):
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
 
-		result = { 'SDCERR': 1 }
+		result = { 'SDCERR': 1,
+				   'InfoMsg': '',}
 		interfaces = []
 
 		try:
@@ -326,5 +359,7 @@ class NetworkInterfaces(object):
 			result['interfaces'] = interfaces
 		except Exception as e:
 			print(e)
+			result['InfoMsg'] = 'Exception getting list of interfaces'
+			syslog(f'NetworkInterfaces GET exception: {e}')
 
 		return result

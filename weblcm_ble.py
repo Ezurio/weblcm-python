@@ -37,6 +37,14 @@ def python_to_dbus(data, datatype = None):
         data = [python_to_dbus(value) for value in data]
     elif isinstance(data, bytearray):
         data = [python_to_dbus(value) for value in data]
+    elif datatype is str:
+        data = dbus.String(data)
+    elif datatype is dict:
+        new_data = dbus.Dictionary()
+        for key in data.keys():
+            new_key = python_to_dbus(key)
+            new_data[new_key] = python_to_dbus(data[key])
+        data = new_data
 
     return data
 
@@ -65,7 +73,7 @@ def dbus_to_python_ex(data, datatype = None):
         new_data = dict()
         for key in data.keys():
             new_key = dbus_to_python_ex(key)
-            new_data[str(new_key)] = dbus_to_python_ex(data[key])
+            new_data[new_key] = dbus_to_python_ex(data[key])
         data = new_data
     return data
 
@@ -74,6 +82,13 @@ def controller_pretty_name(name: str):
 
 def controller_bus_name(pretty_name: str):
     return pretty_name.replace("controller", "hci")
+
+def uri_to_uuid(uri_uuid: str) -> str:
+    """
+    Standardize a device UUID (MAC address) from URI format (xx_xx_xx_xx_xx_xx) to conventional
+    format (XX:XX:XX:XX:XX:XX)
+    """
+    return uri_uuid.upper().replace('_', ':')
 
 def find_controllers(bus):
     """
@@ -142,7 +157,6 @@ def find_device(bus, uuid):
     return None, None
 
 
-
 def set_trusted(path):
     bus = dbus.SystemBus()
     props = dbus.Interface(
@@ -150,6 +164,12 @@ def set_trusted(path):
     )
     props.Set("org.bluez.Device1", "Trusted", True)
 
+
+def device_is_connected(bus, device):
+    device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
+    device_properties = dbus.Interface(device_obj, "org.freedesktop.DBus.Properties")
+    connected_state = device_properties.Get(DEVICE_IFACE, "Connected")
+    return connected_state
 
 def dev_connect(path):
     bus = dbus.SystemBus()

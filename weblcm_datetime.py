@@ -4,6 +4,7 @@ from datetime import datetime
 import weblcm_def
 from subprocess import Popen, PIPE
 from weblcm_settings import SystemSettingsManage
+from weblcm_def import WEBLCM_ERRORS, USER_PERMISSION_TYPES
 
 @cherrypy.expose
 class DateTimeSetting(object):
@@ -57,7 +58,10 @@ class DateTimeSetting(object):
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
 
-		result = { }
+		result = {
+			'SDCERR': WEBLCM_ERRORS.get('SDCERR_SUCCESS'),
+			'InfoMsg': '',
+		}
 
 		result['zones'] = self.zones
 		result['zone'] = self.getLocalZone()
@@ -68,8 +72,6 @@ class DateTimeSetting(object):
 		else:
 			result['method'] = "auto"
 		result['time'] = outs.decode("utf-8")
-		result['SDCERR'] = 0
-		result['ErrorMsg'] = ''
 
 		return result
 
@@ -78,7 +80,10 @@ class DateTimeSetting(object):
 	@cherrypy.tools.json_out()
 	def PUT(self):
 
-		result = { }
+		result = {
+			'SDCERR': WEBLCM_ERRORS.get('SDCERR_SUCCESS'),
+			'InfoMsg': '',
+		}
 
 		zone = cherrypy.request.json.get('zone', "")
 		method = cherrypy.request.json.get('method', "")
@@ -87,7 +92,7 @@ class DateTimeSetting(object):
 		returncode, outs, errs = self.popenHelper(method, zone, dt)
 		if returncode:
 			result['message'] = errs.decode("utf-8")
-			result['ErrorMsg'] = errs.decode("utf-8")
+			result['InfoMsg'] = errs.decode("utf-8")
 			result['SDCERR'] = 1
 			return result
 
@@ -96,5 +101,5 @@ class DateTimeSetting(object):
 		returncode, outs, errs = self.popenHelper("check", "", "")
 		result['time'] = outs.decode("utf-8")
 		result['SDCERR'] = 0
-		result['ErrorMsg'] = ''
+		result['InfoMsg'] = ''
 		return result

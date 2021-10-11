@@ -1,4 +1,6 @@
 import os
+from typing import List
+
 import cherrypy
 import weblcm_def
 import logging
@@ -13,7 +15,16 @@ from weblcm_datetime import DateTimeSetting
 from weblcm_settings import SystemSettingsManage
 from weblcm_modem import PositioningSwitch, Positioning
 from weblcm_advanced import Fips
-from weblcm_bluetooth import Bluetooth
+
+weblcm_plugins: List[str] = []
+
+try:
+	from weblcm_bluetooth import Bluetooth
+	weblcm_plugins.append('bluetooth')
+	cherrypy.log("__main__: Bluetooth loaded")
+except ImportError:
+	Bluetooth = None
+	cherrypy.log("__main__: Bluetooth NOT loaded")
 
 class Root(object):
 
@@ -38,6 +49,7 @@ class Root(object):
 			'PERMISSIONS': weblcm_def.USER_PERMISSION_TYPES,
 			'PLUGINS': plugins,
 			'SETTINGS': settings,
+			'InfoMsg': ''
 		}
 
 
@@ -64,17 +76,18 @@ def force_session_checking():
 		HTMLs still can be loaded to keep consistency, i.e. loaded from local cache or remotely.
 	"""
 
-	paths = (
+	paths = [
 				"connections", "connection", "accesspoints", "networkInterfaces",
 				"file", "users", "firmware", "logData", "awm", "positioning", "positioningSwitch",
-				"logSetting", "factoryReset", "reboot", "files", "datetime", "fips", "bluetooth"
-			)
+				"logSetting", "factoryReset", "reboot", "files", "datetime", "fips"
+			] + weblcm_plugins
 
 	#With the `get` method the session id will be saved which could result in session fixation vulnerability.
 	#Session ids will be destroyed periodically so we have to check 'USERNAME' to make sure the session is not valid after logout.
 	if not cherrypy.session._exists() or not cherrypy.session.get('USERNAME', None):
 		url = cherrypy.url().split('/')[-1]
-		if url and ".html" not in url and ".js" not in url and any(path in url for path in paths):
+		path_root = cherrypy.request.path_info.split('/')[1]
+		if url and ".html" not in url and ".js" not in url and path_root in paths:
 			raise cherrypy.HTTPError(401)
 
 @cherrypy.tools.register('before_finalize', priority=60)
@@ -118,7 +131,8 @@ if __name__ == '__main__':
 	webapp.positioningSwitch = PositioningSwitch()
 	webapp.positioning = Positioning()
 
-	webapp.bluetooth = Bluetooth()
+	if Bluetooth is not None:
+		webapp.bluetooth = Bluetooth()
 
 	webapp.fips = Fips()
 
