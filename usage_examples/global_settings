@@ -1,0 +1,49 @@
+# global settings.  If these values are set prior to sourcing this file,
+#                   the earlier value will be retained.
+#                   Adjust these values for your system.
+
+# setup the Ip address of the DUT
+if [ -z "$IPADDR" ]
+then
+    IPADDR=
+else
+    sed -i 's/^    IPADDR=.*$/    IPADDR='"${IPADDR}"'/g' global_settings
+fi
+if [[ -z "$IPADDR" && -z "$URL" ]]
+then
+    echo "IPADDR variable needs to be set."
+    exit 1
+fi
+
+# Use jq if it is installed.
+
+if [ -z "${JQ_APP+x}" ]
+then
+    if ! command -v jq &> /dev/null
+    then
+        # recommend installing the jq application
+        JQ_APP=tee
+    else
+        JQ_APP=jq
+    fi
+fi
+
+URL="${URL:-"https://${IPADDR}"}"
+WEBLCM_USERNAME="${WEBLCM_USERNAME:-root}"
+WEBLCM_PASSWORD="${WEBLCM_PASSWORD:-Config123!}"
+ORIGINAL_WEBLCM_PASSWORD="${ORIGINAL_WEBLCM_PASSWORD:-summit}"
+
+WL_USERNAME="${WL_USERNAME:-user1}"
+WL_PASSWORD="${WL_PASSWORD:-user1}"
+CONNECTION_NAME="${CONNECTION_NAME:-"UNSET"}"
+SSID="${SSID:-${CONNECTION_NAME}}"
+PRIVATE_KEY="${PRIVATE_KEY:-user1.pfx}"
+PRIVATE_KEY_PASSWORD="${PRIVATE_KEY_PASSWORD:-user1}"
+ANONYMOUS_IDENTITY="${ANONYMOUS_IDENTITY:-anonNAME}"
+CA_CERT="${CA_CERT:-SystestCA.cer}"
+
+CURL_APP="${CURL_APP:-curl}"
+
+
+
+
