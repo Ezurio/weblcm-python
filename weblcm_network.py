@@ -154,14 +154,16 @@ class NetworkConnection(object):
 
 				connections = NetworkManager.Settings.ListConnections()
 				connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in connections])
+				name = new_settings['connection'].get('id', '')
 				if connections.get(new_settings['connection']['uuid']):
 					connections[new_settings['connection']['uuid']].Update(new_settings)
+					result['InfoMsg:'] = f'connection {name} updated'
 				else:
 					NetworkManager.Settings.AddConnection(new_settings)
-				result['SDCERR'] = 0
+					result['InfoMsg:'] = f'connection {name} created'
+					result['SDCERR'] = 0
 
 		except Exception as e:
-			print(e)
 			result['InfoMsg'] = f'Connection POST experienced an exception: {e}'
 
 		return result
@@ -178,7 +180,6 @@ class NetworkConnection(object):
 			connections[uuid].Delete();
 			result['SDCERR'] = 0
 		except Exception as e:
-			print(e)
 			result['InfoMsg'] = f'Unable to delete connection'
 
 		return result
@@ -243,7 +244,6 @@ class NetworkAccessPoints(object):
 			result['InfoMsg'] = 'Scan requested'
 
 		except Exception as e:
-			print(e)
 			result['InfoMsg'] = 'Unable to start scan request'
 
 		return result
@@ -300,7 +300,6 @@ class NetworkAccessPoints(object):
 				result['SDCERR'] = 0
 
 		except Exception as e:
-			print(e)
 			result['InfoMsg'] = 'Unable to get access point list'
 			syslog(f'NetworkAccessPoints GET exception: {e}')
 
@@ -358,7 +357,6 @@ class NetworkInterfaces(object):
 			result['SDCERR'] = 0
 			result['interfaces'] = interfaces
 		except Exception as e:
-			print(e)
 			result['InfoMsg'] = 'Exception getting list of interfaces'
 			syslog(f'NetworkInterfaces GET exception: {e}')
 

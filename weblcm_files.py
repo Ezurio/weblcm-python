@@ -130,27 +130,34 @@ class FileManage(object):
 			'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL'),
 			'InfoMsg': 'Unable to delete file'
 			}
-
 		typ = kwargs.get('type', None)
 		fil = kwargs.get('file', None)
 		if not typ or not fil:
 			if not typ:
 				syslog('FileManage DELETE - no type specified')
+				result['InfoMsg'] = 'no type specified'
 			if not fil:
 				syslog('FileManage DELETE - no filename provided')
-			raise cherrypy.HTTPError(400, 'missing type or filename') #bad request
-
+				result['InfoMsg'] = 'no file specified'
+#			raise cherrypy.HTTPError(400, 'missing type or file') #bad request
+			return result
+		valid = ['cert','pac']
+		if not typ in valid:
+#			raise cherrypy.HTTPError(400, f"type not one of {valid}")
+			result['InfoMsg'] = f'type not one of {valid}'
+			return result
 		path = os.path.normpath(os.path.join(weblcm_def.FILEDIR_DICT.get(typ), fil))
 		if os.path.isfile(path):
 			os.remove(path);
 			if not os.path.exists(path):
 				result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
-				result['InfoMsg'] = f'file {file} deleted'
-				syslog(f'file {file} deleted')
+				result['InfoMsg'] = f'file {fil} deleted'
+				syslog(f'file {fil} deleted')
 			else:
 				syslog(f'Attempt to remove file {path} did not succeed')
 		else:
 			syslog(f'Attempt to remove non-existant file {path}')
+			result['InfoMsg'] = f"File: {fil} not present"
 		return result
 
 @cherrypy.expose
@@ -229,7 +236,7 @@ class AWMCfgManage(object):
 					litemode = True
 					break
 		except Exception as e:
-			print(e)
+			pass
 
 		if not litemode:
 			return result

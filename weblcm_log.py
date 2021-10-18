@@ -22,7 +22,7 @@ class LogData(object):
 			priority = int(kwargs.get('priority', 7))
 		except Exception as e:
 			return '{"SDCERR":1, "InfoMsg": "Priority must be an int between 0-7"}'
-		if not priority in range(0, 7, 1):
+		if not priority in range(0, 8, 1):
 			return '{"SDCERR":1, "InfoMsg": "Priority must be an int between 0-7"}'
 		reader.log_level(priority)
 		# use .title() to ensure incoming type has proper case
@@ -141,11 +141,10 @@ class LogSetting(object):
 				contents = driver_debug_file.read(1)
 				result['driverDebugLevel'] = contents
 		except Exception as e:
-			print(e)
-			if result['SDCERR'] == 0:
+			if result.get('SDCERR') == 0:
 				result['Errormsg'] ='Unable to determine driver debug level'
 			else:
-				result['Errormsg'] ='Unable to determin supplicant nor driver debug level'
+				result['Errormsg'] ='Unable to determine supplicant nor driver debug level'
 			result['SDCERR'] = 1
 
 		return result
