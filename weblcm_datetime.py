@@ -31,6 +31,7 @@ class DateTimeSetting(object):
 				line = fp.readline()
 			fp.close()
 
+		zones.sort()
 		return zones
 
 	def __init__(self):
