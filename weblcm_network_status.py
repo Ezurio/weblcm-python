@@ -233,7 +233,7 @@ class NetworkStatusHelper(object):
 
 	@classmethod
 	def network_status_query(cls):
-
+		cls._network_status = {}
 		with cls._lock:
 			devices = NetworkManager.NetworkManager.GetDevices()
 			for dev in devices:
@@ -297,7 +297,7 @@ def dev_statechange(dev, interface, signal, new_state, old_state, reason):
 			if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
 				NetworkStatusHelper._network_status[dev.Interface]['wireless'] = NetworkStatusHelper.get_wifi_properties(dev)
 				NetworkStatusHelper._network_status[dev.Interface]['activeaccesspoint'] = NetworkStatusHelper.get_ap_properties(dev.ActiveAccessPoint, dev)
-				dev.ActiveAccessPoint.OnPropertiesChanged(ap_propchange)
+#				dev.ActiveAccessPoint.OnPropertiesChanged(ap_propchange)
 		elif new_state == NetworkManager.NM_DEVICE_STATE_DISCONNECTED:
 			if 'ip4config' in NetworkStatusHelper._network_status[dev.Interface]:
 				NetworkStatusHelper._network_status[dev.Interface].pop('ip4config', None)
@@ -325,8 +325,8 @@ def run_event_listener():
 		if dev.DeviceType in (NetworkManager.NM_DEVICE_TYPE_ETHERNET, NetworkManager.NM_DEVICE_TYPE_WIFI, NetworkManager.NM_DEVICE_TYPE_MODEM):
 			dev.OnStateChanged(dev_statechange)
 		#In case wifi connection is already activated
-		if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI and dev.ActiveAccessPoint:
-			dev.ActiveAccessPoint.OnPropertiesChanged(ap_propchange)
+#		if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI and dev.ActiveAccessPoint:
+#			dev.ActiveAccessPoint.OnPropertiesChanged(ap_propchange)
 
 	GLib.MainLoop().run()
 
@@ -345,6 +345,7 @@ class NetworkStatus(object):
 		result = { 'SDCERR': 0,
 		           'InfoMsg': ''}
 
+		NetworkStatusHelper.network_status_query()
 		with NetworkStatusHelper._lock:
 			result['status'] = NetworkStatusHelper._network_status
 
