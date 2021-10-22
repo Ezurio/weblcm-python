@@ -288,6 +288,8 @@ class Bluetooth(object):
         if connected_state != connected:
             if connected == 1:
                 # Note - device may need to be paired prior to connecting
+                # AgentSingleton can be registered to allow BlueZ to auto-pair (without bonding)
+                agent = AgentSingleton()
                 device_methods.get_dbus_method("Connect", DEVICE_IFACE)()
             elif connected == 0:
                 device_methods.get_dbus_method("Disconnect", DEVICE_IFACE)()
