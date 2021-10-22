@@ -217,6 +217,11 @@ class Bluetooth(object):
         transport_filter = post_data.get('transportFilter', None)
         if powered is not None:
             adapter_props.Set(ADAPTER_IFACE, "Powered", dbus.Boolean(powered))
+            if not powered:
+                # Do not attempt to set discoverable or discovering state if powering off
+                discoverable = discoverable if discoverable else None
+                discovering = discovering if discovering else None
+
         if discoverable is not None:
             adapter_props.Set(ADAPTER_IFACE, "Discoverable", dbus.Boolean(discoverable))
         if transport_filter is not None:
