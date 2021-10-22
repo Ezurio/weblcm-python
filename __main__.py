@@ -47,6 +47,8 @@ class Root(object):
 		return {
 			'SDCERR': weblcm_def.WEBLCM_ERRORS,
 			'PERMISSIONS': weblcm_def.USER_PERMISSION_TYPES,
+			'DEVICE_TYPES': weblcm_def.WEBLCM_DEVTYPE_TEXT,
+			'DEVICE_STATES': weblcm_def.WEBLCM_STATE_TEXT,
 			'PLUGINS': plugins,
 			'SETTINGS': settings,
 			'InfoMsg': ''
