@@ -1,6 +1,7 @@
 import threading
 import time
-from typing import Optional, Tuple, Any, Dict
+import socket
+from typing import Optional, Tuple, Any, Dict, List
 
 import cherrypy
 import dbus
@@ -9,7 +10,7 @@ from weblcm_ble import BLUEZ_SERVICE_NAME, GATT_CHRC_IFACE, DBUS_PROP_IFACE, dbu
     GATT_SERVICE_IFACE, DBUS_OM_IFACE
 from weblcm_bluetooth_plugin import BluetoothPlugin
 from weblcm_tcp_connection import TcpConnection, TCP_SOCKET_HOST, firewalld_open_port, \
-    firewalld_close_port
+    firewalld_close_port, SOCK_TIMEOUT
 
 MAX_TX_LEN = 16
 """ Maximum bytes to transfer wrapped in one JSON packet over TCP. """
@@ -18,22 +19,49 @@ MAX_TX_LEN = 16
 class VspConnectionPlugin(BluetoothPlugin):
     def __init__(self):
         self.vsp_connections: Dict[str, VspConnection] = {}
-        """Dictionary of devices and their associated VspConnection, if any"""
+        """Dictionary of devices by UUID and their associated VspConnection, if any"""
 
-    def ProcessDeviceCommand(self, bus, command, device_uuid, device, post_data):
+    @property
+    def device_commands(self) -> List[str]:
+        return ['gattConnect', 'gattDisconnect']
+
+    @property
+    def adapter_commands(self) -> List[str]:
+        return ['gattList']
+
+    def ProcessDeviceCommand(self, bus, command, device_uuid: str, device: dbus.ObjectPath,
+                             post_data):
         processed = False
         error_message = None
         if command == 'gattConnect':
             processed = True
-            if str(device) in self.vsp_connections:
-                error_message = f'device {str(device)} already has vsp connection on port ' \
-                                f'{self.vsp_connections[device].port}'
+            if device_uuid in self.vsp_connections:
+                error_message = f'device {device_uuid} already has vsp connection on port ' \
+                                f'{self.vsp_connections[device_uuid].port}'
             else:
                 vsp_connection = VspConnection()
-                error_message = vsp_connection.gatt_connect(bus, device, post_data)
+                error_message = vsp_connection.gatt_connect(bus, device_uuid, device, post_data)
                 if not error_message:
-                    self.vsp_connections[str(device)] = vsp_connection
+                    self.vsp_connections[device_uuid] = vsp_connection
+        elif command == 'gattDisconnect':
+            processed = True
+            if not device_uuid in self.vsp_connections:
+                error_message = f'device {device_uuid} has no vsp connection'
+            else:
+                vsp_connection = self.vsp_connections.pop(device_uuid)
+                vsp_connection.gatt_disconnect(bus, device_uuid, post_data)
         return processed, error_message
+
+    def ProcessAdapterCommand(self, bus, command, controller_name: str, adapter_obj:
+                              dbus.ObjectPath, post_data) -> (bool, str, dict):
+        processed = False
+        error_message = None
+        result = {}
+        if command == 'gattList':
+            processed = True
+            result['GattConnections'] = [{'device': k, 'port': self.vsp_connections[k].port} for
+                                         k in self.vsp_connections.keys()]
+        return processed, error_message, result
 
 
 class VspConnection(TcpConnection):
@@ -44,8 +72,11 @@ class VspConnection(TcpConnection):
     def __init__(self):
         self.recent_error: Optional[str] = None
         self.vsp_read_chrc: Optional[Tuple[dbus.proxies.ProxyObject, Any]] = None
+        self.signal_vsp_read_prop_changed = None
         self.vsp_write_chrc: Optional[Tuple[dbus.proxies.ProxyObject, Any]] = None
-
+        self.signal_device_prop_changed = None
+        self.sock: Optional[socket.socket] = None
+        self.thread: Optional[threading.Thread] = None
         self.tx_wait_event = threading.Event()
         self.tx_complete = False
         self.tx_error = False
@@ -129,7 +160,23 @@ class VspConnection(TcpConnection):
         # Listen to PropertiesChanged signals from the Read Value
         # Characteristic.
         vsp_read_prop_iface = dbus.Interface(self.vsp_read_chrc[0], DBUS_PROP_IFACE)
-        vsp_read_prop_iface.connect_to_signal("PropertiesChanged", self.vsp_read_prop_changed_cb)
+        self.signal_vsp_read_prop_changed = vsp_read_prop_iface.connect_to_signal(
+            "PropertiesChanged", self.vsp_read_prop_changed_cb)
+
+    def stop_client(self):
+        # Stop client suppresses all errors, because it can be invoked during a failed startup,
+        # in which case we want to focus attention on the startup error, not errors in
+        # subsequently attempting to tear down.
+        if self.vsp_read_chrc and len(self.vsp_read_chrc):
+            try:
+                self.vsp_read_chrc[0].StopNotify(dbus_interface=GATT_CHRC_IFACE)
+            except Exception as e:
+                cherrypy.log("stop_client: " + str(e))
+        if self.signal_vsp_read_prop_changed:
+            try:
+                self.signal_vsp_read_prop_changed.remove()
+            except Exception as e:
+                cherrypy.log("stop_client: " + str(e))
 
     def bt_disconnected(self):
         self._tcp_connection.sendall("{\"Connected\": 0}\n".encode())
@@ -160,7 +207,7 @@ class VspConnection(TcpConnection):
         else:
             return None
 
-    def gatt_connect(self, bus, device: str = None, params=None):
+    def gatt_connect(self, bus, device_uuid: str, device: dbus.ObjectPath = None, params=None):
         if 'vspSvcUuid' not in params:
             return 'vspSvcUuid param not specified'
         if 'vspReadChrUuid' not in params:
@@ -195,66 +242,99 @@ class VspConnection(TcpConnection):
                     break
 
         if not vsp_service:
-            return f"No VSP Service found for device {device}"
+            return f"No VSP Service found for device {device_uuid}"
 
-        # TODO: Fix for multithreaded use
+        # TODO: Enhance for simultaneous clients
         self.recent_error = None
-        self.start_client()
-        time.sleep(0.5)
-        # For RESTful API, return BT connection errors if they occur within 0.5 seconds.
-        if self.recent_error:
-            return self.recent_error
+        try:
+            self.start_client()
+            time.sleep(0.5)
+            # For RESTful API, return BT connection errors if they occur within 0.5 seconds.
+            if self.recent_error:
+                self.stop_client()
+                return self.recent_error
 
-        if 'tcpPort' in params:
-            port = params['tcpPort']
-            if not self.validate_port(int(port)):
-                return f"port {port} not valid"
-            host = TCP_SOCKET_HOST  # cherrypy.server.socket_host
-            sock = self.tcp_server(host, params)
-            if sock:
-                threading.Thread(target=self.vsp_tcp_server_thread,
-                                 name="vsp_tcp_server_thread", daemon=True,
-                                 args=(sock, port)).start()
-            device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
-            device_iface = dbus.Interface(device_obj, DBUS_PROP_IFACE)
-            device_iface.connect_to_signal("PropertiesChanged", self.device_prop_changed_cb)
+            if 'tcpPort' in params:
+                port = params['tcpPort']
+                if not self.validate_port(int(port)):
+                    return f"port {port} not valid"
+                host = TCP_SOCKET_HOST  # cherrypy.server.socket_host
+                self.sock = self.tcp_server(host, params)
+                if self.sock:
+                    self.thread = threading.Thread(target=self.vsp_tcp_server_thread,
+                                                   name="vsp_tcp_server_thread", daemon=True,
+                                                   args=(self.sock, port))
+                    self.thread.start()
+                device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
+                device_iface = dbus.Interface(device_obj, DBUS_PROP_IFACE)
+                self.signal_device_prop_changed = device_iface.connect_to_signal("PropertiesChanged",
+                                                                                 self.device_prop_changed_cb)
+        except Exception:
+            self.stop_client()
+            raise
+
+
+    def gatt_disconnect(self, bus, device_uuid: str = None, params=None):
+        if self.signal_device_prop_changed:
+            self.signal_device_prop_changed.remove()
+        self.stop_tcp_server(self.sock)
+        self.stop_client()
+        if self.thread:
+            self.thread.join()
 
     def vsp_tcp_server_thread(self, sock, port=None):
         if port:
             firewalld_open_port(port)
         try:
+            sock.settimeout(SOCK_TIMEOUT)
             while True:
-                self._tcp_connection, client_address = sock.accept()
-                cherrypy.log("vsp_tcp_server_thread: tcp client connected:" + str(client_address))
                 try:
-                    while True:
-                        data = self._tcp_connection.recv(MAX_TX_LEN)
-                        if data:
-                            # Convert string to array of DBus Bytes & send
-                            val = [dbus.Byte(b) for b in bytearray(data)]
-                            self.tx_complete = False
-                            self.tx_error = False
-                            self.tx_wait_event.clear()
-                            # Use simple wait event rather than private queue, to inform network
-                            # to wait for Bluetooth to consume stream and simplify buffer management.
-                            self.gatt_send_data(val)
-                            if not self.tx_wait_event.wait():
-                                cherrypy.log("vsp_tcp_server_thread: ERROR: gatt tx no completion")
-                            if self.tx_error:
-                                self._tcp_connection.sendall("{\"Error\": \"Transmit failed\""
-                                                             f", \"Data\": \"0x{data.hex()}"
-                                                             "\"}\n".encode())
-                        else:
+                    tcp_connection, client_address = sock.accept()
+                    with self._tcp_lock:
+                        self._tcp_connection = tcp_connection
+                    cherrypy.log("vsp_tcp_server_thread: tcp client connected:" + str(client_address))
+                    try:
+                        while True:
+                            data = self._tcp_connection.recv(MAX_TX_LEN)
+                            if data:
+                                # Convert string to array of DBus Bytes & send
+                                val = [dbus.Byte(b) for b in bytearray(data)]
+                                self.tx_complete = False
+                                self.tx_error = False
+                                self.tx_wait_event.clear()
+                                # Use simple wait event rather than private queue, to inform network
+                                # to wait for Bluetooth to consume stream and simplify buffer management.
+                                self.gatt_send_data(val)
+                                if not self.tx_wait_event.wait():
+                                    cherrypy.log("vsp_tcp_server_thread: ERROR: gatt tx no completion")
+                                if self.tx_error:
+                                    self._tcp_connection.sendall("{\"Error\": \"Transmit failed\""
+                                                                 f", \"Data\": \"0x{data.hex()}"
+                                                                 "\"}\n".encode())
+                            else:
+                                break
+                    except OSError as e:
+                        # If sock is closed, exit.
+                        if e.errno == socket.EBADF:
                             break
+                        cherrypy.log("vsp_tcp_server_thread:" + str(e))
+                    except Exception as e:
+                        cherrypy.log("vsp_tcp_server_thread: non-OSError Exception: " + str(e))
+                    finally:
+                        with self._tcp_lock:
+                            self.close_tcp_connection()
+                            self._tcp_connection, client_address = None, None
+                except socket.timeout:
+                    continue
                 except OSError as e:
-                    cherrypy.log("vsp_tcp_server_thread:" + str(e))
-                except Exception as e:
-                    cherrypy.log("vsp_tcp_server_thread: non-OSError Exception: " + str(e))
-                finally:
-                    self._tcp_connection.close()
-                    self._tcp_connection, client_address = None, None
+                    # If the socket was closed by another thread, exit
+                    if e.errno == socket.EBADF:
+                        break
+                    else:
+                        raise
         finally:
-            # TODO: Consider flagging to manager thread for vsp_connections.pop(str(device))
+            # TODO: Consider flagging to manager thread for vsp_connections.pop(device_uuid)
             sock.close()
+            self._tcp_connection, client_address = None, None
             if port:
                 firewalld_close_port(port)
