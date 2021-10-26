@@ -10,6 +10,8 @@ TCP_PORT_MIN: int = 1000
 TCP_PORT_MAX: int = 49152 - 1
 
 TCP_SOCKET_HOST = "0.0.0.0"
+SOCK_TIMEOUT = 5
+""" Interval to monitor socket for errors or closure in seconds """
 
 FIREWALLD_TIMEOUT_SECONDS = 20
 FIREWALLD_SERVICE_NAME = 'org.fedoraproject.FirewallD1'
@@ -45,6 +47,31 @@ class TcpConnection(object):
         sock.bind(server_address)
         sock.listen()
         return sock
+
+    def stop_tcp_server(self, sock: socket.SOCK_STREAM):
+        """ Stop the specified TCP server.  Note that if accept() is used, it will block
+        indefinitely if the socket is closed, unless a timeout is applied to the socket,
+        and OSError with socket.EBADF handled in case of closure.
+        """
+        self.close_tcp_connection()
+        if sock:
+            sock.close()
+
+    def close_tcp_connection(self):
+        # Create local reference for thread-safety
+        tcp_connection = self._tcp_connection
+        if tcp_connection:
+            try:
+                tcp_connection.shutdown(socket.SHUT_RDWR)
+            except OSError as e:
+                # If the connection is not open, ignore.
+                if e.errno != socket.EBADF and e.strerror != 'Transport endpoint is not connected':
+                    cherrypy.log("TcpConnection.close_tcp_connection:" + str(e))
+            try:
+                tcp_connection.close()
+            except OSError as e:
+                if e.errno != socket.EBADF:
+                    cherrypy.log("TcpConnection.close_tcp_connection:" + str(e))
 
     def tcp_connection_try_send(self, data_encoded):
         """

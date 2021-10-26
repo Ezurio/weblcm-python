@@ -1,8 +1,10 @@
 import configparser
 import json
 import os
+import select
+import socket
 import threading
-from typing import Optional, Dict
+from typing import Optional, Dict, io, List
 
 import cherrypy
 import dbus
@@ -10,7 +12,7 @@ import pyudev
 
 from weblcm_bluetooth_plugin import BluetoothPlugin
 from weblcm_tcp_connection import TcpConnection, firewalld_open_port, \
-    firewalld_close_port, TCP_SOCKET_HOST
+    firewalld_close_port, TCP_SOCKET_HOST, SOCK_TIMEOUT
 from weblcm_ble import device_is_connected
 
 """ AUTO_CONNECT allows clients to open a server port for a specific device, before that device
@@ -36,25 +38,51 @@ ERROR_CHARACTER = ''
 
 class HidBarcodeScannerPlugin(BluetoothPlugin):
     def __init__(self):
-        # self.vsp_connections: Dict[str, VspConnection] = {}
-        # """Dictionary of devices and their associated VspConnection, if any"""
         self.hid_connections: Dict[str, HidBarcodeScanner] = {}
-        """Dictionary of devices and their associated HidBarcodeScanner connection, if any"""
+        """Dictionary of devices by UUID and their associated HidBarcodeScanner connection,
+        if any"""
 
-    def ProcessDeviceCommand(self, bus, command, device_uuid, device, post_data):
+    @property
+    def device_commands(self) -> List[str]:
+        return ['hidConnect', 'hidDisconnect']
+
+    @property
+    def adapter_commands(self) -> List[str]:
+        return ['hidList']
+
+    def ProcessDeviceCommand(self, bus, command, device_uuid: str, device: dbus.ObjectPath,
+                             post_data):
         processed = False
         error_message = None
         if command == 'hidConnect':
             processed = True
-            if str(device) in self.hid_connections:
-                error_message = f'device {str(device)} already has hid connection on port ' \
-                                f'{self.hid_connections[device].port}'
+            if device_uuid in self.hid_connections:
+                error_message = f'device {device_uuid} already has hid connection on port ' \
+                                f'{self.hid_connections[device_uuid].port}'
             else:
                 hid_connection = HidBarcodeScanner()
                 error_message = hid_connection.connect(bus, device_uuid, device, post_data)
                 if not error_message:
-                    self.hid_connections[str(device)] = hid_connection
+                    self.hid_connections[device_uuid] = hid_connection
+        elif command == 'hidDisconnect':
+            processed = True
+            if not device_uuid in self.hid_connections:
+                error_message = f'device {device_uuid} has no hid connection'
+            else:
+                hid_connection = self.hid_connections.pop(device_uuid)
+                hid_connection.disconnect(bus, device_uuid, post_data)
         return processed, error_message
+
+    def ProcessAdapterCommand(self, bus, command, controller_name: str, adapter_obj:
+                              dbus.ObjectPath, post_data) -> (bool, str, dict):
+        processed = False
+        error_message = None
+        result = {}
+        if command == 'hidList':
+            processed = True
+            result['HidConnections'] = [{'device': k, 'port': self.hid_connections[k].port} for
+                                        k in self.hid_connections.keys()]
+        return processed, error_message, result
 
 
 class HidBarcodeScanner(TcpConnection):
@@ -66,7 +94,11 @@ class HidBarcodeScanner(TcpConnection):
         self.recent_error: Optional[str] = None
         self.device_uuid: str = ''
         self.active_device_node: str = ''
+        self.thread: Optional[threading.Thread] = None
+        self.read_thread: Optional[threading.Thread] = None
         self._barcode_read_thread_count = 0
+        self._terminate_read_thread = False
+        self._stop_pipe_r, self._stop_pipe_w = os.pipe()
         context = pyudev.Context()
         self.monitor = pyudev.Monitor.from_netlink(context)
         self.monitor.filter_by(subsystem='hidraw')
@@ -78,9 +110,10 @@ class HidBarcodeScanner(TcpConnection):
         try:
             if action == 'add':
                 if self.hid_device_get_bt_address(device.sys_path) == self.device_uuid:
-                    threading.Thread(target=self.barcode_scanner_read_thread,
-                                     name="barcode_scanner_read_thread", daemon=True,
-                                     args=(device.device_node,)).start()
+                    self.thread = threading.Thread(target=self.barcode_scanner_read_thread,
+                                                   name="barcode_scanner_read_thread", daemon=True,
+                                                   args=(device.device_node,))
+                    self.thread.start()
                     self.send_connected_state(True)
             elif action == 'remove':
                 if self.active_device_node == device.device_node:
@@ -89,27 +122,43 @@ class HidBarcodeScanner(TcpConnection):
             cherrypy.log("udev_event:" + str(e))
             self.tcp_connection_try_send(f'{{"Error": "{str(e)}"}}\n'.encode())
 
-    @staticmethod
-    def barcode_reader(dev_node: str):
+    def barcode_reader(self, dev_node: str):
         barcode_string_output = ''
         # barcode can have a 'shift' character; this switches the character set
         # from the lower to upper case variant for the next character only.
         CHARMAP = CHARMAP_LOWERCASE
-        with open(dev_node, 'rb') as fp:
+        fd = os.open(dev_node, os.O_RDONLY)
+        try:
             while True:
-                # step through returned character codes, ignore zeroes
-                for char_code in [element for element in fp.read(8) if element > 0]:
-                    if char_code == CR_CHAR:
-                        # all barcodes end with a carriage return
-                        return barcode_string_output
-                    if char_code == SHIFT_CHAR:
-                        # use uppercase character set next time
-                        CHARMAP = CHARMAP_UPPERCASE
-                    else:
-                        # if the charcode isn't recognized, use ?
-                        barcode_string_output += CHARMAP.get(char_code, ERROR_CHARACTER)
-                        # reset to lowercase character map
-                        CHARMAP = CHARMAP_LOWERCASE
+                stopping = self.check_reader_stopping(fd)
+                if stopping:
+                    return
+                else:
+                    read_bytes = os.read(fd, 8)
+                    # step through returned character codes, ignore zeroes
+                    for char_code in [element for element in read_bytes if element > 0]:
+                        if char_code == CR_CHAR:
+                            # all barcodes end with a carriage return
+                            return barcode_string_output
+                        if char_code == SHIFT_CHAR:
+                            # use uppercase character set next time
+                            CHARMAP = CHARMAP_UPPERCASE
+                        else:
+                            # if the charcode isn't recognized, use ?
+                            barcode_string_output += CHARMAP.get(char_code, ERROR_CHARACTER)
+                            # reset to lowercase character map
+                            CHARMAP = CHARMAP_LOWERCASE
+        finally:
+            os.close(fd)
+
+    def check_reader_stopping(self, fd):
+        stopping = False
+        result = select.select([self._stop_pipe_r, fd], [], [])
+        if self._stop_pipe_r in result[0]:
+            os.close(self._stop_pipe_r)
+            os.close(self._stop_pipe_w)
+            stopping = True
+        return stopping
 
     @staticmethod
     def hid_device_get_bt_address(device_path: str):
@@ -169,27 +218,43 @@ class HidBarcodeScanner(TcpConnection):
             if not self.validate_port(int(port)):
                 return f"port {port} not valid"
             host = TCP_SOCKET_HOST  # cherrypy.server.socket_host
-            sock = self.tcp_server(host, params)
-            if sock:
-                threading.Thread(target=self.hid_tcp_server_thread,
-                                 name="hid_tcp_server_thread", daemon=True,
-                                 args=(sock, port)).start()
+            self.sock = self.tcp_server(host, params)
+            if self.sock:
+                self.thread = threading.Thread(target=self.hid_tcp_server_thread,
+                                               name="hid_tcp_server_thread", daemon=True,
+                                               args=(self.sock, port))
+                self.thread.start()
                 if hid_input_devname and not self._barcode_read_thread_count:
-                    threading.Thread(target=self.barcode_scanner_read_thread,
-                                     name="barcode_scanner_read_thread", daemon=True,
-                                     args=(hid_input_devname,)).start()
+                    self.read_thread = threading.Thread(target=self.barcode_scanner_read_thread,
+                                                        name="barcode_scanner_read_thread",
+                                                        daemon=True,
+                                                        args=(hid_input_devname,))
+                    self.read_thread.start()
         else:
             return 'tcpPort param not specified'
+
+    def disconnect(self, bus, device_uuid: str = None, params=None):
+        if self.read_thread:
+            self._terminate_read_thread = True
+            self.stop_read_thread()
+            self.read_thread.join()
+        self.stop_tcp_server(self.sock)
+        if self.thread:
+            self.thread.join()
+
+    def stop_read_thread(self):
+        os.write(self._stop_pipe_w, b'c')
 
     def barcode_scanner_read_thread(self, infile_path: str):
         self._barcode_read_thread_count += 1
         self.active_device_node = infile_path
         try:
-            while True:
+            while not self._terminate_read_thread:
                 barcode = self.barcode_reader(infile_path)
-                barcode_packet = {'Received': {'Barcode': barcode}}
-                packet_encode = (json.dumps(barcode_packet) + '\n').encode()
-                self.tcp_connection_try_send(packet_encode)
+                if not self._terminate_read_thread:
+                    barcode_packet = {'Received': {'Barcode': barcode}}
+                    packet_encode = (json.dumps(barcode_packet) + '\n').encode()
+                    self.tcp_connection_try_send(packet_encode)
 
         except Exception as e:
             if type(e) is OSError and not os.path.exists(infile_path):
@@ -204,28 +269,44 @@ class HidBarcodeScanner(TcpConnection):
         if port:
             firewalld_open_port(port)
         try:
+            sock.settimeout(SOCK_TIMEOUT)
             while True:
-                tcp_connection, client_address = sock.accept()
-                with self._tcp_lock:
-                    self._tcp_connection = tcp_connection
-                cherrypy.log(
-                    "hid_tcp_server_thread: tcp client connected:" + str(client_address))
                 try:
-                    # Wait on socket, such that closure will force exception and
-                    # take us back to accept.
-                    while self._tcp_connection.recv(16):
-                        pass
-
-                except Exception as e:
-                    cherrypy.log("hid_tcp_server_thread:" + str(e))
-                    self.tcp_connection_try_send(f'{{"Error": "{str(e)}"}}\n'.encode())
-                finally:
-                    cherrypy.log(
-                        "hid_tcp_server_thread: tcp client disconnected:" + str(client_address))
+                    tcp_connection, client_address = sock.accept()
                     with self._tcp_lock:
-                        self._tcp_connection.close()
-                        self._tcp_connection, client_address = None, None
+                        self._tcp_connection = tcp_connection
+                    cherrypy.log(
+                        "hid_tcp_server_thread: tcp client connected:" + str(client_address))
+                    try:
+                        # Wait on socket, such that closure will force exception and
+                        # take us back to accept.
+                        while self._tcp_connection.recv(16):
+                            pass
+
+                    except OSError as e:
+                        # If sock is closed, exit.
+                        if e.errno == socket.EBADF:
+                            break
+                        cherrypy.log("hid_tcp_server_thread:" + str(e))
+                    except Exception as e:
+                        cherrypy.log("hid_tcp_server_thread: non-OSError Exception: " + str(e))
+                        self.tcp_connection_try_send(f'{{"Error": "{str(e)}"}}\n'.encode())
+                    finally:
+                        cherrypy.log(
+                            "hid_tcp_server_thread: tcp client disconnected:" + str(client_address))
+                        with self._tcp_lock:
+                            self.close_tcp_connection()
+                            self._tcp_connection, client_address = None, None
+                except socket.timeout:
+                    continue
+                except OSError as e:
+                    # If the socket was closed by another thread, exit
+                    if e.errno == socket.EBADF:
+                        break
+                    else:
+                        raise
         finally:
             sock.close()
+            self._tcp_connection, client_address = None, None
             if port:
                 firewalld_close_port(port)

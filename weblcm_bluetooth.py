@@ -1,3 +1,4 @@
+import itertools
 from typing import List, Optional
 
 import cherrypy
@@ -61,6 +62,16 @@ def GetControllerObj(name: str = None):
 class Bluetooth(object):
     def __init__(self):
         self.controller_state = {}
+
+    @property
+    def device_commands(self) -> List[str]:
+        return list(itertools.chain.from_iterable(plugin.device_commands for plugin in
+                                                  bluetooth_plugins))
+
+    @property
+    def adapter_commands(self) -> List[str]:
+        return list(itertools.chain.from_iterable(plugin.adapter_commands for plugin in
+                                                  bluetooth_plugins))
 
     @cherrypy.tools.json_out()
     def GET(self, *args, **kwargs):
@@ -178,14 +189,32 @@ class Bluetooth(object):
             adapter_props = dbus.Interface(adapter_obj, "org.freedesktop.DBus.Properties")
             adapter_methods = dbus.Interface(adapter_obj, "org.freedesktop.DBus.Methods")
 
+            command = post_data['command'] if 'command' in post_data else None
             if not device_uuid:
-                result.update(self.set_adapter_properties(adapter_methods, adapter_props,
-                                                          controller_name, post_data))
+                # adapter-specific operation
+                if command:
+                    if not command in self.adapter_commands:
+                        return '{"SDCERR":1, "InfoMsg": "supplied command parameter must be one ' \
+                               'of %s"}' % self.adapter_commands
+                    result.update(self.execute_adapter_command(bus, command, controller_name,
+                                                               adapter_obj))
+                    return result
+                else:
+                    result.update(self.set_adapter_properties(adapter_methods, adapter_props,
+                                                              controller_name, post_data))
             else:
-                # device_uuid specified
+                # device-specific operation
+                if command and command not in self.device_commands:
+                    return '{"SDCERR":1, "InfoMsg": "supplied command parameter must be one ' \
+                           'of %s"}' % self.device_commands
                 device, device_props = find_device(bus, device_uuid)
                 if device is None:
                     result['InfoMsg'] = 'Device not found'
+                    if command:
+                        # Forward device-specific commands on to plugins even if device
+                        # is not found:
+                        result.update(
+                            self.execute_device_command(bus, command, device_uuid, None))
                     return result
 
                 device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
@@ -193,8 +222,7 @@ class Bluetooth(object):
                 device_methods = dbus.Interface(device_obj, "org.freedesktop.DBus.Methods")
                 device_properties = dbus.Interface(device_obj, "org.freedesktop.DBus.Properties")
 
-                if 'command' in post_data:
-                    command = post_data['command']
+                if command:
                     result.update(self.execute_device_command(bus, command, device_uuid, device))
                     return result
                 else:
@@ -316,7 +344,7 @@ class Bluetooth(object):
         for plugin in bluetooth_plugins:
             try:
                 processed, error_message = plugin.ProcessDeviceCommand(bus, command, device_uuid,
-                                                                      device, post_data)
+                                                                       device, post_data)
             except Exception as e:
                 processed = True
                 error_message = f"Command {command} failed with {str(e)}"
@@ -332,6 +360,37 @@ class Bluetooth(object):
             result['InfoMsg'] = error_message
         else:
             result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+            result['InfoMsg'] = ''
 
         return result
 
+    def execute_adapter_command(self, bus, command, controller_name: str, adapter_obj: dbus.ObjectPath):
+        result = {}
+        error_message = None
+        processed = False
+        post_data = cherrypy.request.json
+        for plugin in bluetooth_plugins:
+            try:
+                processed, error_message, process_result = plugin.ProcessAdapterCommand(bus, command,
+                                                                                        controller_name,
+                                                                                        adapter_obj, post_data)
+                if process_result:
+                    result.update(process_result)
+            except Exception as e:
+                processed = True
+                error_message = f"Command {command} failed with {str(e)}"
+                break
+            if processed:
+                break
+
+        if not processed:
+            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
+            result['InfoMsg'] = f"Unrecognized command {command}"
+        elif error_message:
+            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
+            result['InfoMsg'] = error_message
+        else:
+            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+            result['InfoMsg'] = ''
+
+        return result
