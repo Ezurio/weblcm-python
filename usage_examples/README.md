@@ -1,12 +1,12 @@
 This is a set up scripts which can be used for testing/verification and examples of usage for the various restful APIs.
 
-These scripts and testing are verified on Ubuntu 20.04 but the curl commands should work on other platforms.  The global_settings will likely only work on linux varients without modifications.
+These scripts and testing are verified on Ubuntu 20.04 but the curl commands should work on other platforms.  The global_settings will likely only work on Linux variants without modifications.
 
 The intent is for settings that remain consistent amongst all the scripts can be stored in the global_settings file.  The ip address of the Device Under Test (DUT) can be supplied with the variable IPADDR and this will be stored automatically.  Any other changes to global_settings must be manually modified.
 
 The global_settings in my setup are set for after the initial password change.  Therefore, for the initial login, I will supply the original password as a parameter.
 
-Finally, a word about the cookie file.  The login script will save a cookie file over an existing cookie even if the login fails. This could cause you to loose the session id and get errors when trying other commands, including logging out.  To prevent this, you can make a copy of your cookie file with the appropriate command for your system. If the issue does occur, you can wait for your session to expire (about 10 minutes), restart the weblcm-python.service from the console login, or reboot the DUT. This condition presents itself with a message like:
+Finally, a word about the cookie file.  The login script will save a cookie file over an existing cookie even if the login fails. This could cause you to lose the session id and get errors when trying other commands, including logging out.  To prevent this, you can make a copy of your cookie file with the appropriate command for your system.  If the issue does occur, you can wait for your session to expire (about 10 minutes), restart the weblcm-python.service from the console login, or reboot the DUT. This condition presents itself with a message like:
 ```html
     <!DOCTYPE html PUBLIC
     "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -2099,7 +2099,493 @@ this will create all the example connections in this package:
     Change in FIPS state not active until system reboot
 
 
-# Bluetooth...
+# bluetooth
+
+    # ./bluetooth_scan.sh
+
+    =========================
+    Bluetooth scan
+    reset controller, clear cache and force fresh scan:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    79  100    28  100    51    965   1758 --:--:-- --:--:-- --:--:--  2724
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+
+
+    scan:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    79  100    28  100    51     39     72 --:--:-- --:--:-- --:--:--   111
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+
+
+    confirm:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    96  100    96    0     0   8000      0 --:--:-- --:--:-- --:--:--  8000
+    {
+      "SDCERR": 0,
+      "InfoMsg": "",
+      "controller0": {
+        "discovering": 1,
+        "powered": 1,
+        "discoverable": 1
+      }
+    }
+
+    results:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100  4449  100  4449    0     0   217k      0 --:--:-- --:--:-- --:--:--  217k
+    {
+      "SDCERR": 0,
+      "InfoMsg": "",
+      "controller0": {
+        "bluetoothDevices": [
+          {
+            "Address": "C0:EE:40:43:B1:A7",
+            "AddressType": "public",
+            "Name": "Laird DVK SOM60x2 (43:B1:A4)",
+            "Alias": "Laird DVK SOM60x2 (43:B1:A4)",
+            "Paired": 1,
+            "Trusted": 1,
+            "Blocked": 0,
+            "LegacyPairing": 0,
+            "Connected": 0,
+            "UUIDs": [
+              "00001800-0000-1000-8000-00805f9b34fb",
+              "00001801-0000-1000-8000-00805f9b34fb",
+              "0000180a-0000-1000-8000-00805f9b34fb",
+              "be98076e-8e8d-11e8-9eb6-529269fb1459"
+            ],
+            "Modalias": "usb:v1D6Bp0246d0537",
+            "Adapter": "/org/bluez/hci0",
+            "ServicesResolved": 0
+          },
+          {
+            "Address": "E0:13:7D:9D:2E:45",
+            "AddressType": "random",
+            "Name": "Nordic_UART_Service",
+            "Alias": "Nordic_UART_Service",
+            "Appearance": 833,
+            "Paired": 0,
+            "Trusted": 0,
+            "Blocked": 0,
+            "LegacyPairing": 0,
+            "RSSI": -58,
+            "Connected": 0,
+            "UUIDs": [
+              "00001800-0000-1000-8000-00805f9b34fb",
+              "00001801-0000-1000-8000-00805f9b34fb",
+              "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
+            ],
+            "Adapter": "/org/bluez/hci0",
+            "ServicesResolved": 0
+          }
+        ]
+      }
+    }
+
+    # BT_DEVICE=E0:13:7D:9D:2E:45 ./bluetooth_pair.sh
+
+    =========================
+    Bluetooth pair
+
+    enable discovery:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    47  100    28  100    19   2153   1461 --:--:-- --:--:-- --:--:--  3615
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+
+
+    pair:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   104  100    91    0    13      2      0  0:00:45  0:00:31  0:00:14    28
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+
+
+    read state:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   578  100   578    0     0  10703      0 --:--:-- --:--:-- --:--:-- 10703
+    {
+      "SDCERR": 0,
+      "InfoMsg": "",
+      "Address": "E0:13:7D:9D:2E:45",
+      "AddressType": "random",
+      "Name": "Nordic_UART_Service",
+      "Alias": "Nordic_UART_Service",
+      "Appearance": 833,
+      "Paired": 1,
+      "Trusted": 0,
+      "Blocked": 0,
+      "LegacyPairing": 0,
+      "RSSI": -58,
+      "Connected": 0,
+      "UUIDs": [
+        "00001800-0000-1000-8000-00805f9b34fb",
+        "00001801-0000-1000-8000-00805f9b34fb",
+        "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
+      ],
+      "Adapter": "/org/bluez/hci0",
+      "ServicesResolved": 0
+    }
+
+    # BT_DEVICE=E0:13:7D:9D:2E:45  ./bluetooth_vsp_connect.sh
+
+    =========================
+    Bluetooth virtual serial port (gatt characteristics) connect
+
+    Bluetooth connect:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    29  100    13  100    16     46     57 --:--:-- --:--:-- --:--:--   103
+    {
+      "SDCERR": 0
+    }
+
+
+    read Bluetooth state:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   428  100   428    0     0  30571      0 --:--:-- --:--:-- --:--:-- 30571
+    {
+      "SDCERR": 0,
+      "InfoMsg": "",
+      "Address": "E0:13:7D:9D:2E:45",
+      "AddressType": "random",
+      "Name": "Nordic_UART_Service",
+      "Alias": "Nordic_UART_Service",
+      "Appearance": 833,
+      "Paired": 0,
+      "Trusted": 0,
+      "Blocked": 0,
+      "LegacyPairing": 0,
+      "**Connected**": 1,
+      "UUIDs": [
+        "00001800-0000-1000-8000-00805f9b34fb",
+        "00001801-0000-1000-8000-00805f9b34fb",
+        "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
+      ],
+      "Adapter": "/org/bluez/hci0",
+      "ServicesResolved": 0
+    }
+
+
+    Short delay to allow VSP service to discover...
+
+    read Bluetooth state:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   428  100   428    0     0  30571      0 --:--:-- --:--:-- --:--:-- 30571
+    {
+      "SDCERR": 0,
+      "InfoMsg": "",
+      "Address": "E0:13:7D:9D:2E:45",
+      "AddressType": "random",
+      "Name": "Nordic_UART_Service",
+      "Alias": "Nordic_UART_Service",
+      "Appearance": 833,
+      "Paired": 0,
+      "Trusted": 0,
+      "Blocked": 0,
+      "LegacyPairing": 0,
+      "Connected": 1,
+      "UUIDs": [
+        "00001800-0000-1000-8000-00805f9b34fb",
+        "00001801-0000-1000-8000-00805f9b34fb",
+        "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
+      ],
+      "Adapter": "/org/bluez/hci0",
+      "**ServicesResolved**": 1
+    }
+
+
+    open vsp port 1001:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   294  100    28  100   266     53    507 --:--:-- --:--:-- --:--:--   561
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+
+    check VSP service ports:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   137  100    96  100    41   7384   3153 --:--:-- --:--:-- --:--:-- 10538
+    {
+      "SDCERR": 0,
+      "InfoMsg": "",
+      "GattConnections": [
+        {
+          "device": "E0:13:7D:9D:2E:45",
+          "port": 1001
+        }
+      ]
+    }
+
+
+    send data to port:
+
+    {"Received": "0x446174612066726f6d2072656d6f74652e0d"}
+    {"Connected": 0}
+    {"Error": "Transmit failed", "Data": "0x7465737420646174610a"}
+
+
+
+    # BT_DEVICE=E0:13:7D:9D:2E:45  ./bluetooth_vsp_disconnect.sh
+
+    =========================
+    Bluetooth virtual serial port (gatt characteristics) disconnect
+
+    close vsp service port:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    75  100    28  100    47      7     13  0:00:04  0:00:03  0:00:01    21
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+    check VSP service ports:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    92  100    51  100    41   3187   2562 --:--:-- --:--:-- --:--:--  5750
+    {
+      "SDCERR": 0,
+      "InfoMsg": "",
+      "GattConnections": []
+    }
+
+    Bluetooth disconnect:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    29  100    13  100    16    812   1000 --:--:-- --:--:-- --:--:--  1812
+    {
+      "SDCERR": 0
+    }
+
+
+    read Bluetooth state:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   428  100   428    0     0  28533      0 --:--:-- --:--:-- --:--:-- 28533
+    {
+      "SDCERR": 0,
+      "InfoMsg": "",
+      "Address": "E0:13:7D:9D:2E:45",
+      "AddressType": "random",
+      "Name": "Nordic_UART_Service",
+      "Alias": "Nordic_UART_Service",
+      "Appearance": 833,
+      "Paired": 0,
+      "Trusted": 0,
+      "Blocked": 0,
+      "LegacyPairing": 0,
+      "**Connected**": 0,
+      "UUIDs": [
+        "00001800-0000-1000-8000-00805f9b34fb",
+        "00001801-0000-1000-8000-00805f9b34fb",
+        "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
+      ],
+      "Adapter": "/org/bluez/hci0",
+      "ServicesResolved": 0
+    }
+
+    # BT_DEVICE=00:07:BE:33:80:AB  ./bluetooth_hid_connect.sh
+
+    =========================
+    Bluetooth hid barcode scanner connect
+
+    Bluetooth connect:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    29  100    13  100    16     32     40 --:--:-- --:--:-- --:--:--    72
+    {
+      "SDCERR": 0
+    }
+
+
+    read Bluetooth state:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   631  100   631    0     0   1719      0 --:--:-- --:--:-- --:--:--  1719
+    {
+      "SDCERR": 0,
+      "InfoMsg": "",
+      "Address": "00:07:BE:33:80:AB",
+      "AddressType": "random",
+      "Name": "Datalogic Gryphon GBT4500",
+      "Alias": "Datalogic Gryphon GBT4500",
+      "Appearance": 962,
+      "Icon": "input-keyboard",
+      "Paired": 1,
+      "Trusted": 0,
+      "Blocked": 0,
+      "LegacyPairing": 0,
+      "RSSI": -67,
+      "**Connected**": 1,
+      "UUIDs": [
+      ],
+      "Modalias": "usb:v1915pEEEEd0001",
+      "Adapter": "/org/bluez/hci0",
+      "ServicesResolved": 1,
+      "WakeAllowed": 1
+    }
+
+
+    Short delay to allow HID service to discover and open...
+
+
+    open vsp port 1001:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    98  100    28  100    70     51    128 --:--:-- --:--:-- --:--:--   179
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+
+    check HID service ports:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   135  100    95  100    40    281    118 --:--:-- --:--:-- --:--:--   398
+    {
+      "SDCERR": 0,
+      "InfoMsg": "00:07:BE:33:80:AB",
+      "HidConnections": [
+        {
+          "device": "",
+          "port": 1001
+        }
+      ]
+    }
+
+
+    connecting to TCP port - please scan a barcode and confirm result:
+    {"Received": {"Barcode": "ABCDEF"}}
+    {"Received": {"Barcode": "Code 128"}}
+    {"Connected": 0}
+
+
+    # BT_DEVICE=00:07:BE:33:80:AB  ./bluetooth_hid_disconnect.sh
+
+    =========================
+    Bluetooth hid barcode scanner disconnect
+
+    close HID service TCP port:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    74  100    28  100    46     86    141 --:--:-- --:--:-- --:--:--   228
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+    check HID service ports:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    90  100    50  100    40    192    153 --:--:-- --:--:-- --:--:--   346
+    {
+      "SDCERR": 0,
+      "InfoMsg": "",
+      "HidConnections": []
+    }
+
+    Bluetooth disconnect:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    29  100    13  100    16      3      4  0:00:04  0:00:03  0:00:01     8
+    {
+      "SDCERR": 0
+    }
+
+
+    read Bluetooth state:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   618  100   618    0     0   1889      0 --:--:-- --:--:-- --:--:--  1884
+    {
+      "SDCERR": 0,
+      "InfoMsg": "",
+      "Address": "00:07:BE:33:80:AB",
+      "AddressType": "random",
+      "Name": "Datalogic Gryphon GBT4500",
+      "Alias": "Datalogic Gryphon GBT4500",
+      "Appearance": 962,
+      "Icon": "input-keyboard",
+      "Paired": 1,
+      "Trusted": 0,
+      "Blocked": 0,
+      "LegacyPairing": 0,
+      "RSSI": -68,
+      "**Connected**": 0,
+      "UUIDs": [
+      ],
+      "Modalias": "usb:v1915pEEEEd0001",
+      "Adapter": "/org/bluez/hci0",
+      "ServicesResolved": 1,
+      "WakeAllowed": 1
+    }
+
+
+## example showing user login timed-out prior to request:
+
+    ./bluetooth_scan.sh
+
+    =========================
+    Bluetooth scan
+    reset controller, clear cache and force fresh scan:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   805  100   754  100    51  75400   5100 --:--:-- --:--:-- --:--:-- 80500
+    parse error: Invalid numeric literal at line 1, column 10
+
 
 # Extra notes
 ## Certificate chain of trust - why are we using --insecure flag?
