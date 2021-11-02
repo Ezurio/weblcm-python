@@ -125,15 +125,10 @@ class NetworkConnection(object):
 		if not id:
 			result['InfoMsg'] = 'connection section must have an id element'
 			return result
-		"""
-			does provided uuid exist?
-		"""
+
 		nm_connection_objs = NetworkManager.Settings.ListConnections()
 		connections = dict([(x.GetSettings()['connection']['id'], x) for x in nm_connection_objs])
 		if id in connections:
-			"""
-				verify connection has same uuid if provided
-			"""
 			con_uuid = connections.get(id).GetSettings()['connection']['uuid']
 			if t_uuid and con_uuid:
 				if not con_uuid == t_uuid:
@@ -143,14 +138,8 @@ class NetworkConnection(object):
 
 		connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in nm_connection_objs])
 		try:
-			"""
-				save original connection in case we have issue saving the new one
-			"""
 			saved_con = connections.get(t_uuid).GetSettings()
 		except:
-			"""
-				uuid is not present so must be new
-			"""
 			t_uuid = str(uuid.uuid4())
 			saved_con = None
 
@@ -203,7 +192,6 @@ class NetworkConnection(object):
 						result['InfoMsg'] = f'connection {name} updated'
 						result['SDCERR'] = 0
 					except Exception as e:
-						'restore saved connection'
 						NetworkManager.Settings.AddConnection(saved_con)
 						result['InfoMsg'] = f'An error occurred trying to save config: {e}; Original config restored'
 				else:
