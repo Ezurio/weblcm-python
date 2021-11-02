@@ -111,14 +111,53 @@ class NetworkConnection(object):
 			'InfoMsg': ''
 		}
 
+		post_data = cherrypy.request.json
+		if not post_data.get('connection'):
+			result['InfoMsg'] = 'Missing connection section'
+			return result
+
+		t_uuid = post_data['connection'].get('uuid', None)
+		id = post_data['connection'].get('id', None)
+
+		if not id:
+			result['InfoMsg'] = 'connection section must have an id element'
+			return result
+		"""
+			does provided uuid exist?
+		"""
+		nm_connection_objs = NetworkManager.Settings.ListConnections()
+		connections = dict([(x.GetSettings()['connection']['id'], x) for x in nm_connection_objs])
+		if id in connections:
+			"""
+				verify connection has same uuid if provided
+			"""
+			con_uuid = connections.get(id).GetSettings()['connection']['uuid']
+			if t_uuid and con_uuid:
+				if not con_uuid == t_uuid:
+					result['InfoMsg'] = 'Provided uuid does not match uuid of given id'
+					return result
+			t_uuid = con_uuid
+
+		connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in nm_connection_objs])
+		try:
+			"""
+				save original connection in case we have issue saving the new one
+			"""
+			saved_con = connections.get(t_uuid).GetSettings()
+		except:
+			"""
+				uuid is not present so must be new
+			"""
+			t_uuid = str(uuid.uuid4())
+			saved_con = None
+
 		try:
 			new_settings = {};
-			post_data = cherrypy.request.json
 
 			if post_data.get('connection'):
 				new_settings['connection'] = post_data.get('connection');
 				if not new_settings['connection'].get('uuid'):
-					new_settings['connection']['uuid'] = str(uuid.uuid4())
+					new_settings['connection']['uuid'] = t_uuid
 
 				if post_data.get('802-11-wireless'):
 					new_settings['802-11-wireless'] = post_data.get('802-11-wireless');
@@ -152,15 +191,21 @@ class NetworkConnection(object):
 				if post_data.get('ipv6'):
 					new_settings['ipv6'] = post_data.get('ipv6');
 
-				connections = NetworkManager.Settings.ListConnections()
-				connections = dict([(x.GetSettings()['connection']['uuid'], x) for x in connections])
 				name = new_settings['connection'].get('id', '')
 				if connections.get(new_settings['connection']['uuid']):
-					connections[new_settings['connection']['uuid']].Update(new_settings)
-					result['InfoMsg:'] = f'connection {name} updated'
+					connections[new_settings['connection']['uuid']].Delete()
+
+					try:
+						NetworkManager.Settings.AddConnection(new_settings)
+						result['InfoMsg'] = f'connection {name} updated'
+						result['SDCERR'] = 0
+					except Exception as e:
+						'restore saved connection'
+						NetworkManager.Settings.AddConnection(saved_con)
+						result['InfoMsg'] = f'An error occurred trying to save config: {e}; Original config restored'
 				else:
 					NetworkManager.Settings.AddConnection(new_settings)
-					result['InfoMsg:'] = f'connection {name} created'
+					result['InfoMsg'] = f'connection {name} created'
 					result['SDCERR'] = 0
 
 		except Exception as e:
