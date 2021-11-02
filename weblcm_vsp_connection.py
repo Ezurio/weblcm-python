@@ -76,6 +76,7 @@ class VspConnection(TcpConnection):
         self.vsp_write_chrc: Optional[Tuple[dbus.proxies.ProxyObject, Any]] = None
         self.signal_device_prop_changed = None
         self.sock: Optional[socket.socket] = None
+        self.socket_rx_type: str = 'JSON'
         self.thread: Optional[threading.Thread] = None
         self.tx_wait_event = threading.Event()
         self.tx_complete = False
@@ -99,7 +100,7 @@ class VspConnection(TcpConnection):
 
     def device_prop_changed_cb(self, iface, changed_props, invalidated_props):
         if 'Connected' in changed_props:
-            if self._tcp_connection:
+            if self._tcp_connection and self.socket_rx_type == 'JSON':
                 self._tcp_connection.sendall(
                     f"{{\"Connected\": {changed_props['Connected']}}}\n".encode())
 
@@ -131,8 +132,11 @@ class VspConnection(TcpConnection):
         python_value = dbus_to_python_ex(value, bytearray)
         if self._tcp_connection:
             try:
-                self._tcp_connection.sendall(
-                    f"{{\"Received\": \"0x{python_value.hex()}\"}}\n".encode())
+                if self.socket_rx_type == 'JSON':
+                    self._tcp_connection.sendall(
+                        f"{{\"Received\": \"0x{python_value.hex()}\"}}\n".encode())
+                else:
+                    self._tcp_connection.sendall(python_value)
             except OSError as e:
                 cherrypy.log("gatt_vsp_read_val_cb:" + str(e))
 
@@ -179,7 +183,8 @@ class VspConnection(TcpConnection):
                 cherrypy.log("stop_client: " + str(e))
 
     def bt_disconnected(self):
-        self._tcp_connection.sendall("{\"Connected\": 0}\n".encode())
+        if self._tcp_connection and self.socket_rx_type == 'JSON':
+            self._tcp_connection.sendall("{\"Connected\": 0}\n".encode())
 
     def gatt_send_data(self, data):
         self.vsp_write_chrc[0].WriteValue(data, {}, reply_handler=self.write_val_cb,
@@ -216,6 +221,8 @@ class VspConnection(TcpConnection):
             return 'vspWriteChrUuid param not specified'
         if 'tcpPort' not in params:
             return 'tcpPort param not specified'
+        if 'socketRxType' in params:
+            self.socket_rx_type = params['socketRxType']
 
         om = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, '/'), DBUS_OM_IFACE)
         objects = om.GetManagedObjects()
@@ -309,7 +316,7 @@ class VspConnection(TcpConnection):
                                 self.gatt_send_data(val)
                                 if not self.tx_wait_event.wait():
                                     cherrypy.log("vsp_tcp_server_thread: ERROR: gatt tx no completion")
-                                if self.tx_error:
+                                if self.tx_error and self.socket_rx_type == 'JSON':
                                     self._tcp_connection.sendall("{\"Error\": \"Transmit failed\""
                                                                  f", \"Data\": \"0x{data.hex()}"
                                                                  "\"}\n".encode())
