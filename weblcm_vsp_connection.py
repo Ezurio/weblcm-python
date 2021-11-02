@@ -263,12 +263,14 @@ class VspConnection(TcpConnection):
                 if self.sock:
                     self.thread = threading.Thread(target=self.vsp_tcp_server_thread,
                                                    name="vsp_tcp_server_thread", daemon=True,
-                                                   args=(self.sock, port))
+                                                   args=(self.sock,))
                     self.thread.start()
                 device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
                 device_iface = dbus.Interface(device_obj, DBUS_PROP_IFACE)
                 self.signal_device_prop_changed = device_iface.connect_to_signal("PropertiesChanged",
                                                                                  self.device_prop_changed_cb)
+                if port:
+                    firewalld_open_port(port)
         except Exception:
             self.stop_client()
             raise
@@ -281,10 +283,10 @@ class VspConnection(TcpConnection):
         self.stop_client()
         if self.thread:
             self.thread.join()
+        if self.port:
+            firewalld_close_port(self.port)
 
-    def vsp_tcp_server_thread(self, sock, port=None):
-        if port:
-            firewalld_open_port(port)
+    def vsp_tcp_server_thread(self, sock):
         try:
             sock.settimeout(SOCK_TIMEOUT)
             while True:
@@ -336,5 +338,3 @@ class VspConnection(TcpConnection):
             # TODO: Consider flagging to manager thread for vsp_connections.pop(device_uuid)
             sock.close()
             self._tcp_connection, client_address = None, None
-            if port:
-                firewalld_close_port(port)
