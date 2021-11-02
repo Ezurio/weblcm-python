@@ -222,8 +222,10 @@ class HidBarcodeScanner(TcpConnection):
             if self.sock:
                 self.thread = threading.Thread(target=self.hid_tcp_server_thread,
                                                name="hid_tcp_server_thread", daemon=True,
-                                               args=(self.sock, port))
+                                               args=(self.sock,))
                 self.thread.start()
+                if port:
+                    firewalld_open_port(port)
                 if hid_input_devname and not self._barcode_read_thread_count:
                     self.read_thread = threading.Thread(target=self.barcode_scanner_read_thread,
                                                         name="barcode_scanner_read_thread",
@@ -241,6 +243,8 @@ class HidBarcodeScanner(TcpConnection):
         self.stop_tcp_server(self.sock)
         if self.thread:
             self.thread.join()
+        if self.port:
+            firewalld_close_port(self.port)
 
     def stop_read_thread(self):
         os.write(self._stop_pipe_w, b'c')
@@ -265,9 +269,7 @@ class HidBarcodeScanner(TcpConnection):
         finally:
             self._barcode_read_thread_count -= 1
 
-    def hid_tcp_server_thread(self, sock, port=None):
-        if port:
-            firewalld_open_port(port)
+    def hid_tcp_server_thread(self, sock):
         try:
             sock.settimeout(SOCK_TIMEOUT)
             while True:
@@ -308,5 +310,3 @@ class HidBarcodeScanner(TcpConnection):
         finally:
             sock.close()
             self._tcp_connection, client_address = None, None
-            if port:
-                firewalld_close_port(port)
