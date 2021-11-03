@@ -226,8 +226,9 @@ class Bluetooth(object):
                     result.update(self.execute_device_command(bus, command, device_uuid, device))
                     return result
                 else:
-                    result = self.set_device_properties(adapter_methods, device_methods, device_obj, device_properties,
-                                                        post_data)
+                    result.update(self.set_device_properties(adapter_methods, device_methods,
+                                                             device_obj, device_properties,
+                                                             post_data))
 
         except Exception as e:
             result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
