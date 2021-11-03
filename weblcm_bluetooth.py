@@ -251,11 +251,14 @@ class Bluetooth(object):
                 discoverable = discoverable if discoverable else None
                 discovering = discovering if discovering else None
 
-        if discoverable is not None:
-            adapter_props.Set(ADAPTER_IFACE, "Discoverable", dbus.Boolean(discoverable))
         if transport_filter is not None:
             result.update(self.set_adapter_transport_filter(adapter_methods, controller_name,
                                                   transport_filter))
+            if 'SDCERR' in result and result['SDCERR'] != weblcm_def.WEBLCM_ERRORS.get(
+                    'SDCERR_SUCCESS'):
+                return result
+        if discoverable is not None:
+            adapter_props.Set(ADAPTER_IFACE, "Discoverable", dbus.Boolean(discoverable))
         if discovering is not None:
             discovering_state = adapter_props.Get(ADAPTER_IFACE, "Discovering")
             if discovering_state != discovering:
