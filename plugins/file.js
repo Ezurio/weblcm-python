@@ -107,8 +107,8 @@ function getFileList(type, callback) {
     cache: false,
   })
   .done(function(data) {
-    if(callback && data){
-      callback(data);
+    if(callback && data['files]']){
+      callback(data['files']);
     }
   })
   .fail(function( xhr, textStatus, errorThrown) {

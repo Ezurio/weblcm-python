@@ -37,20 +37,26 @@ class FileManage(object):
 			out.close()
 		return path
 
+	@cherrypy.tools.json_out()
 	def POST(self, *args, **kwargs):
-
+		result = {
+			'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL'),
+			'InfoMsg': ''
+		}
 		typ = kwargs.get('type', None)
 		fil = kwargs.get('file', None)
 		if not typ or not fil:
 			if not typ:
 				syslog('FileManage POST - no type specified')
+				result['InfoMsg'] = 'file POST - no type specified'
 			if not fil:
 				syslog('FileManage POST - no filename provided')
-			raise cherrypy.HTTPError(400, 'filename or type missing') #bad request
+				result['InfoMsg'] = 'file POST - no filename specified'
+			return result
 
 		if typ not in weblcm_def.FILEDIR_DICT:
 			syslog(f'FileManage POST type {typ} unknown')
-			raise cherrypy.HTTPError(400, f'FileManage POST type {typ} unknown') #bad request
+			result['InfoMsg'] = f'file POST type {typ} unknown' #bad request
 
 		with FileManage._lock:
 			fp = self.save_file(typ, fil)
@@ -64,11 +70,13 @@ class FileManage(object):
 					os.remove(fp)
 					if res:
 						syslog(f"unzip command file '{fp}' failed with error {res}")
-						raise cherrypy.HTTPError(500, f'unzip command failed to unzip provided file.  Error returned: {res}') #Internal server error
-				return
+						result['InfoMsg'] = f'unzip command failed to unzip provided file.  Error returned: {res}' #Internal server error
+						return result
+				result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+				return result
 		syslog(f"unable to obtain FileManage._lock")
-
-		raise cherrypy.HTTPError(500, 'unable to obtain internal file lock') #Internal server error
+		result['InfoMsg'] = 'unable to obtain internal file lock' #Internal server error
+		return result
 
 	def GET(self, *args, **kwargs):
 
@@ -165,7 +173,10 @@ class FilesManage(object):
 
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
-
+		result = {
+			'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS'),
+			'InfoMsg': ''
+			}
 		typ = kwargs.get('type', None)
 		if not typ:
 			syslog('FilesManage GET - no type provided')
@@ -179,7 +190,9 @@ class FilesManage(object):
 					if len(strs) == 2 and strs[1] in weblcm_def.FILEFMT_DICT.get(typ):
 						files.append(entry.name)
 		files.sort()
-		return files
+		result['files'] = files
+		result['count'] = len(files)
+		return result
 
 @cherrypy.expose
 class AWMCfgManage(object):

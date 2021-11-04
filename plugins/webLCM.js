@@ -293,8 +293,8 @@ $(document).ready( function (){
     contentType: "application/json",
   })
   .done(function (data) {
-    g_defines = data;
-    weblcm_init(data['PLUGINS']);
+    g_defines = data['Definitions'];
+    weblcm_init(data['Definitions']['PLUGINS']);
   })
   .fail(function( xhr, textStatus, errorThrown) {
     httpErrorResponseHandler(xhr, textStatus, errorThrown)
