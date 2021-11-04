@@ -9,6 +9,6 @@ ${CURL_APP} --location \
     --request GET "${URL}/files?type=${TYPE}" \
     -b cookie --insecure \
     --data-raw ''\
-
+| ${JQ_APP}
 echo -e "\n"
 

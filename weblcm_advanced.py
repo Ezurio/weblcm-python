@@ -53,12 +53,12 @@ class Fips(object):
 			'InfoMsg': 'Reboot required',
 		}
 
-		setOptions = ['unset', 'fips', 'fips-wifi']
+		setOptions = ['unset', 'fips', 'fips_wifi']
 
 		post_data = cherrypy.request.json
-		fips = post_data.get('fips', 'no option provided')
+		fips = post_data.get('fips', None)
 		if fips not in setOptions:
-			result['InfoMsg'] = 'Invalid option: {}'.format(fips)
+			result['InfoMsg'] = f'Invalid option: {fips}; valid options: {setOptions}'
 			return result
 
 		try:

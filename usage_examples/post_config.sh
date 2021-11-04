@@ -9,8 +9,8 @@ ${CURL_APP} --location \
     -b cookie \
     --form 'type="config"' \
     --form 'file=@"config.zip"' \
-    --form 'password="test"'
-
+    --form 'password="test"' \
+| ${JQ_APP}
 echo -e "\nconfig.zip uploaded. Reboot to take effect"
 
 

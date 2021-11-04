@@ -312,9 +312,10 @@ class Version(object):
 
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
-		#TODO should we add SDCERR and InfoMsg entries?
 		try:
 			if not Version._version:
+				Version._version['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+				Version._version['InfoMsg'] = ''
 				Version._version['nm_version'] = NetworkManager.NetworkManager.Version
 				Version._version['weblcm_python_webapp'] = weblcm_def.WEBLCM_PYTHON_VERSION
 				Version._version['build'] = subprocess.check_output("sed -n 's/^VERSION=//p' /etc/os-release", shell=True).decode('ascii').strip().strip('"')
@@ -325,8 +326,7 @@ class Version(object):
 						Version._version['driver_version'] = dev.DriverVersion
 						break
 		except Exception as e:
-			Version._version = {}
-
+			Version._version = {'SDCERR' : weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL'), 'InfoMsg':f'An exception occurred while trying to get versioning info: {e}' }
 		return Version._version
 
 @cherrypy.expose

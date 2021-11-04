@@ -51,13 +51,16 @@ class Root(object):
 		settings['session_timeout'] = SystemSettingsManage.get_session_timeout()
 
 		return {
-			'SDCERR': weblcm_def.WEBLCM_ERRORS,
-			'PERMISSIONS': weblcm_def.USER_PERMISSION_TYPES,
-			'DEVICE_TYPES': weblcm_def.WEBLCM_DEVTYPE_TEXT,
-			'DEVICE_STATES': weblcm_def.WEBLCM_STATE_TEXT,
-			'PLUGINS': plugins,
-			'SETTINGS': settings,
-			'InfoMsg': ''
+			'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS'),
+			'InfoMsg': '',
+			'Definitions' : {
+				'SDCERR': weblcm_def.WEBLCM_ERRORS,
+				'PERMISSIONS': weblcm_def.USER_PERMISSION_TYPES,
+				'DEVICE_TYPES': weblcm_def.WEBLCM_DEVTYPE_TEXT,
+				'DEVICE_STATES': weblcm_def.WEBLCM_STATE_TEXT,
+				'PLUGINS': plugins,
+				'SETTINGS': settings,
+			}
 		}
 
 
