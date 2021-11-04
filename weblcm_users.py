@@ -167,9 +167,10 @@ class UserManage(object):
 			'SDCERR': WEBLCM_ERRORS.get('SDCERR_FAIL'),
 			'InfoMsg': 'unable to delete user',
 		}
+		default_username = cherrypy.request.app.config['weblcm'].get('default_username', "root")
 
-		if username == 'root':
-			result['InfoMsg'] = 'unable to remove root user'
+		if username == default_username:
+			result['InfoMsg'] = f'unable to remove {default_username} user'
 		elif not UserManageHelper.user_exists(username):
 			result['InfoMsg'] = f'user {username} not found'
 		elif UserManageHelper.delUser(username):
@@ -180,7 +181,14 @@ class UserManage(object):
 
 	@cherrypy.tools.json_out()
 	def GET(self, *args, **kwargs):
-		return UserManageHelper.getUserList()
+		result = {
+			'SDCERR': WEBLCM_ERRORS.get('SDCERR_SUCCESS'),
+			'InfoMsg': 'only non-default users listed under \'Users\'',
+			'Default_user': cherrypy.request.app.config['weblcm'].get('default_username', "root")
+		}
+		result['Users'] = UserManageHelper.getUserList()
+		result['Count'] = len(result.get('Users'))
+		return result
 
 class LoginManageHelper(object):
 

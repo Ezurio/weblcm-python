@@ -102,5 +102,5 @@ class DateTimeSetting(object):
 		returncode, outs, errs = self.popenHelper("check", "", "")
 		result['time'] = outs.decode("utf-8")
 		result['SDCERR'] = 0
-		result['InfoMsg'] = ''
+		result['InfoMsg'] = self.getLocalZone()
 		return result

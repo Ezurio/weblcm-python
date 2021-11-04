@@ -1,6 +1,6 @@
 import os
 
-WEBLCM_PYTHON_VERSION = '1.0.0.1'
+WEBLCM_PYTHON_VERSION = '1.0.0.2'
 
 SYSTEM_CONF_DIR = '/data/'
 NETWORKMANAGER_CONF_DIR = '/data/secret/NetworkManager/'
