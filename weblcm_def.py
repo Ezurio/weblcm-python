@@ -47,7 +47,7 @@ WEBLCM_ERRORS = {
 }
 
 USER_PERMISSION_TYPES = {
-	'UserPermssionTypes':[
+	'UserPermissionTypes':[
 		"status_networking",
 		"networking_connections",
 		"networking_edit",
@@ -69,7 +69,7 @@ USER_PERMISSION_TYPES = {
 	],
 
 	#Attributes to be displayed on the web
-	'UserPermssionAttrs':[
+	'UserPermissionAttrs':[
 		["Networking Status", "checked", "disabled"],
 		["View Connections", "checked", "disabled"],
 		["Edit Connection","", ""],
