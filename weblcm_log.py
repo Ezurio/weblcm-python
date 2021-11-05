@@ -11,11 +11,15 @@ from weblcm_settings import SystemSettingsManage
 @cherrypy.expose
 class LogData(object):
 
-	@cherrypy.tools.accept(media='text/plain')
-	@cherrypy.config(**{'response.stream': True})
-	def GET(self,  *args, **kwargs):
 
-		cherrypy.response.headers['Content-Type'] = 'text/plain'
+	@cherrypy.tools.accept(media='application/json')
+	@cherrypy.tools.json_out()
+	def GET(self,  *args, **kwargs):
+		result = {
+			'SDCERR': 0,
+			'InfoMsg': ''
+		}
+		logs = []
 
 		reader = journal.Reader()
 		try:
@@ -42,23 +46,19 @@ class LogData(object):
 		if days > 0:
 			reader.seek_realtime(time.time() - days * 86400)
 
-		def streaming():
-			logs = []
-			log_data_streaming_size = SystemSettingsManage.get_log_data_streaming_size()
-			for entry in reader:
-				logs.append(str(entry.get('__REALTIME_TIMESTAMP', "Undefined")))
-				logs.append(str(entry.get('PRIORITY', 7)))
-				logs.append(entry.get('SYSLOG_IDENTIFIER', "Undefined"))
-				logs.append(entry.get('MESSAGE', "Undefined"))
-				if len(logs) == log_data_streaming_size:
-					yield (":#:".join(logs) + ":#:")
-					logs.clear()
-			if len(logs) > 0:
-				yield ":#:".join(logs)
-				logs.clear()
-			reader.close()
+		for entry in reader:
+			log = {}
+			log['time'] = (str(entry.get('__REALTIME_TIMESTAMP', "Undefined")))
+			log['priority'] = (str(entry.get('PRIORITY', 7)))
+			log['identifier'] = (entry.get('SYSLOG_IDENTIFIER', "Undefined"))
+			log['message'] = (entry.get('MESSAGE', "Undefined"))
+			logs.append(log)
 
-		return streaming()
+		result['InfoMsg'] = f'type: {typ}; days: {days}; Priority: {priority}'
+		result['length'] = len(logs)
+		result['log'] = logs
+		reader.close()
+		return result
 
 @cherrypy.expose
 class LogSetting(object):
