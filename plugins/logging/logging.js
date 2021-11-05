@@ -59,9 +59,9 @@ function queryLogData() {
     table = $("#table-log-data").DataTable();
     table.clear().draw();
 
-    data = msg.split(':#:');
-    for(i=0; i<=data.length-4; i+=4){
-      table.row.add([ data[i], strLevel[data[i+1]], data[i+2], data[i+3] ]);
+    data = msg['log']
+    for(i=0; i<data.length; i++){
+      table.row.add([ data[i]['time'], strLevel[data[i]['priority']], data[i]['identifier'], data[i]['message'] ]);
     }
 
     table.draw();
