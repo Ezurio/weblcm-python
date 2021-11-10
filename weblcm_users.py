@@ -287,7 +287,7 @@ class LoginManage(object):
 
 			cnt = UserManageHelper.getNumberOfUsers()
 			if not cnt:
-				UserManageHelper.addUser(username, password, " ".join(USER_PERMISSION_TYPES['UserPermssionTypes']))
+				UserManageHelper.addUser(username, password, " ".join(USER_PERMISSION_TYPES['UserPermissionTypes']))
 
 			if not cnt or UserManageHelper.verify(default_username, default_password):
 
