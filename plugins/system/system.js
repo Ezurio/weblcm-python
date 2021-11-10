@@ -1103,8 +1103,8 @@ function delUser(){
 
 function createPermissionsTable(){
 
-  var types = g_defines.PERMISSIONS.UserPermssionTypes;
-  var attrs = g_defines.PERMISSIONS.UserPermssionAttrs;
+  var types = g_defines.PERMISSIONS.UserPermissionTypes;
+  var attrs = g_defines.PERMISSIONS.UserPermissionAttrs;
   var j = 0;
 
   var tbody = $("#table-user-permission > tbody");
