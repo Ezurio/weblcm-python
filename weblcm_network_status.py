@@ -306,7 +306,7 @@ class NetworkStatus(object):
 		devices = NetworkManager.NetworkManager.GetDevices()
 		for dev in devices:
 			if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
-				result['status'][dev.Interface]['RegDomain'] = NetworkStatusHelper.get_reg_domain_info();
+				result['status'][dev.Interface]['wireless']['RegDomain'] = NetworkStatusHelper.get_reg_domain_info();
 
 		unmanaged_devices = cherrypy.request.app.config['weblcm'].get('unmanaged_hardware_devices', '').split()
 		for dev in unmanaged_devices:
