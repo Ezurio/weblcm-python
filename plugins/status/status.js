@@ -287,7 +287,7 @@ function updateStatus(){
           // Bit Rate
           wireless.children(".bitrate").text(g_i18nData['Bit Rate'] + ": " + data.status[interfaceName].wireless.Bitrate/1000 + "Mbit/s");
           // Regulatory Domain
-          wireless.children(".regdomain").text(g_i18nData['Regulatory Domain'] + ": " + data.status[interfaceName].RegDomain);
+          wireless.children(".regdomain").text(g_i18nData['Regulatory Domain'] + ": " + data.status[interfaceName].wireless.RegDomain);
         } else {
           wireless.addClass("d-none");
         }
