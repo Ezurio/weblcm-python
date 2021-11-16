@@ -249,7 +249,7 @@ function updateStatus(){
         if (data.status[interfaceName].activeaccesspoint){
           activeaccesspoint.removeClass("d-none");
           // SSID
-          activeaccesspoint.children(".ssid").text("SSID: " + data.status[interfaceName].activeaccesspoint.Ssid);
+          activeaccesspoint.children(".ssid").text("SSID: " + data.status[interfaceName].activeaccesspoint.SSID);
           // BSSID
           activeaccesspoint.children(".bssid").text("BSSID:" + data.status[interfaceName].activeaccesspoint.HwAddress);
           // Frequency

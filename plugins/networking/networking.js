@@ -1702,27 +1702,27 @@ function getScan(retry){
 
       //For each SSID, the channels with best RSSI will be displayed (one for each band)
       msg["accesspoints"].sort( function (a, b){
-          return a.Ssid == b.Ssid ? (b.Strength - a.Strength) : a.Ssid.localeCompare(b.Ssid);
+          return a.SSID == b.SSID ? (b.Strength - a.Strength) : a.SSID.localeCompare(b.SSID);
       });
 
       for (let ap = 0; ap < msg["accesspoints"].length; ap++){
         //Skip NULL SSID
-        if (!msg["accesspoints"][ap].Ssid || msg["accesspoints"][ap].Ssid.trim().length === 0)
+        if (!msg["accesspoints"][ap].SSID || msg["accesspoints"][ap].SSID.trim().length === 0)
           continue;
 
         //Items are already sorted based on RSSI. Items with lower RSSI won't be displayed.
         if (msg["accesspoints"][ap].Frequency > 4900) {
-          if(a_set[msg["accesspoints"][ap].Ssid] && a_set[msg["accesspoints"][ap].Ssid] >= msg["accesspoints"][ap].Strength)
+          if(a_set[msg["accesspoints"][ap].SSID] && a_set[msg["accesspoints"][ap].SSID] >= msg["accesspoints"][ap].Strength)
             continue;
-            a_set[msg["accesspoints"][ap].Ssid] = msg["accesspoints"][ap].Strength
+            a_set[msg["accesspoints"][ap].SSID] = msg["accesspoints"][ap].Strength
         }
         else {
-          if(bg_set[msg["accesspoints"][ap].Ssid] && bg_set[msg["accesspoints"][ap].Ssid] >= msg["accesspoints"][ap].Strength)
+          if(bg_set[msg["accesspoints"][ap].SSID] && bg_set[msg["accesspoints"][ap].SSID] >= msg["accesspoints"][ap].Strength)
             continue;
-           bg_set[msg["accesspoints"][ap].Ssid] = msg["accesspoints"][ap].Strength
+           bg_set[msg["accesspoints"][ap].SSID] = msg["accesspoints"][ap].Strength
         }
 
-        var markup =  "<tr><td>" + msg["accesspoints"][ap].Ssid +
+        var markup =  "<tr><td>" + msg["accesspoints"][ap].SSID +
                     "</td><td>" + wifi_freq_to_channel(msg["accesspoints"][ap].Frequency) +
                     "</td><td>" + msg["accesspoints"][ap].Strength +
                     "</td><td>" + msg["accesspoints"][ap].Security + "</td></tr>";
