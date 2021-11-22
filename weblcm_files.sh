@@ -48,7 +48,7 @@ case ${typ} in
 
 	config)
 		passwd=${5}
-		if [ ${action} = "zip" ]; then
+		if [ ${action} == "zip" ]; then
 			do_zip
 		else
 			do_unzip_config
