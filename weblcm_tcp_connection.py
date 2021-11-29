@@ -36,7 +36,10 @@ class TcpConnection(object):
         :param port: port number to validate
         :return: true if port falls within valid range; false otherwise
         """
-        return TCP_PORT_MIN <= int(port) <= TCP_PORT_MAX
+        try:
+            return TCP_PORT_MIN <= int(port) <= TCP_PORT_MAX
+        except:
+            return False
 
     def tcp_server(self, host, params) -> socket.socket:
         # Create a TCP/IP socket
