@@ -1,4 +1,5 @@
 import itertools
+import sys
 import re
 from syslog import syslog, LOG_ERR, LOG_INFO
 from typing import List, Optional, Dict
@@ -49,6 +50,15 @@ try:
     cherrypy.log("weblcm_bluetooth: VspConnectionPlugin loaded")
 except ImportError:
     cherrypy.log("weblcm_bluetooth: VspConnectionPlugin NOT loaded")
+
+try:
+    # module dependencies, such as bt_logger.py, may be under /usr/lib
+    sys.path.append('/usr/lib')
+    from weblcm_bluetooth_ble import BluetoothBlePlugin
+    bluetooth_plugins.append(BluetoothBlePlugin())
+    cherrypy.log("weblcm_bluetooth: BluetoothBlePlugin loaded")
+except ImportError:
+    cherrypy.log("weblcm_bluetooth: BluetoothBlePlugin NOT loaded")
 
 
 def GetControllerObj(name: str = None):
