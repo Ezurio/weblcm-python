@@ -2573,6 +2573,309 @@ this will create all the example connections in this package:
     }
 
 
+    # IPADDR=localhost JQ_APP=smart_jq BT_DEVICE=E0:13:7D:9D:2E:45  ./bluetooth_ble_start_server.sh
+    =========================
+    Bluetooth ble server start
+
+    open ble server port 1001:
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+	                             Dload  Upload   Total   Spent    Left  Speed
+    100   102  100    28  100    74      9     24  0:00:03  0:00:03 --:--:--    33
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+    listen on port:
+    {
+        "connect":{
+	    "address":"E0:13:7D:9D:2E:45",
+	    "connected":true,
+	    "services":{
+	        "00001801-0000-1000-8000-00805f9b34fb":{
+	            "characteristics":[
+	                {
+	                    "00002b2a-0000-1000-8000-00805f9b34fb":{
+	                        "Flags":[
+	                            "read"
+	                        ]
+	                    }
+	                },
+	                {
+	                    "00002b29-0000-1000-8000-00805f9b34fb":{
+	                        "Flags":[
+	                            "read",
+	                            "write"
+	                        ]
+	                    }
+	                },
+	                {
+	                    "00002a05-0000-1000-8000-00805f9b34fb":{
+	                        "Flags":[
+	                            "indicate"
+	                        ]
+	                    }
+	                }
+	            ]
+	        },
+	        "6e400001-b5a3-f393-e0a9-e50e24dcca9e":{
+	            "characteristics":[
+	                {
+	                    "6e400002-b5a3-f393-e0a9-e50e24dcca9e":{
+	                        "Flags":[
+	                            "write-without-response",
+	                            "write"
+	                        ]
+	                    }
+	                },
+	                {
+	                    "6e400003-b5a3-f393-e0a9-e50e24dcca9e":{
+	                        "Flags":[
+	                            "notify"
+	                        ]
+	                    }
+	                }
+	            ]
+	        }
+	    },
+	    "timestamp":1637677328
+        }
+    }
+
+    {
+        "char":{
+	    "char_uuid":"6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+	    "value":"616f65750d",
+	    "service_uuid":"6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+	    "address":"E0:13:7D:9D:2E:45",
+	    "timestamp":1637677879
+        }
+    }
+
+
+    # IPADDR=localhost JQ_APP=smart_jq   ./bluetooth_ble_start_discovery.sh
+    =========================
+    Bluetooth ble start discovery
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    78  100    28  100    50     52     93 --:--:-- --:--:-- --:--:--   144
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+    Discovery notification events will be received over the connection previously established by bluetooth_ble_connect, for example:
+
+    Example data received
+    {
+        "discovery":{
+            "Address":"C4:93:D9:2E:C7:B0",
+            "Alias":"Erik's Galaxy Note9",
+            "Class":5898764,
+            "Icon":"phone",
+            "Name":"Erik's Galaxy Note9",
+            "RSSI":-69,
+            "UUIDs":[
+                "00001105-0000-1000-8000-00805f9b34fb",
+                "0000110a-0000-1000-8000-00805f9b34fb",
+                "0000110c-0000-1000-8000-00805f9b34fb",
+                "0000110e-0000-1000-8000-00805f9b34fb",
+                "00001112-0000-1000-8000-00805f9b34fb",
+                "00001115-0000-1000-8000-00805f9b34fb",
+                "00001116-0000-1000-8000-00805f9b34fb",
+                "0000111f-0000-1000-8000-00805f9b34fb",
+                "0000112f-0000-1000-8000-00805f9b34fb",
+                "00001200-0000-1000-8000-00805f9b34fb",
+                "00001132-0000-1000-8000-00805f9b34fb"
+            ],
+            "timestamp":1637711953
+        }
+    }
+
+
+    # IPADDR=localhost JQ_APP=smart_jq   ./bluetooth_ble_stop_discovery.sh
+    =========================
+    Bluetooth ble stop discovery
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    77  100    28  100    49   1217   2130 --:--:-- --:--:-- --:--:--  3347
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+
+    #IPADDR=localhost JQ_APP=smart_jq BT_DEVICE=E0:13:7D:9D:2E:45  ./bluetooth_ble_connect.sh
+    =========================
+    Bluetooth ble connect
+
+    Bluetooth connect:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    53  100    28  100    25      8      7  0:00:03  0:00:03 --:--:--    16
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+    read Bluetooth state:
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   428  100   428    0     0  26750      0 --:--:-- --:--:-- --:--:-- 26750
+    {
+      "SDCERR": 0,
+      "InfoMsg": "",
+      "Address": "E0:13:7D:9D:2E:45",
+      "AddressType": "random",
+      "Name": "Nordic_UART_Service",
+      "Alias": "Nordic_UART_Service",
+      "Appearance": 833,
+      "Paired": 0,
+      "Trusted": 1,
+      "Blocked": 0,
+      "LegacyPairing": 0,
+      "Connected": 1,
+      "UUIDs": [
+        "00001800-0000-1000-8000-00805f9b34fb",
+        "00001801-0000-1000-8000-00805f9b34fb",
+        "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
+      ],
+      "Adapter": "/org/bluez/hci0",
+      "ServicesResolved": 0
+    }
+
+    Short delay to allow services to discover...
+    read Bluetooth state:
+
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   428  100   428    0     0  28533      0 --:--:-- --:--:-- --:--:-- 28533
+    {
+      "SDCERR": 0,
+      "InfoMsg": "",
+      "Address": "E0:13:7D:9D:2E:45",
+      "AddressType": "random",
+      "Name": "Nordic_UART_Service",
+      "Alias": "Nordic_UART_Service",
+      "Appearance": 833,
+      "Paired": 0,
+      "Trusted": 1,
+      "Blocked": 0,
+      "LegacyPairing": 0,
+      "Connected": 1,
+      "UUIDs": [
+        "00001800-0000-1000-8000-00805f9b34fb",
+        "00001801-0000-1000-8000-00805f9b34fb",
+        "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
+      ],
+      "Adapter": "/org/bluez/hci0",
+      "ServicesResolved": 1
+    }
+
+
+    # IPADDR=localhost JQ_APP=smart_jq BT_DEVICE=E0:13:7D:9D:2E:45  ./bluetooth_ble_gatt_notify.sh
+    =========================
+    Bluetooth GATT notify
+    Please invoke bluetooth_ble_connect.sh prior to receive response.
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   243  100    28  100   215    358   2756 --:--:-- --:--:-- --:--:--  3115
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+    Characteristic notification events will be received over the connection previously established by bluetooth_ble_connect, for example:
+    {
+        "char":{
+            "char_uuid":"6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+            "value":"0d",
+            "service_uuid":"6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+            "address":"E0:13:7D:9D:2E:45",
+            "timestamp":1637709735
+        }
+    }
+
+
+    Example of read of heart-rate body sensor location (chest) of example-gatt-server.py
+    # IPADDR=localhost JQ_APP=smart_jq BT_DEVICE=C0:EE:40:50:17:6B GATT_SVC_UUID=0000180d-0000-1000-8000-00805f9b34fb GATT_CHR_UUID=00002a38-0000-1000-8000-00805f9b34fb  ./bluetooth_ble_gatt_read.sh
+
+    =========================
+    Bluetooth GATT read
+    Please invoke bluetooth_ble_connect.sh prior to receive response.
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   215  100    28  100   187    368   2460 --:--:-- --:--:-- --:--:--  2866
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+    Read notification events will be received over the connection previously established by bluetooth_ble_connect, for example:
+
+    {
+        "char":{
+            "char_uuid":"00002a38-0000-1000-8000-00805f9b34fb",
+            "value":"01",
+            "service_uuid":"0000180d-0000-1000-8000-00805f9b34fb",
+            "address":"C0:EE:40:50:17:6B",
+            "timestamp":1637782343
+        }
+    }
+
+
+    # IPADDR=localhost JQ_APP=smart_jq BT_DEVICE=E0:13:7D:9D:2E:45  ./bluetooth_ble_gatt_read.sh
+    =========================
+    Bluetooth GATT read
+    Please invoke bluetooth_ble_connect.sh prior to receive response.
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   356  100   169  100   187      7      8  0:00:24  0:00:22  0:00:02    46
+    {
+      "SDCERR": 1,
+      "InfoMsg": "Failed to read device E0:13:7D:9D:2E:45 characteristic 6e400003-b5a3-f393-e0a9-e50e24dcca9e: org.bluez.Error.NotPermitted: Read not permitted"
+    }
+
+
+    Example of write to "Dummy test characteristic" of example-gatt-server.py
+    # IPADDR=localhost JQ_APP=smart_jq BT_DEVICE=C0:EE:40:50:17:6B GATT_SVC_UUID=12345678-1234-5678-1234-56789abcdef0 GATT_CHR_UUID=12345678-1234-5678-1234-56789abcdef1 GATT_DATA=0001020304  ./bluetooth_ble_gatt_write.sh
+    =========================
+    Bluetooth GATT write
+    Please invoke bluetooth_ble_connect.sh prior to receive response.
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   247  100    28  100   219   1272   9954 --:--:-- --:--:-- --:--:-- 11227
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+
+    # IPADDR=localhost JQ_APP=smart_jq BT_DEVICE=C0:EE:40:50:17:6B GATT_SVC_UUID=0000180d-0000-1000-8000-00805f9b34fb GATT_CHR_UUID=00002a37-0000-1000-8000-00805f9b34fb  ./bluetooth_ble_gatt_notify.sh
+    =========================
+    Bluetooth GATT notify
+    Please invoke bluetooth_ble_connect.sh prior to receive response.
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100   243  100    28  100   215    337   2590 --:--:-- --:--:-- --:--:--  2927
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+    Notification events will be received over the connection previously established by bluetooth_ble_connect, for example:
+    {
+        "char":{
+            "char_uuid":"00002a37-0000-1000-8000-00805f9b34fb",
+            "value":"067f",
+            "service_uuid":"0000180d-0000-1000-8000-00805f9b34fb",
+            "address":"C0:EE:40:50:17:6B",
+            "timestamp":1637783561
+        }
+    }
+
+
 ## example showing user login timed-out prior to request:
 
     ./bluetooth_scan.sh
