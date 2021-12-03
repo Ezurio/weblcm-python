@@ -43,7 +43,7 @@ except ImportError:
 
 try:
     # module dependencies, such as bt_logger.py, may be under /usr/lib
-    sys.path.append('/usr/lib')
+    sys.path.append('/usr/lib/igsdk')
     from weblcm_bluetooth_ble import BluetoothBlePlugin
     bluetooth_plugins.append(BluetoothBlePlugin())
     cherrypy.log("weblcm_bluetooth: BluetoothBlePlugin loaded")
