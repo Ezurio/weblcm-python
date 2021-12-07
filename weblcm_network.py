@@ -15,8 +15,9 @@ class NetworkConnections(object):
 	def GET(self, *args, **kwargs):
 		result = {
 			'SDCERR': 0,
-			'connections': {},
-			'InfoMsg': ''
+			'InfoMsg': '',
+			'count': 0,
+			'connections': {}
 		}
 
 		unmanaged_devices = cherrypy.request.app.config['weblcm'].get('unmanaged_hardware_devices', '').split()
@@ -42,7 +43,7 @@ class NetworkConnections(object):
 			if result.get('connections') and result.get('connections').get(uuid):
 				result['connections'][uuid]['activated'] = 1
 
-		result['length'] = len(result['connections'])
+		result['count'] = len(result['connections'])
 		return result
 
 @cherrypy.expose
@@ -320,10 +321,11 @@ class Version(object):
 				Version._version['weblcm_python_webapp'] = weblcm_def.WEBLCM_PYTHON_VERSION
 				Version._version['build'] = subprocess.check_output("sed -n 's/^VERSION=//p' /etc/os-release", shell=True).decode('ascii').strip().strip('"')
 				Version._version['supplicant'] = subprocess.check_output(['sdcsupp','-v']).decode('ascii').rstrip()
+				Version._version['radio_stack'] = NetworkManager.NetworkManager.Version.partition("-")[0]
 				for dev in NetworkManager.Device.all():
 					if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
 						Version._version['driver'] = dev.Driver
-						Version._version['driver_version'] = dev.DriverVersion
+						Version._version['kernel_vermagic'] = dev.DriverVersion
 						break
 		except Exception as e:
 			Version._version = {'SDCERR' : weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL'), 'InfoMsg':f'An exception occurred while trying to get versioning info: {e}' }

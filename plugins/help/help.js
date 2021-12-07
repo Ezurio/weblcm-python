@@ -18,11 +18,12 @@ function clickHelpVersionPage(){
     })
     .done(function(msg) {
       $("#version-driver").text(msg['driver']);
-      $("#version-driver-version").text(msg['driver_version']);
+      $("#version-kernel-vermagic").text(msg['kernel_vermagic']);
       $("#version-supplicant").text(msg['supplicant']);
       $("#version-build").text(msg['build']);
       $("#version-nm").text(msg['nm_version']);
       $("#version-weblcm").text(msg['weblcm_python_webapp']);
+      $("#version-radio-stack").text(msg['radio_stack']);
     })
     .fail(function( xhr, textStatus, errorThrown) {
       httpErrorResponseHandler(xhr, textStatus, errorThrown)
