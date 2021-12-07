@@ -55,7 +55,7 @@ class LogData(object):
 			logs.append(log)
 
 		result['InfoMsg'] = f'type: {typ}; days: {days}; Priority: {priority}'
-		result['length'] = len(logs)
+		result['count'] = len(logs)
 		result['log'] = logs
 		reader.close()
 		return result
@@ -115,6 +115,7 @@ class LogSetting(object):
 			return result
 
 		result['SDCERR'] = 0
+		result['InfoMsg'] = f'Supplicant debug level = {supp_level}; Driver debug level = {drv_level}'
 
 		return result
 

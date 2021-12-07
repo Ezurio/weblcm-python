@@ -64,7 +64,8 @@ class SWUpdate:
 			proc = Popen([SWUpdate.SWUPDATE_SCRIPT, "get-update", str(mode)], stdout=PIPE, stderr=PIPE)
 			outs, errs = proc.communicate(timeout=SystemSettingsManage.get_user_callback_timeout())
 			if proc.returncode:
-				result['InfoMsg'] = errs.decode("utf-8")
+				ret_string = errs.decode("utf-8")
+				result['InfoMsg'] = ret_string.replace("\n","")
 				result['SDCERR'] = proc.returncode
 			else:
 				result['InfoMsg'] = "Updated"
@@ -110,7 +111,9 @@ class SWUpdate:
 				proc = Popen(args, stdout=PIPE, stderr=PIPE)
 				outs, errs = proc.communicate(timeout=timeout)
 				if proc.returncode:
-					result['InfoMsg'] = errs.decode("utf-8")
+					ret_string = errs.decode("utf-8")
+					result['InfoMsg'] = ret_string.replace("\n","")
+
 					result['SDCERR'] = proc.returncode
 				else:
 					if not callback or callback(dryrun) > 0:
