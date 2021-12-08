@@ -318,10 +318,11 @@ class Bluetooth(object):
                 # adapter-specific operation
                 if command:
                     if not command in self.adapter_commands:
-                        return '{"SDCERR":1, "InfoMsg": "supplied command parameter must be one ' \
-                               'of %s"}' % self.adapter_commands
-                    result.update(self.execute_adapter_command(bus, command, controller_name,
-                                                               adapter_obj))
+                        result.update(self.result_parameter_not_one_of('command',
+                                                                       self.adapter_commands))
+                    else:
+                        result.update(self.execute_adapter_command(bus, command, controller_name,
+                                                                   adapter_obj))
                     return result
                 else:
                     for prop in CACHED_ADAPTER_PROPS:
@@ -332,8 +333,9 @@ class Bluetooth(object):
             else:
                 # device-specific operation
                 if command and command not in self.device_commands:
-                    return '{"SDCERR":1, "InfoMsg": "supplied command parameter must be one ' \
-                           'of %s"}' % self.device_commands
+                    result.update(self.result_parameter_not_one_of('command',
+                                                                   self.device_commands))
+                    return result
                 device, device_props = find_device(bus, device_uuid)
                 if device is None:
                     result['InfoMsg'] = 'Device not found'
@@ -384,6 +386,11 @@ class Bluetooth(object):
         if not device_uuid in controller_state.device_properties_uuids:
             controller_state.device_properties_uuids[device_uuid] = {}
         return controller_state.device_properties_uuids[device_uuid]
+
+    @staticmethod
+    def result_parameter_not_one_of(parameter: str, not_one_of):
+        return {'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1),
+                'InfoMsg': f"supplied {parameter} parameter must be one of {not_one_of}"}
 
     def set_adapter_properties(self, adapter_methods, adapter_props, controller_name, post_data):
         """Set properties on an adapter (controller)"""
