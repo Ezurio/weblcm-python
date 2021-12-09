@@ -2,7 +2,7 @@ source global_settings
 
 JQ_APP="${JQ_APP:-smart_jq}"
 # tcpPort may be in the range 1000 to 49151
-BLE_TCP_PORT="${VSP_TCP_PORT:-1001}"
+BLE_TCP_PORT="${BLE_TCP_PORT:-1001}"
 
 function smart_jq {
     local input=$(cat)
