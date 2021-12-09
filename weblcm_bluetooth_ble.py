@@ -35,7 +35,7 @@ class BluetoothBlePlugin(BluetoothPlugin):
 
     @property
     def adapter_commands(self) -> List[str]:
-        return ['bleStartServer', 'bleStartDiscovery', 'bleStopDiscovery']
+        return ['bleStartServer', 'bleStopServer', 'bleStartDiscovery', 'bleStopDiscovery']
 
     def ProcessDeviceCommand(self, bus, command, device_uuid: str, device: dbus.ObjectPath,
                              post_data):
@@ -104,16 +104,24 @@ class BluetoothBlePlugin(BluetoothPlugin):
                         self._server = None
                     else:
                         # Initialize the bluetooth manager
-                        self.bt = bt_init(self.discovery_callback,
-                                          self.characteristic_property_change_callback,
-                                          self.connection_callback,
-                                          self.write_notification_callback)
-                        self.ble_logger = BleLogger(__name__)
-                        self.bt.logger.name = "original logger object"
-                        self.bt.logger = self.ble_logger
+                        if not self.bt:
+                            self.bt = bt_init(self.discovery_callback,
+                                              self.characteristic_property_change_callback,
+                                              self.connection_callback,
+                                              self.write_notification_callback)
+                            self.ble_logger = BleLogger(__name__)
+                            self.bt.logger.name = "original logger object"
+                            self.bt.logger = self.ble_logger
                 except Exception as e:
                     self._server = None
                     raise e
+        elif command == 'bleStopServer':
+            processed = True
+            if self._server:
+                self._server.disconnect(bus, post_data)
+                self._server = None
+            else:
+                error_message = "ble server is not running"
         elif command == 'bleStartDiscovery':
             processed = True
             bt_start_discovery(self.bt)
@@ -221,7 +229,7 @@ class BluetoothTcpServer(TcpConnection):
         else:
             return 'tcpPort param not specified'
 
-    def disconnect(self, bus, device_uuid: str = None, params=None):
+    def disconnect(self, bus, params=None):
         self.stop_tcp_server(self.sock)
         if self.thread:
             self.thread.join()
