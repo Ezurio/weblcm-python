@@ -9,9 +9,10 @@ from typing import Optional, List
 import cherrypy
 import dbus
 
-from bt_module import bt_device_services, bt_init, bt_start_discovery, bt_stop_discovery, \
-    bt_connect, bt_disconnect, bt_read_characteristic, bt_write_characteristic, \
+from bt_module import bt_device_services, bt_start_discovery, \
+    bt_stop_discovery, bt_connect, bt_disconnect, bt_read_characteristic, bt_write_characteristic, \
     bt_config_characteristic_notification
+from bt_module_extended import bt_init_ex
 from weblcm_bluetooth_ble_logger import BleLogger
 from weblcm_bluetooth_plugin import BluetoothPlugin
 from weblcm_tcp_connection import TcpConnection, firewalld_open_port, \
@@ -111,13 +112,14 @@ class BluetoothBlePlugin(BluetoothPlugin):
                     else:
                         # Initialize the bluetooth manager
                         if not self.bt:
-                            self.bt = bt_init(self.discovery_callback,
-                                              self.characteristic_property_change_callback,
-                                              self.connection_callback,
-                                              self.write_notification_callback)
                             self.ble_logger = BleLogger(__name__)
-                            self.bt.logger.name = "original logger object"
-                            self.bt.logger = self.ble_logger
+                            self.bt = bt_init_ex(self.discovery_callback,
+                                                 self.characteristic_property_change_callback,
+                                                 self.connection_callback,
+                                                 self.write_notification_callback,
+                                                 setup_dbus_loop=False,
+                                                 logger=self.ble_logger,
+                                                 daemon=True)
                 except Exception as e:
                     self._server = None
                     raise e
