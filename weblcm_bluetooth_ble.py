@@ -52,7 +52,9 @@ class BluetoothBlePlugin(BluetoothPlugin):
             processed = True
             purge = False
             if 'purge' in post_data:
-                purge = strtobool(post_data['purge'])
+                purge = post_data['purge']
+                if type(purge) is str:
+                    purge = strtobool(purge)
             bt_disconnect(self.bt, device_uuid, purge)
         elif command == 'bleGatt':
             processed = True
@@ -76,7 +78,9 @@ class BluetoothBlePlugin(BluetoothPlugin):
             elif operation == 'notify':
                 if 'enable' not in post_data:
                     return True, "enable param not specified"
-                enable = strtobool(post_data['enable'])
+                enable = post_data['enable']
+                if type(enable) is str:
+                    enable = strtobool(enable)
                 bt_config_characteristic_notification(self.bt, device_uuid, service_uuid,
                                                       char_uuid, enable)
             else:
