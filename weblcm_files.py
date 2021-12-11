@@ -147,11 +147,9 @@ class FileManage(object):
 			if not fil:
 				syslog('FileManage DELETE - no filename provided')
 				result['InfoMsg'] = 'no file specified'
-#			raise cherrypy.HTTPError(400, 'missing type or file') #bad request
 			return result
 		valid = ['cert','pac']
 		if not typ in valid:
-#			raise cherrypy.HTTPError(400, f"type not one of {valid}")
 			result['InfoMsg'] = f'type not one of {valid}'
 			return result
 		path = os.path.normpath(os.path.join(weblcm_def.FILEDIR_DICT.get(typ), fil))
@@ -175,12 +173,20 @@ class FilesManage(object):
 	def GET(self, *args, **kwargs):
 		result = {
 			'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS'),
-			'InfoMsg': ''
+			'InfoMsg': '',
+			'count': 0,
+			'files': []
 			}
 		typ = kwargs.get('type', None)
+		valid = ['cert','pac']
 		if not typ:
-			syslog('FilesManage GET - no type provided')
-			raise cherrypy.HTTPError(400, 'no filename provided')
+			result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL')
+			result['InfoMsg'] = 'no filename provided'
+			return result
+		if not typ in valid:
+			result['InfoMsg'] = f'type not one of {valid}'
+			result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL')
+			return result
 
 		files = []
 		with os.scandir(weblcm_def.FILEDIR_DICT.get(typ)) as listOfEntries:
@@ -192,6 +198,7 @@ class FilesManage(object):
 		files.sort()
 		result['files'] = files
 		result['count'] = len(files)
+		result['InfoMsg'] = f'{typ} files'
 		return result
 
 @cherrypy.expose

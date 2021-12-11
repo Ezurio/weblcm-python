@@ -257,6 +257,7 @@ class NetworkAccessPoints(object):
 		result = {
 			'SDCERR': 1,
 			'InfoMsg': '',
+			'count': 0,
 			'accesspoints': [],
 		}
 
@@ -297,8 +298,11 @@ class NetworkAccessPoints(object):
 				}
 				result['accesspoints'].append(ap_data)
 
-			if len(result['accesspoints']):
+			if len(result['accesspoints']) > 0:
 				result['SDCERR'] = 0
+				result['count'] = len(result['accesspoints'])
+			else:
+				result['InfoMsg'] = 'No access points found'
 
 		except Exception as e:
 			result['InfoMsg'] = 'Unable to get access point list'
