@@ -58,7 +58,7 @@ class SWUpdate:
 		try:
 			mode = int(kwargs.get('mode', 0))
 		except Exception as e:
-			resutt['InfoMsg'] = 'Mode must be 0 (block/block mode) or 1 '
+			result['InfoMsg'] = 'Mode must be 0 (block/block mode) or 1 '
 			return result
 		try:
 			proc = Popen([SWUpdate.SWUPDATE_SCRIPT, "get-update", str(mode)], stdout=PIPE, stderr=PIPE)
@@ -117,6 +117,7 @@ class SWUpdate:
 					result['SDCERR'] = proc.returncode
 				else:
 					if not callback or callback(dryrun) > 0:
+						result['InfoMsg']=''
 						result['SDCERR'] = 0
 			except TimeoutExpired:
 				proc.kill()
@@ -147,7 +148,14 @@ class SWUpdate:
 		cherrypy.session['swupdate'] = cherrypy.session.id
 		return result
 
+	@cherrypy.tools.accept(media='application/json')
+	@cherrypy.tools.json_out()
 	def DELETE(self):
+
+		result = {
+			'SDCERR': 0,
+			'InfoMsg': ""
+		}
 
 		if cherrypy.session.get('swupdate', None) == cherrypy.session.id:
 			swclient.end_fw_update()
@@ -156,4 +164,4 @@ class SWUpdate:
 			SWUpdate._isUpdating = False
 			cherrypy.session.pop('swupdate', None)
 
-		return
+		return result
