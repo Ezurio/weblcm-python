@@ -1,13 +1,13 @@
+
 source global_settings
 
-
 echo -e "\n========================="
-echo "Get accesspoints"
+echo "Get users"
 
 ${CURL_APP} -s --location \
-    --request GET ${URL}/accesspoints \
+    --request GET ${URL}/users \
+    --header "Content-Type: application/json" \
     -b cookie --insecure \
 | ${JQ_APP}
-
 echo -e "\n"
 

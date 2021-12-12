@@ -15,6 +15,15 @@ then
     exit 1
 fi
 
+function smart_jq {
+    local input=$(cat)
+    if [ "${input:0:1}" == "{" ]; then
+        echo "${input}" | jq
+    else
+        echo "${input}"
+    fi
+}
+
 # Use jq if it is installed.
 
 if [ -z "${JQ_APP+x}" ]
@@ -24,7 +33,7 @@ then
         # recommend installing the jq application
         JQ_APP=tee
     else
-        JQ_APP=jq
+        JQ_APP=smart_jq
     fi
 fi
 
