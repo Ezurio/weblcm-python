@@ -1,14 +1,12 @@
-UUID="${UUID:-"a760e87e-e23a-4ea6-81f9-c4e29052db27"}"
 source global_settings
 
-
 echo -e "\n========================="
-echo "Get connection"
+echo "Get datetime"
 
 ${CURL_APP} -s --location \
-    --request GET "${URL}/connection" \
+    --request GET "${URL}/datetime" \
+    --header "Content-Type: application/json" \
     -b cookie --insecure \
 | ${JQ_APP}
-
 echo -e "\n"
 

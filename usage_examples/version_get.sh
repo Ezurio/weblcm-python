@@ -1,13 +1,12 @@
 source global_settings
 
 echo -e "\n========================="
-echo "PUT accesspoints"
+echo "Versions"
 
 ${CURL_APP} -s --header "Content-Type: application/json" \
-    --request PUT "${URL}/accesspoints" \
-    -b cookie \
-    --insecure \
-    --data-raw ‘’\
+    --location \
+    --request GET ${URL}/version \
+    -b cookie --insecure \
 | ${JQ_APP}
 
 echo -e "\n"

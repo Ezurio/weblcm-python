@@ -3,7 +3,7 @@ source global_settings
 echo -e "\n========================="
 echo "Fips Get"
 
-${CURL_APP} --location --request GET ${URL}/fips \
+${CURL_APP} -s --location --request GET ${URL}/fips \
     --header "Content-Type: application/json" \
     -b cookie --insecure\
     --data-raw ''\

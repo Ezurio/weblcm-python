@@ -1,12 +1,15 @@
 source global_settings
 
 echo -e "\n========================="
-echo "AWM Get"
+echo "Reboot"
 
-${CURL_APP} -s --location --request GET ${URL}/awm \
+echo -e "\n\n========================="
+echo "Reboot"
+${CURL_APP} -s --location --request PUT ${URL}/reboot \
     --header "Content-Type: application/json" \
     -b cookie --insecure\
     --data-raw ''\
-    | ${JQ_APP}
+| ${JQ_APP}
+
 
 echo -e "\n"
