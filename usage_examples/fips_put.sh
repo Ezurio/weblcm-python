@@ -3,7 +3,7 @@ source global_settings
 echo -e "\n========================="
 echo "Fips GET"
 
-${CURL_APP} --location --request GET ${URL}/fips \
+${CURL_APP} -s --location --request GET ${URL}/fips \
     --header "Content-Type: application/json" \
     -b cookie --insecure\
     --data-raw ''\
@@ -13,7 +13,7 @@ echo -e "\n========================="
 echo "Fips PUT"
 
 echo -e "empty:\n"
-${CURL_APP} --location --request PUT ${URL}/fips \
+${CURL_APP} -s --location --request PUT ${URL}/fips \
     --header "Content-Type: application/json" \
     -b cookie --insecure\
     --data '{}'\
@@ -21,7 +21,7 @@ ${CURL_APP} --location --request PUT ${URL}/fips \
 echo -e '\n'
 
 echo -e "invalid:\n"
-${CURL_APP} --location --request PUT ${URL}/fips \
+${CURL_APP} -s --location --request PUT ${URL}/fips \
     --header "Content-Type: application/json" \
     -b cookie --insecure\
     --data '{"fips":"status"}'\
@@ -29,7 +29,7 @@ ${CURL_APP} --location --request PUT ${URL}/fips \
 echo -e '\n'
 
 echo -e "unset:\n"
-${CURL_APP} --location --request PUT ${URL}/fips \
+${CURL_APP} -s --location --request PUT ${URL}/fips \
     --header "Content-Type: application/json" \
     -b cookie --insecure\
     --data '{"fips":"unset"}'\

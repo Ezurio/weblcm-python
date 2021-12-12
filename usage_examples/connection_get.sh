@@ -5,7 +5,7 @@ source global_settings
 echo -e "\n========================="
 echo "Get connection"
 
-${CURL_APP} --location \
+${CURL_APP} -s --location \
     --request GET "${URL}/connection?uuid=${UUID}" \
     -b cookie --insecure \
 | ${JQ_APP}

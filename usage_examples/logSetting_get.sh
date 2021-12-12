@@ -1,13 +1,13 @@
-UUID="${UUID:-"a760e87e-e23a-4ea6-81f9-c4e29052db27"}"
 source global_settings
 
-
 echo -e "\n========================="
-echo "Get connection"
+echo "Get LogLevel"
 
 ${CURL_APP} -s --location \
-    --request GET "${URL}/connection" \
+    --request GET ${URL}/logSetting \
+    --header "Content-Type: application/json" \
     -b cookie --insecure \
+    --data-raw '' \
 | ${JQ_APP}
 
 echo -e "\n"
