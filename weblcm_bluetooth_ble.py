@@ -96,6 +96,8 @@ class BluetoothBlePlugin(BluetoothPlugin):
         processed = False
         error_message = None
         result = {}
+        if self.ble_logger:
+            self.ble_logger.error_occurred = False
         if command == 'bleStartServer':
             processed = True
             if self._server:
@@ -119,19 +121,26 @@ class BluetoothBlePlugin(BluetoothPlugin):
                 except Exception as e:
                     self._server = None
                     raise e
-        elif command == 'bleStopServer':
-            processed = True
-            if self._server:
-                self._server.disconnect(bus, post_data)
-                self._server = None
-            else:
-                error_message = "ble server is not running"
-        elif command == 'bleStartDiscovery':
-            processed = True
-            bt_start_discovery(self.bt)
-        elif command == 'bleStopDiscovery':
-            processed = True
-            bt_stop_discovery(self.bt)
+        else:
+            if command in self.adapter_commands and not self.bt:
+                return True, f"bleStartServer must be executed prior to {command}", result
+            elif command == 'bleStopServer':
+                processed = True
+                if self._server:
+                    self._server.disconnect(bus, post_data)
+                    self._server = None
+                else:
+                    error_message = "ble server is not running"
+            elif command == 'bleStartDiscovery':
+                processed = True
+                bt_start_discovery(self.bt)
+            elif command == 'bleStopDiscovery':
+                processed = True
+                bt_stop_discovery(self.bt)
+
+        if self.ble_logger and self.ble_logger.error_occurred:
+            error_message = self.ble_logger.last_message
+
         return processed, error_message, result
 
     def discovery_callback(self, path, interfaces):
