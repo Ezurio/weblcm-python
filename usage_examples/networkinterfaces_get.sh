@@ -5,7 +5,7 @@ source global_settings
 echo -e "\n========================="
 echo "Get networkinterfaces"
 
-${CURL_APP} --location \
+${CURL_APP} -s --location \
     --request GET ${URL}/networkInterfaces \
     -b cookie --insecure \
 | ${JQ_APP}

@@ -1,12 +1,14 @@
 source global_settings
 
 echo -e "\n========================="
-echo "AWM Get"
+echo "Factory Reset"
 
-${CURL_APP} -s --location --request GET ${URL}/awm \
+${CURL_APP} -s --location --request PUT ${URL}/factoryReset \
     --header "Content-Type: application/json" \
     -b cookie --insecure\
     --data-raw ''\
-    | ${JQ_APP}
+| ${JQ_APP}
 
+echo -e "\n\n========================="
+echo "Reboot required"
 echo -e "\n"
