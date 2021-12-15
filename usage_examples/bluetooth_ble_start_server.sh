@@ -1,17 +1,7 @@
 source global_settings
 
-JQ_APP="${JQ_APP:-smart_jq}"
 # tcpPort may be in the range 1000 to 49151
 BLE_TCP_PORT="${BLE_TCP_PORT:-1001}"
-
-function smart_jq {
-    local input=$(cat)
-    if [ "${input:0:1}" == "{" ]; then
-        echo "${input}" | jq
-    else
-        echo "${input}"
-    fi
-}
 
 echo -e "\n========================="
 echo "Bluetooth ble server start"

@@ -1,6 +1,5 @@
 source global_settings
 
-JQ_APP="${JQ_APP:-smart_jq}"
 # Example UUIDs taken from Nordic nRF Connect SDK peripheral uart example project
 VSP_SVC_UUID="${VSP_SVC_UUID:-6e400001-b5a3-f393-e0a9-e50e24dcca9e}"
 VSP_READ_CHR_UUID="${VSP_READ_CHR_UUID:-6e400003-b5a3-f393-e0a9-e50e24dcca9e}"
@@ -9,15 +8,6 @@ VSP_WRITE_CHR_UUID="${VSP_WRITE_CHR_UUID:-6e400002-b5a3-f393-e0a9-e50e24dcca9e}"
 VSP_TCP_PORT="${VSP_TCP_PORT:-1001}"
 # socketRxType may be JSON or raw
 VSP_SOCKET_RX_TYPE="JSON"
-
-function smart_jq {
-    local input=$(cat)
-    if [ "${input:0:1}" == "{" ]; then
-        echo "${input}" | jq
-    else
-        echo "${input}"
-    fi
-}
 
 echo -e "\n========================="
 echo "Bluetooth virtual serial port (gatt characteristics) connect"
