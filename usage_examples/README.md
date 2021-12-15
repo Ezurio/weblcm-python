@@ -2267,6 +2267,7 @@ this will create all the example connections in this package:
     100    29  100    13  100    16     46     57 --:--:-- --:--:-- --:--:--   103
     {
       "SDCERR": 0
+      "InfoMsg": ""
     }
 
 
@@ -2397,6 +2398,7 @@ this will create all the example connections in this package:
     100    29  100    13  100    16    812   1000 --:--:-- --:--:-- --:--:--  1812
     {
       "SDCERR": 0
+      "InfoMsg": ""
     }
 
 
@@ -2439,6 +2441,7 @@ this will create all the example connections in this package:
     100    29  100    13  100    16     32     40 --:--:-- --:--:-- --:--:--    72
     {
       "SDCERR": 0
+      "InfoMsg": ""
     }
 
 
@@ -2541,6 +2544,7 @@ this will create all the example connections in this package:
     100    29  100    13  100    16      3      4  0:00:04  0:00:03  0:00:01     8
     {
       "SDCERR": 0
+      "InfoMsg": ""
     }
 
 
@@ -2573,7 +2577,7 @@ this will create all the example connections in this package:
     }
 
 
-    # IPADDR=localhost JQ_APP=smart_jq BT_DEVICE=E0:13:7D:9D:2E:45  ./bluetooth_ble_start_server.sh
+    # IPADDR=localhost ./bluetooth_ble_start_server.sh
     =========================
     Bluetooth ble server start
 
@@ -2653,7 +2657,20 @@ this will create all the example connections in this package:
     }
 
 
-    # IPADDR=localhost JQ_APP=smart_jq   ./bluetooth_ble_start_discovery.sh
+    # IPADDR=localhost ./bluetooth_ble_stop_server.sh
+
+    =========================
+    Bluetooth ble server stop
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100    74  100    28  100    46     15     24  0:00:01  0:00:01 --:--:--    40
+    {
+      "SDCERR": 0,
+      "InfoMsg": ""
+    }
+
+
+    # IPADDR=localhost ./bluetooth_ble_start_discovery.sh
     =========================
     Bluetooth ble start discovery
       % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
@@ -2693,7 +2710,7 @@ this will create all the example connections in this package:
     }
 
 
-    # IPADDR=localhost JQ_APP=smart_jq   ./bluetooth_ble_stop_discovery.sh
+    # IPADDR=localhost ./bluetooth_ble_stop_discovery.sh
     =========================
     Bluetooth ble stop discovery
       % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
@@ -2705,7 +2722,7 @@ this will create all the example connections in this package:
     }
 
 
-    #IPADDR=localhost JQ_APP=smart_jq BT_DEVICE=E0:13:7D:9D:2E:45  ./bluetooth_ble_connect.sh
+    #IPADDR=localhost BT_DEVICE=E0:13:7D:9D:2E:45  ./bluetooth_ble_connect.sh
     =========================
     Bluetooth ble connect
 
@@ -2774,7 +2791,7 @@ this will create all the example connections in this package:
     }
 
 
-    # IPADDR=localhost JQ_APP=smart_jq BT_DEVICE=E0:13:7D:9D:2E:45  ./bluetooth_ble_gatt_notify.sh
+    # IPADDR=localhost BT_DEVICE=E0:13:7D:9D:2E:45  ./bluetooth_ble_gatt_notify.sh
     =========================
     Bluetooth GATT notify
     Please invoke bluetooth_ble_connect.sh prior to receive response.
@@ -2799,7 +2816,7 @@ this will create all the example connections in this package:
 
 
     Example of read of heart-rate body sensor location (chest) of example-gatt-server.py
-    # IPADDR=localhost JQ_APP=smart_jq BT_DEVICE=C0:EE:40:50:17:6B GATT_SVC_UUID=0000180d-0000-1000-8000-00805f9b34fb GATT_CHR_UUID=00002a38-0000-1000-8000-00805f9b34fb  ./bluetooth_ble_gatt_read.sh
+    # IPADDR=localhost BT_DEVICE=C0:EE:40:50:17:6B GATT_SVC_UUID=0000180d-0000-1000-8000-00805f9b34fb GATT_CHR_UUID=00002a38-0000-1000-8000-00805f9b34fb  ./bluetooth_ble_gatt_read.sh
 
     =========================
     Bluetooth GATT read
@@ -2825,7 +2842,7 @@ this will create all the example connections in this package:
     }
 
 
-    # IPADDR=localhost JQ_APP=smart_jq BT_DEVICE=E0:13:7D:9D:2E:45  ./bluetooth_ble_gatt_read.sh
+    # IPADDR=localhost BT_DEVICE=E0:13:7D:9D:2E:45  ./bluetooth_ble_gatt_read.sh
     =========================
     Bluetooth GATT read
     Please invoke bluetooth_ble_connect.sh prior to receive response.
@@ -2839,7 +2856,7 @@ this will create all the example connections in this package:
 
 
     Example of write to "Dummy test characteristic" of example-gatt-server.py
-    # IPADDR=localhost JQ_APP=smart_jq BT_DEVICE=C0:EE:40:50:17:6B GATT_SVC_UUID=12345678-1234-5678-1234-56789abcdef0 GATT_CHR_UUID=12345678-1234-5678-1234-56789abcdef1 GATT_DATA=0001020304  ./bluetooth_ble_gatt_write.sh
+    # IPADDR=localhost BT_DEVICE=C0:EE:40:50:17:6B GATT_SVC_UUID=12345678-1234-5678-1234-56789abcdef0 GATT_CHR_UUID=12345678-1234-5678-1234-56789abcdef1 GATT_DATA=0001020304  ./bluetooth_ble_gatt_write.sh
     =========================
     Bluetooth GATT write
     Please invoke bluetooth_ble_connect.sh prior to receive response.
@@ -2852,7 +2869,7 @@ this will create all the example connections in this package:
     }
 
 
-    # IPADDR=localhost JQ_APP=smart_jq BT_DEVICE=C0:EE:40:50:17:6B GATT_SVC_UUID=0000180d-0000-1000-8000-00805f9b34fb GATT_CHR_UUID=00002a37-0000-1000-8000-00805f9b34fb  ./bluetooth_ble_gatt_notify.sh
+    # IPADDR=localhost BT_DEVICE=C0:EE:40:50:17:6B GATT_SVC_UUID=0000180d-0000-1000-8000-00805f9b34fb GATT_CHR_UUID=00002a37-0000-1000-8000-00805f9b34fb  ./bluetooth_ble_gatt_notify.sh
     =========================
     Bluetooth GATT notify
     Please invoke bluetooth_ble_connect.sh prior to receive response.
