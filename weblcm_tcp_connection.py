@@ -45,6 +45,7 @@ class TcpConnection(object):
     def tcp_server(self, host, params) -> socket.socket:
         # Create a TCP/IP socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         port = int(params['tcpPort'])
         self.port = port
         server_address = (host, port)
