@@ -55,7 +55,7 @@ class BluetoothBlePlugin(BluetoothPlugin):
         processed = False
         error_message = None
         if command in self.device_commands and not self.bt:
-            return True, f"bleStartServer must be executed prior to {command}"
+            self.initialize()
         if self.ble_logger:
             self.ble_logger.error_occurred = False
         if command == 'bleConnect':
@@ -128,8 +128,8 @@ class BluetoothBlePlugin(BluetoothPlugin):
                     raise e
         else:
             if command in self.adapter_commands and not self.bt:
-                return True, f"bleStartServer must be executed prior to {command}", result
-            elif command == 'bleStopServer':
+                self.initialize()
+            if command == 'bleStopServer':
                 processed = True
                 if self._server:
                     self._server.disconnect(bus, post_data)
