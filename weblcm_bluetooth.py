@@ -52,10 +52,12 @@ except ImportError:
     cherrypy.log("weblcm_bluetooth: VspConnectionPlugin NOT loaded")
 
 try:
+    bluetooth_ble_plugin = None
     # module dependencies, such as bt_logger.py, may be under /usr/lib
     sys.path.append('/usr/lib/igsdk')
     from weblcm_bluetooth_ble import BluetoothBlePlugin
-    bluetooth_plugins.append(BluetoothBlePlugin())
+    bluetooth_ble_plugin = BluetoothBlePlugin()
+    bluetooth_plugins.append(bluetooth_ble_plugin)
     cherrypy.log("weblcm_bluetooth: BluetoothBlePlugin loaded")
 except ImportError:
     cherrypy.log("weblcm_bluetooth: BluetoothBlePlugin NOT loaded")
@@ -362,7 +364,7 @@ class Bluetooth(object):
                             cached_device_properties[prop] = post_data.get(prop)
                     result.update(self.set_device_properties(adapter_methods, device_methods,
                                                              device_obj, device_properties,
-                                                             post_data))
+                                                             device_uuid, post_data))
 
         except Exception as e:
             result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
@@ -448,7 +450,8 @@ class Bluetooth(object):
         controller_state.properties['transportFilter'] = transport_filter
         return result
 
-    def set_device_properties(self, adapter_methods, device_methods, device_obj, device_properties, post_data):
+    def set_device_properties(self, adapter_methods, device_methods, device_obj: dbus.ObjectPath,
+                              device_properties, device_uuid: str, post_data):
         result = {}
         for settable_property in SETTABLE_DEVICE_PROPS:
             prop_name, prop_type = settable_property
@@ -483,7 +486,12 @@ class Bluetooth(object):
                 # Note - device may need to be paired prior to connecting
                 # AgentSingleton can be registered to allow BlueZ to auto-pair (without bonding)
                 agent = AgentSingleton()
-                device_methods.get_dbus_method("Connect", DEVICE_IFACE)()
+                if bluetooth_ble_plugin:
+                    bluetooth_ble_plugin.initialize()
+                if bluetooth_ble_plugin and bluetooth_ble_plugin.bt:
+                    bluetooth_ble_plugin.bt.connect(device_uuid)
+                else:
+                    device_methods.get_dbus_method("Connect", DEVICE_IFACE)()
             elif connected == 0:
                 device_methods.get_dbus_method("Disconnect", DEVICE_IFACE)()
         passkey = post_data.get('passkey', None)
