@@ -38,6 +38,18 @@ class BluetoothBlePlugin(BluetoothPlugin):
     def adapter_commands(self) -> List[str]:
         return ['bleStartServer', 'bleStopServer', 'bleStartDiscovery', 'bleStopDiscovery']
 
+    def initialize(self):
+        # Initialize the bluetooth manager
+        if not self.bt:
+            self.ble_logger = BleLogger(__name__)
+            self.bt = bt_init_ex(self.discovery_callback,
+                                 self.characteristic_property_change_callback,
+                                 self.connection_callback,
+                                 self.write_notification_callback,
+                                 setup_dbus_loop=False,
+                                 logger=self.ble_logger,
+                                 daemon=True)
+
     def ProcessDeviceCommand(self, bus, command, device_uuid: str, device: dbus.ObjectPath,
                              post_data):
         processed = False
@@ -110,16 +122,7 @@ class BluetoothBlePlugin(BluetoothPlugin):
                     if error_message:
                         self._server = None
                     else:
-                        # Initialize the bluetooth manager
-                        if not self.bt:
-                            self.ble_logger = BleLogger(__name__)
-                            self.bt = bt_init_ex(self.discovery_callback,
-                                                 self.characteristic_property_change_callback,
-                                                 self.connection_callback,
-                                                 self.write_notification_callback,
-                                                 setup_dbus_loop=False,
-                                                 logger=self.ble_logger,
-                                                 daemon=True)
+                        self.initialize()
                 except Exception as e:
                     self._server = None
                     raise e
