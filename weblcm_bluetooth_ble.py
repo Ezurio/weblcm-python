@@ -8,7 +8,10 @@ from typing import Optional, List
 
 import cherrypy
 import dbus
+from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
+from ws4py.websocket import WebSocket
 
+import weblcm_def
 from bt_module import bt_device_services, bt_start_discovery, \
     bt_stop_discovery, bt_connect, bt_disconnect, bt_read_characteristic, bt_write_characteristic, \
     bt_config_characteristic_notification
@@ -22,13 +25,64 @@ discovery_keys = {"Name", "Alias", "Address", "Class", "Icon", "RSSI", "UUIDs"}
 
 DEVICE_IFACE = 'org.bluez.Device1'
 
+websockets_auth_by_header_token: bool = True
+
+ble_notification_objects: list = []
+
+
+class BluetoothWebsocket(object):
+    @cherrypy.tools.json_out()
+    @cherrypy.expose
+    def index(self):
+        result = {
+            'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS', 0),
+            'InfoMsg': '',
+        }
+        return result
+
+    @cherrypy.expose
+    def ws(self):
+        # see BluetoothWebSocketHandler
+        pass
+
+
+class BluetoothWebSocketHandler(WebSocket):
+    def __init__(self, *args, **kwargs):
+        ble_notification_objects.append(self)
+        super(BluetoothWebSocketHandler, self).__init__(*args, kwargs)
+
+    def __del__(self):
+        if self in ble_notification_objects:
+            ble_notification_objects.remove(self)
+
+    def received_message(self, message):
+        """
+        Called whenever a complete ``message``, binary or text,
+        is received and ready for application's processing.
+
+        The passed message is an instance of :class:`messaging.TextMessage`
+        or :class:`messaging.BinaryMessage`.
+        """
+        pass
+
+    def ble_notify(self, message):
+        if self.connection and not self.client_terminated and not self.server_terminated:
+            try:
+                self.send(message, binary=False)
+            except Exception as e:
+                cherrypy.log("BluetoothWebSocketHandler:" + str(e))
+                self.close(reason=str(e))
+                self.close_connection()
+                self.terminate()
+                self.__del__()
+
 
 class BluetoothBlePlugin(BluetoothPlugin):
     def __init__(self):
         self._server: Optional[BluetoothTcpServer] = None
+        self._websockets_enabled: bool = False
         self.bt = None
         self.ble_logger: Optional[BleLogger] = None
-        pass
 
     @property
     def device_commands(self) -> List[str]:
@@ -36,7 +90,8 @@ class BluetoothBlePlugin(BluetoothPlugin):
 
     @property
     def adapter_commands(self) -> List[str]:
-        return ['bleStartServer', 'bleStopServer', 'bleStartDiscovery', 'bleStopDiscovery']
+        return ['bleStartServer', 'bleStopServer', 'bleStartDiscovery', 'bleStopDiscovery',
+                'bleEnableWebsockets']
 
     def initialize(self):
         # Initialize the bluetooth manager
@@ -49,6 +104,31 @@ class BluetoothBlePlugin(BluetoothPlugin):
                                  setup_dbus_loop=False,
                                  logger=self.ble_logger,
                                  daemon=True)
+        # Enable websocket endpoint
+        if not self._websockets_enabled:
+            try:
+                WebSocketPlugin(cherrypy.engine).subscribe()
+                cherrypy.tools.websocket = WebSocketTool()
+                cherrypy.tree.mount(BluetoothWebsocket(), "/bluetoothWebsocket", config={
+                    "/": {
+                        "tools.sessions.on": websockets_auth_by_header_token
+                    },
+                    "/ws": {
+                        "tools.sessions.on": websockets_auth_by_header_token,
+                        "tools.websocket.on": True,
+                        "tools.websocket.handler_cls": BluetoothWebSocketHandler
+                    },
+                })
+                self._websockets_enabled = True
+            except Exception as e:
+                self._websockets_enabled = False
+                raise e
+
+    def broadcast_ble_notification(self, message):
+        if self._server:
+            self._server.tcp_connection_try_send(message)
+        for o in ble_notification_objects.copy():
+            o.ble_notify(message)
 
     def ProcessDeviceCommand(self, bus, command, device_uuid: str, device: dbus.ObjectPath,
                              post_data):
@@ -111,7 +191,11 @@ class BluetoothBlePlugin(BluetoothPlugin):
         result = {}
         if self.ble_logger:
             self.ble_logger.error_occurred = False
-        if command == 'bleStartServer':
+        if command == 'bleEnableWebsockets':
+            processed = True
+            if not self._websockets_enabled:
+                self.initialize()
+        elif command == 'bleStartServer':
             processed = True
             if self._server:
                 error_message = "bleServer already started"
@@ -183,8 +267,7 @@ class BluetoothBlePlugin(BluetoothPlugin):
         data['timestamp'] = int(time())
         data = {'connect': data}
         data_json = json.dumps(data, separators=(',', ':'), sort_keys=True, indent=4) + '\n'
-        if self._server:
-            self._server.tcp_connection_try_send(data_json.encode())
+        self.broadcast_ble_notification(data_json.encode())
 
     def write_notification_callback(self, data):
         """
@@ -194,8 +277,7 @@ class BluetoothBlePlugin(BluetoothPlugin):
         data['timestamp'] = int(time())
         data = {'char': data}
         data_json = json.dumps(data, separators=(',', ':'), indent=4) + '\n'
-        if self._server:
-            self._server.tcp_connection_try_send(data_json.encode())
+        self.broadcast_ble_notification(data_json.encode())
 
     def characteristic_property_change_callback(self, data):
         """
@@ -209,8 +291,7 @@ class BluetoothBlePlugin(BluetoothPlugin):
         data['timestamp'] = int(time())
         data = {'char': data}
         data_json = json.dumps(data, separators=(',', ':'), indent=4) + '\n'
-        if self._server:
-            self._server.tcp_connection_try_send(data_json.encode())
+        self.broadcast_ble_notification(data_json.encode())
 
 
 class BluetoothTcpServer(TcpConnection):
