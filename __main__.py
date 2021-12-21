@@ -17,10 +17,16 @@ from weblcm_modem import PositioningSwitch, Positioning
 from weblcm_advanced import Fips
 
 weblcm_plugins: List[str] = []
+websockets_auth_by_header_token: bool = False
+"""
+Note: Authenticating websocket users by header token is non-standard; an alternative method
+may be required for Javascript browser clients.
+"""
 
 try:
 	from weblcm_bluetooth import Bluetooth
 	weblcm_plugins.append('bluetooth')
+	websockets_auth_by_header_token = True
 	cherrypy.log("__main__: Bluetooth loaded")
 except ImportError:
 	Bluetooth = None
@@ -83,6 +89,9 @@ def force_session_checking():
 				"file", "users", "firmware", "logData", "awm", "positioning", "positioningSwitch",
 				"logSetting", "factoryReset", "reboot", "files", "datetime", "fips"
 			] + weblcm_plugins
+
+	if websockets_auth_by_header_token:
+		paths.append("ws")
 
 	#With the `get` method the session id will be saved which could result in session fixation vulnerability.
 	#Session ids will be destroyed periodically so we have to check 'USERNAME' to make sure the session is not valid after logout.
