@@ -249,8 +249,7 @@ class BluetoothBlePlugin(BluetoothPlugin):
                 data['timestamp'] = int(time())
                 data = {'discovery': data}
                 data_json = json.dumps(data, separators=(',', ':'), sort_keys=True, indent=4) + '\n'
-                if self._server:
-                    self._server.tcp_connection_try_send(data_json.encode())
+                self.broadcast_ble_notification(data_json.encode())
 
     def connection_callback(self, data):
         """
