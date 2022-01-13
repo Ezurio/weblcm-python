@@ -1,6 +1,5 @@
-import logging
+from syslog import syslog
 
-import cherrypy
 import dbus
 
 DBUS_OM_IFACE = "org.freedesktop.DBus.ObjectManager"
@@ -197,7 +196,7 @@ class AgentSingleton:
         if AgentSingleton.__instance is None:
             AgentSingleton.__instance = self
 
-            cherrypy.log("Registering agent for auto-pairing...")
+            syslog("Registering agent for auto-pairing...")
             # get the system bus
             bus = dbus.SystemBus()
             agent = AuthenticationAgent(bus, AGENT_PATH)
@@ -216,22 +215,22 @@ class AuthenticationAgent(dbus.service.Object):
 
     @dbus.service.method(AGENT_IFACE, in_signature="", out_signature="")
     def Release(self):
-        cherrypy.log("AuthenticationAgent Release")
+        syslog("AuthenticationAgent Release")
 
     @dbus.service.method(AGENT_IFACE, in_signature="os", out_signature="")
     def AuthorizeService(self, device, uuid):
-        cherrypy.log("AuthenticationAgent AuthorizeService (%s, %s)" % (device, uuid))
+        syslog("AuthenticationAgent AuthorizeService (%s, %s)" % (device, uuid))
         return
 
     @dbus.service.method(AGENT_IFACE, in_signature="o", out_signature="s")
     def RequestPinCode(self, device):
-        cherrypy.log("AuthenticationAgent RequestPinCode (%s)" % (device))
+        syslog("AuthenticationAgent RequestPinCode (%s)" % (device))
         set_trusted(device)
         return "000000"
 
     @dbus.service.method(AGENT_IFACE, in_signature="o", out_signature="u")
     def RequestPasskey(self, device):
-        cherrypy.log("AuthenticationAgent RequestPasskey (%s)" % (device))
+        syslog("AuthenticationAgent RequestPasskey (%s)" % (device))
         set_trusted(device)
         # passkey = ask("Enter passkey: ")
         # TODO: Implement with RESTful set
@@ -244,15 +243,16 @@ class AuthenticationAgent(dbus.service.Object):
 
     @dbus.service.method(AGENT_IFACE, in_signature="ouq", out_signature="")
     def DisplayPasskey(self, device, passkey, entered):
-        cherrypy.log("AuthenticationAgent DisplayPasskey (%s, %06u entered %u)" % (device, passkey, entered))
+        syslog("AuthenticationAgent DisplayPasskey (%s, %06u entered %u)" % (device, passkey,
+                                                                           entered))
 
     @dbus.service.method(AGENT_IFACE, in_signature="os", out_signature="")
     def DisplayPinCode(self, device, pincode):
-        cherrypy.log("AuthenticationAgent DisplayPinCode (%s, %s)" % (device, pincode))
+        syslog("AuthenticationAgent DisplayPinCode (%s, %s)" % (device, pincode))
 
     @dbus.service.method(AGENT_IFACE, in_signature="ou", out_signature="")
     def RequestConfirmation(self, device, passkey):
-        cherrypy.log("AuthenticationAgent RequestConfirmation (%s, %06d)" % (device, passkey))
+        syslog("AuthenticationAgent RequestConfirmation (%s, %06d)" % (device, passkey))
         # TODO:  Check if provided passkey matches customer-preset passkey.
         set_trusted(device)
         return
@@ -263,9 +263,9 @@ class AuthenticationAgent(dbus.service.Object):
     # model."
     @dbus.service.method(AGENT_IFACE, in_signature="o", out_signature="")
     def RequestAuthorization(self, device):
-        cherrypy.log("AuthenticationAgent RequestAuthorization (%s)" % (device))
+        syslog("AuthenticationAgent RequestAuthorization (%s)" % (device))
         return
 
     @dbus.service.method(AGENT_IFACE, in_signature="", out_signature="")
     def Cancel(self):
-        cherrypy.log("AuthenticationAgent Cancel")
+        syslog("AuthenticationAgent Cancel")
