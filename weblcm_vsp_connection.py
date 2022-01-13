@@ -1,6 +1,7 @@
 import threading
 import time
 import socket
+from syslog import syslog
 from typing import Optional, Tuple, Any, Dict, List
 
 import cherrypy
@@ -100,6 +101,8 @@ class VspConnection(TcpConnection):
 
     def device_prop_changed_cb(self, iface, changed_props, invalidated_props):
         if 'Connected' in changed_props:
+            syslog(f"vsp device_prop_changed_cb: Connected: "
+                   f"{changed_props['Connected']}")
             if self._tcp_connection and self.socket_rx_type == 'JSON':
                 self._tcp_connection.sendall(
                     f"{{\"Connected\": {changed_props['Connected']}}}\n".encode())
@@ -183,6 +186,7 @@ class VspConnection(TcpConnection):
                 cherrypy.log("stop_client: " + str(e))
 
     def bt_disconnected(self):
+        syslog("vsp bt_disconnected: Connected: 0")
         if self._tcp_connection and self.socket_rx_type == 'JSON':
             self._tcp_connection.sendall("{\"Connected\": 0}\n".encode())
 
@@ -316,10 +320,12 @@ class VspConnection(TcpConnection):
                                 self.gatt_send_data(val)
                                 if not self.tx_wait_event.wait():
                                     cherrypy.log("vsp_tcp_server_thread: ERROR: gatt tx no completion")
-                                if self.tx_error and self.socket_rx_type == 'JSON':
-                                    self._tcp_connection.sendall("{\"Error\": \"Transmit failed\""
-                                                                 f", \"Data\": \"0x{data.hex()}"
-                                                                 "\"}\n".encode())
+                                if self.tx_error:
+                                    syslog(f"vsp transmit failed, data: 0x{data.hex()}")
+                                    if self.socket_rx_type == 'JSON':
+                                        self._tcp_connection.sendall("{\"Error\": \"Transmit failed\""
+                                                                     f", \"Data\": \"0x{data.hex()}"
+                                                                     "\"}\n".encode())
                             else:
                                 break
                     except OSError as e:
