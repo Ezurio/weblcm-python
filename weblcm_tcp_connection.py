@@ -1,5 +1,6 @@
 import socket
 import threading
+from syslog import syslog
 from typing import Optional
 
 import cherrypy
@@ -70,12 +71,12 @@ class TcpConnection(object):
             except OSError as e:
                 # If the connection is not open, ignore.
                 if e.errno != socket.EBADF and e.strerror != 'Transport endpoint is not connected':
-                    cherrypy.log("TcpConnection.close_tcp_connection:" + str(e))
+                    syslog("TcpConnection.close_tcp_connection:" + str(e))
             try:
                 tcp_connection.close()
             except OSError as e:
                 if e.errno != socket.EBADF:
-                    cherrypy.log("TcpConnection.close_tcp_connection:" + str(e))
+                    syslog("TcpConnection.close_tcp_connection:" + str(e))
 
     def tcp_connection_try_send(self, data_encoded):
         """
@@ -102,7 +103,7 @@ def firewalld_open_port(port):
                                                                     dbus.String('tcp'), dbus.Int32(0)],
                           timeout=FIREWALLD_TIMEOUT_SECONDS)
     except Exception as e:
-        cherrypy.log("firewalld_open_port: Exception: " + str(e))
+        syslog("firewalld_open_port: Exception: " + str(e))
 
 
 def firewalld_close_port(port):
@@ -114,4 +115,4 @@ def firewalld_close_port(port):
                                                                       dbus.String('tcp')],
                           timeout=FIREWALLD_TIMEOUT_SECONDS)
     except Exception as e:
-        cherrypy.log("firewalld_close_port: Exception: " + str(e))
+        syslog("firewalld_close_port: Exception: " + str(e))

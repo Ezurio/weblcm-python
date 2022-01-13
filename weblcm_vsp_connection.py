@@ -4,7 +4,6 @@ import socket
 from syslog import syslog
 from typing import Optional, Tuple, Any, Dict, List
 
-import cherrypy
 import dbus
 
 from weblcm_ble import BLUEZ_SERVICE_NAME, GATT_CHRC_IFACE, DBUS_PROP_IFACE, dbus_to_python_ex, \
@@ -108,11 +107,11 @@ class VspConnection(TcpConnection):
                     f"{{\"Connected\": {changed_props['Connected']}}}\n".encode())
 
         if len(changed_props):
-            cherrypy.log("device_prop_changed_cb: property changed " + str(changed_props))
+            syslog("device_prop_changed_cb: property changed " + str(changed_props))
 
     def vsp_read_prop_changed_cb(self, iface, changed_props, invalidated_props):
         if iface != GATT_CHRC_IFACE:
-            cherrypy.log("vsp_read_prop_changed_cb: iface != GATT_CHRC_IFACE")
+            syslog("vsp_read_prop_changed_cb: iface != GATT_CHRC_IFACE")
 
         if not len(changed_props):
             return
@@ -141,7 +140,7 @@ class VspConnection(TcpConnection):
                 else:
                     self._tcp_connection.sendall(python_value)
             except OSError as e:
-                cherrypy.log("gatt_vsp_read_val_cb:" + str(e))
+                syslog("gatt_vsp_read_val_cb:" + str(e))
 
     def write_val_cb(self):
         self.tx_complete = True
@@ -149,7 +148,7 @@ class VspConnection(TcpConnection):
 
     def generic_val_error_cb(self, error):
         self.recent_error = str(error)
-        cherrypy.log("generic_val_error_cb: D-Bus call failed: " + str(error))
+        syslog("generic_val_error_cb: D-Bus call failed: " + str(error))
         if 'Not connected' in error.args:
             self.bt_disconnected()
 
@@ -178,12 +177,12 @@ class VspConnection(TcpConnection):
             try:
                 self.vsp_read_chrc[0].StopNotify(dbus_interface=GATT_CHRC_IFACE)
             except Exception as e:
-                cherrypy.log("stop_client: " + str(e))
+                syslog("stop_client: " + str(e))
         if self.signal_vsp_read_prop_changed:
             try:
                 self.signal_vsp_read_prop_changed.remove()
             except Exception as e:
-                cherrypy.log("stop_client: " + str(e))
+                syslog("stop_client: " + str(e))
 
     def bt_disconnected(self):
         syslog("vsp bt_disconnected: Connected: 0")
@@ -305,7 +304,7 @@ class VspConnection(TcpConnection):
                     tcp_connection, client_address = sock.accept()
                     with self._tcp_lock:
                         self._tcp_connection = tcp_connection
-                    cherrypy.log("vsp_tcp_server_thread: tcp client connected:" + str(client_address))
+                    syslog("vsp_tcp_server_thread: tcp client connected:" + str(client_address))
                     try:
                         while True:
                             data = self._tcp_connection.recv(MAX_TX_LEN)
@@ -319,7 +318,7 @@ class VspConnection(TcpConnection):
                                 # to wait for Bluetooth to consume stream and simplify buffer management.
                                 self.gatt_send_data(val)
                                 if not self.tx_wait_event.wait():
-                                    cherrypy.log("vsp_tcp_server_thread: ERROR: gatt tx no completion")
+                                    syslog("vsp_tcp_server_thread: ERROR: gatt tx no completion")
                                 if self.tx_error:
                                     syslog(f"vsp transmit failed, data: 0x{data.hex()}")
                                     if self.socket_rx_type == 'JSON':
@@ -332,9 +331,9 @@ class VspConnection(TcpConnection):
                         # If sock is closed, exit.
                         if e.errno == socket.EBADF:
                             break
-                        cherrypy.log("vsp_tcp_server_thread:" + str(e))
+                        syslog("vsp_tcp_server_thread:" + str(e))
                     except Exception as e:
-                        cherrypy.log("vsp_tcp_server_thread: non-OSError Exception: " + str(e))
+                        syslog("vsp_tcp_server_thread: non-OSError Exception: " + str(e))
                     finally:
                         with self._tcp_lock:
                             self.close_tcp_connection()

@@ -4,9 +4,9 @@ import os
 import select
 import socket
 import threading
+from syslog import syslog
 from typing import Optional, Dict, io, List
 
-import cherrypy
 import dbus
 import pyudev
 
@@ -119,7 +119,7 @@ class HidBarcodeScanner(TcpConnection):
                 if self.active_device_node == device.device_node:
                     self.send_connected_state(False)
         except Exception as e:
-            cherrypy.log("udev_event:" + str(e))
+            syslog("udev_event:" + str(e))
             self.tcp_connection_try_send(f'{{"Error": "{str(e)}"}}\n'.encode())
 
     def barcode_reader(self, dev_node: str):
@@ -264,7 +264,7 @@ class HidBarcodeScanner(TcpConnection):
             if type(e) is OSError and not os.path.exists(infile_path):
                 self.send_connected_state(False)
             else:
-                cherrypy.log("barcode_scanner_read_thread:" + str(e))
+                syslog("barcode_scanner_read_thread:" + str(e))
                 self.tcp_connection_try_send(f'{{"Error": "{str(e)}"}}\n'.encode())
         finally:
             self._barcode_read_thread_count -= 1
@@ -277,7 +277,7 @@ class HidBarcodeScanner(TcpConnection):
                     tcp_connection, client_address = sock.accept()
                     with self._tcp_lock:
                         self._tcp_connection = tcp_connection
-                    cherrypy.log(
+                    syslog(
                         "hid_tcp_server_thread: tcp client connected:" + str(client_address))
                     try:
                         # Wait on socket, such that closure will force exception and
@@ -289,12 +289,12 @@ class HidBarcodeScanner(TcpConnection):
                         # If sock is closed, exit.
                         if e.errno == socket.EBADF:
                             break
-                        cherrypy.log("hid_tcp_server_thread:" + str(e))
+                        syslog("hid_tcp_server_thread:" + str(e))
                     except Exception as e:
-                        cherrypy.log("hid_tcp_server_thread: non-OSError Exception: " + str(e))
+                        syslog("hid_tcp_server_thread: non-OSError Exception: " + str(e))
                         self.tcp_connection_try_send(f'{{"Error": "{str(e)}"}}\n'.encode())
                     finally:
-                        cherrypy.log(
+                        syslog(
                             "hid_tcp_server_thread: tcp client disconnected:" + str(client_address))
                         with self._tcp_lock:
                             self.close_tcp_connection()
