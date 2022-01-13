@@ -154,7 +154,7 @@ class Bluetooth(object):
 
             except Exception as e:
                 result['InfoMsg'] = str(e)
-                cherrypy.log(str(e))
+                syslog(str(e))
 
             return result
 
@@ -233,7 +233,7 @@ class Bluetooth(object):
         except Exception as e:
             result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
             result['InfoMsg'] = str(e)
-            cherrypy.log(str(e))
+            syslog(str(e))
 
         return result
 
