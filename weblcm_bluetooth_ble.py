@@ -90,8 +90,8 @@ class BluetoothBlePlugin(BluetoothPlugin):
 
     @property
     def adapter_commands(self) -> List[str]:
-        return ['bleStartServer', 'bleStopServer', 'bleStartDiscovery', 'bleStopDiscovery',
-                'bleEnableWebsockets']
+        return ['bleStartServer', 'bleStopServer', 'bleServerStatus', 'bleStartDiscovery',
+                'bleStopDiscovery', 'bleEnableWebsockets']
 
     def initialize(self):
         # Initialize the bluetooth manager
@@ -210,6 +210,13 @@ class BluetoothBlePlugin(BluetoothPlugin):
                 except Exception as e:
                     self._server = None
                     raise e
+        elif command == 'bleServerStatus':
+            processed = True
+            if not self._server:
+                result['started'] = False
+            else:
+                result['started'] = True
+                result['port'] = self._server.port
         else:
             if command in self.adapter_commands and not self.bt:
                 self.initialize()
