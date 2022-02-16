@@ -1495,7 +1495,7 @@ function prepareIPv6Addresses(){
 
   ipv6['addr-gen-mode'] = parseInt($("#ipv6-addr-gen-mode").val());
 
-  if(!ipv6['addr-gen-mode']) {
+  if((!ipv6['addr-gen-mode']) && (ipv6['token'])) {
     if(!$("#ipv6-token").val().match(tokenFormat)){
       $("#ipv6-token").css('border-color', 'red');
       $("#ipv6-token").focus();
