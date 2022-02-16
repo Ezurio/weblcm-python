@@ -7,6 +7,8 @@ import subprocess
 import NetworkManager
 import weblcm_def
 from syslog import syslog
+from subprocess import Popen, PIPE, TimeoutExpired
+from weblcm_settings import SystemSettingsManage
 
 @cherrypy.expose
 class NetworkConnections(object):
@@ -365,5 +367,84 @@ class NetworkInterfaces(object):
 		except Exception as e:
 			result['InfoMsg'] = 'Exception getting list of interfaces'
 			syslog(f'NetworkInterfaces GET exception: {e}')
+
+		return result
+
+	"""
+			Add virtual interface
+	"""
+
+	@cherrypy.tools.accept(media='application/json')
+	@cherrypy.tools.json_in()
+	@cherrypy.tools.json_out()
+	def POST(self):
+
+		result = {'SDCERR': 1,
+				'InfoMsg': ''}
+
+		post_data = cherrypy.request.json
+		if not post_data.get('interface'):
+			result['InfoMsg'] = 'Missing interface section'
+			return result
+		interface = post_data.get('interface')
+		if not post_data.get('type'):
+			result['InfoMsg'] = 'Missing type section'
+			return result
+		int_type = post_data.get('type')
+		if int_type == 'STA':
+			int_type = 'managed'
+
+		if interface != 'wlan1':
+			result['InfoMsg'] = f'Invalid interface {interface}. Supported interface wlan1'
+			return result
+
+		if int_type != 'managed':
+			result['InfoMsg']= f'Invalid type {int_type}. Supported type: STA'
+			return result
+
+		"""
+			Currently only support wlan1/managed
+		"""
+		result['InfoMsg'] = f'Unable to add virtual interface {interface}.'
+		try:
+			proc = Popen(["iw", "dev", "wlan0", "interface", "add", interface, "type", int_type], stdout=PIPE, stderr=PIPE)
+			outs, errs = proc.communicate(timeout=SystemSettingsManage.get_user_callback_timeout())
+			if not proc.returncode:
+				result ['SDCERR'] = 0
+				result ['InfoMsg'] = f'Virtual interface {interface} added'
+				return result
+		except TimeoutExpired:
+			proc.kill()
+			outs, errs = proc.communicate()
+			syslog(LOG_ERR, f"Call 'iw dev wlan0 interface add {interface} type {int_type}' timeout")
+		except Exception as e:
+			syslog(LOG_ERR, f"Call 'iw dev wlan0 interface add {interface} type {int_type}' failed")
+
+		return result
+
+	@cherrypy.tools.json_out()
+	def DELETE(self, interface):
+		result = {
+			'SDCERR': 1,
+			'InfoMsg': f'Unable to remove interface {interface}'
+		}
+
+		if interface != 'wlan1':
+			return result
+
+		try:
+			proc = Popen(["iw", "dev", interface, "del"], stdout=PIPE, stderr=PIPE)
+			outs, errs = proc.communicate(timeout=SystemSettingsManage.get_user_callback_timeout())
+			if not proc.returncode:
+				result ['SDCERR'] = 0
+				result ['InfoMsg'] = f'Virtual interface {interface} removed'
+				return result
+		except TimeoutExpired:
+			proc.kill()
+			outs, errs = proc.communicate()
+			syslog(LOG_ERR, f"Call 'iw dev {interface} del' timeout")
+		except Exception as e:
+			syslog(LOG_ERR, f"Call 'iw dev {interface} del' failed")
+
 
 		return result
