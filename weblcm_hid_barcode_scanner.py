@@ -34,6 +34,7 @@ CHARMAP_UPPERCASE = {4: 'A', 5: 'B', 6: 'C', 7: 'D', 8: 'E', 9: 'F', 10: 'G', 11
 CR_CHAR = 40
 SHIFT_CHAR = 2
 ERROR_CHARACTER = ''
+MAX_BARCODE_LEN = 4096
 
 
 class HidBarcodeScannerPlugin(BluetoothPlugin):
@@ -144,10 +145,11 @@ class HidBarcodeScanner(TcpConnection):
                             # use uppercase character set next time
                             CHARMAP = CHARMAP_UPPERCASE
                         else:
-                            # if the charcode isn't recognized, use ?
-                            barcode_string_output += CHARMAP.get(char_code, ERROR_CHARACTER)
-                            # reset to lowercase character map
-                            CHARMAP = CHARMAP_LOWERCASE
+                            if len(barcode_string_output) < MAX_BARCODE_LEN:
+                                # if the charcode isn't recognized, use ?
+                                barcode_string_output += CHARMAP.get(char_code, ERROR_CHARACTER)
+                                # reset to lowercase character map
+                                CHARMAP = CHARMAP_LOWERCASE
         finally:
             os.close(fd)
 
