@@ -53,6 +53,8 @@ class SWUpdate:
 		}
 
 		if not cherrypy.session.get('swupdate', None):
+			result['SDCERR'] = 0
+			result['InfoMsg'] = "No update in progress"
 			return result
 
 		try:
