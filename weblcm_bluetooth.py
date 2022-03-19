@@ -43,8 +43,6 @@ except ImportError:
 
 try:
     bluetooth_ble_plugin = None
-    # module dependencies, such as bt_logger.py, may be under /usr/lib
-    sys.path.append('/usr/lib/igsdk')
     from weblcm_bluetooth_ble import BluetoothBlePlugin
     bluetooth_ble_plugin = BluetoothBlePlugin()
     bluetooth_plugins.append(bluetooth_ble_plugin)
