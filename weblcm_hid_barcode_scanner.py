@@ -116,6 +116,7 @@ class HidBarcodeScanner(TcpConnection):
                                                    args=(device.device_node,))
                     self.thread.start()
                     self.send_connected_state(True)
+            # TODO:  See if 'remove' action will fire upon WiFi reset
             elif action == 'remove':
                 if self.active_device_node == device.device_node:
                     self.send_connected_state(False)
