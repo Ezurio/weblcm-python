@@ -77,6 +77,9 @@ def dbus_to_python_ex(data, datatype = None):
     return data
 
 def controller_pretty_name(name: str):
+    """ Return a name friendlier for REST API.
+        controller0, controller1, etc., rather than /org/bluez/hci0, etc.
+    """
     return name.replace("hci", "controller").replace("/org/bluez/", "")
 
 def controller_bus_name(pretty_name: str):
