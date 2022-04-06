@@ -25,11 +25,15 @@ class LogData(object):
 		if not priority in range(0, 8, 1):
 			return '{"SDCERR":1, "InfoMsg": "Priority must be an int between 0-7"}'
 		reader.log_level(priority)
-		# use .title() to ensure incoming type has proper case
-		typ = kwargs.get('type', "All").title()
-		# TODO - documentation says 'python' is lower case while others are upper case.  Is that correct?
-		if typ == 'Python':
-			typ = 'python'
+		# use .lower() to ensure incoming type has comparable case
+		typ = kwargs.get('type', "All").lower()
+		# TODO - documentation says 'python' is lower case while others are upper/mixed case.
+		if typ == 'kernel':
+			typ='Kernel'
+		elif typ == 'networkmanager':
+			typ='NetworkManager'
+		elif typ == 'all':
+			typ='All'
 		types = {'Kernel', 'NetworkManager', 'python', 'All'}
 		if not typ in types:
 			return '{"SDCERR":1, "InfoMsg": "supplied type parameter must be one of %s"}' % types
