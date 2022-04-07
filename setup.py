@@ -11,7 +11,7 @@ if len(environment_variable_value) > 0:
 	if 'WEBLCM_PYTHON_BLUETOOTH' in extra_modules:
 		add_modules += ['weblcm_bluetooth', 'weblcm_ble', 'weblcm_bluetooth_plugin',
 		                'weblcm_bluetooth_ble', 'weblcm_bluetooth_ble_logger',
-		                'weblcm_tcp_connection', 'bt_module_extended',
+		                'weblcm_tcp_connection', 'bt_module', 'bt_module_extended',
 		                'weblcm_bluetooth_controller_state']
 	if 'WEBLCM_PYTHON_HID' in extra_modules:
 		add_modules += ['weblcm_hid_barcode_scanner']
