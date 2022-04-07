@@ -5,30 +5,27 @@
 #
 
 import logging
-import sys
 from typing import Optional
 
 import dbus
 import dbus.exceptions
 import dbus.mainloop.glib
 
-from bt_module import BtMgr, DBUS_OBJ_MGR_IFACE, BT_OBJ, BT_ADAPTER_IFACE, BT_OBJ_PATH, \
+from .bt_module import BtMgr, DBUS_OBJ_MGR_IFACE, BT_OBJ, BT_ADAPTER_IFACE, BT_OBJ_PATH, \
     DBUS_PROP_IFACE
 
-PYTHON3 = sys.version_info >= (3, 0)
-if PYTHON3:
-    from gi.repository import GObject as gobject
-    from gi.repository import GLib as glib
-else:
-    import gobject
+from gi.repository import GObject as gobject
+from gi.repository import GLib as glib
+
 
 class BtMgrEx(BtMgr):
     """
     Class that manages all bluetooth API functionality
     """
+
     def __init__(self, discovery_callback, characteristic_property_change_callback,
                  connection_callback=None, write_notification_callback=None,
-                 logger: logging.Logger=None, setup_dbus_loop=True, **kwargs):
+                 logger=None, setup_dbus_loop=True, **kwargs):
         if logger:
             self.logger = logger
         else:
@@ -42,19 +39,15 @@ class BtMgrEx(BtMgr):
         if setup_dbus_loop:
             dbus.mainloop.glib.threads_init()
             dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-            if PYTHON3:
-                self.loop = glib.MainLoop()
-            else:
-                self.loop = gobject.MainLoop()
-                gobject.threads_init()
+            self.loop = glib.MainLoop()
 
         # Get DBus objects
         self.manager = dbus.Interface(dbus.SystemBus().get_object(BT_OBJ,
-            "/"), DBUS_OBJ_MGR_IFACE)
+                                                                  "/"), DBUS_OBJ_MGR_IFACE)
         self.adapter = dbus.Interface(dbus.SystemBus().get_object(BT_OBJ,
-            BT_OBJ_PATH), BT_ADAPTER_IFACE)
+                                                                  BT_OBJ_PATH), BT_ADAPTER_IFACE)
         self.adapter_props = dbus.Interface(dbus.SystemBus().get_object(BT_OBJ,
-            BT_OBJ_PATH), DBUS_PROP_IFACE)
+                                                                        BT_OBJ_PATH), DBUS_PROP_IFACE)
         self.objects = self.manager.GetManagedObjects()
 
         # Register signal handlers
@@ -76,7 +69,7 @@ class BtMgrEx(BtMgr):
 
 def bt_init_ex(discovery_callback, characteristic_property_change_callback,
                connection_callback=None, write_notification_callback=None,
-               logger: logging.Logger=None, setup_dbus_loop=True, **kwargs) -> Optional[BtMgrEx]:
+               logger=None, setup_dbus_loop=True, **kwargs) -> Optional[BtMgrEx]:
     """
     Initialize the IG bluetooth API
     Returns the device manager instance, to be used in bt_* calls

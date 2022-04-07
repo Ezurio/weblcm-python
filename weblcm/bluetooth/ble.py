@@ -21,7 +21,7 @@ BLUEZ_PATH_PREPEND = "/org/bluez/"
 AGENT_PATH = "/com/lairdconnectivity/agent"
 
 
-def python_to_dbus(data, datatype = None):
+def python_to_dbus(data, datatype=None):
     # Convert python native data types to dbus data types
     if not datatype:
         datatype = type(data)
@@ -47,7 +47,8 @@ def python_to_dbus(data, datatype = None):
 
     return data
 
-def dbus_to_python_ex(data, datatype = None):
+
+def dbus_to_python_ex(data, datatype=None):
     # Convert dbus data types to python native data types
     if not datatype:
         datatype = type(data)
@@ -76,14 +77,17 @@ def dbus_to_python_ex(data, datatype = None):
         data = new_data
     return data
 
+
 def controller_pretty_name(name: str):
     """ Return a name friendlier for REST API.
         controller0, controller1, etc., rather than /org/bluez/hci0, etc.
     """
     return name.replace("hci", "controller").replace("/org/bluez/", "")
 
+
 def controller_bus_name(pretty_name: str):
     return pretty_name.replace("controller", "hci")
+
 
 def uri_to_uuid(uri_uuid: str) -> str:
     """
@@ -91,6 +95,7 @@ def uri_to_uuid(uri_uuid: str) -> str:
     format (XX:XX:XX:XX:XX:XX)
     """
     return uri_uuid.upper().replace('_', ':')
+
 
 def find_controllers(bus):
     """
@@ -107,7 +112,8 @@ def find_controllers(bus):
 
     return controllers
 
-def find_controller(bus, name: str = None):
+
+def find_controller(bus, name: str = ''):
     """
     Returns the first object that has the bluez service and a GattManager1 interface and the provided name, if provided.
     """
@@ -127,6 +133,7 @@ def find_controller(bus, name: str = None):
 
     return None
 
+
 def find_devices(bus):
     """
     Returns the objects that have the bluez service and a DEVICE_IFACE interface
@@ -142,6 +149,7 @@ def find_devices(bus):
             devices.append(props[DEVICE_IFACE])
 
     return devices
+
 
 def find_device(bus, uuid):
     """
@@ -172,6 +180,7 @@ def device_is_connected(bus, device):
     device_properties = dbus.Interface(device_obj, "org.freedesktop.DBus.Properties")
     connected_state = device_properties.Get(DEVICE_IFACE, "Connected")
     return connected_state
+
 
 def dev_connect(path):
     bus = dbus.SystemBus()
@@ -247,7 +256,7 @@ class AuthenticationAgent(dbus.service.Object):
     @dbus.service.method(AGENT_IFACE, in_signature="ouq", out_signature="")
     def DisplayPasskey(self, device, passkey, entered):
         syslog("AuthenticationAgent DisplayPasskey (%s, %06u entered %u)" % (device, passkey,
-                                                                           entered))
+                                                                             entered))
 
     @dbus.service.method(AGENT_IFACE, in_signature="os", out_signature="")
     def DisplayPinCode(self, device, pincode):

@@ -2,14 +2,14 @@ import threading
 import time
 import socket
 from syslog import syslog, LOG_INFO, LOG_ERR
-from typing import Optional, Tuple, Any, Dict, List
+from typing import Optional, Any
 
 import dbus
 
-from weblcm_ble import BLUEZ_SERVICE_NAME, GATT_CHRC_IFACE, DBUS_PROP_IFACE, dbus_to_python_ex, \
+from ..bluetooth.ble import BLUEZ_SERVICE_NAME, GATT_CHRC_IFACE, DBUS_PROP_IFACE, dbus_to_python_ex, \
     GATT_SERVICE_IFACE, DBUS_OM_IFACE, DEVICE_IFACE
-from weblcm_bluetooth_plugin import BluetoothPlugin
-from weblcm_tcp_connection import TcpConnection, TCP_SOCKET_HOST, firewalld_open_port, \
+from ..bluetooth.bt_plugin import BluetoothPlugin
+from ..tcp_connection import TcpConnection, TCP_SOCKET_HOST, firewalld_open_port, \
     firewalld_close_port, SOCK_TIMEOUT
 
 MAX_TX_LEN = 16
@@ -18,15 +18,15 @@ MAX_TX_LEN = 16
 
 class VspConnectionPlugin(BluetoothPlugin):
     def __init__(self):
-        self.vsp_connections: Dict[str, VspConnection] = {}
+        self.vsp_connections: dict[str, VspConnection] = {}
         """Dictionary of devices by UUID and their associated VspConnection, if any"""
 
     @property
-    def device_commands(self) -> List[str]:
+    def device_commands(self) -> list[str]:
         return ['gattConnect', 'gattDisconnect']
 
     @property
-    def adapter_commands(self) -> List[str]:
+    def adapter_commands(self) -> list[str]:
         return ['gattList']
 
     def ProcessDeviceCommand(self, bus, command, device_uuid: str, device: dbus.ObjectPath,
@@ -53,9 +53,9 @@ class VspConnectionPlugin(BluetoothPlugin):
         return processed, error_message
 
     def ProcessAdapterCommand(self, bus, command, controller_name: str, adapter_obj:
-                              dbus.ObjectPath, post_data) -> (bool, str, dict):
+                              dbus.ObjectPath, post_data) -> tuple[bool, str, dict]:
         processed = False
-        error_message = None
+        error_message = ''
         result = {}
         if command == 'gattList':
             processed = True
@@ -85,15 +85,15 @@ class VspConnection(TcpConnection):
     """
 
     def __init__(self):
-        self.device:dbus.ObjectPath = None
+        self.device: dbus.ObjectPath = None
         self._waiting_for_services_resolved: bool = False
         self.recent_error: Optional[str] = None
         self.vsp_svc_uuid = None
-        self.vsp_read_chrc: Optional[Tuple[dbus.proxies.ProxyObject, Any]] = None
+        self.vsp_read_chrc: Optional[tuple[dbus.proxies.ProxyObject, Any]] = None
         self.vsp_read_chr_uuid = None
         self.signal_vsp_read_prop_changed = None
         self.signal_device_prop_changed = None
-        self.vsp_write_chrc: Optional[Tuple[dbus.proxies.ProxyObject, Any]] = None
+        self.vsp_write_chrc: Optional[tuple[dbus.proxies.ProxyObject, Any]] = None
         self.vsp_write_chr_uuid = None
         self.sock: Optional[socket.socket] = None
         self.socket_rx_type: str = 'JSON'
@@ -108,6 +108,9 @@ class VspConnection(TcpConnection):
         chrc = bus.get_object(BLUEZ_SERVICE_NAME, chrc_path)
         chrc_props = chrc.GetAll(GATT_CHRC_IFACE,
                                  dbus_interface=DBUS_PROP_IFACE)
+
+        if not chrc_props:
+            return False
 
         uuid = chrc_props['UUID']
 
@@ -191,6 +194,9 @@ class VspConnection(TcpConnection):
         self.generic_val_error_cb(error)
 
     def start_client(self):
+        if not self.vsp_read_chrc:
+            return
+
         # Subscribe to VSP read value notifications.
         self.vsp_read_chrc[0].StartNotify(reply_handler=self.gatt_vsp_notify_cb,
                                           error_handler=self.generic_val_error_cb,
@@ -240,6 +246,9 @@ class VspConnection(TcpConnection):
         service_props = service.GetAll(GATT_SERVICE_IFACE,
                                        dbus_interface=DBUS_PROP_IFACE)
 
+        if not service_props:
+            return None
+
         uuid = service_props['UUID']
 
         if uuid != vsp_svc_uuid:
@@ -256,23 +265,23 @@ class VspConnection(TcpConnection):
             return None
 
     def gatt_connect(self, bus, device_uuid: str, device: dbus.ObjectPath = None, params=None):
-        self.device = device
+        if not params:
+            return 'no params specified'
         if 'vspSvcUuid' not in params:
             return 'vspSvcUuid param not specified'
-        self.vsp_svc_uuid = params['vspSvcUuid'];
+        self.vsp_svc_uuid = params['vspSvcUuid']
         if 'vspReadChrUuid' not in params:
             return 'vspReachChrUuid param not specified'
-        self.vsp_read_chr_uuid = params['vspReadChrUuid'];
+        self.vsp_read_chr_uuid = params['vspReadChrUuid']
         if 'vspWriteChrUuid' not in params:
             return 'vspWriteChrUuid param not specified'
-        self.vsp_write_chr_uuid = params['vspWriteChrUuid'];
+        self.vsp_write_chr_uuid = params['vspWriteChrUuid']
         if 'tcpPort' not in params:
             return 'tcpPort param not specified'
         if 'socketRxType' in params:
             self.socket_rx_type = params['socketRxType']
 
         vsp_service = self.create_vsp_service()
-
         if not vsp_service:
             return f"No VSP Service found for device {device_uuid}"
 
@@ -285,7 +294,6 @@ class VspConnection(TcpConnection):
             if self.recent_error:
                 self.stop_client()
                 return self.recent_error
-
             if 'tcpPort' in params:
                 port = params['tcpPort']
                 if not self.validate_port(int(port)):
@@ -307,9 +315,8 @@ class VspConnection(TcpConnection):
             self.stop_client()
             raise
 
-
     def gatt_only_disconnect(self):
-        self.vsp_write_chrc: Optional[Tuple[dbus.proxies.ProxyObject, Any]] = None
+        self.vsp_write_chrc: Optional[tuple[dbus.proxies.ProxyObject, Any]] = None
         if self.signal_device_prop_changed:
             try:
                 self.signal_device_prop_changed.remove()
@@ -318,7 +325,7 @@ class VspConnection(TcpConnection):
                 syslog(LOG_ERR, "gatt_only_disconnect: " + str(e))
         self.stop_client()
 
-    def vsp_close(self, bus, device_uuid: str = None, params=None):
+    def vsp_close(self, bus, device_uuid: str = '', params=None):
         """ Close the VSP connection down, including the REST host connection. """
         self.gatt_only_disconnect()
         self.stop_tcp_server(self.sock)
