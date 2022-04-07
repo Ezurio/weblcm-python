@@ -1,8 +1,7 @@
 import itertools
 import re
-import sys
 from syslog import syslog, LOG_ERR, LOG_INFO
-from typing import List, Optional, Dict
+from typing import Optional
 
 import cherrypy
 import dbus
@@ -10,14 +9,14 @@ import dbus.exceptions
 import dbus.mainloop.glib
 import dbus.service
 
-import weblcm_bluetooth_plugin
-import weblcm_def
-from weblcm_ble import (
+from .. import definition
+from .ble import (
     find_controller, find_controllers, controller_pretty_name, controller_bus_name, find_device,
     find_devices, DEVICE_IFACE, ADAPTER_IFACE, DBUS_OM_IFACE, python_to_dbus, AgentSingleton,
     BLUEZ_SERVICE_NAME, uri_to_uuid
 )
-from weblcm_bluetooth_controller_state import BluetoothControllerState
+from . import bt_plugin
+from .bt_controller_state import BluetoothControllerState
 
 # TODO: USER_PERMISSION_TYPES for Bluetooth
 
@@ -33,19 +32,19 @@ PASS_ADAPTER_PROPS = ['Discovering', 'Powered', 'Discoverable']
 
 CACHED_ADAPTER_PROPS = ['discovering', 'powered', 'discoverable', 'transportFilter']
 
-ADAPTER_PATH_PATTERN = re.compile('^/org/bluez/hci\d+$')
+ADAPTER_PATH_PATTERN = re.compile('^/org/bluez/hci\\d+$')
 
-bluetooth_plugins: List[weblcm_bluetooth_plugin.BluetoothPlugin] = []
+bluetooth_plugins: list[bt_plugin.BluetoothPlugin] = []
 
 try:
-    from weblcm_hid_barcode_scanner import HidBarcodeScannerPlugin
+    from ..hid.barcode_scanner import HidBarcodeScannerPlugin
     bluetooth_plugins.append(HidBarcodeScannerPlugin())
     cherrypy.log("weblcm_bluetooth: HidBarcodeScannerPlugin loaded")
 except ImportError:
     cherrypy.log("weblcm_bluetooth: HidBarcodeScannerPlugin NOT loaded")
 
 try:
-    from weblcm_vsp_connection import VspConnectionPlugin
+    from ..vsp.vsp_connection import VspConnectionPlugin
     bluetooth_plugins.append(VspConnectionPlugin())
     cherrypy.log("weblcm_bluetooth: VspConnectionPlugin loaded")
 except ImportError:
@@ -53,7 +52,7 @@ except ImportError:
 
 try:
     bluetooth_ble_plugin = None
-    from weblcm_bluetooth_ble import BluetoothBlePlugin
+    from .bt_ble import BluetoothBlePlugin
     bluetooth_ble_plugin = BluetoothBlePlugin()
     bluetooth_plugins.append(bluetooth_ble_plugin)
     cherrypy.log("weblcm_bluetooth: BluetoothBlePlugin loaded")
@@ -61,7 +60,7 @@ except ImportError:
     cherrypy.log("weblcm_bluetooth: BluetoothBlePlugin NOT loaded")
 
 
-def GetControllerObj(name: str = None):
+def GetControllerObj(name: str = ''):
     result = {}
     # get the system bus
     bus = dbus.SystemBus()
@@ -69,7 +68,7 @@ def GetControllerObj(name: str = None):
     controller = find_controller(bus, name)
     if not controller:
         result['InfoMsg'] = f"Controller {controller_pretty_name(name)} not found."
-        result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
+        result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
         controller_obj = None
     else:
         controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
@@ -83,17 +82,17 @@ class Bluetooth(object):
     _controller_callbacks_registered = False
 
     def __init__(self):
-        self._controller_states: Dict[str, BluetoothControllerState] = {}
+        self._controller_states: dict[str, BluetoothControllerState] = {}
         """ Controller state tracking - indexed by friendly (REST API) name
         """
 
     @property
-    def device_commands(self) -> List[str]:
+    def device_commands(self) -> list[str]:
         return list(itertools.chain.from_iterable(plugin.device_commands for plugin in
                                                   bluetooth_plugins))
 
     @property
-    def adapter_commands(self) -> List[str]:
+    def adapter_commands(self) -> list[str]:
         return list(itertools.chain.from_iterable(plugin.adapter_commands for plugin in
                                                   bluetooth_plugins))
 
@@ -154,7 +153,7 @@ class Bluetooth(object):
         bus, adapter_obj, get_controller_result = GetControllerObj(controller_name)
 
         if not adapter_obj:
-            syslog(LOG_ERR, f"Reset notification received for controller {controller_name}, " \
+            syslog(LOG_ERR, f"Reset notification received for controller {controller_name}, "
                    "but adapter_obj not found")
             return
 
@@ -191,22 +190,21 @@ class Bluetooth(object):
             except Exception as e:
                 syslog(str(e))
 
-
     @cherrypy.tools.json_out()
     def GET(self, *args, **kwargs):
         result = {
-            'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1),
-            'InfoMsg':'',
+            'SDCERR': definition.WEBLCM_ERRORS.get('SDCERR_FAIL', 1),
+            'InfoMsg': '',
         }
 
-        filters: Optional[List[str]] = None
+        filters: Optional[list[str]] = None
         if 'filter' in cherrypy.request.params:
             filters = cherrypy.request.params['filter'].split(",")
 
         if 'controller' in cherrypy.request.params:
-            controller_name = controller_bus_name(cherrypy.request.params['controller'])
+            controller_name: str = controller_bus_name(cherrypy.request.params['controller'])
         else:
-            controller_name = None
+            controller_name: str = ''
 
         if 'device' in cherrypy.request.params:
             device_uuid = uri_to_uuid(cherrypy.request.params['device'])
@@ -216,7 +214,7 @@ class Bluetooth(object):
         # get the system bus
         bus = dbus.SystemBus()
         # get the ble controller
-        if controller_name is not None:
+        if controller_name:
             controller = find_controller(bus, controller_name)
             controllers = [controller]
             if not controller:
@@ -226,9 +224,13 @@ class Bluetooth(object):
             controllers = find_controllers(bus)
 
         for controller in controllers:
-            controller_friendly_name: str = controller_pretty_name(controller)
             controller_result = {}
-            controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
+            if controller:
+                controller_friendly_name: str = controller.replace("hci", "controller").replace("/org/bluez/", "")
+                controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
+            else:
+                controller_friendly_name: str = ''
+                controller_obj = None
 
             if not controller_obj:
                 result['InfoMsg'] = f"Controller {controller_pretty_name(controller_name)} not found."
@@ -256,11 +258,11 @@ class Bluetooth(object):
 
                     result[controller_friendly_name] = controller_result
                     if filters and not matched_filter:
-                        result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
+                        result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
                         result['InfoMsg'] = f"filters {filters} not matched"
                         return result
                 else:
-                    result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
+                    result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
 
                     device, device_props = find_device(bus, device_uuid)
                     if not device:
@@ -269,7 +271,7 @@ class Bluetooth(object):
 
                     result.update(device_props)
 
-                result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+                result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 
             except Exception as e:
                 result['InfoMsg'] = str(e)
@@ -282,7 +284,7 @@ class Bluetooth(object):
     @cherrypy.tools.json_out()
     def PUT(self, *args, **kwargs):
         result = {
-            'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1),
+            'SDCERR': definition.WEBLCM_ERRORS.get('SDCERR_FAIL', 1),
             'InfoMsg': '',
         }
 
@@ -365,7 +367,7 @@ class Bluetooth(object):
                                                              device_uuid, post_data))
 
         except Exception as e:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
+            result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
             result['InfoMsg'] = str(e)
             syslog(str(e))
 
@@ -389,7 +391,7 @@ class Bluetooth(object):
 
     @staticmethod
     def result_parameter_not_one_of(parameter: str, not_one_of):
-        return {'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1),
+        return {'SDCERR': definition.WEBLCM_ERRORS.get('SDCERR_FAIL', 1),
                 'InfoMsg': f"supplied {parameter} parameter must be one of {not_one_of}"}
 
     def set_adapter_properties(self, adapter_methods, adapter_props, controller_name, post_data):
@@ -408,8 +410,8 @@ class Bluetooth(object):
 
         if transport_filter is not None:
             result.update(self.set_adapter_transport_filter(adapter_methods, controller_name,
-                                                  transport_filter))
-            if 'SDCERR' in result and result['SDCERR'] != weblcm_def.WEBLCM_ERRORS.get(
+                                                            transport_filter))
+            if 'SDCERR' in result and result['SDCERR'] != definition.WEBLCM_ERRORS.get(
                     'SDCERR_SUCCESS'):
                 return result
         if discoverable is not None:
@@ -423,7 +425,7 @@ class Bluetooth(object):
                     adapter_methods.get_dbus_method("StopDiscovery", ADAPTER_IFACE)()
 
         if 'SDCERR' not in result:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+            result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 
         return result
 
@@ -435,12 +437,12 @@ class Bluetooth(object):
         """ Set a transport filter on the controller.  Note that "When multiple clients call
         SetDiscoveryFilter, their filters are internally merged" """
         result = {}
-        discovery_filters = { 'Transport': transport_filter }
+        discovery_filters = {'Transport': transport_filter}
         discovery_filters_dbus = python_to_dbus(discovery_filters)
         try:
             adapter_methods.get_dbus_method("SetDiscoveryFilter", ADAPTER_IFACE)(discovery_filters_dbus)
         except dbus.DBusException as e:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
+            result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
             result['InfoMsg'] = f"Transport filter {transport_filter} not accepted"
             return result
 
@@ -470,7 +472,7 @@ class Bluetooth(object):
         elif paired == 0:
             adapter_methods.get_dbus_method("RemoveDevice", ADAPTER_IFACE)(device_obj)
             # If RemoveDevice is successful, further work on device will not be possible.
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+            result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
             for plugin in bluetooth_plugins:
                 try:
                     plugin.DeviceRemovedNotify(device_uuid, device_obj)
@@ -498,7 +500,7 @@ class Bluetooth(object):
             if agent_instance:
                 agent_instance.passkeys[device_obj.object_path] = passkey
         # Found device, set any requested properties.  Assume success.
-        result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+        result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
 
         return result
 
@@ -519,13 +521,13 @@ class Bluetooth(object):
                 break
 
         if not processed:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
+            result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
             result['InfoMsg'] = f"Unrecognized command {command}"
         elif error_message:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
+            result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
             result['InfoMsg'] = error_message
         else:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+            result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
             result['InfoMsg'] = ''
 
         return result
@@ -550,13 +552,13 @@ class Bluetooth(object):
                 break
 
         if not processed:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
+            result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
             result['InfoMsg'] = f"Unrecognized command {command}"
         elif error_message:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
+            result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
             result['InfoMsg'] = error_message
         else:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+            result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
             result['InfoMsg'] = ''
 
         return result

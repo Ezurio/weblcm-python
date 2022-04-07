@@ -1,0 +1,275 @@
+import os
+import re
+import cherrypy
+from cherrypy.lib import static
+from . import definition
+import subprocess
+from pathlib import Path
+from pylibconfig import Config
+from threading import Lock
+from .settings import SystemSettingsManage
+from syslog import syslog
+
+
+@cherrypy.expose
+class FileManage(object):
+
+    ''' File Management '''
+
+    _lock = Lock()
+    FILE_MANAGE_SCRIPT = '/etc/weblcm-python/scripts/weblcm_files.sh'
+
+    # log will be saved in /var/run/log/journal/ for volatile mode, or /var/log/journal/ for persistent mode
+    # If "/var/run/log/journal/" exists, it should be in volatile mode.
+    _log_data_dir = "/var/run/log/journal/"
+    if not os.path.exists("/var/run/log/journal/"):
+        _log_data_dir = "/var/log/journal/"
+
+    def save_file(self, typ, fil):
+        path = os.path.normpath(os.path.join(definition.FILEDIR_DICT[typ], fil.filename))
+        with open(path, 'wb+') as out:
+            while True:
+                data = fil.file.read(8192)
+                if not data:
+                    break
+                out.write(data)
+            out.close()
+        return path
+
+    def POST(self, *args, **kwargs):
+
+        typ = kwargs.get('type', None)
+        fil = kwargs.get('file', None)
+        if not typ or not fil:
+            if not typ:
+                syslog('FileManage POST - no type specified')
+            if not fil:
+                syslog('FileManage POST - no filename provided')
+            raise cherrypy.HTTPError(400, 'filename or type missing')  # bad request
+
+        if typ not in definition.FILEDIR_DICT:
+            syslog(f'FileManage POST type {typ} unknown')
+            raise cherrypy.HTTPError(400, f'FileManage POST type {typ} unknown')  # bad request
+
+        with FileManage._lock:
+            fp = self.save_file(typ, fil)
+            if os.path.isfile(fp):
+                if fp.endswith(".zip"):
+                    password = kwargs.get('password', "")
+                    p = subprocess.Popen([
+                        FileManage.FILE_MANAGE_SCRIPT, typ, "unzip", fp, definition.FILEDIR_DICT.get(typ), password
+                    ])
+                    res = p.wait()
+                    os.remove(fp)
+                    if res:
+                        syslog(f"unzip command file '{fp}' failed with error {res}")
+                        # Internal server error
+                        raise cherrypy.HTTPError(500, f'unzip command failed to unzip provided file.  Error returned: {res}')
+                return
+        syslog(f"unable to obtain FileManage._lock")
+
+        raise cherrypy.HTTPError(500, 'unable to obtain internal file lock')  # Internal server error
+
+    def GET(self, *args, **kwargs):
+
+        typ = kwargs.get('type', None)
+        if not typ:
+            syslog('FileManage Get - no filename provided')
+            raise cherrypy.HTTPError(400, 'no filename provided')
+
+        fil = '{0}{1}'.format(typ, ".zip")
+        path = '{0}{1}'.format("/tmp/", fil)
+
+        if typ == "config":
+
+            password = kwargs.get('password', None)
+            if not password:
+                syslog('FileManage Get - no password provided')
+                raise cherrypy.HTTPError(400, 'no password provided')
+            args = [FileManage.FILE_MANAGE_SCRIPT, "config", "zip",
+                    definition.FILEDIR_DICT.get(typ), path, password]
+            syslog("Configuration zipped for user")
+
+        elif typ == "log":
+            password = kwargs.get('password', None)
+            if not password:
+                syslog('FileManage Get - no password provided')
+                raise cherrypy.HTTPError(400, 'no password provided')
+            args = [FileManage.FILE_MANAGE_SCRIPT, "log", "zip",
+                    FileManage._log_data_dir, path, password]
+            syslog("System log zipped for user")
+
+        elif typ == "debug":
+            args = [FileManage.FILE_MANAGE_SCRIPT, "debug", "zip",
+                    ' '.join([FileManage._log_data_dir, definition.FILEDIR_DICT['config']]),
+                    path, SystemSettingsManage.get_cert_for_file_encryption()]
+            syslog("Configuration and system log zipped/encrypted for user")
+        else:
+            syslog(f"FileManage GET - unknown file type {typ}")
+            raise cherrypy.HTTPError(400, f'unknown file type {typ}')
+
+        try:
+            subprocess.call(args)
+        except Exception as e:
+            syslog("Script execution error {}".format(e))
+            raise cherrypy.HTTPError(400, "Script execution error {}".format(e))
+
+        if os.path.isfile(path):
+            objFile = static.serve_file(path, 'application/x-download', 'attachment', fil)
+            os.unlink(path)
+            return objFile
+
+        syslog(f"Failed to create file {path} for user")
+        raise cherrypy.HTTPError(500, f'failed to create file {path}')
+
+    @cherrypy.tools.json_out()
+    def DELETE(self, *args, **kwargs):
+        result = {
+            'SDCERR': definition.WEBLCM_ERRORS.get('SDCERR_FAIL'),
+            'InfoMsg': 'Unable to delete file'
+        }
+        typ = kwargs.get('type', None)
+        fil = kwargs.get('file', None)
+        if not typ or not fil:
+            if not typ:
+                syslog('FileManage DELETE - no type specified')
+                result['InfoMsg'] = 'no type specified'
+            if not fil:
+                syslog('FileManage DELETE - no filename provided')
+                result['InfoMsg'] = 'no file specified'
+#			raise cherrypy.HTTPError(400, 'missing type or file') #bad request
+            return result
+        valid = ['cert', 'pac']
+        if not typ in valid:
+            #			raise cherrypy.HTTPError(400, f"type not one of {valid}")
+            result['InfoMsg'] = f'type not one of {valid}'
+            return result
+        path = os.path.normpath(os.path.join(definition.FILEDIR_DICT[typ], fil))
+        if os.path.isfile(path):
+            os.remove(path)
+            if not os.path.exists(path):
+                result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+                result['InfoMsg'] = f'file {fil} deleted'
+                syslog(f'file {fil} deleted')
+            else:
+                syslog(f'Attempt to remove file {path} did not succeed')
+        else:
+            syslog(f'Attempt to remove non-existant file {path}')
+            result['InfoMsg'] = f"File: {fil} not present"
+        return result
+
+
+@cherrypy.expose
+class FilesManage(object):
+
+    @cherrypy.tools.json_out()
+    def GET(self, *args, **kwargs):
+
+        typ = kwargs.get('type', None)
+        if not typ:
+            syslog('FilesManage GET - no type provided')
+            raise cherrypy.HTTPError(400, 'no filename provided')
+
+        files = []
+        with os.scandir(definition.FILEDIR_DICT.get(typ)) as listOfEntries:
+            for entry in listOfEntries:
+                if entry.is_file():
+                    strs = entry.name.split('.')
+                    if len(strs) == 2 and strs[1] in definition.FILEFMT_DICT.get(typ):
+                        files.append(entry.name)
+        files.sort()
+        return files
+
+
+@cherrypy.expose
+class AWMCfgManage(object):
+
+    _lock = Lock()
+
+    @cherrypy.tools.json_out()
+    def GET(self, *args, **kwargs):
+
+        # Infinite geo-location checks by default
+        result = {
+            'SDCERR': definition.WEBLCM_ERRORS.get('SDCERR_SUCCESS'),
+            'InfoMsg': 'AWM configuration only supported in LITE mode',
+            'geolocation_scanning_enable': 1,
+        }
+
+        # check if there is a configuration file which contains a "scan_attempts:0" entry
+        # if configuration file does not exist, scan_attempts is not disabled
+        f = cherrypy.request.app.config['weblcm'].get('awm_cfg', None)
+        if not f:
+            return result
+        if not os.path.isfile(f):
+            return result
+
+        config = Config()
+        with AWMCfgManage._lock:
+            config.readFile(f)
+            if config.exists("scan_attempts"):
+                result['geolocation_scanning_enable'] = config.value("scan_attempts")[0]
+                result['ErrorMesg'] = ''
+
+        return result
+
+    @cherrypy.tools.accept(media='application/json')
+    @cherrypy.tools.json_in()
+    @cherrypy.tools.json_out()
+    def PUT(self):
+
+        # Enable/disable geolocation scanning
+        # 0: disable geolocation scanning
+        # others: enable geolocation scanning
+        result = {
+            'SDCERR': definition.WEBLCM_ERRORS.get('SDCERR_FAIL'),
+            'InfoMsg': "AWM's geolocation scanning configuration only supported in LITE mode",
+            'geolocation_scanning_enable': 1,
+        }
+
+        # determine if in LITE mode
+        litemode = False
+        try:
+            file = open("/etc/default/adaptive_ww", "r")
+            for line in file:
+                if re.search('LITE', line):
+                    litemode = True
+                    break
+        except Exception as e:
+            pass
+
+        if not litemode:
+            return result
+
+        # prep for next error condition
+        result['InfoMsg'] = 'No writable configuration file found'
+        # check if there is a configuration file which contains a "scan_attempts:0" entry
+        # if writable configuration file does not exist, scan_attempts can not be modified
+
+        fp = cherrypy.request.app.config['weblcm'].get('awm_cfg', None)
+        if not fp:
+            return result
+
+        d = Path(os.path.dirname(fp))
+        d.mkdir(exist_ok=True)
+
+        geolocation_scanning_enable = cherrypy.request.json.get('geolocation_scanning_enable', 0)
+
+        config = Config()
+        with AWMCfgManage._lock:
+            if os.path.isfile(fp):
+                config.readFile(fp)
+            if geolocation_scanning_enable:
+                if config.exists("scan_attempts"):
+                    config.remove("", "scan_attempts")
+                    config.writeFile(fp)
+            else:
+                if not config.exists("scan_attempts"):
+                    config.addInteger("", "scan_attempts")
+                config.setValue("scan_attempts", geolocation_scanning_enable)
+                config.writeFile(fp)
+
+        result['geolocation_scanning_enable'] = geolocation_scanning_enable
+        result['SDCERR'] = definition.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+        result['InfoMsg'] = ''
+        return result
