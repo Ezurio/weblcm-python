@@ -1,8 +1,7 @@
 import itertools
-import sys
 import re
 from syslog import syslog, LOG_ERR, LOG_INFO
-from typing import List, Optional, Dict
+from typing import Optional
 
 import cherrypy
 import dbus
@@ -10,42 +9,54 @@ import dbus.exceptions
 import dbus.mainloop.glib
 import dbus.service
 
-import weblcm_bluetooth_plugin
-import weblcm_def
-from weblcm_ble import (
-    find_controller, find_controllers, controller_pretty_name, controller_bus_name, find_device,
-    find_devices, DEVICE_IFACE, ADAPTER_IFACE, DBUS_OM_IFACE, python_to_dbus, AgentSingleton,
-    BLUEZ_SERVICE_NAME, uri_to_uuid
+from . import bt_plugin
+from .. import definition
+from .ble import (
+    find_controller,
+    find_controllers,
+    controller_pretty_name,
+    controller_bus_name,
+    find_device,
+    find_devices,
+    DEVICE_IFACE,
+    ADAPTER_IFACE,
+    DBUS_OM_IFACE,
+    python_to_dbus,
+    AgentSingleton,
+    BLUEZ_SERVICE_NAME,
+    uri_to_uuid,
 )
-from weblcm_bluetooth_controller_state import BluetoothControllerState
+from .bt_controller_state import BluetoothControllerState
 
 # TODO: USER_PERMISSION_TYPES for Bluetooth
 
 PAIR_TIMEOUT_SECONDS = 60
 
 # These device properties can be directly set, without requiring any special-case logic.
-SETTABLE_DEVICE_PROPS = [('Trusted', bool)]
+SETTABLE_DEVICE_PROPS = [("Trusted", bool)]
 
-CACHED_DEVICE_PROPS = ['connected']
+CACHED_DEVICE_PROPS = ["connected"]
 
 # These controller properties can be directly set, without requiring any special-case logic.
-PASS_ADAPTER_PROPS = ['Discovering', 'Powered', 'Discoverable']
+PASS_ADAPTER_PROPS = ["Discovering", "Powered", "Discoverable"]
 
-CACHED_ADAPTER_PROPS = ['discovering', 'powered', 'discoverable', 'transportFilter']
+CACHED_ADAPTER_PROPS = ["discovering", "powered", "discoverable", "transportFilter"]
 
-ADAPTER_PATH_PATTERN = re.compile('^/org/bluez/hci\d+$')
+ADAPTER_PATH_PATTERN = re.compile("^/org/bluez/hci\\d+$")
 
-bluetooth_plugins: List[weblcm_bluetooth_plugin.BluetoothPlugin] = []
+bluetooth_plugins: list[bt_plugin.BluetoothPlugin] = []
 
 try:
-    from weblcm_hid_barcode_scanner import HidBarcodeScannerPlugin
+    from ..hid.barcode_scanner import HidBarcodeScannerPlugin
+
     bluetooth_plugins.append(HidBarcodeScannerPlugin())
     cherrypy.log("weblcm_bluetooth: HidBarcodeScannerPlugin loaded")
 except ImportError:
     cherrypy.log("weblcm_bluetooth: HidBarcodeScannerPlugin NOT loaded")
 
 try:
-    from weblcm_vsp_connection import VspConnectionPlugin
+    from ..vsp.vsp_connection import VspConnectionPlugin
+
     bluetooth_plugins.append(VspConnectionPlugin())
     cherrypy.log("weblcm_bluetooth: VspConnectionPlugin loaded")
 except ImportError:
@@ -53,7 +64,8 @@ except ImportError:
 
 try:
     bluetooth_ble_plugin = None
-    from weblcm_bluetooth_ble import BluetoothBlePlugin
+    from .bt_ble import BluetoothBlePlugin
+
     bluetooth_ble_plugin = BluetoothBlePlugin()
     bluetooth_plugins.append(bluetooth_ble_plugin)
     cherrypy.log("weblcm_bluetooth: BluetoothBlePlugin loaded")
@@ -61,15 +73,15 @@ except ImportError:
     cherrypy.log("weblcm_bluetooth: BluetoothBlePlugin NOT loaded")
 
 
-def GetControllerObj(name: str = None):
+def GetControllerObj(name: str = ""):
     result = {}
     # get the system bus
     bus = dbus.SystemBus()
     # get the ble controller
     controller = find_controller(bus, name)
     if not controller:
-        result['InfoMsg'] = f"Controller {controller_pretty_name(name)} not found."
-        result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
+        result["InfoMsg"] = f"Controller {controller_pretty_name(name)} not found."
+        result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
         controller_obj = None
     else:
         controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
@@ -78,38 +90,48 @@ def GetControllerObj(name: str = None):
 
 
 @cherrypy.expose
-@cherrypy.popargs('controller', 'device')
+@cherrypy.popargs("controller", "device")
 class Bluetooth(object):
     _controller_callbacks_registered = False
 
     def __init__(self):
-        self._controller_states: Dict[str, BluetoothControllerState] = {}
+        self._controller_states: dict[str, BluetoothControllerState] = {}
         """ Controller state tracking - indexed by friendly (REST API) name
         """
 
     @property
-    def device_commands(self) -> List[str]:
-        return list(itertools.chain.from_iterable(plugin.device_commands for plugin in
-                                                  bluetooth_plugins))
+    def device_commands(self) -> list[str]:
+        return list(
+            itertools.chain.from_iterable(
+                plugin.device_commands for plugin in bluetooth_plugins
+            )
+        )
 
     @property
-    def adapter_commands(self) -> List[str]:
-        return list(itertools.chain.from_iterable(plugin.adapter_commands for plugin in
-                                                  bluetooth_plugins))
+    def adapter_commands(self) -> list[str]:
+        return list(
+            itertools.chain.from_iterable(
+                plugin.adapter_commands for plugin in bluetooth_plugins
+            )
+        )
 
     def register_controller_callbacks(self):
         if not Bluetooth._controller_callbacks_registered:
             Bluetooth._controller_callbacks_registered = True
 
             bus = dbus.SystemBus()
-            bus.add_signal_receiver(handler_function=self.interface_removed_cb,
-                                    signal_name="InterfacesRemoved",
-                                    dbus_interface=DBUS_OM_IFACE,
-                                    path='/')
-            bus.add_signal_receiver(handler_function=self.interface_added_cb,
-                                    signal_name="InterfacesAdded",
-                                    dbus_interface=DBUS_OM_IFACE,
-                                    path='/')
+            bus.add_signal_receiver(
+                handler_function=self.interface_removed_cb,
+                signal_name="InterfacesRemoved",
+                dbus_interface=DBUS_OM_IFACE,
+                path="/",
+            )
+            bus.add_signal_receiver(
+                handler_function=self.interface_added_cb,
+                signal_name="InterfacesAdded",
+                dbus_interface=DBUS_OM_IFACE,
+                path="/",
+            )
 
     def interface_added_cb(self, interface: str, *args):
         try:
@@ -133,7 +155,7 @@ class Bluetooth(object):
         except Exception as e:
             syslog(LOG_ERR, str(e))
 
-    def controller_restore(self, controller_name: str = '/org/bluez/hci0'):
+    def controller_restore(self, controller_name: str = "/org/bluez/hci0"):
         """
         :param controller_name: controller whose state will be restored
         :return: None
@@ -154,16 +176,23 @@ class Bluetooth(object):
         bus, adapter_obj, get_controller_result = GetControllerObj(controller_name)
 
         if not adapter_obj:
-            syslog(LOG_ERR, f"Reset notification received for controller {controller_name}, " \
-                   "but adapter_obj not found")
+            syslog(
+                LOG_ERR,
+                f"Reset notification received for controller {controller_name}, "
+                "but adapter_obj not found",
+            )
             return
 
         # First, set controller properties, powering it on if previously powered.
         adapter_props = dbus.Interface(adapter_obj, "org.freedesktop.DBus.Properties")
         adapter_methods = dbus.Interface(adapter_obj, "org.freedesktop.DBus.Methods")
         try:
-            self.set_adapter_properties(adapter_methods, adapter_props,
-                                        controller_name, controller_state.properties)
+            self.set_adapter_properties(
+                adapter_methods,
+                adapter_props,
+                controller_name,
+                controller_state.properties,
+            )
         except Exception as e:
             syslog(str(e))
 
@@ -172,15 +201,27 @@ class Bluetooth(object):
             device, device_props = find_device(bus, device_uuid)
             if device is not None:
                 device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
-                device_methods = dbus.Interface(device_obj, "org.freedesktop.DBus.Methods")
-                device_properties = dbus.Interface(device_obj, "org.freedesktop.DBus.Properties")
+                device_methods = dbus.Interface(
+                    device_obj, "org.freedesktop.DBus.Methods"
+                )
+                device_properties = dbus.Interface(
+                    device_obj, "org.freedesktop.DBus.Properties"
+                )
                 try:
-                    self.set_device_properties(adapter_methods, device_methods, device_obj,
-                                               device_properties, properties)
+                    self.set_device_properties(
+                        adapter_methods,
+                        device_methods,
+                        device_obj,
+                        device_properties,
+                        device_uuid,
+                        properties,
+                    )
                 except Exception as e:
                     syslog(str(e))
             else:
-                syslog(LOG_ERR, f"couldn't find device {device_uuid} to restore properties")
+                syslog(
+                    LOG_ERR, f"couldn't find device {device_uuid} to restore properties"
+                )
 
         # Third, notify plugins, re-establishing protocol links.
         # We do not wait for BT connections to restore, so service discovery may not be complete
@@ -191,36 +232,39 @@ class Bluetooth(object):
             except Exception as e:
                 syslog(str(e))
 
-
     @cherrypy.tools.json_out()
     def GET(self, *args, **kwargs):
         result = {
-            'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1),
-            'InfoMsg':'',
+            "SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1),
+            "InfoMsg": "",
         }
 
-        filters: Optional[List[str]] = None
-        if 'filter' in cherrypy.request.params:
-            filters = cherrypy.request.params['filter'].split(",")
+        filters: Optional[list[str]] = None
+        if "filter" in cherrypy.request.params:
+            filters = cherrypy.request.params["filter"].split(",")
 
-        if 'controller' in cherrypy.request.params:
-            controller_name = controller_bus_name(cherrypy.request.params['controller'])
+        if "controller" in cherrypy.request.params:
+            controller_name: str = controller_bus_name(
+                cherrypy.request.params["controller"]
+            )
         else:
-            controller_name = None
+            controller_name: str = ""
 
-        if 'device' in cherrypy.request.params:
-            device_uuid = uri_to_uuid(cherrypy.request.params['device'])
+        if "device" in cherrypy.request.params:
+            device_uuid = uri_to_uuid(cherrypy.request.params["device"])
         else:
             device_uuid = None
 
         # get the system bus
         bus = dbus.SystemBus()
         # get the ble controller
-        if controller_name is not None:
+        if controller_name:
             controller = find_controller(bus, controller_name)
             controllers = [controller]
             if not controller:
-                result['InfoMsg'] = f"Controller {controller_pretty_name(controller_name)} not found."
+                result[
+                    "InfoMsg"
+                ] = f"Controller {controller_pretty_name(controller_name)} not found."
                 return result
         else:
             controllers = find_controllers(bus)
@@ -231,70 +275,81 @@ class Bluetooth(object):
             controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
 
             if not controller_obj:
-                result['InfoMsg'] = f"Controller {controller_pretty_name(controller_name)} not found."
+                result[
+                    "InfoMsg"
+                ] = f"Controller {controller_pretty_name(controller_name)} not found."
                 return result
 
             try:
                 matched_filter = False
                 if not device_uuid:
-                    if not filters or 'bluetoothDevices' in filters:
-                        controller_result['bluetoothDevices'] = find_devices(bus)
+                    if not filters or "bluetoothDevices" in filters:
+                        controller_result["bluetoothDevices"] = find_devices(bus)
                         matched_filter = True
 
-                    adapter_props = dbus.Interface(controller_obj, "org.freedesktop.DBus.Properties")
-                    adapter_methods = dbus.Interface(controller_obj, "org.freedesktop.DBus.Methods")
+                    adapter_props = dbus.Interface(
+                        controller_obj, "org.freedesktop.DBus.Properties"
+                    )
+                    adapter_methods = dbus.Interface(
+                        controller_obj, "org.freedesktop.DBus.Methods"
+                    )
 
-                    if not filters or 'transportFilter' in filters:
-                        controller_result['transportFilter'] = self.get_adapter_transport_filter(
-                            controller_name)
+                    if not filters or "transportFilter" in filters:
+                        controller_result[
+                            "transportFilter"
+                        ] = self.get_adapter_transport_filter(controller_name)
                         matched_filter = True
 
                     for pass_property in PASS_ADAPTER_PROPS:
                         if not filters or pass_property.lower() in filters:
-                            controller_result[pass_property.lower()] = adapter_props.Get(ADAPTER_IFACE, pass_property)
+                            controller_result[
+                                pass_property.lower()
+                            ] = adapter_props.Get(ADAPTER_IFACE, pass_property)
                             matched_filter = True
 
                     result[controller_friendly_name] = controller_result
                     if filters and not matched_filter:
-                        result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
-                        result['InfoMsg'] = f"filters {filters} not matched"
+                        result["SDCERR"] = definition.WEBLCM_ERRORS.get(
+                            "SDCERR_FAIL", 1
+                        )
+                        result["InfoMsg"] = f"filters {filters} not matched"
                         return result
                 else:
-                    result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
+                    result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
 
                     device, device_props = find_device(bus, device_uuid)
                     if not device:
-                        result['InfoMsg'] = 'Device not found'
+                        result["InfoMsg"] = "Device not found"
                         return result
 
                     result.update(device_props)
 
-                result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+                result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
 
             except Exception as e:
-                result['InfoMsg'] = str(e)
+                result["InfoMsg"] = str(e)
                 syslog(str(e))
 
             return result
 
     @cherrypy.tools.json_in()
-    @cherrypy.tools.accept(media='application/json')
+    @cherrypy.tools.accept(media="application/json")
     @cherrypy.tools.json_out()
     def PUT(self, *args, **kwargs):
         result = {
-            'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1),
-            'InfoMsg': '',
+            "SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1),
+            "InfoMsg": "",
         }
 
-        if 'controller' in cherrypy.request.params:
-            controller_name = controller_bus_name(cherrypy.request.params['controller'])
+        if "controller" in cherrypy.request.params:
+            controller_name = controller_bus_name(cherrypy.request.params["controller"])
         else:
-            controller_name = 'hci0'
+            controller_name = "hci0"
 
         self.register_controller_callbacks()
 
-        if 'device' in cherrypy.request.params:
-            device_uuid = uri_to_uuid(cherrypy.request.params['device'])
+        if "device" in cherrypy.request.params:
+            device_uuid = uri_to_uuid(cherrypy.request.params["device"])
         else:
             device_uuid = None
 
@@ -310,74 +365,111 @@ class Bluetooth(object):
         controller_state = self.get_controller_state(controller_friendly_name)
 
         try:
-            adapter_props = dbus.Interface(adapter_obj, "org.freedesktop.DBus.Properties")
-            adapter_methods = dbus.Interface(adapter_obj, "org.freedesktop.DBus.Methods")
+            adapter_props = dbus.Interface(
+                adapter_obj, "org.freedesktop.DBus.Properties"
+            )
+            adapter_methods = dbus.Interface(
+                adapter_obj, "org.freedesktop.DBus.Methods"
+            )
 
-            command = post_data['command'] if 'command' in post_data else None
+            command = post_data["command"] if "command" in post_data else None
             if not device_uuid:
                 # adapter-specific operation
                 if command:
                     if not command in self.adapter_commands:
-                        result.update(self.result_parameter_not_one_of('command',
-                                                                       self.adapter_commands))
+                        result.update(
+                            self.result_parameter_not_one_of(
+                                "command", self.adapter_commands
+                            )
+                        )
                     else:
-                        result.update(self.execute_adapter_command(bus, command, controller_name,
-                                                                   adapter_obj))
+                        result.update(
+                            self.execute_adapter_command(
+                                bus, command, controller_name, adapter_obj
+                            )
+                        )
                     return result
                 else:
                     for prop in CACHED_ADAPTER_PROPS:
                         if prop in post_data:
                             controller_state.properties[prop] = post_data.get(prop)
-                    result.update(self.set_adapter_properties(adapter_methods, adapter_props,
-                                                              controller_name, post_data))
+                    result.update(
+                        self.set_adapter_properties(
+                            adapter_methods, adapter_props, controller_name, post_data
+                        )
+                    )
             else:
                 # device-specific operation
                 if command and command not in self.device_commands:
-                    result.update(self.result_parameter_not_one_of('command',
-                                                                   self.device_commands))
+                    result.update(
+                        self.result_parameter_not_one_of(
+                            "command", self.device_commands
+                        )
+                    )
                     return result
                 device, device_props = find_device(bus, device_uuid)
                 if device is None:
-                    result['InfoMsg'] = 'Device not found'
+                    result["InfoMsg"] = "Device not found"
                     if command:
                         # Forward device-specific commands on to plugins even if device
                         # is not found:
                         result.update(
-                            self.execute_device_command(bus, command, device_uuid, None))
+                            self.execute_device_command(bus, command, device_uuid, None)
+                        )
                     return result
 
                 device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
 
-                device_methods = dbus.Interface(device_obj, "org.freedesktop.DBus.Methods")
-                device_properties = dbus.Interface(device_obj, "org.freedesktop.DBus.Properties")
+                device_methods = dbus.Interface(
+                    device_obj, "org.freedesktop.DBus.Methods"
+                )
+                device_properties = dbus.Interface(
+                    device_obj, "org.freedesktop.DBus.Properties"
+                )
 
                 if command:
-                    result.update(self.execute_device_command(bus, command, device_uuid, device))
+                    result.update(
+                        self.execute_device_command(bus, command, device_uuid, device)
+                    )
                     return result
                 else:
-                    cached_device_properties = self.get_device_properties(controller_state,
-                                                                          device_uuid)
+                    cached_device_properties = self.get_device_properties(
+                        controller_state, device_uuid
+                    )
                     for prop in CACHED_DEVICE_PROPS:
                         if prop in post_data:
                             cached_device_properties[prop] = post_data.get(prop)
-                    result.update(self.set_device_properties(adapter_methods, device_methods,
-                                                             device_obj, device_properties,
-                                                             device_uuid, post_data))
+                    result.update(
+                        self.set_device_properties(
+                            adapter_methods,
+                            device_methods,
+                            device_obj,
+                            device_properties,
+                            device_uuid,
+                            post_data,
+                        )
+                    )
 
         except Exception as e:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
-            result['InfoMsg'] = str(e)
+            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
+            result["InfoMsg"] = str(e)
             syslog(str(e))
 
         return result
 
-    def get_controller_state(self, controller_friendly_name: str) -> BluetoothControllerState:
+    def get_controller_state(
+        self, controller_friendly_name: str
+    ) -> BluetoothControllerState:
         controller_friendly_name = controller_pretty_name(controller_friendly_name)
         if not controller_friendly_name in self._controller_states:
-            self._controller_states[controller_friendly_name] = BluetoothControllerState()
+            self._controller_states[
+                controller_friendly_name
+            ] = BluetoothControllerState()
         return self._controller_states[controller_friendly_name]
 
-    def get_device_properties(self, controller_state: BluetoothControllerState, device_uuid: str):
+    def get_device_properties(
+        self, controller_state: BluetoothControllerState, device_uuid: str
+    ):
         """
         :param controller_state: controller device is on
         :param device_uuid: see uri_to_uuid()
@@ -389,16 +481,20 @@ class Bluetooth(object):
 
     @staticmethod
     def result_parameter_not_one_of(parameter: str, not_one_of):
-        return {'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1),
-                'InfoMsg': f"supplied {parameter} parameter must be one of {not_one_of}"}
+        return {
+            "SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1),
+            "InfoMsg": f"supplied {parameter} parameter must be one of {not_one_of}",
+        }
 
-    def set_adapter_properties(self, adapter_methods, adapter_props, controller_name, post_data):
+    def set_adapter_properties(
+        self, adapter_methods, adapter_props, controller_name, post_data
+    ):
         """Set properties on an adapter (controller)"""
         result = {}
-        powered = post_data.get('powered', None)
-        discovering = post_data.get('discovering', None)
-        discoverable = post_data.get('discoverable', None)
-        transport_filter = post_data.get('transportFilter', None)
+        powered = post_data.get("powered", None)
+        discovering = post_data.get("discovering", None)
+        discoverable = post_data.get("discoverable", None)
+        transport_filter = post_data.get("transportFilter", None)
         if powered is not None:
             adapter_props.Set(ADAPTER_IFACE, "Powered", dbus.Boolean(powered))
             if not powered:
@@ -407,10 +503,14 @@ class Bluetooth(object):
                 discovering = discovering if discovering else None
 
         if transport_filter is not None:
-            result.update(self.set_adapter_transport_filter(adapter_methods, controller_name,
-                                                  transport_filter))
-            if 'SDCERR' in result and result['SDCERR'] != weblcm_def.WEBLCM_ERRORS.get(
-                    'SDCERR_SUCCESS'):
+            result.update(
+                self.set_adapter_transport_filter(
+                    adapter_methods, controller_name, transport_filter
+                )
+            )
+            if "SDCERR" in result and result["SDCERR"] != definition.WEBLCM_ERRORS.get(
+                "SDCERR_SUCCESS"
+            ):
                 return result
         if discoverable is not None:
             adapter_props.Set(ADAPTER_IFACE, "Discoverable", dbus.Boolean(discoverable))
@@ -422,62 +522,79 @@ class Bluetooth(object):
                 else:
                     adapter_methods.get_dbus_method("StopDiscovery", ADAPTER_IFACE)()
 
-        if 'SDCERR' not in result:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+        if "SDCERR" not in result:
+            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
 
         return result
 
     def get_adapter_transport_filter(self, controller_name):
         controller_state = self.get_controller_state(controller_name)
-        return controller_state.properties.get('transportFilter', None)
+        return controller_state.properties.get("transportFilter", None)
 
-    def set_adapter_transport_filter(self, adapter_methods, controller_name, transport_filter):
-        """ Set a transport filter on the controller.  Note that "When multiple clients call
+    def set_adapter_transport_filter(
+        self, adapter_methods, controller_name, transport_filter
+    ):
+        """Set a transport filter on the controller.  Note that "When multiple clients call
         SetDiscoveryFilter, their filters are internally merged" """
         result = {}
-        discovery_filters = { 'Transport': transport_filter }
+        discovery_filters = {"Transport": transport_filter}
         discovery_filters_dbus = python_to_dbus(discovery_filters)
         try:
-            adapter_methods.get_dbus_method("SetDiscoveryFilter", ADAPTER_IFACE)(discovery_filters_dbus)
+            adapter_methods.get_dbus_method("SetDiscoveryFilter", ADAPTER_IFACE)(
+                discovery_filters_dbus
+            )
         except dbus.DBusException as e:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
-            result['InfoMsg'] = f"Transport filter {transport_filter} not accepted"
+            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
+            result["InfoMsg"] = f"Transport filter {transport_filter} not accepted"
             return result
 
         controller_state = self.get_controller_state(controller_name)
-        controller_state.properties['transportFilter'] = transport_filter
+        controller_state.properties["transportFilter"] = transport_filter
         return result
 
-    def set_device_properties(self, adapter_methods, device_methods, device_obj: dbus.ObjectPath,
-                              device_properties, device_uuid: str, post_data):
+    def set_device_properties(
+        self,
+        adapter_methods,
+        device_methods,
+        device_obj: dbus.ObjectPath,
+        device_properties,
+        device_uuid: str,
+        post_data,
+    ):
         result = {}
         for settable_property in SETTABLE_DEVICE_PROPS:
             prop_name, prop_type = settable_property
             value = post_data.get(prop_name.lower(), None)
             if value is not None:
-                device_properties.Set(DEVICE_IFACE, prop_name, python_to_dbus(
-                    value, prop_type))
-        paired = post_data.get('paired', None)
+                device_properties.Set(
+                    DEVICE_IFACE, prop_name, python_to_dbus(value, prop_type)
+                )
+        paired = post_data.get("paired", None)
         if paired == 1:
             paired_state = device_properties.Get(DEVICE_IFACE, "Paired")
             if paired_state != paired:
                 agent = AgentSingleton()
                 bus = dbus.SystemBus()
-                bus.call_blocking(bus_name=BLUEZ_SERVICE_NAME, object_path=device_obj.object_path,
-                                  dbus_interface=DEVICE_IFACE,
-                                  method="Pair", signature='', args=[],
-                                  timeout=PAIR_TIMEOUT_SECONDS)
+                bus.call_blocking(
+                    bus_name=BLUEZ_SERVICE_NAME,
+                    object_path=device_obj.object_path,
+                    dbus_interface=DEVICE_IFACE,
+                    method="Pair",
+                    signature="",
+                    args=[],
+                    timeout=PAIR_TIMEOUT_SECONDS,
+                )
         elif paired == 0:
             adapter_methods.get_dbus_method("RemoveDevice", ADAPTER_IFACE)(device_obj)
             # If RemoveDevice is successful, further work on device will not be possible.
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
             for plugin in bluetooth_plugins:
                 try:
                     plugin.DeviceRemovedNotify(device_uuid, device_obj)
                 except Exception as e:
                     syslog(str(e))
             return result
-        connected = post_data.get('connected', None)
+        connected = post_data.get("connected", None)
         connected_state = device_properties.Get(DEVICE_IFACE, "Connected")
         if connected_state != connected:
             if connected == 1:
@@ -492,25 +609,28 @@ class Bluetooth(object):
                     device_methods.get_dbus_method("Connect", DEVICE_IFACE)()
             elif connected == 0:
                 device_methods.get_dbus_method("Disconnect", DEVICE_IFACE)()
-        passkey = post_data.get('passkey', None)
+        passkey = post_data.get("passkey", None)
         if passkey is not None:
             agent_instance = AgentSingleton.get_instance()
             if agent_instance:
                 agent_instance.passkeys[device_obj.object_path] = passkey
         # Found device, set any requested properties.  Assume success.
-        result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
+        result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
 
         return result
 
-    def execute_device_command(self, bus, command, device_uuid: str, device: dbus.ObjectPath):
+    def execute_device_command(
+        self, bus, command, device_uuid: str, device: dbus.ObjectPath
+    ):
         result = {}
         error_message = None
         processed = False
         post_data = cherrypy.request.json
         for plugin in bluetooth_plugins:
             try:
-                processed, error_message = plugin.ProcessDeviceCommand(bus, command, device_uuid,
-                                                                       device, post_data)
+                processed, error_message = plugin.ProcessDeviceCommand(
+                    bus, command, device_uuid, device, post_data
+                )
             except Exception as e:
                 processed = True
                 error_message = f"Command {command} failed with {str(e)}"
@@ -519,27 +639,29 @@ class Bluetooth(object):
                 break
 
         if not processed:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
-            result['InfoMsg'] = f"Unrecognized command {command}"
+            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
+            result["InfoMsg"] = f"Unrecognized command {command}"
         elif error_message:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
-            result['InfoMsg'] = error_message
+            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
+            result["InfoMsg"] = error_message
         else:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
-            result['InfoMsg'] = ''
+            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+            result["InfoMsg"] = ""
 
         return result
 
-    def execute_adapter_command(self, bus, command, controller_name: str, adapter_obj: dbus.ObjectPath):
+    def execute_adapter_command(
+        self, bus, command, controller_name: str, adapter_obj: dbus.ObjectPath
+    ):
         result = {}
         error_message = None
         processed = False
         post_data = cherrypy.request.json
         for plugin in bluetooth_plugins:
             try:
-                processed, error_message, process_result = plugin.ProcessAdapterCommand(bus, command,
-                                                                                        controller_name,
-                                                                                        adapter_obj, post_data)
+                processed, error_message, process_result = plugin.ProcessAdapterCommand(
+                    bus, command, controller_name, adapter_obj, post_data
+                )
                 if process_result:
                     result.update(process_result)
             except Exception as e:
@@ -550,13 +672,13 @@ class Bluetooth(object):
                 break
 
         if not processed:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
-            result['InfoMsg'] = f"Unrecognized command {command}"
+            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
+            result["InfoMsg"] = f"Unrecognized command {command}"
         elif error_message:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_FAIL', 1)
-            result['InfoMsg'] = error_message
+            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
+            result["InfoMsg"] = error_message
         else:
-            result['SDCERR'] = weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS')
-            result['InfoMsg'] = ''
+            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+            result["InfoMsg"] = ""
 
         return result

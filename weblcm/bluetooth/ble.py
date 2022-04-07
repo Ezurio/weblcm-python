@@ -21,7 +21,7 @@ BLUEZ_PATH_PREPEND = "/org/bluez/"
 AGENT_PATH = "/com/lairdconnectivity/agent"
 
 
-def python_to_dbus(data, datatype = None):
+def python_to_dbus(data, datatype=None):
     # Convert python native data types to dbus data types
     if not datatype:
         datatype = type(data)
@@ -47,7 +47,8 @@ def python_to_dbus(data, datatype = None):
 
     return data
 
-def dbus_to_python_ex(data, datatype = None):
+
+def dbus_to_python_ex(data, datatype=None):
     # Convert dbus data types to python native data types
     if not datatype:
         datatype = type(data)
@@ -76,21 +77,25 @@ def dbus_to_python_ex(data, datatype = None):
         data = new_data
     return data
 
+
 def controller_pretty_name(name: str):
-    """ Return a name friendlier for REST API.
-        controller0, controller1, etc., rather than /org/bluez/hci0, etc.
+    """Return a name friendlier for REST API.
+    controller0, controller1, etc., rather than /org/bluez/hci0, etc.
     """
     return name.replace("hci", "controller").replace("/org/bluez/", "")
 
+
 def controller_bus_name(pretty_name: str):
     return pretty_name.replace("controller", "hci")
+
 
 def uri_to_uuid(uri_uuid: str) -> str:
     """
     Standardize a device UUID (MAC address) from URI format (xx_xx_xx_xx_xx_xx) to conventional
     format (XX:XX:XX:XX:XX:XX)
     """
-    return uri_uuid.upper().replace('_', ':')
+    return uri_uuid.upper().replace("_", ":")
+
 
 def find_controllers(bus):
     """
@@ -107,7 +112,8 @@ def find_controllers(bus):
 
     return controllers
 
-def find_controller(bus, name: str = None):
+
+def find_controller(bus, name: str = ''):
     """
     Returns the first object that has the bluez service and a GattManager1 interface and the provided name, if provided.
     """
@@ -127,6 +133,7 @@ def find_controller(bus, name: str = None):
 
     return None
 
+
 def find_devices(bus):
     """
     Returns the objects that have the bluez service and a DEVICE_IFACE interface
@@ -143,6 +150,7 @@ def find_devices(bus):
 
     return devices
 
+
 def find_device(bus, uuid):
     """
     Returns the first object that has the bluez service and a DEVICE_IFACE interface.
@@ -153,7 +161,7 @@ def find_device(bus, uuid):
     for o, props in objects.items():
         if DEVICE_IFACE in props.keys():
             device = props[DEVICE_IFACE]
-            if device['Address'].capitalize().lower() == uuid.lower():
+            if device["Address"].capitalize().lower() == uuid.lower():
                 return o, props[DEVICE_IFACE]
 
     return None, None
@@ -173,6 +181,7 @@ def device_is_connected(bus, device):
     connected_state = device_properties.Get(DEVICE_IFACE, "Connected")
     return connected_state
 
+
 def dev_connect(path):
     bus = dbus.SystemBus()
     dev = dbus.Interface(bus.get_object("org.bluez", path), "org.bluez.Device1")
@@ -188,13 +197,13 @@ class AgentSingleton:
 
     @staticmethod
     def get_instance():
-        """ Static access method. """
+        """Static access method."""
         if AgentSingleton.__instance is None:
             AgentSingleton()
         return AgentSingleton.__instance
 
     def __init__(self):
-        """ Virtually private constructor. """
+        """Virtually private constructor."""
         self.passkeys = {}
         if AgentSingleton.__instance is None:
             AgentSingleton.__instance = self
@@ -246,8 +255,10 @@ class AuthenticationAgent(dbus.service.Object):
 
     @dbus.service.method(AGENT_IFACE, in_signature="ouq", out_signature="")
     def DisplayPasskey(self, device, passkey, entered):
-        syslog("AuthenticationAgent DisplayPasskey (%s, %06u entered %u)" % (device, passkey,
-                                                                           entered))
+        syslog(
+            "AuthenticationAgent DisplayPasskey (%s, %06u entered %u)"
+            % (device, passkey, entered)
+        )
 
     @dbus.service.method(AGENT_IFACE, in_signature="os", out_signature="")
     def DisplayPinCode(self, device, pincode):
