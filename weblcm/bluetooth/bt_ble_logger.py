@@ -15,22 +15,23 @@ class BleLogger(Logger):
 
     def handle(self, record: LogRecord) -> None:
         self.last_message = record.getMessage()
-        if record.levelname == 'ERROR':
+        if record.levelname == "ERROR":
             self.error_occurred = True
         return super(BleLogger, self).handle(record)
 
     def log(
-            self,
-            level: int,
-            msg: Any,
-            *args: Any,
-            exc_info=...,
-            stack_info: bool = ...,
-            stacklevel: int = ...,
-            extra=...,
-            **kwargs: Any,
+        self,
+        level: int,
+        msg: Any,
+        *args: Any,
+        exc_info=...,
+        stack_info: bool = ...,
+        stacklevel: int = ...,
+        extra=...,
+        **kwargs: Any,
     ) -> None:
         if level == ERROR:
             self.error_occurred = True
-        return super(BleLogger, self).log(level, msg, args, exc_info, stack_info, stacklevel,
-                                          extra, kwargs)
+        return super(BleLogger, self).log(
+            level, msg, args, exc_info, stack_info, stacklevel, extra, kwargs
+        )
