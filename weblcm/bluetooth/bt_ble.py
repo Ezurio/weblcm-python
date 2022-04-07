@@ -4,26 +4,38 @@ import socket
 import threading
 from distutils.util import strtobool
 from time import time
-from typing import Optional, List
+from typing import Optional
 
 import cherrypy
 import dbus
 from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
 from ws4py.websocket import WebSocket
 
-import weblcm_def
-from bt_module import bt_device_services, bt_start_discovery, \
-    bt_stop_discovery, bt_connect, bt_disconnect, bt_read_characteristic, bt_write_characteristic, \
-    bt_config_characteristic_notification
+from .. import definition
+from bt_module import (
+    bt_device_services,
+    bt_start_discovery,
+    bt_stop_discovery,
+    bt_connect,
+    bt_disconnect,
+    bt_read_characteristic,
+    bt_write_characteristic,
+    bt_config_characteristic_notification,
+)
 from bt_module_extended import bt_init_ex
-from weblcm_bluetooth_ble_logger import BleLogger
-from weblcm_bluetooth_plugin import BluetoothPlugin
-from weblcm_tcp_connection import TcpConnection, firewalld_open_port, \
-    firewalld_close_port, TCP_SOCKET_HOST, SOCK_TIMEOUT
+from .bt_ble_logger import BleLogger
+from .bt_plugin import BluetoothPlugin
+from ..tcp_connection import (
+    TcpConnection,
+    firewalld_open_port,
+    firewalld_close_port,
+    TCP_SOCKET_HOST,
+    SOCK_TIMEOUT,
+)
 
 discovery_keys = {"Name", "Alias", "Address", "Class", "Icon", "RSSI", "UUIDs"}
 
-DEVICE_IFACE = 'org.bluez.Device1'
+DEVICE_IFACE = "org.bluez.Device1"
 
 websockets_auth_by_header_token: bool = True
 
@@ -35,8 +47,8 @@ class BluetoothWebsocket(object):
     @cherrypy.expose
     def index(self):
         result = {
-            'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS', 0),
-            'InfoMsg': '',
+            "SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS", 0),
+            "InfoMsg": "",
         }
         return result
 
@@ -66,7 +78,11 @@ class BluetoothWebSocketHandler(WebSocket):
         pass
 
     def ble_notify(self, message):
-        if self.connection and not self.client_terminated and not self.server_terminated:
+        if (
+            self.connection
+            and not self.client_terminated
+            and not self.server_terminated
+        ):
             try:
                 self.send(message, binary=False)
             except Exception as e:
@@ -85,40 +101,50 @@ class BluetoothBlePlugin(BluetoothPlugin):
         self.ble_logger: Optional[BleLogger] = None
 
     @property
-    def device_commands(self) -> List[str]:
-        return ['bleConnect', 'bleDisconnect', 'bleGatt']
+    def device_commands(self) -> list[str]:
+        return ["bleConnect", "bleDisconnect", "bleGatt"]
 
     @property
-    def adapter_commands(self) -> List[str]:
-        return ['bleStartServer', 'bleStopServer', 'bleServerStatus', 'bleStartDiscovery',
-                'bleStopDiscovery', 'bleEnableWebsockets']
+    def adapter_commands(self) -> list[str]:
+        return [
+            "bleStartServer",
+            "bleStopServer",
+            "bleServerStatus",
+            "bleStartDiscovery",
+            "bleStopDiscovery",
+            "bleEnableWebsockets",
+        ]
 
     def initialize(self):
         # Initialize the bluetooth manager
         if not self.bt:
             self.ble_logger = BleLogger(__name__)
-            self.bt = bt_init_ex(self.discovery_callback,
-                                 self.characteristic_property_change_callback,
-                                 self.connection_callback,
-                                 self.write_notification_callback,
-                                 setup_dbus_loop=False,
-                                 logger=self.ble_logger,
-                                 daemon=True)
+            self.bt = bt_init_ex(
+                self.discovery_callback,
+                self.characteristic_property_change_callback,
+                self.connection_callback,
+                self.write_notification_callback,
+                setup_dbus_loop=False,
+                logger=self.ble_logger,
+                daemon=True,
+            )
         # Enable websocket endpoint
         if not self._websockets_enabled:
             try:
                 WebSocketPlugin(cherrypy.engine).subscribe()
                 cherrypy.tools.websocket = WebSocketTool()
-                cherrypy.tree.mount(BluetoothWebsocket(), "/bluetoothWebsocket", config={
-                    "/": {
-                        "tools.sessions.on": websockets_auth_by_header_token
+                cherrypy.tree.mount(
+                    BluetoothWebsocket(),
+                    "/bluetoothWebsocket",
+                    config={
+                        "/": {"tools.sessions.on": websockets_auth_by_header_token},
+                        "/ws": {
+                            "tools.sessions.on": websockets_auth_by_header_token,
+                            "tools.websocket.on": True,
+                            "tools.websocket.handler_cls": BluetoothWebSocketHandler,
+                        },
                     },
-                    "/ws": {
-                        "tools.sessions.on": websockets_auth_by_header_token,
-                        "tools.websocket.on": True,
-                        "tools.websocket.handler_cls": BluetoothWebSocketHandler
-                    },
-                })
+                )
                 self._websockets_enabled = True
             except Exception as e:
                 self._websockets_enabled = False
@@ -130,52 +156,56 @@ class BluetoothBlePlugin(BluetoothPlugin):
         for o in ble_notification_objects.copy():
             o.ble_notify(message)
 
-    def ProcessDeviceCommand(self, bus, command, device_uuid: str, device: dbus.ObjectPath,
-                             post_data):
+    def ProcessDeviceCommand(
+        self, bus, command, device_uuid: str, device: dbus.ObjectPath, post_data
+    ):
         processed = False
         error_message = None
         if command in self.device_commands and not self.bt:
             self.initialize()
         if self.ble_logger:
             self.ble_logger.error_occurred = False
-        if command == 'bleConnect':
+        if command == "bleConnect":
             processed = True
             bt_connect(self.bt, device_uuid)
-        elif command == 'bleDisconnect':
+        elif command == "bleDisconnect":
             processed = True
             purge = False
-            if 'purge' in post_data:
-                purge = post_data['purge']
-                if type(purge) is str:
+            if "purge" in post_data:
+                purge = post_data["purge"]
+                if isinstance(purge, str):
                     purge = strtobool(purge)
             bt_disconnect(self.bt, device_uuid, purge)
-        elif command == 'bleGatt':
+        elif command == "bleGatt":
             processed = True
-            if 'svcUuid' not in post_data:
+            if "svcUuid" not in post_data:
                 return True, "svcUuid param not specified"
-            if 'chrUuid' not in post_data:
+            if "chrUuid" not in post_data:
                 return True, "charUuid param not specified"
-            if 'operation' not in post_data:
+            if "operation" not in post_data:
                 return True, "operation param not specified"
-            service_uuid = post_data['svcUuid']
-            char_uuid = post_data['chrUuid']
-            operation = post_data['operation']
-            if operation == 'read':
+            service_uuid = post_data["svcUuid"]
+            char_uuid = post_data["chrUuid"]
+            operation = post_data["operation"]
+            if operation == "read":
                 bt_read_characteristic(self.bt, device_uuid, service_uuid, char_uuid)
-            elif operation == 'write':
-                if 'value' not in post_data:
+            elif operation == "write":
+                if "value" not in post_data:
                     return True, "value param not specified"
-                value = post_data['value']
+                value = post_data["value"]
                 value_bytes = bytearray.fromhex(value)
-                bt_write_characteristic(self.bt, device_uuid, service_uuid, char_uuid, value_bytes)
-            elif operation == 'notify':
-                if 'enable' not in post_data:
+                bt_write_characteristic(
+                    self.bt, device_uuid, service_uuid, char_uuid, value_bytes
+                )
+            elif operation == "notify":
+                if "enable" not in post_data:
                     return True, "enable param not specified"
-                enable = post_data['enable']
-                if type(enable) is str:
+                enable = post_data["enable"]
+                if isinstance(enable, str):
                     enable = strtobool(enable)
-                bt_config_characteristic_notification(self.bt, device_uuid, service_uuid,
-                                                      char_uuid, enable)
+                bt_config_characteristic_notification(
+                    self.bt, device_uuid, service_uuid, char_uuid, enable
+                )
             else:
                 return True, f"unknown GATT operation {operation} requested"
 
@@ -184,18 +214,24 @@ class BluetoothBlePlugin(BluetoothPlugin):
 
         return processed, error_message
 
-    def ProcessAdapterCommand(self, bus, command, controller_name: str, adapter_obj:
-                              dbus.ObjectPath, post_data) -> (bool, str, dict):
+    def ProcessAdapterCommand(
+        self,
+        bus,
+        command,
+        controller_name: str,
+        adapter_obj: dbus.ObjectPath,
+        post_data,
+    ) -> tuple[bool, str, dict]:
         processed = False
-        error_message = None
+        error_message = ""
         result = {}
         if self.ble_logger:
             self.ble_logger.error_occurred = False
-        if command == 'bleEnableWebsockets':
+        if command == "bleEnableWebsockets":
             processed = True
             if not self._websockets_enabled:
                 self.initialize()
-        elif command == 'bleStartServer':
+        elif command == "bleStartServer":
             processed = True
             if self._server:
                 error_message = "bleServer already started"
@@ -210,27 +246,27 @@ class BluetoothBlePlugin(BluetoothPlugin):
                 except Exception as e:
                     self._server = None
                     raise e
-        elif command == 'bleServerStatus':
+        elif command == "bleServerStatus":
             processed = True
             if not self._server:
-                result['started'] = False
+                result["started"] = False
             else:
-                result['started'] = True
-                result['port'] = self._server.port
+                result["started"] = True
+                result["port"] = self._server.port
         else:
             if command in self.adapter_commands and not self.bt:
                 self.initialize()
-            if command == 'bleStopServer':
+            if command == "bleStopServer":
                 processed = True
                 if self._server:
                     self._server.disconnect(bus, post_data)
                     self._server = None
                 else:
                     error_message = "ble server is not running"
-            elif command == 'bleStartDiscovery':
+            elif command == "bleStartDiscovery":
                 processed = True
                 bt_start_discovery(self.bt)
-            elif command == 'bleStopDiscovery':
+            elif command == "bleStopDiscovery":
                 processed = True
                 bt_stop_discovery(self.bt)
 
@@ -253,9 +289,12 @@ class BluetoothBlePlugin(BluetoothPlugin):
                 for key in properties.keys():
                     if key in discovery_keys:
                         data[key] = properties[key]
-                data['timestamp'] = int(time())
-                data = {'discovery': data}
-                data_json = json.dumps(data, separators=(',', ':'), sort_keys=True, indent=4) + '\n'
+                data["timestamp"] = int(time())
+                data = {"discovery": data}
+                data_json = (
+                    json.dumps(data, separators=(",", ":"), sort_keys=True, indent=4)
+                    + "\n"
+                )
                 self.broadcast_ble_notification(data_json.encode())
 
     def connection_callback(self, data):
@@ -265,14 +304,17 @@ class BluetoothBlePlugin(BluetoothPlugin):
         Publishes connection status, and if connected, the device's services and
         characteristics to the 'connect' topic
         """
-        if data['connected']:
+        if data["connected"]:
             # Get the services and characteristics of the connected device
-            device_services = bt_device_services(self.bt, data['address'])
-            data['services'] = device_services['services']
+            device_services = bt_device_services(self.bt, data["address"])
+            if device_services:
+                data["services"] = device_services["services"]
 
-        data['timestamp'] = int(time())
-        data = {'connect': data}
-        data_json = json.dumps(data, separators=(',', ':'), sort_keys=True, indent=4) + '\n'
+        data["timestamp"] = int(time())
+        data = {"connect": data}
+        data_json = (
+            json.dumps(data, separators=(",", ":"), sort_keys=True, indent=4) + "\n"
+        )
         self.broadcast_ble_notification(data_json.encode())
 
     def write_notification_callback(self, data):
@@ -280,9 +322,9 @@ class BluetoothBlePlugin(BluetoothPlugin):
         A callback that receives notifications on write operations to device
         characteristics and publishes the notification data to the 'gatt' topic
         """
-        data['timestamp'] = int(time())
-        data = {'char': data}
-        data_json = json.dumps(data, separators=(',', ':'), indent=4) + '\n'
+        data["timestamp"] = int(time())
+        data = {"char": data}
+        data_json = json.dumps(data, separators=(",", ":"), indent=4) + "\n"
         self.broadcast_ble_notification(data_json.encode())
 
     def characteristic_property_change_callback(self, data):
@@ -292,11 +334,11 @@ class BluetoothBlePlugin(BluetoothPlugin):
         topic
         """
         # Convert the changed value to hex
-        temp = data['value']
-        data['value'] = ''.join('{:02x}'.format(x) for x in temp)
-        data['timestamp'] = int(time())
-        data = {'char': data}
-        data_json = json.dumps(data, separators=(',', ':'), indent=4) + '\n'
+        temp = data["value"]
+        data["value"] = "".join("{:02x}".format(x) for x in temp)
+        data["timestamp"] = int(time())
+        data = {"char": data}
+        data_json = json.dumps(data, separators=(",", ":"), indent=4) + "\n"
         self.broadcast_ble_notification(data_json.encode())
 
 
@@ -307,32 +349,38 @@ class BluetoothTcpServer(TcpConnection):
 
     def __init__(self):
         self.recent_error: Optional[str] = None
-        self.device_uuid: str = ''
-        self.active_device_node: str = ''
+        self.device_uuid: str = ""
+        self.active_device_node: str = ""
         self.sock: Optional[socket.socket] = None
         self.thread: Optional[threading.Thread] = None
         self._terminate_read_thread = False
         self._stop_pipe_r, self._stop_pipe_w = os.pipe()
         super().__init__()
 
-    def connect(self,
-                params=None):
+    def connect(self, params=None):
 
-        if 'tcpPort' in params:
-            port = params['tcpPort']
-            if not self.validate_port(int(port)):
-                return f"port {port} not valid"
-            host = TCP_SOCKET_HOST  # cherrypy.server.socket_host
-            self.sock = self.tcp_server(host, params)
-            if self.sock:
-                self.thread = threading.Thread(target=self.bluetooth_tcp_server_thread,
-                                               name="bluetooth_tcp_server_thread", daemon=True,
-                                               args=(self.sock,))
-                self.thread.start()
-                if port:
-                    firewalld_open_port(port)
-        else:
-            return 'tcpPort param not specified'
+        if not params or "tcpPort" not in params:
+            return "tcpPort param not specified"
+
+        port = params["tcpPort"]
+        if not self.validate_port(int(port)):
+            return f"port {port} not valid"
+
+        self.sock = self.tcp_server(TCP_SOCKET_HOST, params)
+        if not self.sock:
+            return f"tcp server for port {port} could not start"
+
+        self.thread = threading.Thread(
+            target=self.bluetooth_tcp_server_thread,
+            name="bluetooth_tcp_server_thread",
+            daemon=True,
+            args=(self.sock,),
+        )
+        self.thread.start()
+        if port:
+            firewalld_open_port(port)
+
+        return ""
 
     def disconnect(self, bus, params=None):
         self.stop_tcp_server(self.sock)
@@ -342,7 +390,7 @@ class BluetoothTcpServer(TcpConnection):
             firewalld_close_port(self.port)
 
     def stop_read_thread(self):
-        os.write(self._stop_pipe_w, b'c')
+        os.write(self._stop_pipe_w, b"c")
 
     def bluetooth_tcp_server_thread(self, sock):
         try:
@@ -353,7 +401,9 @@ class BluetoothTcpServer(TcpConnection):
                     with self._tcp_lock:
                         self._tcp_connection = tcp_connection
                     cherrypy.log(
-                        "bluetooth_tcp_server_thread: tcp client connected:" + str(client_address))
+                        "bluetooth_tcp_server_thread: tcp client connected:"
+                        + str(client_address)
+                    )
                     try:
                         # Wait on socket, such that closure will force exception and
                         # take us back to accept.
@@ -366,13 +416,18 @@ class BluetoothTcpServer(TcpConnection):
                             break
                         cherrypy.log("bluetooth_tcp_server_thread:" + str(e))
                     except Exception as e:
-                        cherrypy.log("bluetooth_tcp_server_thread: non-OSError Exception: " +
-                                     str(e))
-                        self.tcp_connection_try_send(f'{{"Error": "{str(e)}"}}\n'.encode())
+                        cherrypy.log(
+                            "bluetooth_tcp_server_thread: non-OSError Exception: "
+                            + str(e)
+                        )
+                        self.tcp_connection_try_send(
+                            f'{{"Error": "{str(e)}"}}\n'.encode()
+                        )
                     finally:
                         cherrypy.log(
-                            "bluetooth_tcp_server_thread: tcp client disconnected:" + str(
-                                client_address))
+                            "bluetooth_tcp_server_thread: tcp client disconnected:"
+                            + str(client_address)
+                        )
                         with self._tcp_lock:
                             self.close_tcp_connection()
                             self._tcp_connection, client_address = None, None
