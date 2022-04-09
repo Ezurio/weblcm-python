@@ -14,6 +14,7 @@ from ..bluetooth.ble import (
     GATT_SERVICE_IFACE,
     DBUS_OM_IFACE,
     DEVICE_IFACE,
+    find_device,
 )
 from ..bluetooth.bt_plugin import BluetoothPlugin
 from ..tcp_connection import (
@@ -321,6 +322,8 @@ class VspConnection(TcpConnection):
     ):
         if not params:
             return "no params specified"
+        self.device = device
+        self.device_uuid = device_uuid
         if "vspSvcUuid" not in params:
             return "vspSvcUuid param not specified"
         self.vsp_svc_uuid = params["vspSvcUuid"]
@@ -392,6 +395,7 @@ class VspConnection(TcpConnection):
             self.thread.join()
         if self.port:
             firewalld_close_port(self.port)
+        syslog(LOG_INFO, f"vsp_close: closed for device {self.device_uuid}")
 
     def gatt_only_reconnect(self):
         """
@@ -401,6 +405,14 @@ class VspConnection(TcpConnection):
         will not have been performed by controller_restore in that case.
         """
         bus = dbus.SystemBus()
+        self.device, device_props = find_device(bus, self.device_uuid)
+
+        if not self.device:
+            syslog(
+                LOG_ERR,
+                f"gatt_only_reconnect: device {self.device_uuid} not found on bus",
+            )
+            return
 
         device_obj = bus.get_object(BLUEZ_SERVICE_NAME, self.device)
         device_iface = dbus.Interface(device_obj, DBUS_PROP_IFACE)
@@ -408,10 +420,7 @@ class VspConnection(TcpConnection):
             "PropertiesChanged", self.device_prop_changed_cb
         )
 
-        device_properties = dbus.Interface(
-            device_obj, "org.freedesktop.DBus.Properties"
-        )
-        services_resolved = device_properties.Get(DEVICE_IFACE, "ServicesResolved")
+        services_resolved = device_props.get("ServicesResolved")
 
         if services_resolved == True:
             self.gatt_only_connected()

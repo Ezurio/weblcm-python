@@ -1,4 +1,5 @@
-from syslog import syslog
+from syslog import syslog, LOG_ERR
+from typing import Tuple
 
 import dbus
 
@@ -113,7 +114,7 @@ def find_controllers(bus):
     return controllers
 
 
-def find_controller(bus, name: str = ''):
+def find_controller(bus, name: str = ""):
     """
     Returns the first object that has the bluez service and a GattManager1 interface and the provided name, if provided.
     """
@@ -151,7 +152,7 @@ def find_devices(bus):
     return devices
 
 
-def find_device(bus, uuid):
+def find_device(bus, uuid) -> Tuple[dbus.ObjectPath, dict]:
     """
     Returns the first object that has the bluez service and a DEVICE_IFACE interface.
     """
@@ -161,7 +162,7 @@ def find_device(bus, uuid):
     for o, props in objects.items():
         if DEVICE_IFACE in props.keys():
             device = props[DEVICE_IFACE]
-            if device["Address"].capitalize().lower() == uuid.lower():
+            if device["Address"].lower() == uuid.lower():
                 return o, props[DEVICE_IFACE]
 
     return None, None
@@ -202,6 +203,10 @@ class AgentSingleton:
             AgentSingleton()
         return AgentSingleton.__instance
 
+    @staticmethod
+    def clear_instance():
+        AgentSingleton.__instance = None
+
     def __init__(self):
         """Virtually private constructor."""
         self.passkeys = {}
@@ -209,14 +214,17 @@ class AgentSingleton:
             AgentSingleton.__instance = self
 
             syslog("Registering agent for auto-pairing...")
-            # get the system bus
-            bus = dbus.SystemBus()
-            agent = AuthenticationAgent(bus, AGENT_PATH)
+            try:
+                # get the system bus
+                bus = dbus.SystemBus()
+                agent = AuthenticationAgent(bus, AGENT_PATH)
 
-            obj = bus.get_object(BLUEZ_SERVICE_NAME, "/org/bluez")
+                obj = bus.get_object(BLUEZ_SERVICE_NAME, "/org/bluez")
 
-            agent_manager = dbus.Interface(obj, "org.bluez.AgentManager1")
-            agent_manager.RegisterAgent(AGENT_PATH, "NoInputNoOutput")
+                agent_manager = dbus.Interface(obj, "org.bluez.AgentManager1")
+                agent_manager.RegisterAgent(AGENT_PATH, "NoInputNoOutput")
+            except Exception as e:
+                syslog(LOG_ERR, str(e))
 
 
 class AuthenticationAgent(dbus.service.Object):

@@ -1,4 +1,5 @@
 import itertools
+import logging
 import re
 from syslog import syslog, LOG_ERR, LOG_INFO
 from typing import Optional, List, Dict
@@ -12,10 +13,7 @@ import dbus.service
 from . import bt_plugin
 from .. import definition
 from .ble import (
-    find_controller,
-    find_controllers,
     controller_pretty_name,
-    controller_bus_name,
     find_device,
     find_devices,
     DEVICE_IFACE,
@@ -25,6 +23,7 @@ from .ble import (
     AgentSingleton,
     BLUEZ_SERVICE_NAME,
     uri_to_uuid,
+    GATT_MANAGER_IFACE,
 )
 from .bt_controller_state import BluetoothControllerState
 
@@ -73,15 +72,16 @@ except ImportError:
     cherrypy.log("weblcm_bluetooth: BluetoothBlePlugin NOT loaded")
 
 
-def GetControllerObj(name: str = ""):
+def get_controller_obj(controller: str = ""):
     result = {}
     # get the system bus
     bus = dbus.SystemBus()
     # get the ble controller
-    controller = find_controller(bus, name)
     if not controller:
-        result["InfoMsg"] = f"Controller {controller_pretty_name(name)} not found."
-        result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
+        result[
+            "InfoMsg"
+        ] = f"Controller {controller_pretty_name(controller)} not found."
+        result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
         controller_obj = None
     else:
         controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
@@ -92,12 +92,16 @@ def GetControllerObj(name: str = ""):
 @cherrypy.expose
 @cherrypy.popargs("controller", "device")
 class Bluetooth(object):
-    _controller_callbacks_registered = False
-
     def __init__(self):
         self._controller_states: Dict[str, BluetoothControllerState] = {}
         """ Controller state tracking - indexed by friendly (REST API) name
         """
+        self._controller_addresses: Dict[str, str] = {}
+        """ Controller addresses - indexed by friendly (REST API) name
+        """
+        self._controller_callbacks_registered = False
+        self._logger = logging.getLogger(__name__)
+        self.discover_controllers()
 
     @property
     def device_commands(self) -> List[str]:
@@ -115,9 +119,88 @@ class Bluetooth(object):
             )
         )
 
+    def get_remapped_controller(self, controller_friendly_name: str):
+        """Scan present controllers and find the controller with address associated with
+        controller_friendly_name, in _controller_addresses dictionary.
+        This allows for consistent referencing of controller by REST API name in the event
+        the controller bluez object path changes in the system. (e.g. /org/bluez/hci5)
+        """
+        address = self._controller_addresses[controller_friendly_name]
+        bus = dbus.SystemBus()
+        remote_om = dbus.Interface(
+            bus.get_object(BLUEZ_SERVICE_NAME, "/"), DBUS_OM_IFACE
+        )
+        objects = remote_om.GetManagedObjects()
+
+        for controller, props in objects.items():
+            if GATT_MANAGER_IFACE in props.keys():
+                if (
+                    ADAPTER_IFACE in props.keys()
+                    and "Address" in props[ADAPTER_IFACE].keys()
+                ):
+                    if address == props[ADAPTER_IFACE]["Address"]:
+                        return controller
+        return None
+
+    def remapped_controller_to_friendly_name(self, controller: str) -> str:
+        """Lookup the REST API name of the controller with the address matching the provided
+        controller by dbus path.
+        """
+        bus = dbus.SystemBus()
+        controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
+
+        if not controller_obj:
+            return None
+        adapter_props = dbus.Interface(
+            controller_obj, "org.freedesktop.DBus.Properties"
+        )
+        requested_address = adapter_props.Get(ADAPTER_IFACE, "Address")
+        for controller_friendly_name, address in self._controller_addresses.items():
+            if requested_address == address:
+                return controller_friendly_name
+        return None
+
+    def discover_controllers(self, renumber=True):
+        """
+        Find objects that have the bluez service and a GattManager1 interface,
+        building _controller_addresses dictionary to later allow referencing of
+        controllers by fixed name, even if their dbus object path changes.
+        The assumption is that all controllers will be present in the system
+        with the names the REST API wants to expose them under when weblcm-python starts,
+        and that weblcm-python will never restart.
+        If these assumptions are not true, renumber can be set to simply number
+        discovered controllers as controller0 and up.
+        """
+        bus = dbus.SystemBus()
+        remote_om = dbus.Interface(
+            bus.get_object(BLUEZ_SERVICE_NAME, "/"), DBUS_OM_IFACE
+        )
+        objects = remote_om.GetManagedObjects()
+        controller_number = len(self._controller_addresses.keys())
+
+        for controller, props in objects.items():
+            if GATT_MANAGER_IFACE in props.keys():
+                if renumber:
+                    controller_friendly_name: str = f"controller{controller_number}"
+                else:
+                    controller_friendly_name: str = controller_pretty_name(controller)
+                if (
+                    ADAPTER_IFACE in props.keys()
+                    and "Address" in props[ADAPTER_IFACE].keys()
+                ):
+                    address = props[ADAPTER_IFACE]["Address"]
+                    if address not in self._controller_addresses.values():
+                        self._controller_addresses[controller_friendly_name] = address
+                        syslog(
+                            LOG_INFO,
+                            f"assigning controller {controller} at address {address} "
+                            f"to REST API name {controller_friendly_name}",
+                        )
+                        controller_number += 1
+
     def register_controller_callbacks(self):
-        if not Bluetooth._controller_callbacks_registered:
-            Bluetooth._controller_callbacks_registered = True
+        if not self._controller_callbacks_registered:
+            self._controller_callbacks_registered = True
 
             bus = dbus.SystemBus()
             bus.add_signal_receiver(
@@ -137,16 +220,21 @@ class Bluetooth(object):
         try:
             if ADAPTER_PATH_PATTERN.match(interface):
                 syslog(LOG_INFO, f"Bluetooth interface added: {str(interface)}")
+                AgentSingleton.clear_instance()
                 # For now, assume the controller was previously removed and has been re-attached.
                 self.controller_restore(interface)
         except Exception as e:
-            syslog(LOG_ERR, str(e))
+            self.log_exception(e)
+
+    def log_exception(self, e):
+        self._logger.exception(e)
+        syslog(LOG_ERR, str(e))
 
     def interface_removed_cb(self, interface: str, *args):
         try:
             if ADAPTER_PATH_PATTERN.match(interface):
                 syslog(LOG_INFO, f"Bluetooth interface removed: {str(interface)}")
-                bus, adapter_obj, get_controller_result = GetControllerObj(interface)
+                bus, adapter_obj, get_controller_result = get_controller_obj(interface)
                 for plugin in bluetooth_plugins:
                     try:
                         plugin.ControllerRemovedNotify(interface, adapter_obj)
@@ -155,9 +243,9 @@ class Bluetooth(object):
         except Exception as e:
             syslog(LOG_ERR, str(e))
 
-    def controller_restore(self, controller_name: str = "/org/bluez/hci0"):
+    def controller_restore(self, controller: str = "/org/bluez/hci0"):
         """
-        :param controller_name: controller whose state will be restored
+        :param controller: controller whose state will be restored
         :return: None
 
         Call when the specified controller experienced a HW reset, for example, in case
@@ -169,16 +257,22 @@ class Bluetooth(object):
         """
         # we remove the bus path by convention, so the index names match that used by hosts
         # in REST API
-        controller_friendly_name: str = controller_pretty_name(controller_name)
+        controller_friendly_name: str = self.remapped_controller_to_friendly_name(
+            controller
+        )
+        syslog(
+            LOG_INFO,
+            f"controller_restore: restoring controller state for REST API name "
+            f"{controller_friendly_name}",
+        )
         controller_state = self.get_controller_state(controller_friendly_name)
 
-        controller_name = controller_bus_name(controller_friendly_name)
-        bus, adapter_obj, get_controller_result = GetControllerObj(controller_name)
+        bus, adapter_obj, get_controller_result = get_controller_obj(controller)
 
         if not adapter_obj:
             syslog(
                 LOG_ERR,
-                f"Reset notification received for controller {controller_name}, "
+                f"Reset notification received for controller {controller}, "
                 "but adapter_obj not found",
             )
             return
@@ -190,7 +284,7 @@ class Bluetooth(object):
             self.set_adapter_properties(
                 adapter_methods,
                 adapter_props,
-                controller_name,
+                controller,
                 controller_state.properties,
             )
         except Exception as e:
@@ -228,9 +322,9 @@ class Bluetooth(object):
         # when plugins receive notification.
         for plugin in bluetooth_plugins:
             try:
-                plugin.ControllerAddedNotify(controller_name, adapter_obj)
+                plugin.ControllerAddedNotify(controller, adapter_obj)
             except Exception as e:
-                syslog(str(e))
+                self.log_exception(e)
 
     @cherrypy.tools.json_out()
     def GET(self, *args, **kwargs):
@@ -244,11 +338,11 @@ class Bluetooth(object):
             filters = cherrypy.request.params["filter"].split(",")
 
         if "controller" in cherrypy.request.params:
-            controller_name: str = controller_bus_name(
+            controller_friendly_name: str = controller_pretty_name(
                 cherrypy.request.params["controller"]
             )
         else:
-            controller_name: str = ""
+            controller_friendly_name: str = ""
 
         if "device" in cherrypy.request.params:
             device_uuid = uri_to_uuid(cherrypy.request.params["device"])
@@ -258,26 +352,27 @@ class Bluetooth(object):
         # get the system bus
         bus = dbus.SystemBus()
         # get the ble controller
-        if controller_name:
-            controller = find_controller(bus, controller_name)
+        if controller_friendly_name is not None:
+            controller = (
+                controller_friendly_name,
+                self.get_remapped_controller(controller_friendly_name),
+            )
             controllers = [controller]
-            if not controller:
-                result[
-                    "InfoMsg"
-                ] = f"Controller {controller_pretty_name(controller_name)} not found."
+            if not controller[1]:
+                result["InfoMsg"] = f"Controller {controller_friendly_name} not found."
                 return result
         else:
-            controllers = find_controllers(bus)
+            controllers = {
+                (x, self.get_remapped_controller(x))
+                for x in self._controller_addresses.keys()
+            }
 
-        for controller in controllers:
-            controller_friendly_name: str = controller_pretty_name(controller)
+        for controller_friendly_name, controller in controllers:
             controller_result = {}
             controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
 
             if not controller_obj:
-                result[
-                    "InfoMsg"
-                ] = f"Controller {controller_pretty_name(controller_name)} not found."
+                result["InfoMsg"] = f"Controller {controller_friendly_name} not found."
                 return result
 
             try:
@@ -297,7 +392,7 @@ class Bluetooth(object):
                     if not filters or "transportFilter" in filters:
                         controller_result[
                             "transportFilter"
-                        ] = self.get_adapter_transport_filter(controller_name)
+                        ] = self.get_adapter_transport_filter(controller_friendly_name)
                         matched_filter = True
 
                     for pass_property in PASS_ADAPTER_PROPS:
@@ -339,12 +434,24 @@ class Bluetooth(object):
             "InfoMsg": "",
         }
 
-        if "controller" in cherrypy.request.params:
-            controller_name = controller_bus_name(cherrypy.request.params["controller"])
-        else:
-            controller_name = "hci0"
-
         self.register_controller_callbacks()
+
+        if "controller" in cherrypy.request.params:
+            controller_friendly_name = controller_pretty_name(
+                cherrypy.request.params["controller"]
+            )
+        else:
+            controller_friendly_name = "controller0"
+
+        controller = self.get_remapped_controller(controller_friendly_name)
+        controller_friendly_name_check = self.remapped_controller_to_friendly_name(
+            controller
+        )
+        if controller_friendly_name_check != controller_friendly_name:
+            syslog(
+                LOG_ERR,
+                f"friendly name check failed, returned {controller_friendly_name_check}",
+            )
 
         if "device" in cherrypy.request.params:
             device_uuid = uri_to_uuid(cherrypy.request.params["device"])
@@ -352,14 +459,13 @@ class Bluetooth(object):
             device_uuid = None
 
         post_data = cherrypy.request.json
-        bus, adapter_obj, get_controller_result = GetControllerObj(controller_name)
+        bus, adapter_obj, get_controller_result = get_controller_obj(controller)
 
         result.update(get_controller_result)
 
         if not adapter_obj:
             return result
 
-        controller_friendly_name: str = controller_pretty_name(controller_name)
         controller_state = self.get_controller_state(controller_friendly_name)
 
         try:
@@ -383,7 +489,7 @@ class Bluetooth(object):
                     else:
                         result.update(
                             self.execute_adapter_command(
-                                bus, command, controller_name, adapter_obj
+                                bus, command, controller_friendly_name, adapter_obj
                             )
                         )
                     return result
@@ -393,7 +499,10 @@ class Bluetooth(object):
                             controller_state.properties[prop] = post_data.get(prop)
                     result.update(
                         self.set_adapter_properties(
-                            adapter_methods, adapter_props, controller_name, post_data
+                            adapter_methods,
+                            adapter_props,
+                            controller_friendly_name,
+                            post_data,
                         )
                     )
             else:
@@ -485,7 +594,7 @@ class Bluetooth(object):
         }
 
     def set_adapter_properties(
-        self, adapter_methods, adapter_props, controller_name, post_data
+        self, adapter_methods, adapter_props, controller_friendly_name, post_data
     ):
         """Set properties on an adapter (controller)"""
         result = {}
@@ -503,7 +612,7 @@ class Bluetooth(object):
         if transport_filter is not None:
             result.update(
                 self.set_adapter_transport_filter(
-                    adapter_methods, controller_name, transport_filter
+                    adapter_methods, controller_friendly_name, transport_filter
                 )
             )
             if "SDCERR" in result and result["SDCERR"] != definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]:
@@ -523,12 +632,12 @@ class Bluetooth(object):
 
         return result
 
-    def get_adapter_transport_filter(self, controller_name):
-        controller_state = self.get_controller_state(controller_name)
+    def get_adapter_transport_filter(self, controller_friendly_name):
+        controller_state = self.get_controller_state(controller_friendly_name)
         return controller_state.properties.get("transportFilter", None)
 
     def set_adapter_transport_filter(
-        self, adapter_methods, controller_name, transport_filter
+        self, adapter_methods, controller_friendly_name, transport_filter
     ):
         """Set a transport filter on the controller.  Note that "When multiple clients call
         SetDiscoveryFilter, their filters are internally merged" """
@@ -544,7 +653,7 @@ class Bluetooth(object):
             result["InfoMsg"] = f"Transport filter {transport_filter} not accepted"
             return result
 
-        controller_state = self.get_controller_state(controller_name)
+        controller_state = self.get_controller_state(controller_friendly_name)
         controller_state.properties["transportFilter"] = transport_filter
         return result
 
@@ -647,7 +756,7 @@ class Bluetooth(object):
         return result
 
     def execute_adapter_command(
-        self, bus, command, controller_name: str, adapter_obj: dbus.ObjectPath
+        self, bus, command, controller_friendly_name: str, adapter_obj: dbus.ObjectPath
     ):
         result = {}
         error_message = None
@@ -656,7 +765,7 @@ class Bluetooth(object):
         for plugin in bluetooth_plugins:
             try:
                 processed, error_message, process_result = plugin.ProcessAdapterCommand(
-                    bus, command, controller_name, adapter_obj, post_data
+                    bus, command, controller_friendly_name, adapter_obj, post_data
                 )
                 if process_result:
                     result.update(process_result)

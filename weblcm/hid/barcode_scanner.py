@@ -208,6 +208,7 @@ class HidBarcodeScanner(TcpConnection):
         self._barcode_read_thread_count = 0
         self._terminate_read_thread = False
         self._stop_pipe_r, self._stop_pipe_w = os.pipe()
+        self.sock = None
         context = pyudev.Context()
         self.monitor = pyudev.Monitor.from_netlink(context)
         self.monitor.filter_by(subsystem="hidraw")
