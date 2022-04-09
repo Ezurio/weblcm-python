@@ -13,7 +13,6 @@ from ..bluetooth.ble import (
     dbus_to_python_ex,
     GATT_SERVICE_IFACE,
     DBUS_OM_IFACE,
-    DEVICE_IFACE,
     find_device,
 )
 from ..bluetooth.bt_plugin import BluetoothPlugin
@@ -102,9 +101,12 @@ class VspConnectionPlugin(BluetoothPlugin):
         for vsp_uuid, vsp_connection in self.vsp_connections.items():
             vsp_connection.gatt_only_disconnect()
 
-    def ControllerAddedNotify(self, controller_name: str, adapter_obj: dbus.ObjectPath):
+    def DeviceAddedNotify(
+        self, device: str, device_uuid: str, device_obj: dbus.ObjectPath
+    ):
         for vsp_uuid, vsp_connection in self.vsp_connections.items():
-            vsp_connection.gatt_only_reconnect()
+            if vsp_uuid == device_uuid:
+                vsp_connection.gatt_only_reconnect()
 
 
 class VspConnection(TcpConnection):

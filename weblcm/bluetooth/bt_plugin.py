@@ -48,3 +48,11 @@ class BluetoothPlugin(object):
         """Notify plugin that (probably previously removed) BT controller was added, all state
         reset."""
         return
+
+    def DeviceAddedNotify(
+        self, device: str, device_uuid: str, device_obj: dbus.ObjectPath
+    ):
+        """Notify plugin that (probably previously removed) BT device was added
+        :param device: string specifying dbus object path
+        """
+        return
