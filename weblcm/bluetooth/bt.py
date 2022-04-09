@@ -42,6 +42,8 @@ PASS_ADAPTER_PROPS = ["Discovering", "Powered", "Discoverable"]
 CACHED_ADAPTER_PROPS = ["discovering", "powered", "discoverable", "transportFilter"]
 
 ADAPTER_PATH_PATTERN = re.compile("^/org/bluez/hci\\d+$")
+DEVICE_PATH_PATTERN = re.compile("^/org/bluez/hci\\d+/dev_\w+$")
+DEVICE_ADAPTER_GROUP_PATTERN = re.compile("^(/org/bluez/hci\\d+)/dev_\w+$")
 
 bluetooth_plugins: List[bt_plugin.BluetoothPlugin] = []
 
@@ -102,6 +104,9 @@ class Bluetooth(object):
         self._controller_callbacks_registered = False
         self._logger = logging.getLogger(__name__)
         self.discover_controllers()
+        self._devices_to_restore: Dict[str, type(None)] = {}
+        """ Map of device uuids to restore state due to associated controller reset
+        """
 
     @property
     def device_commands(self) -> List[str]:
@@ -150,7 +155,7 @@ class Bluetooth(object):
         controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
 
         if not controller_obj:
-            return None
+            return ""
         adapter_props = dbus.Interface(
             controller_obj, "org.freedesktop.DBus.Properties"
         )
@@ -158,7 +163,7 @@ class Bluetooth(object):
         for controller_friendly_name, address in self._controller_addresses.items():
             if requested_address == address:
                 return controller_friendly_name
-        return None
+        return ""
 
     def discover_controllers(self, renumber=True):
         """
@@ -220,9 +225,12 @@ class Bluetooth(object):
         try:
             if ADAPTER_PATH_PATTERN.match(interface):
                 syslog(LOG_INFO, f"Bluetooth interface added: {str(interface)}")
-                AgentSingleton.clear_instance()
+                # IF bluetoothd crashed, may want to AgentSingleton.clear_instance()
                 # For now, assume the controller was previously removed and has been re-attached.
                 self.controller_restore(interface)
+            elif DEVICE_PATH_PATTERN.match(interface):
+                syslog(LOG_INFO, f"Bluetooth device added: {str(interface)}")
+                self.device_restore(interface)
         except Exception as e:
             self.log_exception(e)
 
@@ -290,39 +298,88 @@ class Bluetooth(object):
         except Exception as e:
             syslog(str(e))
 
-        # Second, set each device's properties, connecting if applicable.
+        # Second, schedule set of each device's properties.
         for device_uuid, properties in controller_state.device_properties_uuids.items():
-            device, device_props = find_device(bus, device_uuid)
-            if device is not None:
-                device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
-                device_methods = dbus.Interface(
-                    device_obj, "org.freedesktop.DBus.Methods"
-                )
-                device_properties = dbus.Interface(
-                    device_obj, "org.freedesktop.DBus.Properties"
-                )
-                try:
-                    self.set_device_properties(
-                        adapter_methods,
-                        device_methods,
-                        device_obj,
-                        device_properties,
-                        device_uuid,
-                        properties,
-                    )
-                except Exception as e:
-                    syslog(str(e))
-            else:
-                syslog(
-                    LOG_ERR, f"couldn't find device {device_uuid} to restore properties"
-                )
+            self._devices_to_restore.update({device_uuid: None})
 
-        # Third, notify plugins, re-establishing protocol links.
+    def device_restore(self, device: str):
+        """Set device's properties, and plugin protocol connections if applicable."""
+        syslog(
+            LOG_INFO,
+            f"device: restoring device state for {device}",
+        )
+        bus, device_obj, get_controller_result = get_controller_obj(device)
+
+        if not device_obj:
+            syslog(
+                LOG_ERR,
+                f"Reset notification received for device {device}, "
+                "but device_obj not found",
+            )
+            return
+
+        device_props = dbus.Interface(device_obj, "org.freedesktop.DBus.Properties")
+
+        device_address = device_props.Get(DEVICE_IFACE, "Address")
+        device_uuid = uri_to_uuid(device_address)
+
+        if device_uuid not in self._devices_to_restore.keys():
+            return
+
+        self._devices_to_restore.pop(device_uuid)
+
+        m = DEVICE_ADAPTER_GROUP_PATTERN.match(device)
+        if not m or m.lastindex < 1:
+            syslog(
+                LOG_ERR,
+                f"device_restore couldn't determine controller of device {device}",
+            )
+            return
+        controller = m[1]
+        controller_friendly_name: str = self.remapped_controller_to_friendly_name(
+            controller
+        )
+        syslog(
+            LOG_INFO,
+            f"device_restore: restoring device state on controller REST API name "
+            f"{controller_friendly_name}",
+        )
+        controller_state = self.get_controller_state(controller_friendly_name)
+        bus, adapter_obj, get_controller_result = get_controller_obj(controller)
+        adapter_methods = dbus.Interface(device_obj, "org.freedesktop.DBus.Methods")
+
+        cached_device_properties = self.get_device_properties(
+            controller_state, device_uuid
+        )
+        device, device_props = find_device(bus, device_uuid)
+        if device is not None:
+            device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
+            device_methods = dbus.Interface(device_obj, "org.freedesktop.DBus.Methods")
+            device_properties = dbus.Interface(
+                device_obj, "org.freedesktop.DBus.Properties"
+            )
+            try:
+                self.set_device_properties(
+                    adapter_methods,
+                    device_methods,
+                    device_obj,
+                    device_properties,
+                    device_uuid,
+                    cached_device_properties,
+                )
+            except Exception as e:
+                syslog(LOG_ERR, "failed setting device properties with " + str(e))
+        else:
+            syslog(
+                LOG_ERR, f"***couldn't find device {device_uuid} to restore properties"
+            )
+
+        # Notify plugins, re-establishing protocol links.
         # We do not wait for BT connections to restore, so service discovery may not be complete
         # when plugins receive notification.
         for plugin in bluetooth_plugins:
             try:
-                plugin.ControllerAddedNotify(controller, adapter_obj)
+                plugin.DeviceAddedNotify(device, device_uuid, device_obj)
             except Exception as e:
                 self.log_exception(e)
 
@@ -444,14 +501,6 @@ class Bluetooth(object):
             controller_friendly_name = "controller0"
 
         controller = self.get_remapped_controller(controller_friendly_name)
-        controller_friendly_name_check = self.remapped_controller_to_friendly_name(
-            controller
-        )
-        if controller_friendly_name_check != controller_friendly_name:
-            syslog(
-                LOG_ERR,
-                f"friendly name check failed, returned {controller_friendly_name_check}",
-            )
 
         if "device" in cherrypy.request.params:
             device_uuid = uri_to_uuid(cherrypy.request.params["device"])
@@ -710,8 +759,9 @@ class Bluetooth(object):
                     bluetooth_ble_plugin.initialize()
                 if bluetooth_ble_plugin and bluetooth_ble_plugin.bt:
                     bluetooth_ble_plugin.bt.connect(device_uuid)
-                else:
-                    device_methods.get_dbus_method("Connect", DEVICE_IFACE)()
+                # Always attempt connect bypassing BLE plugin, as it will refuse
+                # to attempt connection to devices it has not previously "discovered".
+                device_methods.get_dbus_method("Connect", DEVICE_IFACE)()
             elif connected == 0:
                 device_methods.get_dbus_method("Disconnect", DEVICE_IFACE)()
         passkey = post_data.get("passkey", None)
