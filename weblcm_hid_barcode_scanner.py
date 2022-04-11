@@ -5,18 +5,21 @@ import select
 import socket
 import threading
 from syslog import syslog
-from typing import Optional
+from typing import Optional, Dict, io, List
+
 import dbus
 import pyudev
-from ..bluetooth.bt_plugin import BluetoothPlugin
-from ..tcp_connection import TcpConnection, firewalld_open_port, \
+
+from weblcm_bluetooth_plugin import BluetoothPlugin
+from weblcm_tcp_connection import TcpConnection, firewalld_open_port, \
     firewalld_close_port, TCP_SOCKET_HOST, SOCK_TIMEOUT
-from ..bluetooth.ble import device_is_connected
+from weblcm_ble import device_is_connected
 
 """ AUTO_CONNECT allows clients to open a server port for a specific device, before that device
 is actually present in the system.
 """
 AUTO_CONNECT = False
+
 # From https://github.com/julzhk/usb_barcode_scanner/blob/master/scanner.py
 CHARMAP_LOWERCASE = {4: 'a', 5: 'b', 6: 'c', 7: 'd', 8: 'e', 9: 'f', 10: 'g', 11: 'h', 12: 'i', 13: 'j', 14: 'k',
                      15: 'l', 16: 'm', 17: 'n', 18: 'o', 19: 'p', 20: 'q', 21: 'r', 22: 's', 23: 't', 24: 'u', 25: 'v',
@@ -36,16 +39,16 @@ MAX_BARCODE_LEN = 4096
 
 class HidBarcodeScannerPlugin(BluetoothPlugin):
     def __init__(self):
-        self.hid_connections: dict[str, HidBarcodeScanner] = {}
+        self.hid_connections: Dict[str, HidBarcodeScanner] = {}
         """Dictionary of devices by UUID and their associated HidBarcodeScanner connection,
         if any"""
 
     @property
-    def device_commands(self) -> list[str]:
+    def device_commands(self) -> List[str]:
         return ['hidConnect', 'hidDisconnect']
 
     @property
-    def adapter_commands(self) -> list[str]:
+    def adapter_commands(self) -> List[str]:
         return ['hidList']
 
     def ProcessDeviceCommand(self, bus, command, device_uuid: str, device: dbus.ObjectPath,
@@ -72,9 +75,9 @@ class HidBarcodeScannerPlugin(BluetoothPlugin):
         return processed, error_message
 
     def ProcessAdapterCommand(self, bus, command, controller_name: str, adapter_obj:
-                              dbus.ObjectPath, post_data) -> tuple[bool, str, dict]:
+                              dbus.ObjectPath, post_data) -> (bool, str, dict):
         processed = False
-        error_message = ''
+        error_message = None
         result = {}
         if command == 'hidList':
             processed = True
@@ -188,7 +191,7 @@ class HidBarcodeScanner(TcpConnection):
         self.tcp_connection_try_send(
             (json.dumps(connected_packet) + '\n').encode())
 
-    def connect(self, bus, device_uuid: str = '', device: dbus.ObjectPath = None,
+    def connect(self, bus, device_uuid: str=None, device: dbus.ObjectPath=None,
                 params=None):
         device_uuid = device_uuid.upper()
         if AUTO_CONNECT:
@@ -213,7 +216,7 @@ class HidBarcodeScanner(TcpConnection):
         if not AUTO_CONNECT and not os.path.exists(hid_input_devname):
             return f"Cannot open hidraw devnode at {hid_input_devname}"
 
-        if params and 'tcpPort' in params:
+        if 'tcpPort' in params:
             port = params['tcpPort']
             if not self.validate_port(int(port)):
                 return f"port {port} not valid"
@@ -235,7 +238,7 @@ class HidBarcodeScanner(TcpConnection):
         else:
             return 'tcpPort param not specified'
 
-    def disconnect(self, bus, device_uuid: str = '', params=None):
+    def disconnect(self, bus, device_uuid: str = None, params=None):
         if self.read_thread:
             self._terminate_read_thread = True
             self.stop_read_thread()
