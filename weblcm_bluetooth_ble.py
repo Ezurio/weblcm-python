@@ -4,21 +4,21 @@ import socket
 import threading
 from distutils.util import strtobool
 from time import time
-from typing import Optional
+from typing import Optional, List
 
 import cherrypy
 import dbus
 from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
 from ws4py.websocket import WebSocket
 
-from .. import definition
-from .bt_module import bt_device_services, bt_start_discovery, \
+import weblcm_def
+from bt_module import bt_device_services, bt_start_discovery, \
     bt_stop_discovery, bt_connect, bt_disconnect, bt_read_characteristic, bt_write_characteristic, \
     bt_config_characteristic_notification
-from .bt_module_extended import bt_init_ex
-from .bt_ble_logger import BleLogger
-from .bt_plugin import BluetoothPlugin
-from ..tcp_connection import TcpConnection, firewalld_open_port, \
+from bt_module_extended import bt_init_ex
+from weblcm_bluetooth_ble_logger import BleLogger
+from weblcm_bluetooth_plugin import BluetoothPlugin
+from weblcm_tcp_connection import TcpConnection, firewalld_open_port, \
     firewalld_close_port, TCP_SOCKET_HOST, SOCK_TIMEOUT
 
 discovery_keys = {"Name", "Alias", "Address", "Class", "Icon", "RSSI", "UUIDs"}
@@ -35,7 +35,7 @@ class BluetoothWebsocket(object):
     @cherrypy.expose
     def index(self):
         result = {
-            'SDCERR': definition.WEBLCM_ERRORS.get('SDCERR_SUCCESS', 0),
+            'SDCERR': weblcm_def.WEBLCM_ERRORS.get('SDCERR_SUCCESS', 0),
             'InfoMsg': '',
         }
         return result
@@ -85,11 +85,11 @@ class BluetoothBlePlugin(BluetoothPlugin):
         self.ble_logger: Optional[BleLogger] = None
 
     @property
-    def device_commands(self) -> list[str]:
+    def device_commands(self) -> List[str]:
         return ['bleConnect', 'bleDisconnect', 'bleGatt']
 
     @property
-    def adapter_commands(self) -> list[str]:
+    def adapter_commands(self) -> List[str]:
         return ['bleStartServer', 'bleStopServer', 'bleServerStatus', 'bleStartDiscovery',
                 'bleStopDiscovery', 'bleEnableWebsockets']
 
@@ -185,9 +185,9 @@ class BluetoothBlePlugin(BluetoothPlugin):
         return processed, error_message
 
     def ProcessAdapterCommand(self, bus, command, controller_name: str, adapter_obj:
-                              dbus.ObjectPath, post_data) -> tuple[bool, str, dict]:
+                              dbus.ObjectPath, post_data) -> (bool, str, dict):
         processed = False
-        error_message = ''
+        error_message = None
         result = {}
         if self.ble_logger:
             self.ble_logger.error_occurred = False
@@ -268,8 +268,7 @@ class BluetoothBlePlugin(BluetoothPlugin):
         if data['connected']:
             # Get the services and characteristics of the connected device
             device_services = bt_device_services(self.bt, data['address'])
-            if device_services:
-                data['services'] = device_services['services']
+            data['services'] = device_services['services']
 
         data['timestamp'] = int(time())
         data = {'connect': data}
@@ -316,32 +315,27 @@ class BluetoothTcpServer(TcpConnection):
         self._stop_pipe_r, self._stop_pipe_w = os.pipe()
         super().__init__()
 
-    def connect(self, params=None) -> str:
+    def connect(self,
+                params=None):
 
-        if not params or 'tcpPort' not in params:
+        if 'tcpPort' in params:
+            port = params['tcpPort']
+            if not self.validate_port(int(port)):
+                return f"port {port} not valid"
+            host = TCP_SOCKET_HOST  # cherrypy.server.socket_host
+            self.sock = self.tcp_server(host, params)
+            if self.sock:
+                self.thread = threading.Thread(target=self.bluetooth_tcp_server_thread,
+                                               name="bluetooth_tcp_server_thread", daemon=True,
+                                               args=(self.sock,))
+                self.thread.start()
+                if port:
+                    firewalld_open_port(port)
+        else:
             return 'tcpPort param not specified'
 
-        port = params['tcpPort']
-        if not self.validate_port(int(port)):
-            return f"port {port} not valid"
-
-        self.sock = self.tcp_server(TCP_SOCKET_HOST, params)
-        if not self.sock:
-            return f"tcp server for port {port} could not start"
-
-        self.thread = threading.Thread(target=self.bluetooth_tcp_server_thread,
-                                       name="bluetooth_tcp_server_thread", daemon=True,
-                                       args=(self.sock,))
-        self.thread.start()
-        if port:
-            firewalld_open_port(port)
-
-        return ''
-
     def disconnect(self, bus, params=None):
-        if self.sock:
-            self.stop_tcp_server(self.sock)
-
+        self.stop_tcp_server(self.sock)
         if self.thread:
             self.thread.join()
         if self.port:

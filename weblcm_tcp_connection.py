@@ -3,6 +3,7 @@ import threading
 from syslog import syslog
 from typing import Optional
 
+import cherrypy
 import dbus
 
 TCP_PORT_MIN: int = 1000
@@ -52,7 +53,7 @@ class TcpConnection(object):
         sock.listen()
         return sock
 
-    def stop_tcp_server(self, sock: Optional[socket.socket]):
+    def stop_tcp_server(self, sock: socket.SOCK_STREAM):
         """ Stop the specified TCP server.  Note that if accept() is used, it will block
         indefinitely if the socket is closed, unless a timeout is applied to the socket,
         and OSError with socket.EBADF handled in case of closure.
