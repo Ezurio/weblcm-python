@@ -2,7 +2,7 @@ import threading
 import time
 import socket
 from syslog import syslog, LOG_INFO, LOG_ERR
-from typing import Optional, Any
+from typing import Optional, Any, Tuple
 
 import dbus
 
@@ -76,7 +76,7 @@ class VspConnectionPlugin(BluetoothPlugin):
         controller_name: str,
         adapter_obj: dbus.ObjectPath,
         post_data,
-    ) -> tuple[bool, str, dict]:
+    ) -> Tuple[bool, str, dict]:
         processed = False
         error_message = ""
         result = {}
@@ -116,11 +116,11 @@ class VspConnection(TcpConnection):
         self._waiting_for_services_resolved: bool = False
         self.recent_error: Optional[str] = None
         self.vsp_svc_uuid = None
-        self.vsp_read_chrc: Optional[tuple[dbus.proxies.ProxyObject, Any]] = None
+        self.vsp_read_chrc: Optional[Tuple[dbus.proxies.ProxyObject, Any]] = None
         self.vsp_read_chr_uuid = None
         self.signal_vsp_read_prop_changed = None
         self.signal_device_prop_changed = None
-        self.vsp_write_chrc: Optional[tuple[dbus.proxies.ProxyObject, Any]] = None
+        self.vsp_write_chrc: Optional[Tuple[dbus.proxies.ProxyObject, Any]] = None
         self.vsp_write_chr_uuid = None
         self.sock: Optional[socket.socket] = None
         self.socket_rx_type: str = "JSON"
@@ -375,7 +375,7 @@ class VspConnection(TcpConnection):
             raise
 
     def gatt_only_disconnect(self):
-        self.vsp_write_chrc: Optional[tuple[dbus.proxies.ProxyObject, Any]] = None
+        self.vsp_write_chrc: Optional[Tuple[dbus.proxies.ProxyObject, Any]] = None
         if self.signal_device_prop_changed:
             try:
                 self.signal_device_prop_changed.remove()

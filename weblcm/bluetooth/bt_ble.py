@@ -4,7 +4,7 @@ import socket
 import threading
 from distutils.util import strtobool
 from time import time
-from typing import Optional
+from typing import Optional, Tuple
 
 import cherrypy
 import dbus
@@ -221,7 +221,7 @@ class BluetoothBlePlugin(BluetoothPlugin):
         controller_name: str,
         adapter_obj: dbus.ObjectPath,
         post_data,
-    ) -> tuple[bool, str, dict]:
+    ) -> Tuple[bool, str, dict]:
         processed = False
         error_message = ""
         result = {}

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import dbus
 
@@ -14,7 +14,7 @@ class BluetoothPlugin(object):
 
     def ProcessDeviceCommand(
         self, bus, command, device_uuid: str, device: dbus.ObjectPath, post_data
-    ) -> tuple[bool, str]:
+    ) -> Tuple[bool, str]:
         """Process a device-specific command."""
         return False, ""
 
@@ -25,7 +25,7 @@ class BluetoothPlugin(object):
         controller_name: str,
         adapter_obj: dbus.ObjectPath,
         post_data,
-    ) -> tuple[bool, str, Optional[dict]]:
+    ) -> Tuple[bool, str, Optional[dict]]:
         """Process an adapter-specific command."""
         return False, "", None
 
