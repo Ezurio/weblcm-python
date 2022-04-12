@@ -3,7 +3,6 @@ import threading
 from syslog import syslog
 from typing import Optional
 
-import cherrypy
 import dbus
 
 TCP_PORT_MIN: int = 1000
