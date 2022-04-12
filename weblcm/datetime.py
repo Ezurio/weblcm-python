@@ -1,11 +1,12 @@
 import os
 from syslog import syslog
 from subprocess import run
+from typing import Tuple
 import cherrypy
+
 from . import definition
 from .settings import SystemSettingsManage
 from .definition import WEBLCM_ERRORS
-from typing import Tuple
 
 
 @cherrypy.expose
