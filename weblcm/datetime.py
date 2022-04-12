@@ -5,13 +5,14 @@ import cherrypy
 from . import definition
 from .settings import SystemSettingsManage
 from definition import WEBLCM_ERRORS
+from typing import Tuple
 
 
 @cherrypy.expose
 class DateTimeSetting(object):
     DATE_TIME_SCRIPT = "/etc/weblcm-python/scripts/weblcm_datetime.sh"
 
-    def popenHelper(self, method="", zone="", dt="") -> tuple[int, str, str]:
+    def popenHelper(self, method="", zone="", dt="") -> Tuple[int, str, str]:
 
         try:
             proc = run(
