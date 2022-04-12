@@ -1,0 +1,3 @@
+#!/usr/bin/python
+
+from weblcm import __main__

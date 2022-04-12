@@ -13,9 +13,5 @@ setup(
     name='weblcm-python',
     version='1.0',
     packages=['weblcm'] + extra_packages,
-    entry_points={
-        "console_scripts": [
-            "weblcm-python = weblcm.__main__:main"
-        ]
-    },
+    scripts=['weblcm-python'],
 )

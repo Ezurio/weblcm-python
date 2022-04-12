@@ -2,7 +2,7 @@ import threading
 import time
 import socket
 from syslog import syslog, LOG_INFO, LOG_ERR
-from typing import Optional, Any, Tuple
+from typing import Optional, Any, Tuple, List, Dict
 
 import dbus
 
@@ -30,15 +30,15 @@ MAX_TX_LEN = 16
 
 class VspConnectionPlugin(BluetoothPlugin):
     def __init__(self):
-        self.vsp_connections: dict[str, VspConnection] = {}
+        self.vsp_connections: Dict[str, VspConnection] = {}
         """Dictionary of devices by UUID and their associated VspConnection, if any"""
 
     @property
-    def device_commands(self) -> list[str]:
+    def device_commands(self) -> List[str]:
         return ["gattConnect", "gattDisconnect"]
 
     @property
-    def adapter_commands(self) -> list[str]:
+    def adapter_commands(self) -> List[str]:
         return ["gattList"]
 
     def ProcessDeviceCommand(

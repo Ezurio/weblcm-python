@@ -1,7 +1,9 @@
 import os
 import cherrypy
-from . import definition
 import logging
+from typing import List
+
+from . import definition
 from .network_status import NetworkStatus
 from .network import (
     NetworkInterfaces,
@@ -20,7 +22,7 @@ from .settings import SystemSettingsManage
 from .modem import PositioningSwitch, Positioning
 from .advanced import Fips
 
-weblcm_plugins: list[str] = []
+weblcm_plugins: List[str] = []
 websockets_auth_by_header_token: bool = False
 
 """

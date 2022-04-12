@@ -4,7 +4,7 @@ import socket
 import threading
 from distutils.util import strtobool
 from time import time
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 import cherrypy
 import dbus
@@ -101,11 +101,11 @@ class BluetoothBlePlugin(BluetoothPlugin):
         self.ble_logger: Optional[BleLogger] = None
 
     @property
-    def device_commands(self) -> list[str]:
+    def device_commands(self) -> List[str]:
         return ["bleConnect", "bleDisconnect", "bleGatt"]
 
     @property
-    def adapter_commands(self) -> list[str]:
+    def adapter_commands(self) -> List[str]:
         return [
             "bleStartServer",
             "bleStopServer",

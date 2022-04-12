@@ -1,7 +1,7 @@
 import itertools
 import re
 from syslog import syslog, LOG_ERR, LOG_INFO
-from typing import Optional
+from typing import Optional, List, Dict
 
 import cherrypy
 import dbus
@@ -44,7 +44,7 @@ CACHED_ADAPTER_PROPS = ["discovering", "powered", "discoverable", "transportFilt
 
 ADAPTER_PATH_PATTERN = re.compile("^/org/bluez/hci\\d+$")
 
-bluetooth_plugins: list[bt_plugin.BluetoothPlugin] = []
+bluetooth_plugins: List[bt_plugin.BluetoothPlugin] = []
 
 try:
     from ..hid.barcode_scanner import HidBarcodeScannerPlugin
@@ -95,12 +95,12 @@ class Bluetooth(object):
     _controller_callbacks_registered = False
 
     def __init__(self):
-        self._controller_states: dict[str, BluetoothControllerState] = {}
+        self._controller_states: Dict[str, BluetoothControllerState] = {}
         """ Controller state tracking - indexed by friendly (REST API) name
         """
 
     @property
-    def device_commands(self) -> list[str]:
+    def device_commands(self) -> List[str]:
         return list(
             itertools.chain.from_iterable(
                 plugin.device_commands for plugin in bluetooth_plugins
@@ -108,7 +108,7 @@ class Bluetooth(object):
         )
 
     @property
-    def adapter_commands(self) -> list[str]:
+    def adapter_commands(self) -> List[str]:
         return list(
             itertools.chain.from_iterable(
                 plugin.adapter_commands for plugin in bluetooth_plugins
@@ -239,7 +239,7 @@ class Bluetooth(object):
             "InfoMsg": "",
         }
 
-        filters: Optional[list[str]] = None
+        filters: Optional[List[str]] = None
         if "filter" in cherrypy.request.params:
             filters = cherrypy.request.params["filter"].split(",")
 

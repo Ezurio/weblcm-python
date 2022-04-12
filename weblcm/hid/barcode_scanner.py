@@ -5,7 +5,7 @@ import select
 import socket
 import threading
 from syslog import syslog
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List, Dict
 
 import dbus
 import pyudev
@@ -134,16 +134,16 @@ MAX_BARCODE_LEN = 4096
 
 class HidBarcodeScannerPlugin(BluetoothPlugin):
     def __init__(self):
-        self.hid_connections: dict[str, HidBarcodeScanner] = {}
+        self.hid_connections: Dict[str, HidBarcodeScanner] = {}
         """Dictionary of devices by UUID and their associated HidBarcodeScanner connection,
         if any"""
 
     @property
-    def device_commands(self) -> list[str]:
+    def device_commands(self) -> List[str]:
         return ["hidConnect", "hidDisconnect"]
 
     @property
-    def adapter_commands(self) -> list[str]:
+    def adapter_commands(self) -> List[str]:
         return ["hidList"]
 
     def ProcessDeviceCommand(
