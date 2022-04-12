@@ -112,7 +112,7 @@ class VspConnection(TcpConnection):
     """
 
     def __init__(self):
-        self.device: dbus.ObjectPath = None
+        self.device: Optional[dbus.ObjectPath] = None
         self._waiting_for_services_resolved: bool = False
         self.recent_error: Optional[str] = None
         self.vsp_svc_uuid = None
