@@ -5,7 +5,7 @@ import select
 import socket
 import threading
 from syslog import syslog
-from typing import Optional
+from typing import Optional, Tuple
 
 import dbus
 import pyudev
@@ -181,7 +181,7 @@ class HidBarcodeScannerPlugin(BluetoothPlugin):
         controller_name: str,
         adapter_obj: dbus.ObjectPath,
         post_data,
-    ) -> tuple[bool, str, dict]:
+    ) -> Tuple[bool, str, dict]:
         processed = False
         error_message = ""
         result = {}
