@@ -4,7 +4,7 @@ from subprocess import run
 import cherrypy
 from . import definition
 from .settings import SystemSettingsManage
-from definition import WEBLCM_ERRORS
+from .definition import WEBLCM_ERRORS
 from typing import Tuple
 
 
