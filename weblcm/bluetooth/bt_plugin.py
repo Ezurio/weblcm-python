@@ -1,15 +1,15 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 import dbus
 
 
 class BluetoothPlugin(object):
     @property
-    def device_commands(self) -> list[str]:
+    def device_commands(self) -> List[str]:
         return []
 
     @property
-    def adapter_commands(self) -> list[str]:
+    def adapter_commands(self) -> List[str]:
         return []
 
     def ProcessDeviceCommand(
