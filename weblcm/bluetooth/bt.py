@@ -620,7 +620,7 @@ class Bluetooth(object):
         return result
 
     def execute_device_command(
-        self, bus, command, device_uuid: str, device: dbus.ObjectPath
+        self, bus, command, device_uuid: str, device: Optional[dbus.ObjectPath]
     ):
         result = {}
         error_message = None
