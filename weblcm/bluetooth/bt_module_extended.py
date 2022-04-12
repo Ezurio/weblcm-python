@@ -11,7 +11,7 @@ import dbus
 import dbus.exceptions
 import dbus.mainloop.glib
 
-from bt_module import (
+from .bt_module import (
     BtMgr,
     DBUS_OBJ_MGR_IFACE,
     BT_OBJ,
@@ -20,7 +20,6 @@ from bt_module import (
     DBUS_PROP_IFACE,
 )
 
-from gi.repository import GObject as gobject
 from gi.repository import GLib as glib
 
 

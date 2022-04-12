@@ -12,7 +12,7 @@ from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
 from ws4py.websocket import WebSocket
 
 from .. import definition
-from bt_module import (
+from .bt_module import (
     bt_device_services,
     bt_start_discovery,
     bt_stop_discovery,
@@ -22,7 +22,7 @@ from bt_module import (
     bt_write_characteristic,
     bt_config_characteristic_notification,
 )
-from bt_module_extended import bt_init_ex
+from .bt_module_extended import bt_init_ex
 from .bt_ble_logger import BleLogger
 from .bt_plugin import BluetoothPlugin
 from ..tcp_connection import (
