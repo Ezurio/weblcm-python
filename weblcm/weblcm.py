@@ -188,7 +188,3 @@ def main(args=None):
     )
 
     cherrypy.quickstart(WebApp(), "/", config=definition.WEBLCM_PYTHON_SERVER_CONF_FILE)
-
-
-if __name__ == "__main__":
-    main()

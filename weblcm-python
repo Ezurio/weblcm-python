@@ -1,3 +1,8 @@
 #!/usr/bin/python
 
-from weblcm import __main__
+import sys
+
+from weblcm.weblcm import main
+
+if __name__ == '__main__':
+   sys.exit(main())
