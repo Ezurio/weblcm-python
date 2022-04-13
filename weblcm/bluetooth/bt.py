@@ -81,7 +81,7 @@ def GetControllerObj(name: str = ""):
     controller = find_controller(bus, name)
     if not controller:
         result["InfoMsg"] = f"Controller {controller_pretty_name(name)} not found."
-        result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
+        result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
         controller_obj = None
     else:
         controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
@@ -235,7 +235,7 @@ class Bluetooth(object):
     @cherrypy.tools.json_out()
     def GET(self, *args, **kwargs):
         result = {
-            "SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1),
+            "SDCERR": definition.WEBLCM_ERRORS["SDCERR_FAIL"],
             "InfoMsg": "",
         }
 
@@ -309,13 +309,11 @@ class Bluetooth(object):
 
                     result[controller_friendly_name] = controller_result
                     if filters and not matched_filter:
-                        result["SDCERR"] = definition.WEBLCM_ERRORS.get(
-                            "SDCERR_FAIL", 1
-                        )
+                        result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
                         result["InfoMsg"] = f"filters {filters} not matched"
                         return result
                 else:
-                    result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
+                    result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
 
                     device, device_props = find_device(bus, device_uuid)
                     if not device:
@@ -324,7 +322,7 @@ class Bluetooth(object):
 
                     result.update(device_props)
 
-                result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+                result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
 
             except Exception as e:
                 result["InfoMsg"] = str(e)
@@ -337,7 +335,7 @@ class Bluetooth(object):
     @cherrypy.tools.json_out()
     def PUT(self, *args, **kwargs):
         result = {
-            "SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1),
+            "SDCERR": definition.WEBLCM_ERRORS["SDCERR_FAIL"],
             "InfoMsg": "",
         }
 
@@ -451,7 +449,7 @@ class Bluetooth(object):
                     )
 
         except Exception as e:
-            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
+            result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
             result["InfoMsg"] = str(e)
             syslog(str(e))
 
@@ -482,7 +480,7 @@ class Bluetooth(object):
     @staticmethod
     def result_parameter_not_one_of(parameter: str, not_one_of):
         return {
-            "SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1),
+            "SDCERR": definition.WEBLCM_ERRORS["SDCERR_FAIL"],
             "InfoMsg": f"supplied {parameter} parameter must be one of {not_one_of}",
         }
 
@@ -508,9 +506,7 @@ class Bluetooth(object):
                     adapter_methods, controller_name, transport_filter
                 )
             )
-            if "SDCERR" in result and result["SDCERR"] != definition.WEBLCM_ERRORS.get(
-                "SDCERR_SUCCESS"
-            ):
+            if "SDCERR" in result and result["SDCERR"] != definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]:
                 return result
         if discoverable is not None:
             adapter_props.Set(ADAPTER_IFACE, "Discoverable", dbus.Boolean(discoverable))
@@ -523,7 +519,7 @@ class Bluetooth(object):
                     adapter_methods.get_dbus_method("StopDiscovery", ADAPTER_IFACE)()
 
         if "SDCERR" not in result:
-            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+            result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
 
         return result
 
@@ -544,7 +540,7 @@ class Bluetooth(object):
                 discovery_filters_dbus
             )
         except dbus.DBusException as e:
-            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
+            result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
             result["InfoMsg"] = f"Transport filter {transport_filter} not accepted"
             return result
 
@@ -587,7 +583,7 @@ class Bluetooth(object):
         elif paired == 0:
             adapter_methods.get_dbus_method("RemoveDevice", ADAPTER_IFACE)(device_obj)
             # If RemoveDevice is successful, further work on device will not be possible.
-            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+            result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
             for plugin in bluetooth_plugins:
                 try:
                     plugin.DeviceRemovedNotify(device_uuid, device_obj)
@@ -615,7 +611,7 @@ class Bluetooth(object):
             if agent_instance:
                 agent_instance.passkeys[device_obj.object_path] = passkey
         # Found device, set any requested properties.  Assume success.
-        result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+        result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
 
         return result
 
@@ -639,13 +635,13 @@ class Bluetooth(object):
                 break
 
         if not processed:
-            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
+            result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
             result["InfoMsg"] = f"Unrecognized command {command}"
         elif error_message:
-            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
+            result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
             result["InfoMsg"] = error_message
         else:
-            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+            result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
             result["InfoMsg"] = ""
 
         return result
@@ -672,13 +668,13 @@ class Bluetooth(object):
                 break
 
         if not processed:
-            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
+            result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
             result["InfoMsg"] = f"Unrecognized command {command}"
         elif error_message:
-            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL", 1)
+            result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
             result["InfoMsg"] = error_message
         else:
-            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+            result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
             result["InfoMsg"] = ""
 
         return result

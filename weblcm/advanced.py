@@ -15,7 +15,7 @@ class Reboot(object):
         except BaseException:
             syslog("reboot cannot be initiated")
         result = {
-            "SDCERR": WEBLCM_ERRORS.get("SDCERR_SUCCESS"),
+            "SDCERR": WEBLCM_ERRORS["SDCERR_SUCCESS"],
             "InfoMsg": "Reboot initiated",
         }
 
