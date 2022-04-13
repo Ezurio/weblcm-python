@@ -1,14 +1,12 @@
 import os
-import re
+import subprocess
+from threading import Lock
+from syslog import syslog
 import cherrypy
 from cherrypy.lib import static
+import libconf
 from . import definition
-import subprocess
-from pathlib import Path
-from pylibconfig import Config
-from threading import Lock
 from .settings import SystemSettingsManage
-from syslog import syslog
 
 
 @cherrypy.expose
@@ -261,17 +259,15 @@ class AWMCfgManage(object):
         # check if there is a configuration file which contains a "scan_attempts:0" entry
         # if configuration file does not exist, scan_attempts is not disabled
         f = cherrypy.request.app.config["weblcm"].get("awm_cfg", None)
-        if not f:
-            return result
-        if not os.path.isfile(f):
+        if not f or not os.path.isfile(f):
             return result
 
-        config = Config()
         with AWMCfgManage._lock:
-            config.readFile(f)
-            if config.exists("scan_attempts"):
-                result["geolocation_scanning_enable"] = config.value("scan_attempts")[0]
-                result["ErrorMesg"] = ""
+                with open(f, 'r', encoding='utf-8') as fp:
+                    config = libconf.load(fp)
+                if "scan_attempts" in config:
+                    result["geolocation_scanning_enable"] = config["scan_attempts"]
+                    result["ErrorMesg"] = ""
 
         return result
 
@@ -291,14 +287,9 @@ class AWMCfgManage(object):
 
         # determine if in LITE mode
         litemode = False
-        try:
-            file = open("/etc/default/adaptive_ww", "r")
-            for line in file:
-                if re.search("LITE", line):
-                    litemode = True
-                    break
-        except Exception as e:
-            pass
+        with open("/etc/default/adaptive_ww", "r") as file:
+            if "LITE" in file.read():
+                litemode = True
 
         if not litemode:
             return result
@@ -308,30 +299,35 @@ class AWMCfgManage(object):
         # check if there is a configuration file which contains a "scan_attempts:0" entry
         # if writable configuration file does not exist, scan_attempts can not be modified
 
-        fp = cherrypy.request.app.config["weblcm"].get("awm_cfg", None)
-        if not fp:
+        f = cherrypy.request.app.config["weblcm"].get("awm_cfg", None)
+        if not f:
             return result
 
-        d = Path(os.path.dirname(fp))
-        d.mkdir(exist_ok=True)
+        os.makedirs(os.path.dirname(f), exist_ok=True)
 
         geolocation_scanning_enable = cherrypy.request.json.get(
             "geolocation_scanning_enable", 0
         )
 
-        config = Config()
         with AWMCfgManage._lock:
-            if os.path.isfile(fp):
-                config.readFile(fp)
+            try:
+                with open(f, 'r', encoding='utf-8') as fp:
+                    config = libconf.load(fp)
+            except:
+                config = {}
+
+            need_store = False
             if geolocation_scanning_enable:
-                if config.exists("scan_attempts"):
-                    config.remove("", "scan_attempts")
-                    config.writeFile(fp)
+                if "scan_attempts" in config:
+                    del config["scan_attempts"]
+                    need_store = True
             else:
-                if not config.exists("scan_attempts"):
-                    config.addInteger("", "scan_attempts")
-                config.setValue("scan_attempts", geolocation_scanning_enable)
-                config.writeFile(fp)
+                config["scan_attempts"] = geolocation_scanning_enable
+                need_store = True
+
+            if need_store:
+                with open(f, 'w', encoding='utf-8') as fp:
+                    libconf.dump(config, fp)
 
         result["geolocation_scanning_enable"] = geolocation_scanning_enable
         result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
