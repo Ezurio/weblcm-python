@@ -47,7 +47,7 @@ class BluetoothWebsocket(object):
     @cherrypy.expose
     def index(self):
         result = {
-            "SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS", 0),
+            "SDCERR": definition.WEBLCM_ERRORS["SDCERR_SUCCESS"],
             "InfoMsg": "",
         }
         return result

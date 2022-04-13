@@ -73,7 +73,7 @@ class DateTimeSetting(object):
     def GET(self, *args, **kwargs):
 
         result = {
-            "SDCERR": WEBLCM_ERRORS.get("SDCERR_SUCCESS"),
+            "SDCERR": WEBLCM_ERRORS["SDCERR_SUCCESS"],
             "InfoMsg": "",
         }
 

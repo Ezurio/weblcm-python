@@ -411,9 +411,7 @@ class Version(object):
     def GET(self, *args, **kwargs):
         try:
             if not Version._version:
-                Version._version["SDCERR"] = definition.WEBLCM_ERRORS.get(
-                    "SDCERR_SUCCESS"
-                )
+                Version._version["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
                 Version._version["InfoMsg"] = ""
                 Version._version["nm_version"] = NetworkManager.NetworkManager.Version
                 Version._version[
@@ -440,7 +438,7 @@ class Version(object):
                         break
         except Exception as e:
             Version._version = {
-                "SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_FAIL"),
+                "SDCERR": definition.WEBLCM_ERRORS["SDCERR_FAIL"],
                 "InfoMsg": f"An exception occurred while trying to get versioning info: {e}",
             }
         return Version._version
