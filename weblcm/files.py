@@ -174,7 +174,7 @@ class FileManage(object):
     @cherrypy.tools.json_out()
     def DELETE(self, *args, **kwargs):
         result = {
-            "SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_FAIL"),
+            "SDCERR": definition.WEBLCM_ERRORS["SDCERR_FAIL"],
             "InfoMsg": "Unable to delete file",
         }
         typ = kwargs.get("type", None)
@@ -195,7 +195,7 @@ class FileManage(object):
         if os.path.isfile(path):
             os.remove(path)
             if not os.path.exists(path):
-                result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+                result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
                 result["InfoMsg"] = f"file {fil} deleted"
                 syslog(f"file {fil} deleted")
             else:
@@ -211,7 +211,7 @@ class FilesManage(object):
     @cherrypy.tools.json_out()
     def GET(self, *args, **kwargs):
         result = {
-            "SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS"),
+            "SDCERR": definition.WEBLCM_ERRORS["SDCERR_SUCCESS"],
             "InfoMsg": "",
             "count": 0,
             "files": [],
@@ -219,12 +219,12 @@ class FilesManage(object):
         typ = kwargs.get("type", None)
         valid = ["cert", "pac"]
         if not typ:
-            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL")
+            result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
             result["InfoMsg"] = "no filename provided"
             return result
         if not typ in valid:
             result["InfoMsg"] = f"type not one of {valid}"
-            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL")
+            result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
             return result
 
         files = []
@@ -251,7 +251,7 @@ class AWMCfgManage(object):
 
         # Infinite geo-location checks by default
         result = {
-            "SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS"),
+            "SDCERR": definition.WEBLCM_ERRORS["SDCERR_SUCCESS"],
             "InfoMsg": "AWM configuration only supported in LITE mode",
             "geolocation_scanning_enable": 1,
         }
@@ -280,7 +280,7 @@ class AWMCfgManage(object):
         # 0: disable geolocation scanning
         # others: enable geolocation scanning
         result = {
-            "SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_FAIL"),
+            "SDCERR": definition.WEBLCM_ERRORS["SDCERR_FAIL"],
             "InfoMsg": "AWM's geolocation scanning configuration only supported in LITE mode",
             "geolocation_scanning_enable": 1,
         }
@@ -330,6 +330,6 @@ class AWMCfgManage(object):
                     libconf.dump(config, fp)
 
         result["geolocation_scanning_enable"] = geolocation_scanning_enable
-        result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+        result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
         result["InfoMsg"] = ""
         return result

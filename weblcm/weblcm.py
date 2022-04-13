@@ -91,7 +91,7 @@ class WebApp(object):
         settings["session_timeout"] = SystemSettingsManage.get_session_timeout()
 
         return {
-            "SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS"),
+            "SDCERR": definition.WEBLCM_ERRORS["SDCERR_SUCCESS"],
             "InfoMsg": "",
             "Definitions": {
                 "SDCERR": definition.WEBLCM_ERRORS,
