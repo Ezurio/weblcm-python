@@ -2,7 +2,7 @@
 
 import sys
 
-from weblcm.weblcm import main
+from weblcm import main
 
 if __name__ == '__main__':
    sys.exit(main())
