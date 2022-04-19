@@ -14,15 +14,14 @@ SOCK_TIMEOUT = 5
 """ Interval to monitor socket for errors or closure in seconds """
 
 FIREWALLD_TIMEOUT_SECONDS = 20
-FIREWALLD_SERVICE_NAME = 'org.fedoraproject.FirewallD1'
-FIREWALLD_OBJECT_PATH = '/org/fedoraproject/FirewallD1'
-FIREWALLD_ZONE_INTERFACE = 'org.fedoraproject.FirewallD1.zone'
-FIREWALLD_ZONE = 'internal'
+FIREWALLD_SERVICE_NAME = "org.fedoraproject.FirewallD1"
+FIREWALLD_OBJECT_PATH = "/org/fedoraproject/FirewallD1"
+FIREWALLD_ZONE_INTERFACE = "org.fedoraproject.FirewallD1.zone"
+FIREWALLD_ZONE = "internal"
 
 
 class TcpConnection(object):
-    """Represent a TCP server socket connection.
-    """
+    """Represent a TCP server socket connection."""
 
     def __init__(self):
         self._tcp_lock = threading.Lock()
@@ -45,7 +44,7 @@ class TcpConnection(object):
         # Create a TCP/IP socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        port = int(params['tcpPort'])
+        port = int(params["tcpPort"])
         self.port = port
         server_address = (host, port)
         sock.bind(server_address)
@@ -53,7 +52,7 @@ class TcpConnection(object):
         return sock
 
     def stop_tcp_server(self, sock: socket.SOCK_STREAM):
-        """ Stop the specified TCP server.  Note that if accept() is used, it will block
+        """Stop the specified TCP server.  Note that if accept() is used, it will block
         indefinitely if the socket is closed, unless a timeout is applied to the socket,
         and OSError with socket.EBADF handled in case of closure.
         """
@@ -69,7 +68,10 @@ class TcpConnection(object):
                 tcp_connection.shutdown(socket.SHUT_RDWR)
             except OSError as e:
                 # If the connection is not open, ignore.
-                if e.errno != socket.EBADF and e.strerror != 'Transport endpoint is not connected':
+                if (
+                    e.errno != socket.EBADF
+                    and e.strerror != "Transport endpoint is not connected"
+                ):
                     syslog("TcpConnection.close_tcp_connection:" + str(e))
             try:
                 tcp_connection.close()
@@ -96,11 +98,20 @@ class TcpConnection(object):
 def firewalld_open_port(port):
     try:
         bus = dbus.SystemBus()
-        bus.call_blocking(bus_name=FIREWALLD_SERVICE_NAME, object_path=FIREWALLD_OBJECT_PATH,
-                          dbus_interface=FIREWALLD_ZONE_INTERFACE,
-                          method='addPort', signature='sssi', args=[dbus.String(FIREWALLD_ZONE), dbus.String(port),
-                                                                    dbus.String('tcp'), dbus.Int32(0)],
-                          timeout=FIREWALLD_TIMEOUT_SECONDS)
+        bus.call_blocking(
+            bus_name=FIREWALLD_SERVICE_NAME,
+            object_path=FIREWALLD_OBJECT_PATH,
+            dbus_interface=FIREWALLD_ZONE_INTERFACE,
+            method="addPort",
+            signature="sssi",
+            args=[
+                dbus.String(FIREWALLD_ZONE),
+                dbus.String(port),
+                dbus.String("tcp"),
+                dbus.Int32(0),
+            ],
+            timeout=FIREWALLD_TIMEOUT_SECONDS,
+        )
     except Exception as e:
         syslog("firewalld_open_port: Exception: " + str(e))
 
@@ -108,10 +119,14 @@ def firewalld_open_port(port):
 def firewalld_close_port(port):
     try:
         bus = dbus.SystemBus()
-        bus.call_blocking(bus_name=FIREWALLD_SERVICE_NAME, object_path=FIREWALLD_OBJECT_PATH,
-                          dbus_interface=FIREWALLD_ZONE_INTERFACE,
-                          method='removePort', signature='sss', args=[dbus.String(FIREWALLD_ZONE), dbus.String(port),
-                                                                      dbus.String('tcp')],
-                          timeout=FIREWALLD_TIMEOUT_SECONDS)
+        bus.call_blocking(
+            bus_name=FIREWALLD_SERVICE_NAME,
+            object_path=FIREWALLD_OBJECT_PATH,
+            dbus_interface=FIREWALLD_ZONE_INTERFACE,
+            method="removePort",
+            signature="sss",
+            args=[dbus.String(FIREWALLD_ZONE), dbus.String(port), dbus.String("tcp")],
+            timeout=FIREWALLD_TIMEOUT_SECONDS,
+        )
     except Exception as e:
         syslog("firewalld_close_port: Exception: " + str(e))

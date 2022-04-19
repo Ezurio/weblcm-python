@@ -263,11 +263,11 @@ class AWMCfgManage(object):
             return result
 
         with AWMCfgManage._lock:
-                with open(f, 'r', encoding='utf-8') as fp:
-                    config = libconf.load(fp)
-                if "scan_attempts" in config:
-                    result["geolocation_scanning_enable"] = config["scan_attempts"]
-                    result["ErrorMesg"] = ""
+            with open(f, "r", encoding="utf-8") as fp:
+                config = libconf.load(fp)
+            if "scan_attempts" in config:
+                result["geolocation_scanning_enable"] = config["scan_attempts"]
+                result["ErrorMesg"] = ""
 
         return result
 
@@ -311,7 +311,7 @@ class AWMCfgManage(object):
 
         with AWMCfgManage._lock:
             try:
-                with open(f, 'r', encoding='utf-8') as fp:
+                with open(f, "r", encoding="utf-8") as fp:
                     config = libconf.load(fp)
             except:
                 config = {}
@@ -326,7 +326,7 @@ class AWMCfgManage(object):
                 need_store = True
 
             if need_store:
-                with open(f, 'w', encoding='utf-8') as fp:
+                with open(f, "w", encoding="utf-8") as fp:
                     libconf.dump(config, fp)
 
         result["geolocation_scanning_enable"] = geolocation_scanning_enable
