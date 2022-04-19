@@ -1,9 +1,9 @@
 #!/usr/bin/python
 import dbus
 
-DBUS_PROP_IFACE =		'org.freedesktop.DBus.Properties'
-WPA_OBJ =				'/fi/w1/wpa_supplicant1'
-WPA_IFACE =				'fi.w1.wpa_supplicant1'
+DBUS_PROP_IFACE = "org.freedesktop.DBus.Properties"
+WPA_OBJ = "/fi/w1/wpa_supplicant1"
+WPA_IFACE = "fi.w1.wpa_supplicant1"
 
 bus = dbus.SystemBus()
 proxy = bus.get_object(WPA_IFACE, WPA_OBJ)
