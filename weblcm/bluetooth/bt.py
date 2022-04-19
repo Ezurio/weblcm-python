@@ -664,7 +664,10 @@ class Bluetooth(object):
                     adapter_methods, controller_friendly_name, transport_filter
                 )
             )
-            if "SDCERR" in result and result["SDCERR"] != definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]:
+            if (
+                "SDCERR" in result
+                and result["SDCERR"] != definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
+            ):
                 return result
         if discoverable is not None:
             adapter_props.Set(ADAPTER_IFACE, "Discoverable", dbus.Boolean(discoverable))
