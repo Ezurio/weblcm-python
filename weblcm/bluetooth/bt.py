@@ -304,10 +304,6 @@ class Bluetooth(object):
 
     def device_restore(self, device: str):
         """Set device's properties, and plugin protocol connections if applicable."""
-        syslog(
-            LOG_INFO,
-            f"device: restoring device state for {device}",
-        )
         bus, device_obj, get_controller_result = get_controller_obj(device)
 
         if not device_obj:
@@ -341,8 +337,8 @@ class Bluetooth(object):
         )
         syslog(
             LOG_INFO,
-            f"device_restore: restoring device state on controller REST API name "
-            f"{controller_friendly_name}",
+            f"device_restore: restoring device state for {device} on controller "
+            f"REST API name {controller_friendly_name}",
         )
         controller_state = self.get_controller_state(controller_friendly_name)
         bus, adapter_obj, get_controller_result = get_controller_obj(controller)
