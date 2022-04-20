@@ -23,7 +23,6 @@ from .modem import PositioningSwitch, Positioning
 from .advanced import Fips
 
 weblcm_plugins: List[str] = []
-websockets_auth_by_header_token: bool = False
 
 """
 Note: Authenticating websocket users by header token is non-standard; an alternative method
@@ -32,9 +31,9 @@ may be required for Javascript browser clients.
 
 try:
     from .bluetooth.bt import Bluetooth
+    from .bluetooth.bt_ble import websockets_auth_by_header_token
 
     weblcm_plugins.append("bluetooth")
-    websockets_auth_by_header_token = True
     cherrypy.log("__main__: Bluetooth loaded")
 except ImportError:
     Bluetooth = None
@@ -150,7 +149,7 @@ def force_session_checking():
         "fips",
     ] + weblcm_plugins
 
-    if websockets_auth_by_header_token:
+    if Bluetooth and websockets_auth_by_header_token:
         paths.append("ws")
 
     # With the `get` method the session id will be saved which could result in session fixation vulnerability.
