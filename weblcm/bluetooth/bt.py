@@ -130,6 +130,8 @@ class Bluetooth(object):
         This allows for consistent referencing of controller by REST API name in the event
         the controller bluez object path changes in the system. (e.g. /org/bluez/hci5)
         """
+        if controller_friendly_name not in self._controller_addresses.keys():
+            return None
         address = self._controller_addresses[controller_friendly_name]
         bus = dbus.SystemBus()
         remote_om = dbus.Interface(
@@ -234,9 +236,9 @@ class Bluetooth(object):
         except Exception as e:
             self.log_exception(e)
 
-    def log_exception(self, e):
+    def log_exception(self, e, message: str = ""):
         self._logger.exception(e)
-        syslog(LOG_ERR, str(e))
+        syslog(LOG_ERR, message + str(e))
 
     def interface_removed_cb(self, interface: str, *args):
         try:
@@ -247,9 +249,9 @@ class Bluetooth(object):
                     try:
                         plugin.ControllerRemovedNotify(interface, adapter_obj)
                     except Exception as e:
-                        syslog(LOG_ERR, str(e))
+                        self.log_exception(e)
         except Exception as e:
-            syslog(LOG_ERR, str(e))
+            self.log_exception(e)
 
     def controller_restore(self, controller: str = "/org/bluez/hci0"):
         """
@@ -296,7 +298,7 @@ class Bluetooth(object):
                 controller_state.properties,
             )
         except Exception as e:
-            syslog(str(e))
+            self.log_exception(e)
 
         # Second, schedule set of each device's properties.
         for device_uuid, properties in controller_state.device_properties_uuids.items():
@@ -364,7 +366,7 @@ class Bluetooth(object):
                     cached_device_properties,
                 )
             except Exception as e:
-                syslog(LOG_ERR, "failed setting device properties with " + str(e))
+                self.log_exception(e, "failed setting device properties: ")
         else:
             syslog(
                 LOG_ERR, f"***couldn't find device {device_uuid} to restore properties"
@@ -386,49 +388,49 @@ class Bluetooth(object):
             "InfoMsg": "",
         }
 
-        filters: Optional[List[str]] = None
-        if "filter" in cherrypy.request.params:
-            filters = cherrypy.request.params["filter"].split(",")
+        try:
+            filters: Optional[List[str]] = None
+            if "filter" in cherrypy.request.params:
+                filters = cherrypy.request.params["filter"].split(",")
 
-        if "controller" in cherrypy.request.params:
-            controller_friendly_name: str = controller_pretty_name(
-                cherrypy.request.params["controller"]
-            )
-        else:
-            controller_friendly_name: str = ""
+            if "controller" in cherrypy.request.params:
+                controller_friendly_name: str = controller_pretty_name(
+                    cherrypy.request.params["controller"]
+                )
+            else:
+                controller_friendly_name: str = ""
 
-        if "device" in cherrypy.request.params:
-            device_uuid = uri_to_uuid(cherrypy.request.params["device"])
-        else:
-            device_uuid = None
+            if "device" in cherrypy.request.params:
+                device_uuid = uri_to_uuid(cherrypy.request.params["device"])
+            else:
+                device_uuid = None
 
-        # get the system bus
-        bus = dbus.SystemBus()
-        # get the ble controller
-        if controller_friendly_name is not None:
-            controller = (
-                controller_friendly_name,
-                self.get_remapped_controller(controller_friendly_name),
-            )
-            controllers = [controller]
-            if not controller[1]:
-                result["InfoMsg"] = f"Controller {controller_friendly_name} not found."
-                return result
-        else:
-            controllers = {
-                (x, self.get_remapped_controller(x))
-                for x in self._controller_addresses.keys()
-            }
+            # get the system bus
+            bus = dbus.SystemBus()
+            # get the ble controller
+            if controller_friendly_name:
+                controller = (
+                    controller_friendly_name,
+                    self.get_remapped_controller(controller_friendly_name),
+                )
+                controllers = [controller]
+                if not controller[1]:
+                    result["InfoMsg"] = f"Controller {controller_friendly_name} not found."
+                    return result
+            else:
+                controllers = {
+                    (x, self.get_remapped_controller(x))
+                    for x in self._controller_addresses.keys()
+                }
 
-        for controller_friendly_name, controller in controllers:
-            controller_result = {}
-            controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
+            for controller_friendly_name, controller in controllers:
+                controller_result = {}
+                controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
 
-            if not controller_obj:
-                result["InfoMsg"] = f"Controller {controller_friendly_name} not found."
-                return result
+                if not controller_obj:
+                    result["InfoMsg"] = f"Controller {controller_friendly_name} not found."
+                    return result
 
-            try:
                 matched_filter = False
                 if not device_uuid:
                     if not filters or "bluetoothDevices" in filters:
@@ -462,21 +464,17 @@ class Bluetooth(object):
                         return result
                 else:
                     result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
-
                     device, device_props = find_device(bus, device_uuid)
                     if not device:
                         result["InfoMsg"] = "Device not found"
                         return result
-
                     result.update(device_props)
-
                 result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
+        except Exception as e:
+            self.log_exception(e)
+            result["InfoMsg"] = f"Error: {str(e)}"
 
-            except Exception as e:
-                result["InfoMsg"] = str(e)
-                syslog(str(e))
-
-            return result
+        return result
 
     @cherrypy.tools.json_in()
     @cherrypy.tools.accept(media="application/json")
@@ -604,8 +602,8 @@ class Bluetooth(object):
 
         except Exception as e:
             result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
-            result["InfoMsg"] = str(e)
-            syslog(str(e))
+            self.log_exception(e)
+            result["InfoMsg"] = f"Error: {str(e)}"
 
         return result
 
@@ -745,7 +743,7 @@ class Bluetooth(object):
                 try:
                     plugin.DeviceRemovedNotify(device_uuid, device_obj)
                 except Exception as e:
-                    syslog(str(e))
+                    self.log_exception(e)
             return result
         connected = post_data.get("connected", None)
         connected_state = device_properties.Get(DEVICE_IFACE, "Connected")
@@ -786,6 +784,7 @@ class Bluetooth(object):
                     bus, command, device_uuid, device, post_data
                 )
             except Exception as e:
+                self.log_exception(e)
                 processed = True
                 error_message = f"Command {command} failed with {str(e)}"
                 break
@@ -819,6 +818,7 @@ class Bluetooth(object):
                 if process_result:
                     result.update(process_result)
             except Exception as e:
+                self.log_exception(e)
                 processed = True
                 error_message = f"Command {command} failed with {str(e)}"
                 break
