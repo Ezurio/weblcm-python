@@ -39,7 +39,9 @@ CACHED_DEVICE_PROPS = ["connected"]
 # These controller properties can be directly set, without requiring any special-case logic.
 PASS_ADAPTER_PROPS = ["Discovering", "Powered", "Discoverable"]
 
-CACHED_ADAPTER_PROPS = ["discovering", "powered", "discoverable", "transportFilter"]
+# Additionally transportFilter is cached, but by special-case logic that confirms
+# value is accepted.
+CACHED_ADAPTER_PROPS = ["discovering", "powered", "discoverable"]
 
 ADAPTER_PATH_PATTERN = re.compile("^/org/bluez/hci\\d+$")
 DEVICE_PATH_PATTERN = re.compile("^/org/bluez/hci\\d+/dev_\w+$")
@@ -415,7 +417,9 @@ class Bluetooth(object):
                 )
                 controllers = [controller]
                 if not controller[1]:
-                    result["InfoMsg"] = f"Controller {controller_friendly_name} not found."
+                    result[
+                        "InfoMsg"
+                    ] = f"Controller {controller_friendly_name} not found."
                     return result
             else:
                 controllers = {
@@ -428,7 +432,9 @@ class Bluetooth(object):
                 controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
 
                 if not controller_obj:
-                    result["InfoMsg"] = f"Controller {controller_friendly_name} not found."
+                    result[
+                        "InfoMsg"
+                    ] = f"Controller {controller_friendly_name} not found."
                     return result
 
                 matched_filter = False
