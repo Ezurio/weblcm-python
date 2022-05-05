@@ -127,6 +127,7 @@ class BluetoothBlePlugin(BluetoothPlugin):
                 setup_dbus_loop=False,
                 logger=self.ble_logger,
                 daemon=True,
+                throw_exceptions=True,
             )
         # Enable websocket endpoint
         if not self._websockets_enabled:

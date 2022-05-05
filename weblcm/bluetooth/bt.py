@@ -44,8 +44,8 @@ PASS_ADAPTER_PROPS = ["Discovering", "Powered", "Discoverable"]
 CACHED_ADAPTER_PROPS = ["discovering", "powered", "discoverable"]
 
 ADAPTER_PATH_PATTERN = re.compile("^/org/bluez/hci\\d+$")
-DEVICE_PATH_PATTERN = re.compile("^/org/bluez/hci\\d+/dev_\w+$")
-DEVICE_ADAPTER_GROUP_PATTERN = re.compile("^(/org/bluez/hci\\d+)/dev_\w+$")
+DEVICE_PATH_PATTERN = re.compile("^/org/bluez/hci\\d+/dev_\\w+$")
+DEVICE_ADAPTER_GROUP_PATTERN = re.compile("^(/org/bluez/hci\\d+)/dev_\\w+$")
 
 bluetooth_plugins: List[bt_plugin.BluetoothPlugin] = []
 
@@ -446,9 +446,6 @@ class Bluetooth(object):
                     adapter_props = dbus.Interface(
                         controller_obj, "org.freedesktop.DBus.Properties"
                     )
-                    adapter_methods = dbus.Interface(
-                        controller_obj, "org.freedesktop.DBus.Methods"
-                    )
 
                     if not filters or "transportFilter" in filters:
                         controller_result[
@@ -529,7 +526,7 @@ class Bluetooth(object):
             if not device_uuid:
                 # adapter-specific operation
                 if command:
-                    if not command in self.adapter_commands:
+                    if command not in self.adapter_commands:
                         result.update(
                             self.result_parameter_not_one_of(
                                 "command", self.adapter_commands
@@ -617,7 +614,7 @@ class Bluetooth(object):
         self, controller_friendly_name: str
     ) -> BluetoothControllerState:
         controller_friendly_name = controller_pretty_name(controller_friendly_name)
-        if not controller_friendly_name in self._controller_states:
+        if controller_friendly_name not in self._controller_states:
             self._controller_states[
                 controller_friendly_name
             ] = BluetoothControllerState()
@@ -631,7 +628,7 @@ class Bluetooth(object):
         :param device_uuid: see uri_to_uuid()
         :return: dictionary map of device property names and values
         """
-        if not device_uuid in controller_state.device_properties_uuids:
+        if device_uuid not in controller_state.device_properties_uuids:
             controller_state.device_properties_uuids[device_uuid] = {}
         return controller_state.device_properties_uuids[device_uuid]
 
@@ -700,7 +697,7 @@ class Bluetooth(object):
             adapter_methods.get_dbus_method("SetDiscoveryFilter", ADAPTER_IFACE)(
                 discovery_filters_dbus
             )
-        except dbus.DBusException as e:
+        except dbus.DBusException:
             result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
             result["InfoMsg"] = f"Transport filter {transport_filter} not accepted"
             return result
@@ -730,7 +727,7 @@ class Bluetooth(object):
         if paired == 1:
             paired_state = device_properties.Get(DEVICE_IFACE, "Paired")
             if paired_state != paired:
-                agent = AgentSingleton()
+                AgentSingleton()
                 bus = dbus.SystemBus()
                 bus.call_blocking(
                     bus_name=BLUEZ_SERVICE_NAME,
@@ -757,14 +754,17 @@ class Bluetooth(object):
             if connected == 1:
                 # Note - device may need to be paired prior to connecting
                 # AgentSingleton can be registered to allow BlueZ to auto-pair (without bonding)
-                agent = AgentSingleton()
+                AgentSingleton()
                 if bluetooth_ble_plugin:
                     bluetooth_ble_plugin.initialize()
                 if bluetooth_ble_plugin and bluetooth_ble_plugin.bt:
-                    bluetooth_ble_plugin.bt.connect(device_uuid)
-                # Always attempt connect bypassing BLE plugin, as it will refuse
-                # to attempt connection to devices it has not previously "discovered".
-                device_methods.get_dbus_method("Connect", DEVICE_IFACE)()
+                    # Use ig BLE plugin if available, because it will refuse to
+                    # interact with devices it has not explicitly connected to.
+                    # Pass device path to ig BLE plugin, as it will fail
+                    # to connect to devices it has not previously "discovered".
+                    bluetooth_ble_plugin.bt.connect(device_uuid, device_obj.object_path)
+                else:
+                    device_methods.get_dbus_method("Connect", DEVICE_IFACE)()
             elif connected == 0:
                 device_methods.get_dbus_method("Disconnect", DEVICE_IFACE)()
         passkey = post_data.get("passkey", None)

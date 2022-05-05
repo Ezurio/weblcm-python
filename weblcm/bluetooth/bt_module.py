@@ -37,9 +37,11 @@ class BtMgr(threading.Thread):
         characteristic_property_change_callback,
         connection_callback=None,
         write_notification_callback=None,
+        throw_exceptions=False,
     ):
         self.logger = logging.getLogger(__name__)
         self.logger.info("Initalizing BtMgr")
+        self.throw_exceptions = throw_exceptions
 
         self.devices = {}
 
@@ -138,7 +140,7 @@ class BtMgr(threading.Thread):
 
         return chars_array
 
-    def connect(self, address):
+    def connect(self, address, device_path=""):
         """
         Connect to the bluetooth device at the designated address
         """
@@ -146,21 +148,35 @@ class BtMgr(threading.Thread):
         self.objects = self.manager.GetManagedObjects()
 
         success = False
-        for path, interfaces in self.objects.items():
-            if path.startswith(self.adapter.object_path):
-                device = interfaces.get(BT_DEVICE_IFACE)
-                if device and str(device["Address"]) == address:
-                    # Found it; create and connect
-                    # NOTE: The 'mgr_connection_callback' will store the device locally if it connects successfully
-                    device = Device(
-                        address,
-                        path,
-                        self.characteristic_property_change_callback,
-                        self.mgr_connection_callback,
-                        self.write_notification_callback,
-                    )
-                    device.connect()
-                    success = True
+        if device_path:
+            # NOTE: The 'mgr_connection_callback' will store the device locally if it connects successfully
+            device = Device(
+                address,
+                device_path,
+                self.characteristic_property_change_callback,
+                self.mgr_connection_callback,
+                self.write_notification_callback,
+                throw_exceptions=self.throw_exceptions,
+            )
+            device.connect()
+            success = True
+        else:
+            for path, interfaces in self.objects.items():
+                if path.startswith(self.adapter.object_path):
+                    device = interfaces.get(BT_DEVICE_IFACE)
+                    if device and str(device["Address"]) == address:
+                        # Found it; create and connect
+                        # NOTE: The 'mgr_connection_callback' will store the device locally if it connects successfully
+                        device = Device(
+                            address,
+                            path,
+                            self.characteristic_property_change_callback,
+                            self.mgr_connection_callback,
+                            self.write_notification_callback,
+                            throw_exceptions=self.throw_exceptions,
+                        )
+                        device.connect()
+                        success = True
 
         if not success:
             self.logger.error("Device {} was not found".format(address))
@@ -418,6 +434,7 @@ class Device:
         property_change_callback,
         connection_callback,
         write_notification_callback=None,
+        throw_exceptions=False,
     ):
         self.logger = logging.getLogger(__name__)
         self.address = address
@@ -431,6 +448,7 @@ class Device:
         self.interface = dbus.Interface(self.object, BT_DEVICE_IFACE)
         self.properties = dbus.Interface(self.object, DBUS_PROP_IFACE)
         self.properties_signal = None
+        self.throw_exceptions = throw_exceptions
 
     def connect(self):
         """
@@ -446,6 +464,8 @@ class Device:
             self.interface.Connect()
         except dbus.exceptions.DBusException as e:
             self.logger.error("Failed to connect device {}: {}".format(self.address, e))
+            if self.throw_exceptions:
+                raise
 
     def disconnect(self):
         """
@@ -457,6 +477,8 @@ class Device:
             self.logger.error(
                 "Failed to disconnect device {}: {}".format(self.address, e)
             )
+            if self.throw_exceptions:
+                raise
 
     def add_service(self, uuid, path):
         """
