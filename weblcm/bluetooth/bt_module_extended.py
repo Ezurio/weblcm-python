@@ -36,13 +36,15 @@ class BtMgrEx(BtMgr):
         write_notification_callback=None,
         logger: Optional[logging.Logger] = None,
         setup_dbus_loop=True,
+        throw_exceptions=False,
         **kwargs
     ):
         if logger:
             self.logger = logger
         else:
             self.logger = logging.getLogger(__name__)
-        self.logger.info("Initalizing BtMgr")
+        self.logger.info("Initalizing BtMgrEx")
+        self.throw_exceptions = throw_exceptions
 
         self.devices = {}
 
