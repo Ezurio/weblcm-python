@@ -739,6 +739,8 @@ class Bluetooth(object):
                     timeout=PAIR_TIMEOUT_SECONDS,
                 )
         elif paired == 0:
+            if device_properties.Get(DEVICE_IFACE, "Connected"):
+                device_methods.get_dbus_method("Disconnect", DEVICE_IFACE)()
             adapter_methods.get_dbus_method("RemoveDevice", ADAPTER_IFACE)(device_obj)
             # If RemoveDevice is successful, further work on device will not be possible.
             result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
