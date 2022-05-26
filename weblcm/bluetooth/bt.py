@@ -30,6 +30,7 @@ from .bt_controller_state import BluetoothControllerState
 # TODO: USER_PERMISSION_TYPES for Bluetooth
 
 PAIR_TIMEOUT_SECONDS = 60
+CONNECT_TIMEOUT_SECONDS = 60
 
 # These device properties can be directly set, without requiring any special-case logic.
 SETTABLE_DEVICE_PROPS = [("Trusted", bool)]
@@ -766,7 +767,9 @@ class Bluetooth(object):
                     # to connect to devices it has not previously "discovered".
                     bluetooth_ble_plugin.bt.connect(device_uuid, device_obj.object_path)
                 else:
-                    device_methods.get_dbus_method("Connect", DEVICE_IFACE)()
+                    device_methods.get_dbus_method("Connect", DEVICE_IFACE)(
+                        timeout=CONNECT_TIMEOUT_SECONDS
+                    )
             elif connected == 0:
                 device_methods.get_dbus_method("Disconnect", DEVICE_IFACE)()
         passkey = post_data.get("passkey", None)

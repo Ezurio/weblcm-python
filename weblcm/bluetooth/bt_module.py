@@ -21,6 +21,7 @@ BT_SERVICE_IFACE = "org.bluez.GattService1"
 BT_CHARACTERISTIC_IFACE = "org.bluez.GattCharacteristic1"
 DBUS_OBJ_MGR_IFACE = "org.freedesktop.DBus.ObjectManager"
 DBUS_PROP_IFACE = "org.freedesktop.DBus.Properties"
+CONNECT_TIMEOUT_SECONDS = 60
 
 result_success = 0
 result_err = -1
@@ -461,7 +462,7 @@ class Device:
                     "PropertiesChanged", self.properties_changed
                 )
 
-            self.interface.Connect()
+            self.interface.Connect(timeout=CONNECT_TIMEOUT_SECONDS)
         except dbus.exceptions.DBusException as e:
             self.logger.error("Failed to connect device {}: {}".format(self.address, e))
             if self.throw_exceptions:
