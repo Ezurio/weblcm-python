@@ -1,8 +1,0 @@
-[Unit]
-Description=SWUpdate daemon
-
-[Service]
-EnvironmentFile=/etc/weblcm-python/swcert.conf
-EnvironmentFile=/tmp/.swupdate.conf
-ExecStart=/usr/bin/swupdate $SWCERT $IMAGESET $URL
-KeyringMode=inherit
