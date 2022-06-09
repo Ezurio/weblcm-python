@@ -1,10 +1,17 @@
+FIRMWARE="${1}"
+
+if [ -z "${FIRMWARE}" ]; then
+    echo usage: ${0} update file
+    exit
+fi
+
+if [ ! -e "${FIRMWARE}" ]; then
+    echo \"${FIRMWARE}\": file not found
+    exit
+fi
+
 # first - create the block files that you will send with split:
-
-# split -b128k -d -a 4 --additional-suffix=.swu-block som60.swu
-
-echo run the split command in this file and then remove the following exit
-# then remove this exit
-exit
+split -b128k -d -a 4 --additional-suffix=.swu-block ${FIRMWARE}
 
 source global_settings
 
@@ -22,23 +29,28 @@ for file in x*.swu-block; do
     ${CURL_APP} -s -S --request PUT ${URL}/firmware --header "Content-type: application/octet-stream" -b cookie --insecure --data-binary @${file}
 done
 
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=0 -b cookie | ${JQ_APP}
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=0 -b cookie | ${JQ_APP}
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=0 -b cookie | ${JQ_APP}
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=0 -b cookie | ${JQ_APP}
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=0 -b cookie | ${JQ_APP}
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=0 -b cookie | ${JQ_APP}
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=0 -b cookie | ${JQ_APP}
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=0 -b cookie | ${JQ_APP}
+SUCCESS=false
+echo
+echo
+while true; do
+    echo "Checking status:"
+    ${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie | tee status | ${JQ_APP}
+    echo
+    if grep -q Updated status; then
+        SUCCESS=true
+        break
+    fi
+    if grep -q Failed status; then
+        break
+    fi
+    sleep 1
+done
 
-${CURL_APP} -s --request DELETE --insecure ${URL}/firmware -b cookie | ${JQ_APP}
-echo "You will need to reboot the device once the update is complete"
+echo
+if [ "${SUCCESS}" = true ]; then
+    source ./reboot_put.sh
+fi
 
 
+echo ""
+echo "Done"
