@@ -5,7 +5,7 @@ if [ -z "${FIRMWARE}" ]; then
     exit
 fi
 
-source global_settings
+. ./global_settings
 
 
 echo -e "\n\n========================="
@@ -36,9 +36,7 @@ while true; do
 done
 
 echo
-if [ "${SUCCESS}" = true ]; then
-    source ./reboot_put.sh
-fi
+${SUCCESS} && . ./reboot_put.sh
 
 
 echo ""

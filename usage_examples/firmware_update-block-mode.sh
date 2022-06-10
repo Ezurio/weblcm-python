@@ -13,7 +13,7 @@ fi
 # first - create the block files that you will send with split:
 split -b128k -d -a 4 --additional-suffix=.swu-block ${FIRMWARE}
 
-source global_settings
+. ./global_settings
 
 
 echo -e "\n\n========================="
@@ -47,9 +47,7 @@ while true; do
 done
 
 echo
-if [ "${SUCCESS}" = true ]; then
-    source ./reboot_put.sh
-fi
+${SUCCESS} && . ./reboot_put.sh
 
 
 echo ""
