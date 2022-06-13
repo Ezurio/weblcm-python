@@ -1,5 +1,5 @@
 import os
-from syslog import syslog
+from syslog import syslog, LOG_ERR
 from subprocess import run
 from typing import Tuple
 import cherrypy
@@ -30,22 +30,29 @@ class DateTimeSetting(object):
             proc.stderr.decode("utf-8"),
         )
 
-    def getZoneList(self):
+    def getZoneListDynamic(self):
         zones = []
 
         try:
-            with open(definition.WEBLCM_PYTHON_ZONELIST, "r") as fp:
-                line = fp.readline()
-                while line:
-                    zones.append(line.strip())
-                    line = fp.readline()
-                fp.close()
+            proc = run(
+                definition.WEBLCM_PYTHON_ZONELIST_COMMAND,
+                capture_output=True,
+                timeout=SystemSettingsManage.get_user_callback_timeout(),
+            )
+            if proc.returncode:
+                syslog(
+                    LOG_ERR,
+                    "Get Timezone list failure: %s" % proc.stderr.decode("utf-8"),
+                )
+            else:
+                zones_raw = proc.stdout.decode("utf-8")
 
-            zones.sort()
+                zones = zones_raw.splitlines()
+                zones.sort()
+            return zones
         except Exception as e:
-            syslog("Get Timezone list failure: %s" % str(e))
-
-        return zones
+            syslog(LOG_ERR, "Get Timezone list failure: %s" % str(e))
+            return zones
 
     def __init__(self):
 
@@ -53,7 +60,7 @@ class DateTimeSetting(object):
         self.zoneinfo = "/usr/share/zoneinfo/"
         self.userZoneinfo = definition.WEBLCM_PYTHON_ZONEINFO
         self.userLocaltime = self.userZoneinfo + "localtime"
-        self.zones = self.getZoneList()
+        self.zones = self.getZoneListDynamic()
 
     def getLocalZone(self):
 
@@ -67,7 +74,7 @@ class DateTimeSetting(object):
             if -1 != index:
                 return localtime[index + len(self.userZoneinfo) :]
         except Exception as e:
-            syslog(str(e))
+            syslog(LOG_ERR, str(e))
 
     @cherrypy.tools.json_out()
     def GET(self, *args, **kwargs):

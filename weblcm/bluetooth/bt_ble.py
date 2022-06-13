@@ -8,10 +8,7 @@ from typing import Optional, Tuple, List
 
 import cherrypy
 import dbus
-from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
-from ws4py.websocket import WebSocket
 
-from .. import definition
 from .bt_module import (
     bt_device_services,
     bt_start_discovery,
@@ -37,60 +34,19 @@ discovery_keys = {"Name", "Alias", "Address", "Class", "Icon", "RSSI", "UUIDs"}
 
 DEVICE_IFACE = "org.bluez.Device1"
 
-websockets_auth_by_header_token: bool = True
-
 ble_notification_objects: list = []
 
+try:
+    from ws4py.server.cherrypyserver import WebSocketPlugin, WebSocketTool
+    from ws4py.websocket import WebSocket
+    from .bt_ble_websocket import BluetoothWebsocket, BluetoothWebSocketHandler
 
-class BluetoothWebsocket(object):
-    @cherrypy.tools.json_out()
-    @cherrypy.expose
-    def index(self):
-        result = {
-            "SDCERR": definition.WEBLCM_ERRORS["SDCERR_SUCCESS"],
-            "InfoMsg": "",
-        }
-        return result
+    cherrypy.log("bt_ble: Bluetooth BLE Websockets loaded")
+except ImportError:
+    WebSocketPlugin = None
+    cherrypy.log("bt_ble: Bluetooth BLE Websockets NOT loaded")
 
-    @cherrypy.expose
-    def ws(self):
-        # see BluetoothWebSocketHandler
-        pass
-
-
-class BluetoothWebSocketHandler(WebSocket):
-    def __init__(self, *args, **kwargs):
-        ble_notification_objects.append(self)
-        super(BluetoothWebSocketHandler, self).__init__(*args, kwargs)
-
-    def __del__(self):
-        if self in ble_notification_objects:
-            ble_notification_objects.remove(self)
-
-    def received_message(self, message):
-        """
-        Called whenever a complete ``message``, binary or text,
-        is received and ready for application's processing.
-
-        The passed message is an instance of :class:`messaging.TextMessage`
-        or :class:`messaging.BinaryMessage`.
-        """
-        pass
-
-    def ble_notify(self, message):
-        if (
-            self.connection
-            and not self.client_terminated
-            and not self.server_terminated
-        ):
-            try:
-                self.send(message, binary=False)
-            except Exception as e:
-                cherrypy.log("BluetoothWebSocketHandler:" + str(e))
-                self.close(reason=str(e))
-                self.close_connection()
-                self.terminate()
-                self.__del__()
+websockets_auth_by_header_token: bool = WebSocketPlugin is not None
 
 
 class BluetoothBlePlugin(BluetoothPlugin):
@@ -106,14 +62,16 @@ class BluetoothBlePlugin(BluetoothPlugin):
 
     @property
     def adapter_commands(self) -> List[str]:
-        return [
+        adapter_commands = [
             "bleStartServer",
             "bleStopServer",
             "bleServerStatus",
             "bleStartDiscovery",
             "bleStopDiscovery",
-            "bleEnableWebsockets",
         ]
+        if WebSocketPlugin:
+            adapter_commands += ["bleEnableWebsockets"]
+        return adapter_commands
 
     def initialize(self):
         # Initialize the bluetooth manager
@@ -130,7 +88,7 @@ class BluetoothBlePlugin(BluetoothPlugin):
                 throw_exceptions=True,
             )
         # Enable websocket endpoint
-        if not self._websockets_enabled:
+        if WebSocketPlugin and not self._websockets_enabled:
             try:
                 WebSocketPlugin(cherrypy.engine).subscribe()
                 cherrypy.tools.websocket = WebSocketTool()
@@ -228,7 +186,7 @@ class BluetoothBlePlugin(BluetoothPlugin):
         result = {}
         if self.ble_logger:
             self.ble_logger.error_occurred = False
-        if command == "bleEnableWebsockets":
+        if WebSocketPlugin and command == "bleEnableWebsockets":
             processed = True
             if not self._websockets_enabled:
                 self.initialize()
