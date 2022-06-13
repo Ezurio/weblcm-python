@@ -15,11 +15,10 @@ from .network import (
 from .log import LogData, LogSetting
 from .swupdate import SWUpdate
 from .users import UserManage, LoginManage
-from .files import FileManage, FilesManage, AWMCfgManage
+from .files import FileManage, FilesManage
 from .advanced import Reboot, FactoryReset
 from .datetime import DateTimeSetting
 from .settings import SystemSettingsManage
-from .modem import PositioningSwitch, Positioning
 from .advanced import Fips
 
 weblcm_plugins: List[str] = []
@@ -38,6 +37,25 @@ try:
 except ImportError:
     Bluetooth = None
     cherrypy.log("__main__: Bluetooth NOT loaded")
+
+try:
+    from .awm.awm_cfg_manage import AWMCfgManage
+
+    weblcm_plugins.append("awm")
+    cherrypy.log("__main__: AWM loaded")
+except ImportError:
+    AWMCfgManage = None
+    cherrypy.log("__main__: AWM NOT loaded")
+
+try:
+    from .modem.modem import PositioningSwitch, Positioning
+
+    weblcm_plugins.append("positioning")
+    weblcm_plugins.append("positioningSwitch")
+    cherrypy.log("__main__: modem loaded")
+except ImportError:
+    PositioningSwitch = None
+    cherrypy.log("__main__: modem NOT loaded")
 
 
 class WebApp(object):
@@ -58,7 +76,8 @@ class WebApp(object):
         self.users = UserManage()
         self.file = FileManage()
         self.files = FilesManage()
-        self.awm = AWMCfgManage()
+        if AWMCfgManage:
+            self.awm = AWMCfgManage()
 
         self.firmware = SWUpdate()
 
@@ -66,8 +85,9 @@ class WebApp(object):
         self.factoryReset = FactoryReset()
         self.datetime = DateTimeSetting()
 
-        self.positioningSwitch = PositioningSwitch()
-        self.positioning = Positioning()
+        if PositioningSwitch:
+            self.positioningSwitch = PositioningSwitch()
+            self.positioning = Positioning()
         self.fips = Fips()
 
         if Bluetooth:
@@ -138,9 +158,6 @@ def force_session_checking():
         "users",
         "firmware",
         "logData",
-        "awm",
-        "positioning",
-        "positioningSwitch",
         "logSetting",
         "factoryReset",
         "reboot",

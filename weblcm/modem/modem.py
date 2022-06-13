@@ -2,7 +2,7 @@ import cherrypy
 import dbus
 from syslog import syslog
 from xml.etree import ElementTree
-from .definition import WEBLCM_ERRORS
+from ..definition import WEBLCM_ERRORS
 
 
 def dbus_to_python(data):
