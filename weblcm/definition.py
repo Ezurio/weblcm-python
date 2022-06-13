@@ -11,7 +11,7 @@ WEBLCM_PYTHON_SERVER_CONF_FILE = "/etc/weblcm-python/weblcm-python.ini"
 WEBLCM_PYTHON_SETTINGS_FILE = "/data/secret/weblcm-python/weblcm-settings.ini"
 
 # timezone list
-WEBLCM_PYTHON_ZONELIST = "/data/secret/weblcm-python/zonelist.db"
+WEBLCM_PYTHON_ZONELIST_COMMAND = ["timedatectl", "list-timezones"]
 
 # Default system timezone datebase can be readonly. Save customer files in /data/misc/.
 WEBLCM_PYTHON_ZONEINFO = "/data/misc/zoneinfo/"

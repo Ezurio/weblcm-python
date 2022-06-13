@@ -49,6 +49,22 @@ function loadmenu(menu, id){
   });
 }
 
+function remove_if_unavailable(endpoint, element) {
+  $.ajax({
+    url: endpoint,
+    type: "GET",
+    cache: false,
+    contentType: "application/json",
+  })
+  .fail(function(xhr, textStatus, errorThrown) {
+    $(element).remove();
+  });
+}
+
+function remove_unavailable_endpoints() {
+    remove_if_unavailable("positioning", "#system_positioning_main_menu");
+}
+
 function weblcm_init(plugins) {
   let i, lang;
   let requests = [];
@@ -186,6 +202,7 @@ function login(user, passwd) {
         $("#networking_mini_menu").removeClass("d-none");
         $("#system_main_menu").removeClass("d-none");
         $("#system_mini_menu").removeClass("d-none");
+        remove_unavailable_endpoints();
         clickStatusPage();
       }
 
