@@ -177,6 +177,22 @@ class NetworkStatusHelper(object):
         return ip6Properties
 
     @classmethod
+    def get_dhcp4_properties(cls, dhcp4):
+
+        if not dhcp4:
+            return {}
+
+        return dhcp4.Options
+
+    @classmethod
+    def get_dhcp6_properties(cls, dhcp6):
+
+        if not dhcp6:
+            return {}
+
+        return dhcp6.Options
+
+    @classmethod
     def get_ap_properties(cls, ap, dev):
 
         apProperties = {}
@@ -585,6 +601,12 @@ class NetworkStatusHelper(object):
                     cls._network_status[interface_name][
                         "ip6config"
                     ] = cls.get_ipv6_properties(dev.Ip6Config)
+                    cls._network_status[interface_name][
+                        "dhcp4config"
+                    ] = cls.get_dhcp4_properties(dev.Dhcp4Config)
+                    cls._network_status[interface_name][
+                        "dhcp6config"
+                    ] = cls.get_dhcp6_properties(dev.Dhcp6Config)
 
                 # Get wired specific items
                 if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_ETHERNET:
@@ -655,6 +677,12 @@ def dev_statechange(dev, interface, signal, new_state, old_state, reason):
             NetworkStatusHelper._network_status[dev.Interface][
                 "ip6config"
             ] = NetworkStatusHelper.get_ipv6_properties(dev.Ip6Config)
+            NetworkStatusHelper._network_status[dev.Interface][
+                "dhcp4config"
+            ] = NetworkStatusHelper.get_dhcp4_properties(dev.Dhcp4Config)
+            NetworkStatusHelper._network_status[dev.Interface][
+                "dhcp6config"
+            ] = NetworkStatusHelper.get_dhcp6_properties(dev.Dhcp6Config)
             if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_ETHERNET:
                 NetworkStatusHelper._network_status[dev.Interface][
                     "wired"
