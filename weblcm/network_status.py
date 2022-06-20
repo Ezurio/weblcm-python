@@ -108,6 +108,7 @@ class NetworkStatusHelper(object):
             addresses[i] = str(addr[0]) + "/" + str(addr[1])
             i += 1
         ip4Properties["Addresses"] = addresses
+        ip4Properties["AddressData"] = ipv4.AddressData
 
         routes = {}
         i = 0
@@ -115,7 +116,7 @@ class NetworkStatusHelper(object):
             routes[i] = str(rt[0]) + "/" + str(rt[1]) + " metric " + str(rt[3])
             i += 1
         ip4Properties["Routes"] = routes
-
+        ip4Properties["RouteData"] = ipv4.RouteData
         ip4Properties["Gateway"] = ipv4.Gateway
 
         i = 0
@@ -124,6 +125,11 @@ class NetworkStatusHelper(object):
             domains[i] = str(dns)
             i += 1
         ip4Properties["Domains"] = domains
+
+        ip4Properties["NameserverData"] = ipv4.NameserverData
+        ip4Properties["DnsOptions"] = ipv4.DnsOptions
+        ip4Properties["DnsPriority"] = ipv4.DnsPriority
+        ip4Properties["WinsServerData"] = ipv4.WinsServerData
 
         return ip4Properties
 
@@ -140,6 +146,7 @@ class NetworkStatusHelper(object):
             addresses[i] = str(addr[0]) + "/" + str(addr[1])
             i += 1
         ip6Properties["Addresses"] = addresses
+        ip6Properties["AddressData"] = ipv6.AddressData
 
         routes = {}
         i = 0
@@ -147,6 +154,7 @@ class NetworkStatusHelper(object):
             routes[i] = str(rt[0]) + "/" + str(rt[1]) + " metric " + str(rt[3])
             i += 1
         ip6Properties["Routes"] = routes
+        ip6Properties["RouteData"] = ipv6.RouteData
 
         ip6Properties["Gateway"] = ipv6.Gateway
 
@@ -156,6 +164,10 @@ class NetworkStatusHelper(object):
             domains[i] = str(dns)
             i += 1
         ip6Properties["Domains"] = domains
+
+        ip6Properties["Nameservers"] = ipv6.Nameservers
+        ip6Properties["DnsOptions"] = ipv6.DnsOptions
+        ip6Properties["DnsPriority"] = ipv6.DnsPriority
 
         return ip6Properties
 
@@ -214,6 +226,26 @@ class NetworkStatusHelper(object):
         wired["Speed"] = dev.Speed
         wired["Carrier"] = dev.Carrier
         return wired
+
+    @classmethod
+    def get_available_connections(cls, available_connections):
+
+        if not available_connections:
+            return {}
+
+        connections = []
+        for connection in available_connections:
+            connections.append(connection.GetSettings()["connection"])
+
+        return connections
+
+    @classmethod
+    def get_active_connection(cls, dev):
+
+        if not dev or not dev.ActiveConnection:
+            return {}
+
+        return dev.ActiveConnection.Connection.GetSettings()["connection"]
 
     @classmethod
     def network_status_query(cls):
