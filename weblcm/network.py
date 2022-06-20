@@ -6,6 +6,7 @@ from . import definition
 from syslog import syslog, LOG_ERR
 from subprocess import run, TimeoutExpired
 from .settings import SystemSettingsManage
+from .network_status import NetworkStatusHelper
 
 
 @cherrypy.expose
@@ -563,5 +564,121 @@ class NetworkInterfaces(object):
             syslog(LOG_ERR, f"Call 'iw dev {interface} del' timeout")
         except Exception as e:
             syslog(LOG_ERR, f"Call 'iw dev {interface} del' failed")
+
+        return result
+
+
+@cherrypy.expose
+class NetworkInterface(object):
+    @cherrypy.tools.json_out()
+    def GET(self, *args, **kwargs):
+
+        result = {"SDCERR": 1, "InfoMsg": ""}
+        try:
+            name = kwargs.get("name", None)
+            if not name:
+                result["InfoMsg"] = "no interface name provided"
+                return result
+
+            unmanaged_devices = (
+                cherrypy.request.app.config["weblcm"]
+                .get("unmanaged_hardware_devices", "")
+                .split()
+            )
+            if name in unmanaged_devices:
+                result["InfoMsg"] = "invalid interface name provided"
+                return result
+
+            devices = NetworkManager.Device.all()
+            for dev in devices:
+                if name == dev.Interface:
+                    # Read all NM device properties
+                    dev_properties = {}
+                    dev_properties["Udi"] = dev.Udi
+                    dev_properties["Path"] = dev.Path
+                    dev_properties["Interface"] = dev.Interface
+                    dev_properties["IpInterface"] = dev.IpInterface
+                    dev_properties["Driver"] = dev.Driver
+                    dev_properties["DriverVersion"] = dev.DriverVersion
+                    dev_properties["FirmwareVersion"] = dev.FirmwareVersion
+                    dev_properties["Capabilities"] = dev.Capabilities
+                    dev_properties["StateReason"] = dev.StateReason
+                    dev_properties[
+                        "ActiveConnection"
+                    ] = NetworkStatusHelper.get_active_connection(dev)
+                    dev_properties[
+                        "Ip4Config"
+                    ] = NetworkStatusHelper.get_ipv4_properties(dev.Ip4Config)
+                    dev_properties[
+                        "Ip6Config"
+                    ] = NetworkStatusHelper.get_ipv6_properties(dev.Ip6Config)
+                    dev_properties[
+                        "Dhcp4Config"
+                    ] = NetworkStatusHelper.get_dhcp4_properties(dev.Dhcp4Config)
+                    dev_properties[
+                        "Dhcp6Config"
+                    ] = NetworkStatusHelper.get_dhcp6_properties(dev.Dhcp6Config)
+                    dev_properties["Managed"] = dev.Managed
+                    dev_properties["Autoconnect"] = dev.Autoconnect
+                    dev_properties["FirmwareMissing"] = dev.FirmwareMissing
+                    dev_properties["NmPluginMissing"] = dev.NmPluginMissing
+                    dev_properties["Status"] = NetworkStatusHelper.get_dev_status(dev)
+                    dev_properties[
+                        "AvailableConnections"
+                    ] = NetworkStatusHelper.get_available_connections(
+                        dev.AvailableConnections
+                    )
+                    dev_properties["PhysicalPortId"] = dev.PhysicalPortId
+                    dev_properties["Metered"] = dev.Metered
+                    dev_properties["MeteredText"] = definition.WEBLCM_METERED_TEXT.get(
+                        dev.Metered
+                    )
+                    dev_properties["LldpNeighbors"] = dev.LldpNeighbors
+                    dev_properties["Real"] = dev.Real
+                    dev_properties["Ip4Connectivity"] = dev.Ip4Connectivity
+                    dev_properties[
+                        "Ip4ConnectivityText"
+                    ] = definition.WEBLCM_CONNECTIVITY_STATE_TEXT.get(
+                        dev.Ip4Connectivity
+                    )
+                    dev_properties["Ip6Connectivity"] = dev.Ip6Connectivity
+                    dev_properties[
+                        "Ip6ConnectivityText"
+                    ] = definition.WEBLCM_CONNECTIVITY_STATE_TEXT.get(
+                        dev.Ip6Connectivity
+                    )
+                    dev_properties["InterfaceFlags"] = dev.InterfaceFlags
+
+                    # Get wired specific items
+                    if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_ETHERNET:
+                        dev_properties[
+                            "Wired"
+                        ] = NetworkStatusHelper.get_wired_properties(dev)
+
+                    # Get Wi-Fi specific items
+                    if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
+                        dev_properties[
+                            "Wireless"
+                        ] = NetworkStatusHelper.get_wifi_properties(dev)
+                        if dev.State == NetworkManager.NM_DEVICE_STATE_ACTIVATED:
+                            dev_properties[
+                                "ActiveAccessPoint"
+                            ] = NetworkStatusHelper.get_ap_properties(
+                                dev.ActiveAccessPoint, dev
+                            )
+
+                    result["Properties"] = dev_properties
+                    result["SDCERR"] = 0
+
+                    return result
+
+            # Target interface wasn't found, so throw an error
+            result["InfoMsg"] = "invalid interface name provided"
+
+        except Exception as e:
+            syslog(
+                LOG_ERR,
+                f"Unable to retrieve detailed network interface configuration: {str(e)}",
+            )
 
         return result
