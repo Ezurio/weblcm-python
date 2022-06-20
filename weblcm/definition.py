@@ -144,3 +144,21 @@ WEBLCM_STATE_TEXT = {
     110: "Deactivating",
     120: "Failed",
 }
+
+# values from https://developer-old.gnome.org/NetworkManager/stable/nm-dbus-types.html
+WEBLCM_METERED_TEXT = {
+    0: "Unknown",
+    1: "Metered",
+    2: "Not metered",
+    3: "Metered (guessed)",
+    4: "Not metered (guessed)",
+}
+
+# values from https://developer-old.gnome.org/NetworkManager/stable/nm-dbus-types.html
+WEBLCM_CONNECTIVITY_STATE_TEXT = {
+    0: "Unknown",
+    1: "None",
+    2: "Portal",
+    3: "Limited",
+    4: "Full",
+}

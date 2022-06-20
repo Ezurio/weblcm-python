@@ -7,6 +7,7 @@ from . import definition
 from .network_status import NetworkStatus
 from .network import (
     NetworkInterfaces,
+    NetworkInterface,
     NetworkConnections,
     NetworkConnection,
     NetworkAccessPoints,
@@ -68,6 +69,7 @@ class WebApp(object):
         self.connection = NetworkConnection()
         self.accesspoints = NetworkAccessPoints()
         self.networkInterfaces = NetworkInterfaces()
+        self.networkInterface = NetworkInterface()
         self.version = Version()
 
         self.logData = LogData()
@@ -156,6 +158,7 @@ def force_session_checking():
         "connection",
         "accesspoints",
         "networkInterfaces",
+        "networkInterface",
         "file",
         "users",
         "firmware",
