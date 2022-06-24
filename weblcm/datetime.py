@@ -1,7 +1,7 @@
 import os
 from syslog import syslog, LOG_ERR
 from subprocess import run
-from typing import Tuple
+from typing import Tuple, List
 import cherrypy
 
 from . import definition
@@ -30,7 +30,7 @@ class DateTimeSetting(object):
             proc.stderr.decode("utf-8"),
         )
 
-    def getZoneListDynamic(self):
+    def getZoneListDynamic(self) -> List[str]:
         zones = []
 
         try:
@@ -60,7 +60,13 @@ class DateTimeSetting(object):
         self.zoneinfo = "/usr/share/zoneinfo/"
         self.userZoneinfo = definition.WEBLCM_PYTHON_ZONEINFO
         self.userLocaltime = self.userZoneinfo + "localtime"
-        self.zones = self.getZoneListDynamic()
+        self._zones_cache = None
+
+    @property
+    def zones(self) -> List[str]:
+        if not self._zones_cache:
+            self._zones_cache = self.getZoneListDynamic()
+        return self._zones_cache
 
     def getLocalZone(self):
 
