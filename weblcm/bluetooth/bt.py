@@ -117,7 +117,7 @@ class Bluetooth(object):
             itertools.chain.from_iterable(
                 plugin.device_commands for plugin in bluetooth_plugins
             )
-        )
+        ) + ["getConnInfo"]
 
     @property
     def adapter_commands(self) -> List[str]:
@@ -789,18 +789,27 @@ class Bluetooth(object):
         error_message = None
         processed = False
         post_data = cherrypy.request.json
-        for plugin in bluetooth_plugins:
-            try:
-                processed, error_message = plugin.ProcessDeviceCommand(
-                    bus, command, device_uuid, device, post_data
-                )
-            except Exception as e:
-                self.log_exception(e)
-                processed = True
-                error_message = f"Command {command} failed with {str(e)}"
-                break
-            if processed:
-                break
+        if command == "getConnInfo":
+            processed = True
+            device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
+            interface = dbus.Interface(device_obj, DEVICE_IFACE)
+            (rssi, tx_power, max_tx_power) = interface.GetConnInfo()
+            result["rssi"] = rssi
+            result["tx_power"] = tx_power
+            result["max_tx_power"] = max_tx_power
+        else:
+            for plugin in bluetooth_plugins:
+                try:
+                    processed, error_message = plugin.ProcessDeviceCommand(
+                        bus, command, device_uuid, device, post_data
+                    )
+                except Exception as e:
+                    self.log_exception(e)
+                    processed = True
+                    error_message = f"Command {command} failed with {str(e)}"
+                    break
+                if processed:
+                    break
 
         if not processed:
             result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
