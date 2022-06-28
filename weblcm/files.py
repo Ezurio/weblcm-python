@@ -16,6 +16,7 @@ class FileManage(object):
 
     _lock = Lock()
     FILE_MANAGE_SCRIPT = "/etc/weblcm-python/scripts/weblcm_files.sh"
+    FILE_MANAGE_POST_ZIP_TYPES = ["config", "timezone"]
 
     # log will be saved in /var/run/log/journal/ for volatile mode, or /var/log/journal/ for persistent mode
     # If "/var/run/log/journal/" exists, it should be in volatile mode.
@@ -60,7 +61,9 @@ class FileManage(object):
             result["InfoMsg"] = f"file POST type {typ} unknown"  # bad request
             return result
 
-        if not fil.filename.endswith(".zip"):
+        if typ in FileManage.FILE_MANAGE_POST_ZIP_TYPES and not fil.filename.endswith(
+            ".zip"
+        ):
             syslog(f"FileManage POST type not .zip file")
             result["InfoMsg"] = f"file POST type not .zip file"  # bad request
             return result
@@ -72,24 +75,27 @@ class FileManage(object):
                 result["InfoMsg"] = f"file POST failure to copy file"  # bad request
                 return result
 
-            password = kwargs.get("password", "")
-            res = subprocess.call(
-                [
-                    FileManage.FILE_MANAGE_SCRIPT,
-                    typ,
-                    "unzip",
-                    fp,
-                    definition.FILEDIR_DICT.get(typ),
-                    password,
-                ]
-            )
-            os.remove(fp)
-            if res:
-                syslog(f"unzip command file '{fp}' failed with error {res}")
-                result[
-                    "InfoMsg"
-                ] = f"unzip command failed to unzip provided file.  Error returned: {res}"  # Internal server error
-                return result
+            # Only attempt to unzip the uploaded file if the 'type' requires a zip file. Otherwise,
+            # just saving the file is sufficient (i.e., for a certificate)
+            if typ in FileManage.FILE_MANAGE_POST_ZIP_TYPES:
+                password = kwargs.get("password", "")
+                res = subprocess.call(
+                    [
+                        FileManage.FILE_MANAGE_SCRIPT,
+                        typ,
+                        "unzip",
+                        fp,
+                        definition.FILEDIR_DICT.get(typ),
+                        password,
+                    ]
+                )
+                os.remove(fp)
+                if res:
+                    syslog(f"unzip command file '{fp}' failed with error {res}")
+                    result[
+                        "InfoMsg"
+                    ] = f"unzip command failed to unzip provided file.  Error returned: {res}"  # Internal server error
+                    return result
 
             result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
             return result
