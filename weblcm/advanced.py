@@ -1,23 +1,90 @@
 import cherrypy
-from syslog import syslog
+from syslog import syslog, LOG_ERR
 from subprocess import run, call, TimeoutExpired, CalledProcessError
-from .definition import WEBLCM_ERRORS
+from .definition import (
+    WEBLCM_ERRORS,
+    LOGIND_BUS_NAME,
+    LOGIND_MAIN_OBJ,
+    LOGIND_MAIN_IFACE,
+)
 from .settings import SystemSettingsManage
+import dbus
+
+
+@cherrypy.expose
+class PowerOff(object):
+    @cherrypy.tools.json_out()
+    def PUT(self):
+        result = {
+            "SDCERR": WEBLCM_ERRORS["SDCERR_FAIL"],
+            "InfoMsg": "Poweroff cannot be initiated",
+        }
+
+        try:
+            bus = dbus.SystemBus()
+            manager = dbus.Interface(
+                bus.get_object(LOGIND_BUS_NAME, LOGIND_MAIN_OBJ), LOGIND_MAIN_IFACE
+            )
+
+            # Call PowerOff() (non-interactive)
+            manager.PowerOff(False)
+
+            result["SDCERR"] = WEBLCM_ERRORS["SDCERR_SUCCESS"]
+            result["InfoMsg"] = "Poweroff initiated"
+        except Exception as e:
+            syslog(LOG_ERR, f"Poweroff cannot be initiated: {str(e)}")
+
+        return result
+
+
+@cherrypy.expose
+class Suspend(object):
+    @cherrypy.tools.json_out()
+    def PUT(self):
+        result = {
+            "SDCERR": WEBLCM_ERRORS["SDCERR_FAIL"],
+            "InfoMsg": "Suspend cannot be initiated",
+        }
+
+        try:
+            bus = dbus.SystemBus()
+            manager = dbus.Interface(
+                bus.get_object(LOGIND_BUS_NAME, LOGIND_MAIN_OBJ), LOGIND_MAIN_IFACE
+            )
+
+            # Call Suspend() (non-interactive)
+            manager.Suspend(False)
+
+            result["SDCERR"] = WEBLCM_ERRORS["SDCERR_SUCCESS"]
+            result["InfoMsg"] = "Suspend initiated"
+        except Exception as e:
+            syslog(LOG_ERR, f"Suspend cannot be initiated: {str(e)}")
+
+        return result
 
 
 @cherrypy.expose
 class Reboot(object):
     @cherrypy.tools.json_out()
     def PUT(self):
-        try:
-            call(["systemctl", "reboot"])
-            syslog("reboot initiated")
-        except BaseException:
-            syslog("reboot cannot be initiated")
         result = {
-            "SDCERR": WEBLCM_ERRORS["SDCERR_SUCCESS"],
-            "InfoMsg": "Reboot initiated",
+            "SDCERR": WEBLCM_ERRORS["SDCERR_FAIL"],
+            "InfoMsg": "Reboot cannot be initiated",
         }
+
+        try:
+            bus = dbus.SystemBus()
+            manager = dbus.Interface(
+                bus.get_object(LOGIND_BUS_NAME, LOGIND_MAIN_OBJ), LOGIND_MAIN_IFACE
+            )
+
+            # Call Reboot() (non-interactive)
+            manager.Reboot(False)
+
+            result["SDCERR"] = WEBLCM_ERRORS["SDCERR_SUCCESS"]
+            result["InfoMsg"] = "Reboot initiated"
+        except Exception as e:
+            syslog(LOG_ERR, f"Reboot cannot be initiated: {str(e)}")
 
         return result
 
