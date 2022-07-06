@@ -1,8 +1,8 @@
 source global_settings
 
 echo -e "\n\n========================="
-echo "Reboot"
-${CURL_APP} -s --location --request PUT ${URL}/reboot \
+echo "Suspend"
+${CURL_APP} -s --location --request PUT ${URL}/suspend \
     --header "Content-Type: application/json" \
     -b cookie --insecure\
     --data-raw ''\

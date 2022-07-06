@@ -37,6 +37,10 @@ DBUS_PROP_IFACE = "org.freedesktop.DBus.Properties"
 WPA_OBJ = "/fi/w1/wpa_supplicant1"
 WPA_IFACE = "fi.w1.wpa_supplicant1"
 
+LOGIND_BUS_NAME = "org.freedesktop.login1"
+LOGIND_MAIN_OBJ = "/org/freedesktop/login1"
+LOGIND_MAIN_IFACE = "org.freedesktop.login1.Manager"
+
 WEBLCM_ERRORS = {
     "SDCERR_SUCCESS": 0,
     "SDCERR_FAIL": 1,

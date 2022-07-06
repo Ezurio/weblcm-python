@@ -16,7 +16,7 @@ from .log import LogData, LogSetting
 from .swupdate import SWUpdate
 from .users import UserManage, LoginManage
 from .files import FileManage, FilesManage
-from .advanced import Reboot, FactoryReset
+from .advanced import PowerOff, Suspend, Reboot, FactoryReset
 from .datetime import DateTimeSetting
 from .settings import SystemSettingsManage
 from .advanced import Fips
@@ -81,6 +81,8 @@ class WebApp(object):
 
         self.firmware = SWUpdate()
 
+        self.poweroff = PowerOff()
+        self.suspend = Suspend()
         self.reboot = Reboot()
         self.factoryReset = FactoryReset()
         self.datetime = DateTimeSetting()
@@ -160,6 +162,8 @@ def force_session_checking():
         "logData",
         "logSetting",
         "factoryReset",
+        "poweroff",
+        "suspend",
         "reboot",
         "files",
         "datetime",
