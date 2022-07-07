@@ -4,7 +4,7 @@ Wants=network.target factory-reset.service
 After=network.target factory-reset.service
 
 [Service]
-ExecStart=python /usr/bin/weblcm-python
+ExecStart=/usr/bin/weblcm-python
 KeyringMode=inherit
 
 [Install]
