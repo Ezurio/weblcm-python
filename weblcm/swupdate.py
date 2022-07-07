@@ -43,6 +43,7 @@ class SWUpdate:
 
     _lock = Lock()
     _isUpdating = False
+    _mode = 0
     cherrypy.tools.octet_stream_in = cherrypy.Tool(
         "before_request_body", octet_stream_in
     )
@@ -62,13 +63,8 @@ class SWUpdate:
             return result
 
         try:
-            mode = int(kwargs.get("mode", 0))
-        except Exception as e:
-            result["InfoMsg"] = "Mode must be 0 (block/block mode) or 1 "
-            return result
-        try:
             proc = run(
-                [SWUpdate.SWUPDATE_SCRIPT, "get-update", str(mode)],
+                [SWUpdate.SWUPDATE_SCRIPT, "get-update", str(SWUpdate._mode)],
                 capture_output=True,
                 timeout=SystemSettingsManage.get_user_callback_timeout(),
             )
@@ -141,8 +137,10 @@ class SWUpdate:
 
         if imageset:
             if url:
+                SWUpdate._mode = 1
                 do_swupdate(args=[SWUpdate.SWUPDATE_SCRIPT, "do-update", imageset, url])
             else:
+                SWUpdate._mode = 0
                 do_swupdate(
                     args=[SWUpdate.SWUPDATE_SCRIPT, "pre-update", imageset],
                     callback=swclient.prepare_fw_update,

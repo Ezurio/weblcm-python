@@ -3,7 +3,7 @@
 # split -b128k -d -a 4 --additional-suffix=.swu-block som60.swu
 
 echo run the split command in this file and then remove the following exit
-# then remove this exit
+# then remove the following exit line
 exit
 
 source global_settings
@@ -22,23 +22,27 @@ for file in x*.swu-block; do
     ${CURL_APP} -s -S --request PUT ${URL}/firmware --header "Content-type: application/octet-stream" -b cookie --insecure --data-binary @${file}
 done
 
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=0 -b cookie | ${JQ_APP}
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=0 -b cookie | ${JQ_APP}
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=0 -b cookie | ${JQ_APP}
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=0 -b cookie | ${JQ_APP}
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=0 -b cookie | ${JQ_APP}
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=0 -b cookie | ${JQ_APP}
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=0 -b cookie | ${JQ_APP}
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=0 -b cookie | ${JQ_APP}
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie | ${JQ_APP}
+echo && sleep 3
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie | ${JQ_APP}
+echo && sleep 3
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie | ${JQ_APP}
+echo && sleep 3
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie | ${JQ_APP}
+echo && sleep 3
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie | ${JQ_APP}
+echo && sleep 3
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie | ${JQ_APP}
+echo && sleep 3
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie | ${JQ_APP}
+echo && sleep 3
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie | ${JQ_APP}
 
 ${CURL_APP} -s --request DELETE --insecure ${URL}/firmware -b cookie | ${JQ_APP}
-echo "You will need to reboot the device once the update is complete"
+echo -e "\nYou will need to reboot the device once the update is complete"
 
 
+${CURL_APP} -s --request DELETE --insecure ${URL}/firmware -b cookie
+
+echo ""
+echo "Done"
