@@ -1,4 +1,4 @@
-FIRMWARE=http://192.168.1.123:8080/som60.swu
+FIRMWARE="${FIRMWARE:-http://192.168.1.123:8080/som60.swu}"
 
 source global_settings
 
@@ -11,25 +11,24 @@ ${CURL_APP} -s --header "Content-Type: application/json" \
     '{"image":"full", "url":"'"${FIRMWARE}"'"}'  --insecure \
     ${URL}/firmware -b cookie
 
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=1 -b cookie
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=1 -b cookie
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=1 -b cookie
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=1 -b cookie
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=1 -b cookie
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=1 -b cookie
-echo && sleep 5
-${CURL_APP} -s --request GET --insecure ${URL}/firmware?mode=1 -b cookie
-echo "You will need to reboot the device once the update is complete"
+echo && sleep 3
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie
+echo && sleep 3
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie
+echo && sleep 3
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie
+echo && sleep 3
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie
+echo && sleep 3
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie
+echo && sleep 3
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie
+echo && sleep 3
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie
+echo -e "\nYou will need to reboot the device once the update is complete"
 
 
 ${CURL_APP} -s --request DELETE --insecure ${URL}/firmware -b cookie
-
 
 echo ""
 echo "Done"
