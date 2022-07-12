@@ -115,6 +115,7 @@ class Fips(object):
 
         except FileNotFoundError:
             result["InfoMsg"] = "Not a FIPS image"
+            result["SDCERR"] = WEBLCM_ERRORS["SDCERR_SUCCESS"]
 
         except TimeoutExpired as e:
             syslog("FIPS SET timeout: %s" % e)
