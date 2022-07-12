@@ -279,30 +279,55 @@ class NetworkConnection(object):
                 result["InfoMsg"] = "no UUID provided"
                 return result
 
-            connections = NetworkManager.Settings.ListConnections()
-            connections = dict(
-                [(x.GetSettings()["connection"]["uuid"], x) for x in connections]
-            )
-            settings = connections[uuid].GetSettings()
-            if settings.get("802-1x"):
-                settings["802-1x"]["ca-cert"] = cert_to_filename(
-                    settings["802-1x"].get("ca-cert")
+            extended = kwargs.get("extended", False)
+            if extended:
+                try:
+                    (
+                        ret,
+                        msg,
+                        settings,
+                    ) = NetworkStatusHelper.gi_get_extended_connection_settings(uuid)
+
+                    if ret < 0:
+                        result["InfoMsg"] = msg
+                    else:
+                        result["connection"] = settings
+                        result["SDCERR"] = ret
+                except Exception as e_extended:
+                    syslog(
+                        LOG_ERR,
+                        f"Unable to retrieve extended connection settings: {str(e_extended)}",
+                    )
+                    result[
+                        "InfoMsg"
+                    ] = "Unable to retrieve extended connecting settings"
+
+                return result
+            else:
+                connections = NetworkManager.Settings.ListConnections()
+                connections = dict(
+                    [(x.GetSettings()["connection"]["uuid"], x) for x in connections]
                 )
-                settings["802-1x"]["client-cert"] = cert_to_filename(
-                    settings["802-1x"].get("client-cert")
-                )
-                settings["802-1x"]["private-key"] = cert_to_filename(
-                    settings["802-1x"].get("private-key")
-                )
-                settings["802-1x"]["phase2-ca-cert"] = cert_to_filename(
-                    settings["802-1x"].get("phase2-ca-cert")
-                )
-                settings["802-1x"]["phase2-client-cert"] = cert_to_filename(
-                    settings["802-1x"].get("phase2-client-cert")
-                )
-                settings["802-1x"]["phase2-private-key"] = cert_to_filename(
-                    settings["802-1x"].get("phase2-private-key")
-                )
+                settings = connections[uuid].GetSettings()
+                if settings.get("802-1x"):
+                    settings["802-1x"]["ca-cert"] = cert_to_filename(
+                        settings["802-1x"].get("ca-cert")
+                    )
+                    settings["802-1x"]["client-cert"] = cert_to_filename(
+                        settings["802-1x"].get("client-cert")
+                    )
+                    settings["802-1x"]["private-key"] = cert_to_filename(
+                        settings["802-1x"].get("private-key")
+                    )
+                    settings["802-1x"]["phase2-ca-cert"] = cert_to_filename(
+                        settings["802-1x"].get("phase2-ca-cert")
+                    )
+                    settings["802-1x"]["phase2-client-cert"] = cert_to_filename(
+                        settings["802-1x"].get("phase2-client-cert")
+                    )
+                    settings["802-1x"]["phase2-private-key"] = cert_to_filename(
+                        settings["802-1x"].get("phase2-private-key")
+                    )
             result["connection"] = settings
             result["SDCERR"] = 0
         except Exception as e:
