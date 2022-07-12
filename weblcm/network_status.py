@@ -1,12 +1,16 @@
 import os
+from typing import Any, Tuple
 import cherrypy
 from dbus.mainloop.glib import DBusGMainLoop
-from gi.repository import GLib
+import gi
+
+gi.require_version("NM", "1.0")
+from gi.repository import GLib, NM
 import NetworkManager
 from threading import Thread, Lock
 from .settings import SystemSettingsManage
 from . import definition
-from syslog import syslog, LOG_ERR
+from syslog import LOG_WARNING, syslog, LOG_ERR
 from subprocess import run, TimeoutExpired
 import re
 
@@ -16,6 +20,7 @@ class NetworkStatusHelper(object):
     _network_status = {}
     _lock = Lock()
     _IW_PATH = "/usr/sbin/iw"
+    _client = NM.Client.new(None)
 
     @classmethod
     def get_reg_domain_info(cls):
@@ -230,6 +235,328 @@ class NetworkStatusHelper(object):
             return {}
 
         return dev.ActiveConnection.Connection.GetSettings()["connection"]
+
+    @classmethod
+    def gi_extract_properties_from_nm_setting(cls, nm_setting):
+        if not nm_setting:
+            return {}
+
+        properties = {}
+
+        if nm_setting.props is not None:
+            for prop in nm_setting.props:
+                # The 'name' property is the name of the setting itself so it isn't valuable here
+                if prop.name == "name":
+                    continue
+
+                # Hide secret values
+                if prop.name in [
+                    "wep-key0",
+                    "wep-key1",
+                    "wep-key2",
+                    "wep-key3",
+                    "psk",
+                    "leap-password",
+                ]:
+                    properties[prop.name] = "<hidden>"
+                    continue
+
+                # The data from a GBytes type can be converted to a 'bytes' type by calling
+                # get_data()
+                if prop.value_type.name == "GBytes":
+                    properties[prop.name] = (
+                        nm_setting.get_property(prop.name).get_data().decode("utf-8")
+                    )
+                    continue
+
+                # Enum/flags values can be cast to an integer
+                if (
+                    prop.value_type.name == "GEnum"
+                    or prop.value_type.fundamental.name == "GEnum"
+                    or prop.value_type.fundamental.name == "GFlags"
+                ):
+                    properties[prop.name] = int(nm_setting.get_property(prop.name))
+                    continue
+
+                # IP address values can be printed as a string in CIDR notation
+                if prop.name in ["addresses", "routes"]:
+                    properties[prop.name] = []
+                    for value in nm_setting.get_property(prop.name):
+                        properties[prop.name].append(
+                            f"{value.get_address()}/{value.get_prefix()}"
+                        )
+                    continue
+
+                properties[prop.name] = nm_setting.get_property(prop.name)
+
+        return properties
+
+    @classmethod
+    def gi_extract_general_properties_from_active_connection(cls, active_connection):
+        # Attempt to match output from:
+        # 'nmcli connection show <target_profile>'
+        properties = {}
+
+        properties["name"] = active_connection.get_id()
+        properties["uuid"] = active_connection.get_uuid()
+
+        properties["devices"] = []
+        for device in active_connection.get_devices():
+            device_props = {}
+            device_props["interface"] = device.get_iface()
+            device_props["ip-interface"] = device.get_ip_iface()
+            properties["devices"].append(device_props)
+
+        properties["state"] = definition.WEBLCM_NM_ACTIVE_CONNECTION_STATE_TEXT.get(
+            int(active_connection.get_state())
+        )
+
+        properties["default"] = active_connection.get_default()
+        properties["default6"] = active_connection.get_default6()
+        properties[
+            "specific-object-path"
+        ] = active_connection.get_specific_object_path()
+        properties["vpn"] = active_connection.get_vpn()
+        properties["dbus-path"] = active_connection.get_path()
+
+        connection = active_connection.get_connection()
+        properties["con-path"] = connection.get_path()
+        properties["zone"] = connection.get_setting_connection().get_zone()
+
+        master = active_connection.get_master()
+        if master:
+            properties["master-path"] = master.get_path()
+        else:
+            properties["master-path"] = None
+
+        return properties
+
+    @classmethod
+    def gi_extract_ip_config_properties_from_active_connection(cls, ip_config):
+        # Attempt to match output from:
+        # 'nmcli connection show <target_profile>'
+        properties = {}
+
+        properties["addresses"] = []
+        for address in ip_config.get_addresses():
+            properties["addresses"].append(
+                f"{address.get_address()}/{address.get_prefix()}"
+            )
+
+        properties["domains"] = ip_config.get_domains()
+        properties["gateway"] = ip_config.get_gateway()
+        properties["dns"] = ip_config.get_nameservers()
+
+        properties["routes"] = []
+        for route in ip_config.get_routes():
+            route_props = {}
+            route_props["destination"] = f"{route.get_dest()}/{int(route.get_prefix())}"
+            route_props["next_hop"] = route.get_next_hop()
+            route_props["metric"] = int(route.get_metric())
+            properties["routes"].append(route_props)
+
+        return properties
+
+    @classmethod
+    def gi_extract_dhcp_config_properties_from_active_connection(cls, dhcp_config):
+        if not dhcp_config:
+            return {}
+
+        # Attempt to match output from:
+        # 'nmcli connection show <target_profile>'
+        properties = {}
+
+        properties["options"] = dhcp_config.get_options()
+
+        return properties
+
+    @classmethod
+    def gi_get_802_1x_settings(cls, settings):
+        if not settings:
+            return {}
+
+        properties = {}
+
+        # The following properties are omitted as they are binary blobs
+        # - 'ca-cert'
+        # - 'client-cert'
+        # - 'phase2-ca-cert'
+        # - 'phase2-client-cert'
+        # - 'phase2-private-key' (also a secret)
+        # - 'private-key' (also a secret)
+
+        # The following properties are arrays of strings
+        properties["altsubject-matches"] = settings.get_property("altsubject-matches")
+        properties["eap"] = settings.get_property("eap")
+        properties["phase2-altsubject-matches"] = settings.get_property(
+            "phase2-altsubject-matches"
+        )
+
+        # The following properties are passwords/secrets and are therefore hidden
+        properties["ca-cert-password"] = "<hidden>"
+        properties["client-cert-password"] = "<hidden>"
+        properties["password"] = "<hidden>"
+        properties["password-raw"] = "<hidden>"
+        properties["phase2-ca-cert-password"] = "<hidden>"
+        properties["phase2-client-cert-password"] = "<hidden>"
+        properties["phase2-private-key-password"] = "<hidden>"
+        properties["pin"] = "<hidden>"
+        properties["private-key-password"] = "<hidden>"
+
+        # The following properties are flags (enums)
+        properties["ca-cert-password-flags"] = int(
+            settings.get_ca_cert_password_flags()
+        )
+        properties["client-cert-password-flags"] = int(
+            settings.get_client_cert_password_flags()
+        )
+        properties["password-flags"] = int(settings.get_password_flags())
+        properties["password-raw-flags"] = int(settings.get_password_raw_flags())
+        properties["phase1-auth-flags"] = int(settings.get_phase1_auth_flags())
+        properties["phase2-ca-cert-password-flags"] = int(
+            settings.get_phase2_ca_cert_password_flags()
+        )
+        properties["phase2-client-cert-password-flags"] = int(
+            settings.get_phase2_client_cert_password_flags()
+        )
+        properties["phase2-private-key-password-flags"] = int(
+            settings.get_phase2_private_key_password_flags()
+        )
+        properties["pin-flags"] = int(settings.get_pin_flags())
+        properties["private-key-password-flags"] = int(
+            settings.get_private_key_password_flags()
+        )
+
+        # The following properties are standard Python types (strings, booleans, etc.)
+        properties["anonymous-identity"] = settings.get_anonymous_identity()
+        properties["auth-timeout"] = settings.get_auth_timeout()
+        properties["ca-path"] = settings.get_ca_path()
+        properties["domain-match"] = settings.get_domain_match()
+        properties["domain-suffix-match"] = settings.get_domain_suffix_match()
+        properties["identity"] = settings.get_identity()
+        properties["optional"] = settings.get_optional()
+        properties["pac-file"] = settings.get_pac_file()
+        properties["phase1-fast-provisioning"] = settings.get_phase1_fast_provisioning()
+        properties["phase1-peaplabel"] = settings.get_phase1_peaplabel()
+        properties["phase1-peapver"] = settings.get_phase1_peapver()
+        properties["phase2-auth"] = settings.get_property("phase2-auth")
+        properties["phase2-autheap"] = settings.get_property("phase2-autheap")
+        properties["phase2-ca-path"] = settings.get_phase2_ca_path()
+        properties["phase2-domain-match"] = settings.get_phase2_domain_match()
+        properties[
+            "phase2-domain-suffix-match"
+        ] = settings.get_phase2_domain_suffix_match()
+        properties["phase2-subject-match"] = settings.get_phase2_subject_match()
+        properties["subject-match"] = settings.get_subject_match()
+        properties["system-ca-certs"] = settings.get_system_ca_certs()
+
+        return properties
+
+    @classmethod
+    def gi_get_extended_connection_settings(cls, uuid) -> Tuple[int, Any, object]:
+        if not uuid or uuid == "":
+            return (-1, "Invalid UUID", {})
+
+        settings = {}
+
+        with cls._lock:
+            if not cls._client.reload_connections(None):
+                syslog(
+                    LOG_WARNING,
+                    "Unable to reload connection settings, reported settings could be stale",
+                )
+
+            connection = cls._client.get_connection_by_uuid(str(uuid))
+            if not connection:
+                return (-1, "Invalid UUID", {})
+
+            settings[
+                definition.WEBLCM_NM_SETTING_CONNECTION_TEXT
+            ] = cls.gi_extract_properties_from_nm_setting(
+                connection.get_setting_connection()
+            )
+            settings[
+                definition.WEBLCM_NM_SETTING_IP4_CONFIG_TEXT
+            ] = cls.gi_extract_properties_from_nm_setting(
+                connection.get_setting_ip4_config()
+            )
+            settings[
+                definition.WEBLCM_NM_SETTING_IP6_CONFIG_TEXT
+            ] = cls.gi_extract_properties_from_nm_setting(
+                connection.get_setting_ip6_config()
+            )
+            settings[
+                definition.WEBLCM_NM_SETTING_PROXY_TEXT
+            ] = cls.gi_extract_properties_from_nm_setting(
+                connection.get_setting_proxy()
+            )
+
+            # Get settings only available if the requested connection is the active one
+            for active_connection in cls._client.get_active_connections():
+                if active_connection.get_uuid() == connection.get_uuid():
+                    settings[
+                        definition.WEBLCM_NM_SETTING_GENERAL_TEXT
+                    ] = cls.gi_extract_general_properties_from_active_connection(
+                        active_connection
+                    )
+                    settings[
+                        definition.WEBLCM_NM_SETTING_IP4_TEXT
+                    ] = cls.gi_extract_ip_config_properties_from_active_connection(
+                        active_connection.get_ip4_config()
+                    )
+                    settings[
+                        definition.WEBLCM_NM_SETTING_IP6_TEXT
+                    ] = cls.gi_extract_ip_config_properties_from_active_connection(
+                        active_connection.get_ip6_config()
+                    )
+                    settings[
+                        definition.WEBLCM_NM_SETTING_DHCP4_TEXT
+                    ] = cls.gi_extract_dhcp_config_properties_from_active_connection(
+                        active_connection.get_dhcp4_config()
+                    )
+                    settings[
+                        definition.WEBLCM_NM_SETTING_DHCP6_TEXT
+                    ] = cls.gi_extract_dhcp_config_properties_from_active_connection(
+                        active_connection.get_dhcp6_config()
+                    )
+
+                    break
+
+            # Get type-specific connection settings (e.g., Wired, Wireless, etc.)
+            if settings[definition.WEBLCM_NM_SETTING_CONNECTION_TEXT]["type"]:
+                if (
+                    settings[definition.WEBLCM_NM_SETTING_CONNECTION_TEXT]["type"]
+                    == definition.WEBLCM_NM_DEVICE_TYPE_WIRED_TEXT
+                ):
+                    settings[
+                        definition.WEBLCM_NM_SETTING_WIRED_TEXT
+                    ] = cls.gi_extract_properties_from_nm_setting(
+                        connection.get_setting_wired()
+                    )
+
+                if (
+                    settings[definition.WEBLCM_NM_SETTING_CONNECTION_TEXT]["type"]
+                    == definition.WEBLCM_NM_DEVICE_TYPE_WIRELESS_TEXT
+                ):
+                    settings[
+                        definition.WEBLCM_NM_SETTING_WIRELESS_TEXT
+                    ] = cls.gi_extract_properties_from_nm_setting(
+                        connection.get_setting_wireless()
+                    )
+                    settings[
+                        definition.WEBLCM_NM_SETTING_WIRELESS_SECURITY_TEXT
+                    ] = cls.gi_extract_properties_from_nm_setting(
+                        connection.get_setting_wireless_security()
+                    )
+
+            # Get 802.1x settings, if present
+            enterprise_802_1x_settings = connection.get_setting_802_1x()
+            if enterprise_802_1x_settings is not None:
+                settings[
+                    definition.WEBLCM_NM_SETTING_802_1X_TEXT
+                ] = cls.gi_get_802_1x_settings(enterprise_802_1x_settings)
+
+        return (0, "", settings)
 
     @classmethod
     def network_status_query(cls):
