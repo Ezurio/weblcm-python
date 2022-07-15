@@ -64,6 +64,15 @@ except ImportError:
     PositioningSwitch = None
     cherrypy.log("__main__: modem NOT loaded")
 
+try:
+    from .firewalld.ports import Ports
+
+    weblcm_plugins.append("ports")
+    cherrypy.log("__main__: ports loaded")
+except ImportError:
+    Ports = None
+    cherrypy.log("__main__: ports NOT loaded")
+
 
 class WebApp(object):
     def __init__(self):
@@ -109,6 +118,11 @@ class WebApp(object):
             self.bluetooth = Bluetooth()
         else:
             self.bluetooth = None
+
+        if Ports:
+            self.ports = Ports()
+        else:
+            self.ports = None
 
     @cherrypy.expose
     @cherrypy.tools.accept(media="application/json")
