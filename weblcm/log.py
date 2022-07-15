@@ -1,3 +1,4 @@
+from syslog import LOG_ERR, syslog
 import cherrypy
 import dbus
 import time
@@ -17,31 +18,41 @@ class LogData(object):
         try:
             priority = int(kwargs.get("priority", 7))
         except Exception as e:
-            return '{"SDCERR":1, "InfoMsg": "Priority must be an int between 0-7"}'
-        if not priority in range(0, 8, 1):
-            return '{"SDCERR":1, "InfoMsg": "Priority must be an int between 0-7"}'
+            syslog(
+                LOG_ERR, f"Error parsing 'priority' parameter as an integer: {str(e)}"
+            )
+            return {"SDCERR": 1, "InfoMsg": "Priority must be an int between 0-7"}
+        if priority not in range(0, 8, 1):
+            return {"SDCERR": 1, "InfoMsg": "Priority must be an int between 0-7"}
         reader.log_level(priority)
         # use .lower() to ensure incoming type has comparable case
         typ = kwargs.get("type", "All").lower()
         # TODO - documentation says 'python' is lower case while others are upper/mixed case.
-        if typ == "kernel":
-            typ = "Kernel"
-        elif typ == "networkmanager":
+        if typ == "networkmanager":
             typ = "NetworkManager"
         elif typ == "all":
             typ = "All"
-        types = {"Kernel", "NetworkManager", "python", "All"}
-        if not typ in types:
-            return (
-                '{"SDCERR":1, "InfoMsg": "supplied type parameter must be one of %s"}'
-                % types
-            )
+        elif typ == "python":
+            typ = "weblcm-python"
+        types = {
+            "kernel",
+            "NetworkManager",
+            "weblcm-python",
+            "adaptive_ww",
+            "All",
+        }
+        if typ not in types:
+            return {
+                "SDCERR": 1,
+                "InfoMsg": f"supplied type parameter must be one of {str(types)}",
+            }
         if typ != "All":
             reader.add_match(SYSLOG_IDENTIFIER=typ)
         try:
             days = int(kwargs.get("days", 1))
         except Exception as e:
-            return '{"SDCERR":1, "InfoMsg": "days must be an int"}'
+            syslog(LOG_ERR, f"Error parsing 'days' parameter as an integer: {str(e)}")
+            return {"SDCERR": 1, "InfoMsg": "days must be an int"}
         if days > 0:
             reader.seek_realtime(time.time() - days * 86400)
 
