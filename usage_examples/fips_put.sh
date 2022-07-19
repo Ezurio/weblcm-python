@@ -28,6 +28,13 @@ ${CURL_APP} -s --location --request PUT ${URL}/fips \
     | ${JQ_APP}
 echo -e '\n'
 
+echo -e "fips:\n"
+${CURL_APP} -s --location --request PUT ${URL}/fips \
+    --header "Content-Type: application/json" \
+    -b cookie --insecure\
+    --data '{"fips":"fips"}'\
+    | ${JQ_APP}
+
 echo -e "unset:\n"
 ${CURL_APP} -s --location --request PUT ${URL}/fips \
     --header "Content-Type: application/json" \
