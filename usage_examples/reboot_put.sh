@@ -4,7 +4,7 @@ echo -e "\n\n========================="
 echo "Reboot"
 ${CURL_APP} -s --location --request PUT ${URL}/reboot \
     --header "Content-Type: application/json" \
-    -b cookie --insecure\
+    -b cookie -c cookie --insecure\
     --data-raw ''\
 | ${JQ_APP}
 

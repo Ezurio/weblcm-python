@@ -9,26 +9,26 @@ echo "========================="
 ${CURL_APP} -s --header "Content-Type: application/json" \
     --request POST   --data \
     '{"image":"full", "url":"'"${FIRMWARE}"'"}'  --insecure \
-    ${URL}/firmware -b cookie
+    ${URL}/firmware -b cookie -c cookie
 
 echo && sleep 3
-${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie -c cookie
 echo && sleep 3
-${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie -c cookie
 echo && sleep 3
-${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie -c cookie
 echo && sleep 3
-${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie -c cookie
 echo && sleep 3
-${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie -c cookie
 echo && sleep 3
-${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie -c cookie
 echo && sleep 3
-${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie
+${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie -c cookie
 echo -e "\nYou will need to reboot the device once the update is complete"
 
 
-${CURL_APP} -s --request DELETE --insecure ${URL}/firmware -b cookie
+${CURL_APP} -s --request DELETE --insecure ${URL}/firmware -b cookie -c cookie
 
 echo ""
 echo "Done"

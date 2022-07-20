@@ -7,7 +7,7 @@ echo "========================="
 echo "Upload cert file for Network Manager"
 ${CURL_APP} -s --request POST \
     ${URL}/file \
-    -b cookie --insecure \
+    -b cookie -c cookie --insecure \
     --form 'type="cert"' \
     --form 'file=@"'"${FILE}"'"'
 

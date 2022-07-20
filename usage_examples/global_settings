@@ -5,7 +5,7 @@
 # setup the Ip address of the DUT
 if [ -z "$IPADDR" ]
 then
-    IPADDR=
+    IPADDR=192.168.1.233
 else
     sed -i 's/^    IPADDR=.*$/    IPADDR='"${IPADDR}"'/g' global_settings
 fi
