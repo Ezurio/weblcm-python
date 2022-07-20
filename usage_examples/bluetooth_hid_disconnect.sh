@@ -13,7 +13,7 @@ echo -e "\nclose HID service TCP port:\n"
 
 ${CURL_APP} --location --request PUT ${URL}/bluetooth/${BT_CONTROLLER}/${BT_DEVICE} \
     --header "Content-Type: application/json" \
-    -b cookie --insecure\
+    -b cookie -c cookie --insecure\
     --data '{
         "command": "hidDisconnect"
         }' \
@@ -22,7 +22,7 @@ ${CURL_APP} --location --request PUT ${URL}/bluetooth/${BT_CONTROLLER}/${BT_DEVI
 echo -e "\ncheck HID service ports:\n"
 ${CURL_APP} --location --request PUT ${URL}/bluetooth/${BT_CONTROLLER} \
     --header "Content-Type: application/json" \
-    -b cookie --insecure\
+    -b cookie -c cookie --insecure\
     --data '{
         "command": "hidList"
         }' \
@@ -31,7 +31,7 @@ ${CURL_APP} --location --request PUT ${URL}/bluetooth/${BT_CONTROLLER} \
 echo -e "\nBluetooth disconnect:\n"
 ${CURL_APP} --location --request PUT ${URL}/bluetooth/${BT_CONTROLLER}/${BT_DEVICE} \
     --header "Content-Type: application/json" \
-    -b cookie --insecure\
+    -b cookie -c cookie --insecure\
     --data '{"connected": 0}' \
     | ${JQ_APP}
 echo -e '\n'
@@ -39,7 +39,7 @@ echo -e '\n'
 echo -e "\nread Bluetooth state:\n"
 ${CURL_APP} --location --request GET ${URL}/bluetooth/${BT_CONTROLLER}/${BT_DEVICE} \
     --header "Content-Type: application/json" \
-    -b cookie --insecure\
+    -b cookie -c cookie --insecure\
     | ${JQ_APP} | grep --context=99 --color Connected
 echo -e '\n'
 

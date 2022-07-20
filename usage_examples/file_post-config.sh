@@ -6,7 +6,7 @@ echo "POST config"
 ${CURL_APP} -s --location \
     --request POST "${URL}/file" \
     --insecure \
-    -b cookie \
+    -b cookie -c cookie \
     --form 'type="config"' \
     --form 'file=@"config.zip"' \
     --form 'password="test"' \

@@ -6,7 +6,7 @@ echo "Delete virtual networkinterface"
 
 ${CURL_APP} -s \
     --request DELETE ${URL}/networkInterfaces?interface=wlan1 \
-    -b cookie --insecure \
+    -b cookie -c cookie --insecure \
 | ${JQ_APP}
 
 echo -e "\n"

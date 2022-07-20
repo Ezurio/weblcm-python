@@ -5,7 +5,7 @@ echo "Fips Get"
 
 ${CURL_APP} -s --location --request GET ${URL}/fips \
     --header "Content-Type: application/json" \
-    -b cookie --insecure\
+    -b cookie -c cookie --insecure\
     --data-raw ''\
     | ${JQ_APP}
 

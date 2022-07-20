@@ -16,14 +16,14 @@ echo
 ${CURL_APP} -s --header "Content-Type: application/json" \
     --request POST   --data \
     '{"image":"full", "url":"'"${FIRMWARE}"'"}'  --insecure \
-    ${URL}/firmware -b cookie
+    ${URL}/firmware -b cookie -c cookie
 
 SUCCESS=false
 echo
 echo
 while true; do
     echo "Checking status:"
-    ${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie | tee status | ${JQ_APP}
+    ${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie -c cookie | tee status | ${JQ_APP}
     echo
     if grep -q Updated status; then
         SUCCESS=true

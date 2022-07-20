@@ -7,7 +7,7 @@ echo "Get connection"
 
 ${CURL_APP} -s --location \
     --request GET "${URL}/connection" \
-    -b cookie --insecure \
+    -b cookie -c cookie --insecure \
 | ${JQ_APP}
 
 echo -e "\n"
