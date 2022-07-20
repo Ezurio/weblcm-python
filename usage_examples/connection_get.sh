@@ -13,7 +13,7 @@ fi
 
 ${CURL_APP} -s --location \
     --request GET "${REQUEST_URL}" \
-    -b cookie --insecure \
+    -b cookie -c cookie --insecure \
 | ${JQ_APP}
 
 echo -e "\n"

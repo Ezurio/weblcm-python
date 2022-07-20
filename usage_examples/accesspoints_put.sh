@@ -5,7 +5,7 @@ echo "PUT accesspoints"
 
 ${CURL_APP} -s --header "Content-Type: application/json" \
     --request PUT "${URL}/accesspoints" \
-    -b cookie \
+    -b cookie -c cookie \
     --insecure \
     --data-raw ‘’\
 | ${JQ_APP}

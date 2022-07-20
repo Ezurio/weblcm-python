@@ -8,7 +8,7 @@ echo "Modify connection"
 ${CURL_APP} -s --header "Content-Type: application/json" \
     --request POST \
     ${URL}/connection \
-    -b cookie --insecure \
+    -b cookie -c cookie --insecure \
     --data '{
     "connection": {
       "id": "br-slave-wlan0",

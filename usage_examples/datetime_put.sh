@@ -12,7 +12,7 @@ ${CURL_APP} -s --location \
     "zone": "'"${TZ}"'"
     }' \
     --insecure \
-    -b cookie \
+    -b cookie -c cookie \
     | ${JQ_APP}
 
 

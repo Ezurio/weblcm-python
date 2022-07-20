@@ -6,7 +6,7 @@ echo "Get config"
 ${CURL_APP} -s --location \
     --request GET "${URL}/file?type=debug" \
     --header "Content-Type: application/json" \
-    -b cookie --insecure \
+    -b cookie -c cookie --insecure \
     --data-raw '' \
     --output debug.encrypt
 

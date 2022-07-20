@@ -7,7 +7,7 @@ echo "Get users"
 ${CURL_APP} -s --location \
     --request GET ${URL}/users \
     --header "Content-Type: application/json" \
-    -b cookie --insecure \
+    -b cookie -c cookie --insecure \
 | ${JQ_APP}
 echo -e "\n"
 

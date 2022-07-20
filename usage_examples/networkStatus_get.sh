@@ -5,6 +5,6 @@ echo "network status"
 ${CURL_APP} -s --header "Content-Type: application/json" \
     --request GET \
     ${URL}/networkStatus \
-    -b cookie --insecure \
+    -b cookie -c cookie --insecure \
 | ${JQ_APP}
 echo -e "\n"
