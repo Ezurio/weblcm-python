@@ -189,3 +189,9 @@ WEBLCM_NM_SETTING_IP4_TEXT = "IP4"
 WEBLCM_NM_SETTING_IP6_TEXT = "IP6"
 WEBLCM_NM_SETTING_DHCP4_TEXT = "DHCP4"
 WEBLCM_NM_SETTING_DHCP6_TEXT = "DHCP6"
+# file names for firmware-update and in-progress in sync with names in
+# /usr/bin/modem_check_firmware_update.sh script
+MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE = '/data/modem/update-in-progress'
+MODEM_FIRMWARE_UPDATE_FILE = '/data/modem/firmware-update'
+MODEM_FIRMWARE_UPDATE_DST_DIR = '/data/modem'
+MODEM_FIRMWARE_UPDATE_SRC_DIR = '/lib/firmware/modem'
