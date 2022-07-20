@@ -1,9 +1,15 @@
 import cherrypy
+import os
 import dbus
 from syslog import syslog
 from xml.etree import ElementTree
-from ..definition import WEBLCM_ERRORS
-
+from ..definition import (
+    WEBLCM_ERRORS,
+    MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE,
+    MODEM_FIRMWARE_UPDATE_FILE,
+    MODEM_FIRMWARE_UPDATE_DST_DIR,
+    MODEM_FIRMWARE_UPDATE_SRC_DIR,
+)
 
 def dbus_to_python(data):
     # convert dbus data types to python native data types
@@ -132,5 +138,73 @@ class Positioning(Modem):
             syslog("Set token: DBUS failed %s" % e)
         except Exception as e:
             syslog("Set token failed: %s" % e)
+
+        return result
+
+@cherrypy.expose
+class ModemFirmwareUpdate(object):
+    @cherrypy.tools.json_out()
+    def PUT(self):
+        result = {
+            "SDCERR": WEBLCM_ERRORS.get("SDCERR_FAIL"),
+            "InfoMsg": "",
+        }
+
+        if os.path.exists(MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE):
+            result["InfoMsg"]="Modem firmware update already in progress"
+            return result
+
+        if os.path.exists(MODEM_FIRMWARE_UPDATE_FILE):
+            result["InfoMsg"]="Modem firmware update already queued for next boot"
+            result["SDCERR"] = WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+            return result
+
+        if not os.path.isdir(MODEM_FIRMWARE_UPDATE_SRC_DIR):
+            result["InfoMsg"]="No modem firmware update file available"
+            return result
+
+        flist = []
+        for path in os.listdir(MODEM_FIRMWARE_UPDATE_SRC_DIR):
+            if os.path.isfile(os.path.join(MODEM_FIRMWARE_UPDATE_SRC_DIR, path)):
+                flist.append(path)
+
+        if len(flist) == 0:
+            result["InfoMsg"] = "No firmware files found in %s" % MODEM_FIRMWARE_UPDATE_SRC_DIR
+            return result
+
+        try:
+            os.makedirs(MODEM_FIRMWARE_UPDATE_DST_DIR, mode=0o755, exist_ok=True)
+        except Exception as e:
+            syslog("Unable to create directory: %s" % e)
+            result["InfoMsg"] = "Unable to create directory for firmware update file: %s" % e
+            return result
+
+        if (len(flist)) > 1:
+            result["InfoMsg"] = "Multiple firmware files located in %s - " % MODEM_FIRMWARE_UPDATE_SRC_DIR
+
+        try:
+            os.symlink(os.path.join(MODEM_FIRMWARE_UPDATE_SRC_DIR,flist[0]), MODEM_FIRMWARE_UPDATE_FILE)
+        except Exception as e:
+            syslog("Unable to create symlink: %s" % e)
+            result["InfoMsg"] = "Unable to create symlink for firmware update file: %s" % e
+            return result
+
+        syslog("Modem firmware update file queued for installation.  File: %s" % os.path.join(MODEM_FIRMWARE_UPDATE_SRC_DIR,flist[0]))
+        result["InfoMsg"]+= "Modem Firmware Update queued for next boot"
+        result["SDCERR"] = WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+
+        return result
+
+    @cherrypy.tools.json_out()
+    def GET(self):
+        result = {
+            "SDCERR": WEBLCM_ERRORS["SDCERR_SUCCESS"],
+            "InfoMsg": "No modem firmware update in progress"
+        }
+
+        if os.path.exists(MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE):
+            result["InfoMsg"]="Modem firmware update in progress"
+        elif os.path.exists(MODEM_FIRMWARE_UPDATE_FILE):
+            result["InfoMsg"]="Modem firmware update queued for next boot"
 
         return result

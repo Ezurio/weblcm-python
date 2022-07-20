@@ -1,4 +1,5 @@
 import cherrypy
+import os
 from syslog import syslog, LOG_ERR
 from subprocess import run, call, TimeoutExpired, CalledProcessError
 from .definition import (
@@ -6,6 +7,7 @@ from .definition import (
     LOGIND_BUS_NAME,
     LOGIND_MAIN_OBJ,
     LOGIND_MAIN_IFACE,
+    MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE,
 )
 from .settings import SystemSettingsManage
 import dbus
@@ -19,6 +21,10 @@ class PowerOff(object):
             "SDCERR": WEBLCM_ERRORS["SDCERR_FAIL"],
             "InfoMsg": "Poweroff cannot be initiated",
         }
+
+        if os.path.exists(MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE):
+            result["InfoMsg"]+=" - modem firmware update in progress"
+            return result
 
         try:
             bus = dbus.SystemBus()
@@ -46,6 +52,10 @@ class Suspend(object):
             "InfoMsg": "Suspend cannot be initiated",
         }
 
+        if os.path.exists(MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE):
+            result["InfoMsg"]+=" - modem firmware update in progress"
+            return result
+
         try:
             bus = dbus.SystemBus()
             manager = dbus.Interface(
@@ -72,6 +82,10 @@ class Reboot(object):
             "InfoMsg": "Reboot cannot be initiated",
         }
 
+        if os.path.exists(MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE):
+            result["InfoMsg"]+=" - modem firmware update in progress"
+            return result
+
         try:
             bus = dbus.SystemBus()
             manager = dbus.Interface(
@@ -95,7 +109,15 @@ class FactoryReset(object):
 
     @cherrypy.tools.json_out()
     def PUT(self):
-        result = {}
+        result = {
+            "SDCERR": WEBLCM_ERRORS["SDCERR_FAIL"],
+            "InfoMsg": "FactoryReset cannot be initiated",
+        }
+
+        if os.path.exists(MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE):
+            result["InfoMsg"]+=" - modem firmware update in progress"
+            return result
+
         syslog("Factory Reset requested")
         try:
             returncode = call([self.FACTORY_RESET_SCRIPT, "reset"])
