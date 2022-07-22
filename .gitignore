@@ -11,3 +11,4 @@ html_sendall
 build/
 dist/
 weblcm_python.egg-info/
+usage_examples/cookie

@@ -23,7 +23,7 @@ class PowerOff(object):
         }
 
         if os.path.exists(MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE):
-            result["InfoMsg"]+=" - modem firmware update in progress"
+            result["InfoMsg"] += " - modem firmware update in progress"
             return result
 
         try:
@@ -53,7 +53,7 @@ class Suspend(object):
         }
 
         if os.path.exists(MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE):
-            result["InfoMsg"]+=" - modem firmware update in progress"
+            result["InfoMsg"] += " - modem firmware update in progress"
             return result
 
         try:
@@ -83,7 +83,7 @@ class Reboot(object):
         }
 
         if os.path.exists(MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE):
-            result["InfoMsg"]+=" - modem firmware update in progress"
+            result["InfoMsg"] += " - modem firmware update in progress"
             return result
 
         try:
@@ -115,7 +115,7 @@ class FactoryReset(object):
         }
 
         if os.path.exists(MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE):
-            result["InfoMsg"]+=" - modem firmware update in progress"
+            result["InfoMsg"] += " - modem firmware update in progress"
             return result
 
         syslog("Factory Reset requested")
