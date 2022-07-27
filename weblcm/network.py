@@ -7,6 +7,10 @@ from syslog import syslog, LOG_ERR
 from subprocess import run, TimeoutExpired
 from .settings import SystemSettingsManage
 from .network_status import NetworkStatusHelper
+import gi
+
+gi.require_version("NM", "1.0")
+from gi.repository import GLib, NM
 
 
 @cherrypy.expose
@@ -706,4 +710,54 @@ class NetworkInterface(object):
                 f"Unable to retrieve detailed network interface configuration: {str(e)}",
             )
 
+        return result
+
+
+@cherrypy.expose
+class WifiEnable(object):
+    _client = NetworkStatusHelper.get_client()
+
+    @cherrypy.tools.json_out()
+    def GET(self):
+
+        result = {"SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")}
+
+        result["wifi_radio_software_enabled"] = self._client.wireless_get_enabled()
+        result[
+            "wifi_radio_hardware_enabled"
+        ] = self._client.wireless_hardware_get_enabled()
+
+        result["InfoMsg"] = "wifi enable results"
+
+        return result
+
+    @cherrypy.tools.accept(media="application/json")
+    @cherrypy.tools.json_out()
+    def PUT(self, *args, **kwargs):
+        result = {}
+        enable_test = -1
+        try:
+            enable = kwargs.get("enable")
+            enable = enable.lower()
+            if enable in ("y", "yes", "t", "true", "on", "1"):
+                enable_test = 1
+            elif enable in ("n", "no", "f", "false", "off", "0"):
+                enable_test = 0
+            if enable_test < 0:
+                raise ValueError("illegal value passed in")
+        except Exception as e:
+            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL")
+            result["infoMsg"] = (
+                "unable to set wireless_set_enable. Supplied enable parameter '%s' invalid."
+                % kwargs.get("enable")
+            )
+
+            return result
+
+        self._client.wireless_set_enabled(enable)
+        result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+        result["infoMsg"] = "wireless_radio_software_enabled: %s" % (
+            "true" if enable else "false"
+        )
+        result["wifi_radio_software_enabled"] = self._client.wireless_get_enabled()
         return result
