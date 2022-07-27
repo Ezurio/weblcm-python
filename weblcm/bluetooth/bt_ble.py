@@ -2,7 +2,6 @@ import json
 import os
 import socket
 import threading
-from distutils.util import strtobool
 from time import time
 from typing import Optional, Tuple, List
 
@@ -132,8 +131,6 @@ class BluetoothBlePlugin(BluetoothPlugin):
             purge = False
             if "purge" in post_data:
                 purge = post_data["purge"]
-                if isinstance(purge, str):
-                    purge = strtobool(purge)
             bt_disconnect(self.bt, device_uuid, purge)
         elif command == "bleGatt":
             processed = True
@@ -160,8 +157,6 @@ class BluetoothBlePlugin(BluetoothPlugin):
                 if "enable" not in post_data:
                     return True, "enable param not specified"
                 enable = post_data["enable"]
-                if isinstance(enable, str):
-                    enable = strtobool(enable)
                 bt_config_characteristic_notification(
                     self.bt, device_uuid, service_uuid, char_uuid, enable
                 )
