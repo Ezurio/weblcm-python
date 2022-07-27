@@ -9,6 +9,8 @@ WEBLCM_PYTHON_CONF_DIR = "/data/secret/weblcm-python/"
 WEBLCM_PYTHON_SERVER_CONF_FILE = "/etc/weblcm-python/weblcm-python.ini"
 # system settings
 WEBLCM_PYTHON_SETTINGS_FILE = "/data/secret/weblcm-python/weblcm-settings.ini"
+# log forwarding
+LOG_FORWARDING_ENABLED_FLAG_FILE = "/data/secret/weblcm-python/log_forwarding_enabled"
 
 # timezone list
 WEBLCM_PYTHON_ZONELIST_COMMAND = ["timedatectl", "list-timezones"]
@@ -40,6 +42,15 @@ WPA_IFACE = "fi.w1.wpa_supplicant1"
 LOGIND_BUS_NAME = "org.freedesktop.login1"
 LOGIND_MAIN_OBJ = "/org/freedesktop/login1"
 LOGIND_MAIN_IFACE = "org.freedesktop.login1.Manager"
+
+SYSTEMD_BUS_NAME = "org.freedesktop.systemd1"
+SYSTEMD_MAIN_OBJ = "/org/freedesktop/systemd1"
+SYSTEMD_MANAGER_IFACE = "org.freedesktop.systemd1.Manager"
+SYSTEMD_UNIT_IFACE = "org.freedesktop.systemd1.Unit"
+SYSTEMD_UNIT_ACTIVE_STATE_PROP = "ActiveState"
+SYSTEMD_UNIT_UNIT_FILE_STATE_PROP = "UnitFileState"
+SYSTEMD_JOURNAL_GATEWAYD_SERVICE_FILE = "systemd-journal-gatewayd.service"
+SYSTEMD_JOURNAL_GATEWAYD_SOCKET_FILE = "systemd-journal-gatewayd.socket"
 
 WEBLCM_ERRORS = {
     "SDCERR_SUCCESS": 0,

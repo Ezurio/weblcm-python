@@ -13,7 +13,7 @@ from .network import (
     NetworkAccessPoints,
     Version,
 )
-from .log import LogData, LogSetting
+from .log import LogData, LogSetting, LogForwarding
 from .swupdate import SWUpdate
 from .users import UserManage, LoginManage
 from .files import FileManage, FilesManage
@@ -75,6 +75,7 @@ class WebApp(object):
 
         self.logData = LogData()
         self.logSetting = LogSetting()
+        self.logForwarding = LogForwarding()
 
         self.users = UserManage()
         self.file = FileManage()
@@ -166,6 +167,7 @@ def force_session_checking():
         "firmware",
         "logData",
         "logSetting",
+        "logForwarding",
         "factoryReset",
         "poweroff",
         "suspend",
