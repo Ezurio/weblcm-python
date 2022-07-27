@@ -1,7 +1,9 @@
 import os
 import configparser
+
 from . import definition
 from threading import Lock
+
 
 """
 	Weblcm-python system settings manage based on configParser
@@ -60,6 +62,12 @@ class WeblcmConfigManage(object):
         return fallback
 
     @classmethod
+    def get_bool_key_from_section(cls, section, key, fallback=None):
+        if cls._parser.has_section(section):
+            return cls._parser.getboolean(section, key, fallback=fallback)
+        return fallback
+
+    @classmethod
     def delete_key_from_section(cls, section, key):
         with cls._lock:
             if cls._parser.has_section(section):
@@ -106,9 +114,21 @@ class SystemSettingsManage(object):
     """Manage 'settings' section"""
 
     section = "settings"
+    __initialized = False
+
+    @classmethod
+    def check_init(cls):
+        if not cls.__initialized:
+            cls.__initialized = True
+            cls.initialize()
+
+    @classmethod
+    def initialize(cls):
+        return WeblcmConfigManage.add_section(cls.section)
 
     @classmethod
     def update(cls, key, val):
+        cls.check_init()
         return WeblcmConfigManage.update_key_from_section(cls.section, key, val)
 
     @classmethod
@@ -121,12 +141,16 @@ class SystemSettingsManage(object):
 
     @classmethod
     def getBool(cls, key, fallback=None):
-        return bool(WeblcmConfigManage.get_key_from_section(cls.section, key, fallback))
+        value = WeblcmConfigManage.get_bool_key_from_section(cls.section, key, fallback)
+        return value
 
     @classmethod
     def update_persistent(cls, key, val):
-        WeblcmConfigManage.update_key_from_section(cls.section, key, val)
-        return WeblcmConfigManage.save()
+        cls.check_init()
+        return (
+            WeblcmConfigManage.update_key_from_section(cls.section, key, val)
+            and WeblcmConfigManage.save()
+        )
 
     @classmethod
     def delete(cls, key):

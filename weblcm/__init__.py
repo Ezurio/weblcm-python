@@ -16,6 +16,7 @@ from .network import (
 )
 from .log import LogData, LogSetting, LogForwarding
 from .swupdate import SWUpdate
+from .unauthenticated import AllowUnauthenticatedResetReboot
 from .users import UserManage, LoginManage
 from .files import FileManage, FilesManage
 from .advanced import PowerOff, Suspend, Reboot, FactoryReset
@@ -24,6 +25,7 @@ from .settings import SystemSettingsManage
 from .advanced import Fips
 
 weblcm_plugins: List[str] = []
+
 
 """
 Note: Authenticating websocket users by header token is non-standard; an alternative method
@@ -90,6 +92,8 @@ class WebApp(object):
         self.suspend = Suspend()
         self.reboot = Reboot()
         self.factoryReset = FactoryReset()
+        self.allowUnauthenticatedResetReboot = AllowUnauthenticatedResetReboot()
+
         self.datetime = DateTimeSetting()
         self.wifienable = WifiEnable()
 
@@ -170,14 +174,15 @@ def force_session_checking():
         "logData",
         "logSetting",
         "logForwarding",
-        "factoryReset",
         "poweroff",
         "suspend",
-        "reboot",
         "files",
         "datetime",
         "fips",
     ] + weblcm_plugins
+
+    if not AllowUnauthenticatedResetReboot.allow_unauthenticated_reset_reboot():
+        paths += ["factoryReset", "reboot"]
 
     if Bluetooth and websockets_auth_by_header_token:
         paths.append("ws")
