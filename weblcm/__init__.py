@@ -12,6 +12,7 @@ from .network import (
     NetworkConnection,
     NetworkAccessPoints,
     Version,
+    WifiEnable,
 )
 from .log import LogData, LogSetting
 from .swupdate import SWUpdate
@@ -89,6 +90,7 @@ class WebApp(object):
         self.reboot = Reboot()
         self.factoryReset = FactoryReset()
         self.datetime = DateTimeSetting()
+        self.wifienable = WifiEnable()
 
         if PositioningSwitch:
             self.positioningSwitch = PositioningSwitch()
