@@ -602,6 +602,10 @@ class NetworkStatusHelper(object):
                             "activeaccesspoint"
                         ] = cls.get_ap_properties(dev.ActiveAccessPoint, dev)
 
+    @classmethod
+    def get_client(cls):
+        return cls._client
+
 
 def dev_added(nm, interface, signal, device_path):
     with NetworkStatusHelper._lock:
