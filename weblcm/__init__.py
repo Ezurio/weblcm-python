@@ -1,4 +1,6 @@
+import configparser
 import os
+from syslog import syslog, LOG_ERR
 import cherrypy
 import logging
 from typing import List
@@ -146,9 +148,19 @@ def force_tls():
 
 
 def setup_http_server():
+    # Determine if we need to bind to a specific IP address.
+    bind_ip = "::"
+    try:
+        parser = configparser.ConfigParser()
+        parser.read(definition.WEBLCM_PYTHON_SERVER_CONF_FILE)
+
+        bind_ip = parser["global"].get("server.socket_host", "::").strip('"')
+    except Exception as e:
+        syslog(LOG_ERR, f"Unable to bind to specified IP address: {str(e)}")
+        bind_ip = "::"
 
     httpServer = cherrypy._cpserver.Server()
-    httpServer.socket_host = "::"
+    httpServer.socket_host = bind_ip
     httpServer.socket_port = 80
     httpServer.thread_pool = 0
     httpServer.subscribe()
