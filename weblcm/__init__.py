@@ -71,13 +71,13 @@ except ImportError:
     cherrypy.log("__main__: modem NOT loaded")
 
 try:
-    from .firewalld.ports import Ports
+    from .firewalld.firewall import Firewall
 
-    weblcm_plugins.append("ports")
-    cherrypy.log("__main__: ports loaded")
+    weblcm_plugins.append("firewall")
+    cherrypy.log("__main__: firewall loaded")
 except ImportError:
-    Ports = None
-    cherrypy.log("__main__: ports NOT loaded")
+    Firewall = None
+    cherrypy.log("__main__: firewall NOT loaded")
 
 
 class WebApp(object):
@@ -126,10 +126,10 @@ class WebApp(object):
         else:
             self.bluetooth = None
 
-        if Ports:
-            self.ports = Ports()
+        if Firewall:
+            self.firewall = Firewall()
         else:
-            self.ports = None
+            self.firewall = None
 
     @cherrypy.expose
     @cherrypy.tools.accept(media="application/json")

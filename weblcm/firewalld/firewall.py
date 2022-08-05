@@ -76,6 +76,19 @@ def firewalld_get_forward_ports(zone: str):
     )
 
 
+def firewalld_get_zones():
+    bus = dbus.SystemBus()
+    return bus.call_blocking(
+        bus_name=FIREWALLD_SERVICE_NAME,
+        object_path=FIREWALLD_OBJECT_PATH,
+        dbus_interface=FIREWALLD_ZONE_INTERFACE,
+        method="getZones",
+        signature="",
+        args=[],
+        timeout=FIREWALLD_TIMEOUT_SECONDS,
+    )
+
+
 def check_parameters(post_data, parameters: List[str]):
     for parameter in parameters:
         if parameter not in post_data:
@@ -84,7 +97,7 @@ def check_parameters(post_data, parameters: List[str]):
 
 @cherrypy.expose
 @cherrypy.popargs("zone", "command")
-class Ports(object):
+class Firewall(object):
     def __init__(self):
         self._logger = logging.getLogger(__name__)
         self.port_commands = ["addForwardPort", "removeForwardPort"]
@@ -109,16 +122,29 @@ class Ports(object):
         }
 
         try:
-            check_parameters(cherrypy.request.params, ["zone"])
-            zone = cherrypy.request.params["zone"]
+            zone = (
+                cherrypy.request.params["zone"]
+                if "zone" in cherrypy.request.params
+                else None
+            )
 
             filters: Optional[List[str]] = None
             if "filter" in cherrypy.request.params:
                 filters = cherrypy.request.params["filter"].split(",")
 
-            if not filters or "Forward" in filters:
-                result["Forward"] = firewalld_get_forward_ports(zone)
-                matched_filter = True
+            if zone:
+                if not filters or "Forward" in filters:
+                    result["Forward"] = firewalld_get_forward_ports(zone)
+                    matched_filter = True
+            else:
+                zones = firewalld_get_zones()
+                result["zones"] = {}
+                for zone in zones:
+                    zone_objects = {}
+                    if not filters or "Forward" in filters:
+                        zone_objects["Forward"] = firewalld_get_forward_ports(zone)
+                        matched_filter = True
+                    result["zones"][zone] = zone_objects
 
             if filters and not matched_filter:
                 result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_FAIL"]
