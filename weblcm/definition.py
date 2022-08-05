@@ -1,6 +1,11 @@
 import os
+import configparser
+import cherrypy
 
-WEBLCM_PYTHON_VERSION = "1.0.0.4"
+WEBLCM_PYTHON_VERSION = "1.0.0.5"
+
+# directory base when /data is not available
+NON_ROOT_DATA_PATH = "/etc"
 
 SYSTEM_CONF_DIR = "/data/"
 NETWORKMANAGER_CONF_DIR = "/data/secret/NetworkManager/"
@@ -206,3 +211,49 @@ MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE = "/data/modem/update-in-progress"
 MODEM_FIRMWARE_UPDATE_FILE = "/data/modem/firmware-update"
 MODEM_FIRMWARE_UPDATE_DST_DIR = "/data/modem"
 MODEM_FIRMWARE_UPDATE_SRC_DIR = "/lib/firmware/modem"
+# MODEM_ENABLE_FILE in sync with /usr/bin/modem_check_enable.sh
+MODEM_ENABLE_FILE = "/data/modem/modem_enabled"
+
+onlyonce = True
+
+
+def adjust_data_paths():
+    global onlyonce
+    if onlyonce:
+        onlyonce = False
+        try:
+            parser = configparser.ConfigParser()
+            parser.read(WEBLCM_PYTHON_SERVER_CONF_FILE)
+
+            data_available = (
+                parser["weblcm"].get("root_data_is_available", "false").lower()
+            )
+        except Exception as e:
+            data_available = "exception"
+        if data_available == "false":
+            cherrypy.log("/data not available.  Using /etc/data instead")
+            global SYSTEM_CONF_DIR
+            global NETWORKMANAGER_CONF_DIR
+            global WEBLCM_PYTHON_CONF_DIR
+            global WEBLCM_PYTHON_SETTINGS_FILE
+            global WEBLCM_PYTHON_ZONEINFO
+            global MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE
+            global MODEM_FIRMWARE_UPDATE_FILE
+            global MODEM_FIRMWARE_UPDATE_DST_DIR
+            global MODEM_ENABLE_FILE
+
+            SYSTEM_CONF_DIR = NON_ROOT_DATA_PATH + SYSTEM_CONF_DIR
+            NETWORKMANAGER_CONF_DIR = NON_ROOT_DATA_PATH + NETWORKMANAGER_CONF_DIR
+            WEBLCM_PYTHON_CONF_DIR = NON_ROOT_DATA_PATH + WEBLCM_PYTHON_CONF_DIR
+            WEBLCM_PYTHON_SETTINGS_FILE = (
+                NON_ROOT_DATA_PATH + WEBLCM_PYTHON_SETTINGS_FILE
+            )
+            WEBLCM_PYTHON_ZONEINFO = NON_ROOT_DATA_PATH + WEBLCM_PYTHON_ZONEINFO
+            MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE = (
+                NON_ROOT_DATA_PATH + MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE
+            )
+            MODEM_FIRMWARE_UPDATE_FILE = NON_ROOT_DATA_PATH + MODEM_FIRMWARE_UPDATE_FILE
+            MODEM_FIRMWARE_UPDATE_DST_DIR = (
+                NON_ROOT_DATA_PATH + MODEM_FIRMWARE_UPDATE_DST_DIR
+            )
+            MODEM_ENABLE_FILE = NON_ROOT_DATA_PATH + MODEM_ENABLE_FILE
