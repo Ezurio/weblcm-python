@@ -9,7 +9,10 @@ from ..definition import (
     MODEM_FIRMWARE_UPDATE_FILE,
     MODEM_FIRMWARE_UPDATE_DST_DIR,
     MODEM_FIRMWARE_UPDATE_SRC_DIR,
+    MODEM_ENABLE_FILE,
 )
+from subprocess import run, call, TimeoutExpired
+from pathlib import Path
 
 
 def dbus_to_python(data):
@@ -224,4 +227,88 @@ class ModemFirmwareUpdate(object):
         elif os.path.exists(MODEM_FIRMWARE_UPDATE_FILE):
             result["InfoMsg"] = "Modem firmware update queued for next boot"
 
+        return result
+
+
+@cherrypy.expose
+class ModemEnable(object):
+    @cherrypy.tools.json_out()
+    def GET(self):
+        result = {"SDCERR": WEBLCM_ERRORS.get("SDCERR_SUCCESS")}
+
+        enable = False
+        if os.path.exists(MODEM_ENABLE_FILE):
+            enable = True
+
+        result["modem_enabled"] = "true" if enable else "false"
+        result["InfoMsg"] = "Modem is %s" % ("enabled" if enable else "disabled")
+        return result
+
+    @cherrypy.tools.accept(media="application/json")
+    @cherrypy.tools.json_out()
+    def PUT(self, *args, **kwargs):
+        result = {}
+        enable_test = -1
+        result["SDCERR"] = WEBLCM_ERRORS.get("SDCERR_FAIL")
+        try:
+            enable = kwargs.get("enable")
+            enable = enable.lower()
+            if enable in ("y", "yes", "t", "true", "on", "1"):
+                enable_test = 1
+            elif enable in ("n", "no", "f", "false", "off", "0"):
+                enable_test = 0
+            if enable_test < 0:
+                raise ValueError("illegal value passed in")
+        except Exception as e:
+            result["infoMsg"] = (
+                "unable to set modem enable. Supplied enable parameter '%s' invalid."
+                % kwargs.get("enable")
+            )
+
+            return result
+
+        enable = False
+        if os.path.exists(MODEM_ENABLE_FILE):
+            enable = True
+
+        result["SDCERR"] = WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+        if enable and enable_test == 1:
+            result["InfoMsg"] = "modem already enabled. No change"
+            result["modem_enabled"] = "True"
+        elif (not enable) and enable_test == 0:
+            result["InfoMsg"] = "modem already disabled. No change"
+            result["modem_enabled"] = "False"
+        else:
+            MODEM_CONTROL_SCRIPT = "/usr/lib/systemd/system-sleep/modem_control.sh"
+
+            param = "pre"
+            if enable_test == 1:
+                # enable on device
+                Path(MODEM_ENABLE_FILE).touch()
+                param = "post"
+
+            try:
+                proc = run(
+                    [
+                        MODEM_CONTROL_SCRIPT,
+                        param,
+                    ],
+                    capture_output=True,
+                    timeout=120,
+                )
+            except TimeoutExpired:
+                result["InfoMsg"] = "Update checking timeout"
+                return result
+            except Exception as e:
+                result["InfoMsg"] = "{}".format(e)
+                return result
+
+            if enable_test == 0:
+                # disable on device
+                os.remove(MODEM_ENABLE_FILE)
+
+            result["modem_enabled"] = "true" if enable_test == 1 else "false"
+            result["InfoMsg"] = "Modem is %s" % (
+                "enabled" if enable_test == 1 else "disabled"
+            )
         return result

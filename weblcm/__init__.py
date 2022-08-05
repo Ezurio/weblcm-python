@@ -54,11 +54,17 @@ except ImportError:
     cherrypy.log("__main__: AWM NOT loaded")
 
 try:
-    from .modem.modem import PositioningSwitch, Positioning, ModemFirmwareUpdate
+    from .modem.modem import (
+        PositioningSwitch,
+        Positioning,
+        ModemFirmwareUpdate,
+        ModemEnable,
+    )
 
     weblcm_plugins.append("positioning")
     weblcm_plugins.append("positioningSwitch")
     weblcm_plugins.append("modemFirmwareUpdate")
+    weblcm_plugins.append("modemEnable")
     cherrypy.log("__main__: modem loaded")
 except ImportError:
     PositioningSwitch = None
@@ -106,12 +112,13 @@ class WebApp(object):
         self.allowUnauthenticatedResetReboot = AllowUnauthenticatedResetReboot()
 
         self.datetime = DateTimeSetting()
-        self.wifienable = WifiEnable()
+        self.wifiEnable = WifiEnable()
 
         if PositioningSwitch:
             self.positioningSwitch = PositioningSwitch()
             self.positioning = Positioning()
             self.modemFirmwareUpdate = ModemFirmwareUpdate()
+            self.modemEnable = ModemEnable()
         self.fips = Fips()
 
         if Bluetooth:
@@ -247,4 +254,5 @@ def main(args=None):
         }
     )
 
+    definition.adjust_data_paths()
     cherrypy.quickstart(WebApp(), "/", config=definition.WEBLCM_PYTHON_SERVER_CONF_FILE)
