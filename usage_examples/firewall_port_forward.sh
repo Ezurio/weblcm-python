@@ -32,7 +32,7 @@ fi
 
 echo -e "\nforward port ${VSP_TCP_PORT}:\n"
 
-${CURL_APP} --location --request PUT ${URL}/ports/${ZONE}/addForwardPort \
+${CURL_APP} --location --request PUT ${URL}/firewall/${ZONE}/addForwardPort \
     --header "Content-Type: application/json" \
     -b cookie --insecure\
     --data '{
@@ -44,7 +44,7 @@ ${CURL_APP} --location --request PUT ${URL}/ports/${ZONE}/addForwardPort \
     | ${JQ_APP}
 
 echo -e "\n\ncheck forwarded ports:\n"
-${CURL_APP} --location --request GET ${URL}/ports/${ZONE} \
+${CURL_APP} --location --request GET ${URL}/firewall/${ZONE} \
     --header "Content-Type: application/json" \
     -b cookie --insecure\
     | ${JQ_APP}
