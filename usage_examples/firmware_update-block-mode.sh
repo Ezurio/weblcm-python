@@ -19,6 +19,10 @@ split -b128k -d -a 4 --additional-suffix=.swu-block ${FIRMWARE}
 echo -e "\n\n========================="
 echo "Firmware update"
 echo "========================="
+${CURL_APP} -s -S \
+    --request DELETE --insecure \
+    ${URL}/firmware -b cookie -c cookie | ${JQ_APP}
+
 ${CURL_APP} -s -S --header "Content-Type: application/json" \
     --request POST   --data \
     '{"image":"main"}'  --insecure \
