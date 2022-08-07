@@ -202,4 +202,10 @@ class SWUpdate:
     @cherrypy.tools.json_out()
     def DELETE(self):
         result = {"SDCERR": 0, "InfoMsg": ""}
+        try:
+            self.stop_progress_thread()
+        except Exception as e:
+            self.log_exception(e)
+            result["SDCERR"] = 1
+            result["InfoMsg"] = "{}".format(e)
         return result
