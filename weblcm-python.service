@@ -6,6 +6,8 @@ After=network.target factory-reset.service
 [Service]
 ExecStart=/usr/bin/weblcm-python
 KeyringMode=inherit
+Restart=on-failure
+RestartSec=10s
 
 [Install]
 WantedBy=multi-user.target
