@@ -1,4 +1,4 @@
-#TZ="${TZ:-"America/Los_Angeles"}"
+TZ="${TZ:-"America/Los_Angeles"}"
 
 source global_settings
 

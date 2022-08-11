@@ -1,27 +1,22 @@
 import os
-import configparser
 import cherrypy
 
 WEBLCM_PYTHON_VERSION = "1.0.0.5"
 
-# directory base when /data is not available
-NON_ROOT_DATA_PATH = "/etc"
-
+# TODO - deal with directories for file retrieval (see FIELDIR_DICT and files.py)
 SYSTEM_CONF_DIR = "/data/"
-NETWORKMANAGER_CONF_DIR = "/data/secret/NetworkManager/"
-WEBLCM_PYTHON_CONF_DIR = "/data/secret/weblcm-python/"
+
+NETWORKMANAGER_CONF_DIR = "/etc/NetworkManager/"
 # weblcm-python.ini is for server config. It should be updated only by software update.
 WEBLCM_PYTHON_SERVER_CONF_FILE = "/etc/weblcm-python/weblcm-python.ini"
 # system settings
-WEBLCM_PYTHON_SETTINGS_FILE = "/data/secret/weblcm-python/weblcm-settings.ini"
+WEBLCM_PYTHON_SETTINGS_FILE = "/etc/weblcm-python/weblcm-settings.ini"
 # log forwarding
-LOG_FORWARDING_ENABLED_FLAG_FILE = "/data/secret/weblcm-python/log_forwarding_enabled"
+LOG_FORWARDING_ENABLED_FLAG_FILE = "/etc/weblcm-python/log_forwarding_enabled"
 
 # timezone list
 WEBLCM_PYTHON_ZONELIST_COMMAND = ["timedatectl", "list-timezones"]
-
-# Default system timezone datebase can be readonly. Save customer files in /data/misc/.
-WEBLCM_PYTHON_ZONEINFO = "/data/misc/zoneinfo/"
+WEBLCM_PYTHON_ZONEINFO = "/etc/localtime"
 
 WIFI_DRIVER_DEBUG_PARAM = "/sys/module/lrdmwl/parameters/lrd_debug"
 # Change to ath6kl driver for wb50n
@@ -207,53 +202,9 @@ WEBLCM_NM_SETTING_DHCP4_TEXT = "DHCP4"
 WEBLCM_NM_SETTING_DHCP6_TEXT = "DHCP6"
 # file names for firmware-update and in-progress in sync with names in
 # /usr/bin/modem_check_firmware_update.sh script
-MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE = "/data/modem/update-in-progress"
-MODEM_FIRMWARE_UPDATE_FILE = "/data/modem/firmware-update"
-MODEM_FIRMWARE_UPDATE_DST_DIR = "/data/modem"
+MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE = "/etc/modem/update-in-progress"
+MODEM_FIRMWARE_UPDATE_FILE = "/etc/modem/firmware-update"
+MODEM_FIRMWARE_UPDATE_DST_DIR = "/etc/modem"
 MODEM_FIRMWARE_UPDATE_SRC_DIR = "/lib/firmware/modem"
 # MODEM_ENABLE_FILE in sync with /usr/bin/modem_check_enable.sh
-MODEM_ENABLE_FILE = "/data/modem/modem_enabled"
-
-onlyonce = True
-
-
-def adjust_data_paths():
-    global onlyonce
-    if onlyonce:
-        onlyonce = False
-        try:
-            parser = configparser.ConfigParser()
-            parser.read(WEBLCM_PYTHON_SERVER_CONF_FILE)
-
-            data_available = (
-                parser["weblcm"].get("root_data_is_available", "false").lower()
-            )
-        except Exception as e:
-            data_available = "exception"
-        if data_available == "false":
-            cherrypy.log("/data not available.  Using /etc/data instead")
-            global SYSTEM_CONF_DIR
-            global NETWORKMANAGER_CONF_DIR
-            global WEBLCM_PYTHON_CONF_DIR
-            global WEBLCM_PYTHON_SETTINGS_FILE
-            global WEBLCM_PYTHON_ZONEINFO
-            global MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE
-            global MODEM_FIRMWARE_UPDATE_FILE
-            global MODEM_FIRMWARE_UPDATE_DST_DIR
-            global MODEM_ENABLE_FILE
-
-            SYSTEM_CONF_DIR = NON_ROOT_DATA_PATH + SYSTEM_CONF_DIR
-            NETWORKMANAGER_CONF_DIR = NON_ROOT_DATA_PATH + NETWORKMANAGER_CONF_DIR
-            WEBLCM_PYTHON_CONF_DIR = NON_ROOT_DATA_PATH + WEBLCM_PYTHON_CONF_DIR
-            WEBLCM_PYTHON_SETTINGS_FILE = (
-                NON_ROOT_DATA_PATH + WEBLCM_PYTHON_SETTINGS_FILE
-            )
-            WEBLCM_PYTHON_ZONEINFO = NON_ROOT_DATA_PATH + WEBLCM_PYTHON_ZONEINFO
-            MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE = (
-                NON_ROOT_DATA_PATH + MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE
-            )
-            MODEM_FIRMWARE_UPDATE_FILE = NON_ROOT_DATA_PATH + MODEM_FIRMWARE_UPDATE_FILE
-            MODEM_FIRMWARE_UPDATE_DST_DIR = (
-                NON_ROOT_DATA_PATH + MODEM_FIRMWARE_UPDATE_DST_DIR
-            )
-            MODEM_ENABLE_FILE = NON_ROOT_DATA_PATH + MODEM_ENABLE_FILE
+MODEM_ENABLE_FILE = "/etc/modem/modem_enabled"

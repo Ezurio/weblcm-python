@@ -114,6 +114,10 @@ class FactoryReset(object):
             "InfoMsg": "FactoryReset cannot be initiated",
         }
 
+        if not os.path.exists(self.FACTORY_RESET_SCRIPT):
+            result["InfoMsg"] += " - not available on non-encrypted file system images"
+            return result
+
         if os.path.exists(MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE):
             result["InfoMsg"] += " - modem firmware update in progress"
             return result

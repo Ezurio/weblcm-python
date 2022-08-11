@@ -11,7 +11,7 @@ from .definition import WEBLCM_ERRORS
 
 @cherrypy.expose
 class DateTimeSetting(object):
-    DATE_TIME_SCRIPT = "/etc/weblcm-python/scripts/weblcm_datetime.sh"
+    DATE_TIME_SCRIPT = "/usr/bin/weblcm-python.scripts/weblcm_datetime.sh"
 
     def popenHelper(self, method="", zone="", dt="") -> Tuple[int, str, str]:
 
@@ -58,8 +58,8 @@ class DateTimeSetting(object):
 
         self.localtime = "/etc/localtime"
         self.zoneinfo = "/usr/share/zoneinfo/"
-        self.userZoneinfo = definition.WEBLCM_PYTHON_ZONEINFO
-        self.userLocaltime = self.userZoneinfo + "localtime"
+        self.userZoneinfo = "/etc/timezone"
+        self.userLocaltime = "/etc/localtime"
         self._zones_cache = None
 
     @property
@@ -70,17 +70,23 @@ class DateTimeSetting(object):
 
     def getLocalZone(self):
 
+        # find the last non-file link in a list of links
+        def find_final_link(path):
+            try:
+                link = os.readlink(path)
+                return find_final_link(link)
+            except OSError:  # will throw exception once we get to a non-symlink
+                return path
+
         try:
-            localtime = os.readlink(self.userLocaltime)
+            localtime = find_final_link(self.userLocaltime)
             index = localtime.find(self.zoneinfo)
             if -1 != index:
                 return localtime[index + len(self.zoneinfo) :]
-
-            index = localtime.find(self.userZoneinfo)
-            if -1 != index:
-                return localtime[index + len(self.userZoneinfo) :]
         except Exception as e:
             syslog(LOG_ERR, str(e))
+
+        return "Unable to determine timezone"
 
     @cherrypy.tools.json_out()
     def GET(self, *args, **kwargs):
@@ -94,6 +100,7 @@ class DateTimeSetting(object):
         result["zone"] = self.getLocalZone()
 
         returncode, result["time"], _ = self.popenHelper("check", "", "")
+        result["time"] = result["time"].strip()
         if returncode:
             result["method"] = "manual"
         else:
@@ -125,7 +132,7 @@ class DateTimeSetting(object):
         # Python datetime module returns system time only. Extra modules like dateutil etc. are
         # required to calculate the offset according to the timezone. So just get it from bash.
         returncode, outs, errs = self.popenHelper("check", "", "")
-        result["time"] = outs
+        result["time"] = outs.strip()
         result["SDCERR"] = 0
         result["InfoMsg"] = self.getLocalZone()
         return result
