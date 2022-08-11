@@ -254,5 +254,4 @@ def main(args=None):
         }
     )
 
-    definition.adjust_data_paths()
     cherrypy.quickstart(WebApp(), "/", config=definition.WEBLCM_PYTHON_SERVER_CONF_FILE)

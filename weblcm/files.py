@@ -14,7 +14,7 @@ class FileManage(object):
     """File Management"""
 
     _lock = Lock()
-    FILE_MANAGE_SCRIPT = "/etc/weblcm-python/scripts/weblcm_files.sh"
+    FILE_MANAGE_SCRIPT = "/usr/bin/weblcm-python.scripts/weblcm_files.sh"
     FILE_MANAGE_POST_ZIP_TYPES = ["config", "timezone"]
 
     # log will be saved in /var/run/log/journal/ for volatile mode, or /var/log/journal/ for persistent mode
