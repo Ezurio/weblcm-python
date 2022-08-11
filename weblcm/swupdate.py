@@ -39,7 +39,7 @@ def octet_stream_in(force=True, debug=False):
 
 @cherrypy.expose
 class SWUpdate:
-    SWUPDATE_SCRIPT = "/etc/weblcm-python/scripts/weblcm_swupdate.sh"
+    SWUPDATE_SCRIPT = "/usr/bin/weblcm-python.scripts/weblcm_swupdate.sh"
 
     _lock = Lock()
     _isUpdating = False

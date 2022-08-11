@@ -18,7 +18,7 @@ pre_update() {
 	systemctl restart swupdate
 
 	#Provide way for customer scripts to inject logic into the update process
-	PRECHECK_SCRIPT=/etc/weblcm-python/scripts/swupdate_custom_precheck.sh
+	PRECHECK_SCRIPT=/usr/bin/weblcm-python.scripts/swupdate_custom_precheck.sh
 	if [ -x ${PRECHECK_SCRIPT} ] ; then
 		error_msg=$(${PRECHECK_SCRIPT}) || exit_on_error 1 "${error_msg}"
 	fi
