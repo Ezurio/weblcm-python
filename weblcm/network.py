@@ -283,7 +283,30 @@ class NetworkConnection(object):
                 result["InfoMsg"] = "no UUID provided"
                 return result
 
-            extended = kwargs.get("extended", False)
+            extended_test = -1
+            try:
+                extended = kwargs.get("extended", None)
+                if extended is not None:
+                    extended = extended.lower()
+                    if extended in ("y", "yes", "t", "true", "on", "1"):
+                        extended_test = 1
+                        extended = True
+                    elif extended in ("n", "no", "f", "false", "off", "0"):
+                        extended_test = 0
+                        extended = False
+                    if extended_test < 0:
+                        raise ValueError("illegal value passed in")
+                else:
+                    # Default to 'non-extended' mode when 'extended' parameter is omitted
+                    extended = False
+            except Exception:
+                result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL")
+                result["InfoMsg"] = (
+                    "Unable to get extended connection info. Supplied extended parameter '%s' invalid."
+                    % kwargs.get("extended")
+                )
+                return result
+
             if extended:
                 try:
                     (
@@ -747,7 +770,7 @@ class WifiEnable(object):
                 raise ValueError("illegal value passed in")
         except Exception as e:
             result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL")
-            result["infoMsg"] = (
+            result["InfoMsg"] = (
                 "unable to set wireless_set_enable. Supplied enable parameter '%s' invalid."
                 % kwargs.get("enable")
             )
@@ -756,7 +779,7 @@ class WifiEnable(object):
 
         self._client.wireless_set_enabled(enable)
         result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
-        result["infoMsg"] = "wireless_radio_software_enabled: %s" % (
+        result["InfoMsg"] = "wireless_radio_software_enabled: %s" % (
             "true" if enable else "false"
         )
         result["wifi_radio_software_enabled"] = self._client.wireless_get_enabled()
