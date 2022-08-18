@@ -199,6 +199,7 @@ def force_session_checking():
         "connections",
         "connection",
         "accesspoints",
+        "allowUnauthenticatedResetReboot",
         "networkInterfaces",
         "networkInterface",
         "file",
