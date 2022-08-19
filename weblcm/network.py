@@ -646,80 +646,80 @@ class NetworkInterface(object):
                 if name == dev.Interface:
                     # Read all NM device properties
                     dev_properties = {}
-                    dev_properties["Udi"] = dev.Udi
-                    dev_properties["Path"] = dev.Path
-                    dev_properties["Interface"] = dev.Interface
-                    dev_properties["IpInterface"] = dev.IpInterface
-                    dev_properties["Driver"] = dev.Driver
-                    dev_properties["DriverVersion"] = dev.DriverVersion
-                    dev_properties["FirmwareVersion"] = dev.FirmwareVersion
-                    dev_properties["Capabilities"] = dev.Capabilities
-                    dev_properties["StateReason"] = dev.StateReason
+                    dev_properties["udi"] = dev.Udi
+                    dev_properties["path"] = dev.Path
+                    dev_properties["interface"] = dev.Interface
+                    dev_properties["ip_interface"] = dev.IpInterface
+                    dev_properties["driver"] = dev.Driver
+                    dev_properties["driver_version"] = dev.DriverVersion
+                    dev_properties["firmware_version"] = dev.FirmwareVersion
+                    dev_properties["capabilities"] = dev.Capabilities
+                    dev_properties["state_reason"] = dev.StateReason
                     dev_properties[
-                        "ActiveConnection"
+                        "connection_active"
                     ] = NetworkStatusHelper.get_active_connection(dev)
                     dev_properties[
-                        "Ip4Config"
+                        "ip4config"
                     ] = NetworkStatusHelper.get_ipv4_properties(dev.Ip4Config)
                     dev_properties[
-                        "Ip6Config"
+                        "ip6config"
                     ] = NetworkStatusHelper.get_ipv6_properties(dev.Ip6Config)
                     dev_properties[
-                        "Dhcp4Config"
+                        "dhcp4config"
                     ] = NetworkStatusHelper.get_dhcp4_properties(dev.Dhcp4Config)
                     dev_properties[
-                        "Dhcp6Config"
+                        "dhcp6config"
                     ] = NetworkStatusHelper.get_dhcp6_properties(dev.Dhcp6Config)
-                    dev_properties["Managed"] = dev.Managed
-                    dev_properties["Autoconnect"] = dev.Autoconnect
-                    dev_properties["FirmwareMissing"] = dev.FirmwareMissing
-                    dev_properties["NmPluginMissing"] = dev.NmPluginMissing
-                    dev_properties["Status"] = NetworkStatusHelper.get_dev_status(dev)
+                    dev_properties["managed"] = dev.Managed
+                    dev_properties["autoconnect"] = dev.Autoconnect
+                    dev_properties["firmware_missing"] = dev.FirmwareMissing
+                    dev_properties["nm_plugin_missing"] = dev.NmPluginMissing
+                    dev_properties["status"] = NetworkStatusHelper.get_dev_status(dev)
                     dev_properties[
-                        "AvailableConnections"
+                        "available_connections"
                     ] = NetworkStatusHelper.get_available_connections(
                         dev.AvailableConnections
                     )
-                    dev_properties["PhysicalPortId"] = dev.PhysicalPortId
-                    dev_properties["Metered"] = dev.Metered
-                    dev_properties["MeteredText"] = definition.WEBLCM_METERED_TEXT.get(
+                    dev_properties["physical_port_id"] = dev.PhysicalPortId
+                    dev_properties["metered"] = dev.Metered
+                    dev_properties["metered_text"] = definition.WEBLCM_METERED_TEXT.get(
                         dev.Metered
                     )
-                    dev_properties["LldpNeighbors"] = dev.LldpNeighbors
-                    dev_properties["Real"] = dev.Real
-                    dev_properties["Ip4Connectivity"] = dev.Ip4Connectivity
+                    dev_properties["lldp_neighbors"] = dev.LldpNeighbors
+                    dev_properties["real"] = dev.Real
+                    dev_properties["ip4connectivity"] = dev.Ip4Connectivity
                     dev_properties[
-                        "Ip4ConnectivityText"
+                        "ip4connectivity_text"
                     ] = definition.WEBLCM_CONNECTIVITY_STATE_TEXT.get(
                         dev.Ip4Connectivity
                     )
-                    dev_properties["Ip6Connectivity"] = dev.Ip6Connectivity
+                    dev_properties["ip6connectivity"] = dev.Ip6Connectivity
                     dev_properties[
-                        "Ip6ConnectivityText"
+                        "ip6connectivity_text"
                     ] = definition.WEBLCM_CONNECTIVITY_STATE_TEXT.get(
                         dev.Ip6Connectivity
                     )
-                    dev_properties["InterfaceFlags"] = dev.InterfaceFlags
+                    dev_properties["interface_flags"] = dev.InterfaceFlags
 
                     # Get wired specific items
                     if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_ETHERNET:
                         dev_properties[
-                            "Wired"
+                            "wired"
                         ] = NetworkStatusHelper.get_wired_properties(dev)
 
                     # Get Wi-Fi specific items
                     if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
                         dev_properties[
-                            "Wireless"
+                            "wireless"
                         ] = NetworkStatusHelper.get_wifi_properties(dev)
                         if dev.State == NetworkManager.NM_DEVICE_STATE_ACTIVATED:
                             dev_properties[
-                                "ActiveAccessPoint"
+                                "activeaccesspoint"
                             ] = NetworkStatusHelper.get_ap_properties(
                                 dev.ActiveAccessPoint, dev
                             )
 
-                    result["Properties"] = dev_properties
+                    result["properties"] = dev_properties
                     result["SDCERR"] = 0
 
                     return result
