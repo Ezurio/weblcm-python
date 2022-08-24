@@ -777,7 +777,7 @@ class WifiEnable(object):
 
             return result
 
-        self._client.wireless_set_enabled(enable)
+        self._client.wireless_set_enabled(enable_test)
         result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
         result["InfoMsg"] = "wireless_radio_software_enabled: %s" % (
             "true" if enable else "false"
