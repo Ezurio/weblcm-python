@@ -240,7 +240,7 @@ class ModemEnable(object):
         if os.path.exists(MODEM_ENABLE_FILE):
             enable = True
 
-        result["modem_enabled"] = "true" if enable else "false"
+        result["modem_enabled"] = True if enable else False
         result["InfoMsg"] = "Modem is %s" % ("enabled" if enable else "disabled")
         return result
 
@@ -274,10 +274,10 @@ class ModemEnable(object):
         result["SDCERR"] = WEBLCM_ERRORS.get("SDCERR_SUCCESS")
         if enable and enable_test == 1:
             result["InfoMsg"] = "modem already enabled. No change"
-            result["modem_enabled"] = "True"
+            result["modem_enabled"] = True
         elif (not enable) and enable_test == 0:
             result["InfoMsg"] = "modem already disabled. No change"
-            result["modem_enabled"] = "False"
+            result["modem_enabled"] = False
         else:
             MODEM_CONTROL_SCRIPT = "/usr/lib/systemd/system-sleep/modem_sleep_control.sh"
 
@@ -307,7 +307,7 @@ class ModemEnable(object):
                 # disable on device
                 os.remove(MODEM_ENABLE_FILE)
 
-            result["modem_enabled"] = "true" if enable_test == 1 else "false"
+            result["modem_enabled"] = True if enable_test == 1 else False
             result["InfoMsg"] = "Modem is %s" % (
                 "enabled" if enable_test == 1 else "disabled"
             )
