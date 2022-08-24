@@ -29,7 +29,7 @@ FILEDIR_DICT = {
 }
 
 FILEFMT_DICT = {
-    "cert": ("crt", "key", "pem", "bin", "der", "p12", "pfx"),
+    "cert": ("crt", "key", "pem", "bin", "der", "p12", "pfx", "cer"),
     "pac": ("pac"),
 }
 
