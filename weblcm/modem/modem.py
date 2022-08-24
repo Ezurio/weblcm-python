@@ -279,7 +279,7 @@ class ModemEnable(object):
             result["InfoMsg"] = "modem already disabled. No change"
             result["modem_enabled"] = "False"
         else:
-            MODEM_CONTROL_SCRIPT = "/usr/lib/systemd/system-sleep/modem_control.sh"
+            MODEM_CONTROL_SCRIPT = "/usr/lib/systemd/system-sleep/modem_sleep_control.sh"
 
             param = "pre"
             if enable_test == 1:
