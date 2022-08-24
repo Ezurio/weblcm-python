@@ -1,7 +1,8 @@
-import uuid
+from socket import AF_INET, AF_INET6
+from threading import Lock
+from typing import Any, Optional, Tuple
 import cherrypy
 import subprocess
-import NetworkManager
 from . import definition
 from syslog import syslog, LOG_ERR
 from subprocess import run, TimeoutExpired
@@ -17,6 +18,7 @@ from gi.repository import GLib, NM
 class NetworkConnections(object):
     @cherrypy.tools.json_out()
     def GET(self, *args, **kwargs):
+        _client = NetworkStatusHelper.get_client()
         result = {"SDCERR": 0, "InfoMsg": "", "count": 0, "connections": {}}
 
         unmanaged_devices = (
@@ -25,24 +27,26 @@ class NetworkConnections(object):
             .split()
         )
 
-        for conn in NetworkManager.Settings.ListConnections():
-            s_all = conn.GetSettings()
-            s_conn = s_all.get("connection")
-            if unmanaged_devices and s_conn.get("interface-name") in unmanaged_devices:
+        with NetworkStatusHelper.get_lock():
+            connections = _client.get_connections()
+        for conn in connections:
+            if unmanaged_devices and conn.get_interface_name() in unmanaged_devices:
                 continue
 
             t = {}
-            t["id"] = s_conn.get("id")
+            t["id"] = conn.get_id()
             t["activated"] = 0
 
-            s_wifi = s_all.get("802-11-wireless")
-            if s_wifi and s_wifi.get("mode") == "ap":
+            s_wifi = conn.get_setting_wireless()
+            if s_wifi and s_wifi.get_mode() == "ap":
                 t["type"] = "ap"
 
-            result["connections"][s_conn.get("uuid")] = t
+            result["connections"][conn.get_uuid()] = t
 
-        for conn in NetworkManager.NetworkManager.ActiveConnections:
-            uuid = conn.Connection.GetSettings().get("connection").get("uuid")
+        with NetworkStatusHelper.get_lock():
+            active_connections = _client.get_active_connections()
+        for conn in active_connections:
+            uuid = conn.get_uuid()
             if result.get("connections") and result.get("connections").get(uuid):
                 result["connections"][uuid]["activated"] = 1
 
@@ -52,14 +56,159 @@ class NetworkConnections(object):
 
 @cherrypy.expose
 class NetworkConnection(object):
+
+    SUPPORTED_8021X_CERTS = [
+        NM.SETTING_802_1X_CA_CERT,
+        NM.SETTING_802_1X_CLIENT_CERT,
+        NM.SETTING_802_1X_PRIVATE_KEY,
+        NM.SETTING_802_1X_PHASE2_CA_CERT,
+        NM.SETTING_802_1X_PHASE2_CLIENT_CERT,
+        NM.SETTING_802_1X_PHASE2_PRIVATE_KEY,
+    ]
+
+    IPCONFIG_PROPERTIES = [
+        (NM.SETTING_IP_CONFIG_DAD_TIMEOUT, int),
+        (NM.SETTING_IP_CONFIG_DHCP_HOSTNAME, str),
+        (NM.SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS, int),
+        (NM.SETTING_IP_CONFIG_DHCP_IAID, str),
+        (NM.SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, bool),
+        (NM.SETTING_IP_CONFIG_DHCP_TIMEOUT, int),
+        (NM.SETTING_IP_CONFIG_DNS_PRIORITY, int),
+        (NM.SETTING_IP_CONFIG_GATEWAY, str),
+        (NM.SETTING_IP_CONFIG_IGNORE_AUTO_DNS, bool),
+        (NM.SETTING_IP_CONFIG_IGNORE_AUTO_ROUTES, bool),
+        (NM.SETTING_IP_CONFIG_MAY_FAIL, bool),
+        (NM.SETTING_IP_CONFIG_METHOD, str),
+        (NM.SETTING_IP_CONFIG_NEVER_DEFAULT, bool),
+        (NM.SETTING_IP_CONFIG_ROUTE_METRIC, int),
+        (NM.SETTING_IP_CONFIG_ROUTE_TABLE, int),
+    ]
+
+    IP4CONFIG_PROPERTIES = [
+        (NM.SETTING_IP4_CONFIG_DHCP_CLIENT_ID, str),
+        (NM.SETTING_IP4_CONFIG_DHCP_FQDN, str),
+        (NM.SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER, str),
+    ]
+
+    IP6CONFIG_PROPERTIES = [
+        (NM.SETTING_IP6_CONFIG_ADDR_GEN_MODE, int),
+        (NM.SETTING_IP6_CONFIG_DHCP_DUID, str),
+        (NM.SETTING_IP6_CONFIG_IP6_PRIVACY, NM.SettingIP6ConfigPrivacy),
+        (NM.SETTING_IP6_CONFIG_RA_TIMEOUT, int),
+        (NM.SETTING_IP6_CONFIG_TOKEN, str),
+    ]
+
+    def __init__(self):
+        self.callback_finished = False
+        self.callback_success = False
+        self.callback_lock = Lock()
+        self.client = NetworkStatusHelper.get_client()
+
+    def connection_added_callback(self, source_object, res, user_data):
+        self.callback_finished = False
+        self.callback_success = False
+
+        try:
+            # Finish the asynchronous operation (source_object is the client)
+            with NetworkStatusHelper.get_lock():
+                self.callback_success = source_object.add_connection_finish(res)
+        except Exception as e:
+            syslog(LOG_ERR, f"Could not finish adding new connection: {str(e)}")
+
+        self.callback_finished = True
+
+    def connection_deleted_callback(self, source_object, res, user_data):
+        self.callback_finished = False
+        self.callback_success = False
+
+        try:
+            # Finish the asynchronous operation (source_object is an NM.RemoteConnection)
+            self.callback_success = source_object.delete_finish(res)
+        except Exception as e:
+            syslog(LOG_ERR, f"Could not finish deleting the connection: {str(e)}")
+
+        self.callback_finished = True
+
+    def connection_activated_callback(self, source_object, res, user_data):
+        self.callback_finished = False
+        self.callback_success = False
+
+        try:
+            # Finish the asynchronous operation (source_object is the client)
+            with NetworkStatusHelper.get_lock():
+                self.callback_success = source_object.activate_connection_finish(res)
+        except Exception as e:
+            syslog(LOG_ERR, f"Could not finish activating connection: {str(e)}")
+
+        self.callback_finished = True
+
+    def add_connection(self, new_connection: NM.SimpleConnection) -> bool:
+        success = False
+
+        with self.callback_lock:
+            try:
+                with NetworkStatusHelper.get_lock():
+                    self.client.add_connection_async(
+                        new_connection, True, None, self.connection_added_callback, None
+                    )
+                while not self.callback_finished:
+                    pass
+                success = self.callback_success
+            except Exception as e:
+                syslog(LOG_ERR, f"Error adding connection: {str(e)}")
+                success = False
+
+        return success
+
+    def delete_connection(self, connection_to_delete: NM.RemoteConnection) -> bool:
+        success = False
+
+        with self.callback_lock:
+            try:
+                connection_to_delete.delete_async(
+                    None, self.connection_deleted_callback, None
+                )
+                while not self.callback_finished:
+                    pass
+                success = self.callback_success
+            except Exception as e:
+                syslog(LOG_ERR, f"Error deleting connection: {str(e)}")
+                success = False
+
+        return success
+
+    def activate_connection(
+        self, connection: NM.Connection, dev: Optional[NM.Device] = None
+    ) -> bool:
+        success = False
+
+        with self.callback_lock:
+            try:
+                with NetworkStatusHelper.get_lock():
+                    self.client.activate_connection_async(
+                        connection,
+                        dev,
+                        "/",
+                        None,
+                        self.connection_activated_callback,
+                        None,
+                    )
+                while not self.callback_finished:
+                    pass
+                success = self.callback_success
+            except Exception as e:
+                syslog(LOG_ERR, f"Error activating connection: {str(e)}")
+                success = False
+
+        return success
+
     def get_connection_from_uuid(self, uuid):
-        connections = NetworkManager.Settings.ListConnections()
-        connections = dict(
-            [(x.GetSettings()["connection"]["uuid"], x) for x in connections]
-        )
+        connections = NetworkStatusHelper._client.get_connections()
+        connections = dict([(x.get_uuid(), x) for x in connections])
         try:
             conn = connections[uuid]
         except Exception as e:
+            syslog(LOG_ERR, f"Could not find connection by UUID: {str(e)}")
             conn = None
         return conn
 
@@ -84,37 +233,456 @@ class NetworkConnection(object):
                 cherrypy.request.json["activate"] == 1
                 or cherrypy.request.json["activate"] == "1"
             ):
-                if conn.GetSettings()["connection"]["type"] == "bridge":
-                    if NetworkManager.NetworkManager.ActivateConnection(conn, "/", "/"):
+                if conn.get_setting_connection().get_property("type") == "bridge":
+                    if self.activate_connection(conn, None):
                         result["SDCERR"] = 0
                         result["InfoMsg"] = "Bridge activated"
                 else:
-                    interface_name = conn.GetSettings()["connection"]["interface-name"]
-                    for dev in NetworkManager.Device.all():
-                        if dev.Interface == interface_name:
-                            if NetworkManager.NetworkManager.ActivateConnection(
-                                conn, dev, "/"
-                            ):
+                    interface_name = conn.get_setting_connection().get_interface_name()
+                    with NetworkStatusHelper.get_lock():
+                        all_devices = self.client.get_all_devices()
+                    for dev in all_devices:
+                        if dev.get_iface() == interface_name:
+                            if self.activate_connection(conn, dev):
                                 result["SDCERR"] = 0
                                 result["InfoMsg"] = "Connection Activated"
                                 break
             else:
-                result["SDCERR"] = 0
-                for conn in NetworkManager.NetworkManager.ActiveConnections:
-                    if uuid == conn.Connection.GetSettings()["connection"]["uuid"]:
-                        NetworkManager.NetworkManager.DeactivateConnection(conn)
-                        result["InfoMsg"] = "Connection Deactivated"
+                with NetworkStatusHelper.get_lock():
+                    active_connections = self.client.get_active_connections()
+                for conn in active_connections:
+                    if uuid == conn.get_uuid():
+                        if self.client.deactivate_connection(conn, None):
+                            result["SDCERR"] = 0
+                            result["InfoMsg"] = "Connection Deactivated"
+                        else:
+                            result["InfoMsg"] = "Unable to deactivate connection"
                         return result
+                result["SDCERR"] = 0
                 result["InfoMsg"] = "Already inactive. No action taken"
         except Exception as e:
-            syslog(f"exception during NetworkConnection PUT: {e}")
-            result["InfoMsg"] = f"Internal error - exception from NeworkManger: {e}"
+            syslog(LOG_ERR, f"exception during NetworkConnection PUT: {e}")
+            result["InfoMsg"] = f"Internal error - exception from NetworkManager: {e}"
         return result
 
     @cherrypy.tools.accept(media="application/json")
     @cherrypy.tools.json_in()
     @cherrypy.tools.json_out()
     def POST(self):
+        def get_variant(data: Any) -> GLib.Variant:
+            """
+            Builds a GLib.Variant from the given data.
+            Based on:
+            https://gitlab.gnome.org/nE0sIghT/gnome-browser-connector/-/blob/master/gnome_browser_connector/helpers.py#L8
+            """
+            if isinstance(data, str):
+                return GLib.Variant.new_string(data)
+            elif isinstance(data, int):
+                return GLib.Variant.new_int32(data)
+            elif isinstance(data, bytearray):
+                return GLib.Variant.new_from_bytes(
+                    GLib.VariantType.new("ay"), GLib.Bytes.new(list(data)), True
+                )
+            elif isinstance(data, (list, tuple, set)):
+                if len(data) > 0 and isinstance(data[0], str):
+                    variant_builder: GLib.VariantBuilder = GLib.VariantBuilder.new(
+                        GLib.VariantType.new("as")
+                    )
+
+                    for value in data:
+                        variant_builder.add_value(GLib.Variant.new_string(str(value)))
+                else:
+                    variant_builder: GLib.VariantBuilder = GLib.VariantBuilder.new(
+                        GLib.VariantType.new("av")
+                    )
+
+                    for value in data:
+                        variant_builder.add_value(
+                            GLib.Variant.new_variant(get_variant(value))
+                        )
+
+                return variant_builder.end()
+            elif isinstance(data, dict):
+                variant_builder = GLib.VariantBuilder.new(GLib.VariantType.new("a{sv}"))
+
+                for key in data:
+                    if data[key] is None:
+                        continue
+
+                    key_string = str(key)
+
+                    variant_builder.add_value(
+                        GLib.Variant.new_dict_entry(
+                            get_variant(key_string),
+                            GLib.Variant.new_variant(get_variant(data[key])),
+                        )
+                    )
+
+                return variant_builder.end()
+            else:
+                raise Exception(f"Unknown data type: {type(data)}")
+
+        def build_connection_from_json(
+            connection_json: dict, t_uuid: str = ""
+        ) -> Tuple[NM.SimpleConnection, str]:
+            """
+            Build an NM connection (NM.SimpleConnection) from the given JSON object
+            """
+
+            try:
+                if not connection_json.get(NM.SETTING_CONNECTION_SETTING_NAME):
+                    return (None, "Invalid parameters")
+
+                variant_builder = GLib.VariantBuilder.new(
+                    GLib.VariantType.new("a{sa{sv}}")
+                )
+
+                # Build the 'Connection' section
+                # Name constant:    NM.SETTING_CONNECTION_SETTING_NAME
+                # Constant value:   connection
+                if not connection_json[NM.SETTING_CONNECTION_SETTING_NAME].get(
+                    NM.SETTING_CONNECTION_UUID
+                ):
+                    connection_json[NM.SETTING_CONNECTION_SETTING_NAME][
+                        NM.SETTING_CONNECTION_UUID
+                    ] = t_uuid
+
+                # Remove the UUID if it's empty for compatibility with libnm
+                if (
+                    connection_json[NM.SETTING_CONNECTION_SETTING_NAME][
+                        NM.SETTING_CONNECTION_UUID
+                    ]
+                    == ""
+                ):
+                    del connection_json[NM.SETTING_CONNECTION_SETTING_NAME][
+                        NM.SETTING_CONNECTION_UUID
+                    ]
+
+                variant_builder.add_value(
+                    GLib.Variant.new_dict_entry(
+                        GLib.Variant.new_string(
+                            str(NM.SETTING_CONNECTION_SETTING_NAME)
+                        ),
+                        get_variant(
+                            connection_json[NM.SETTING_CONNECTION_SETTING_NAME]
+                        ),
+                    )
+                )
+
+                # Build the 'Wireless' section
+                # Name constant:    NM.SETTING_WIRELESS_SETTING_NAME
+                # Constant value:   802-11-wireless
+                if connection_json.get(NM.SETTING_WIRELESS_SETTING_NAME):
+                    if not connection_json[NM.SETTING_WIRELESS_SETTING_NAME].get(
+                        NM.SETTING_WIRELESS_SSID
+                    ):
+                        syslog(LOG_ERR, "SSID required for Wi-Fi connection")
+                        variant_builder.end()
+                        return (None, "SSID required for Wi-Fi connection")
+                    try:
+                        connection_json[NM.SETTING_WIRELESS_SETTING_NAME][
+                            NM.SETTING_WIRELESS_SSID
+                        ] = bytearray(
+                            str(
+                                connection_json[NM.SETTING_WIRELESS_SETTING_NAME][
+                                    NM.SETTING_WIRELESS_SSID
+                                ]
+                            ),
+                            "utf-8",
+                        )
+                    except Exception as e:
+                        syslog(LOG_ERR, f"Invalid SSID: {str(e)}")
+                        variant_builder.end()
+                        return (None, "Invalid SSID")
+
+                    variant_builder.add_value(
+                        GLib.Variant.new_dict_entry(
+                            GLib.Variant.new_string(
+                                str(NM.SETTING_WIRELESS_SETTING_NAME)
+                            ),
+                            get_variant(
+                                connection_json[NM.SETTING_WIRELESS_SETTING_NAME]
+                            ),
+                        )
+                    )
+
+                    # Build the 'Wireless Security' section
+                    # Name constant:    NM.SETTING_WIRELESS_SECURITY_SETTING_NAME
+                    # Constant value:   802-11-wireless-security
+                    if connection_json.get(NM.SETTING_WIRELESS_SECURITY_SETTING_NAME):
+                        variant_builder.add_value(
+                            GLib.Variant.new_dict_entry(
+                                GLib.Variant.new_string(
+                                    str(NM.SETTING_WIRELESS_SECURITY_SETTING_NAME)
+                                ),
+                                get_variant(
+                                    connection_json[
+                                        NM.SETTING_WIRELESS_SECURITY_SETTING_NAME
+                                    ]
+                                ),
+                            )
+                        )
+
+                        # Build the '802-1x' section
+                        # Name constant:    NM.SETTING_802_1X_SETTING_NAME
+                        # Constant value:   802-1x
+                        if connection_json.get(NM.SETTING_802_1X_SETTING_NAME):
+                            # libnm expects some 802-1x properties to be an array of strings
+                            for property in [
+                                "eap",
+                                "phase2-auth",
+                                "phase2-autheap",
+                                "altsubject-matches",
+                                "phase2-altsubject-matches",
+                            ]:
+                                if connection_json["802-1x"].get(property):
+                                    if not isinstance(
+                                        connection_json["802-1x"][property], list
+                                    ):
+                                        connection_json["802-1x"][property] = [
+                                            str(connection_json["802-1x"][property])
+                                        ]
+
+                            for cert in self.SUPPORTED_8021X_CERTS:
+                                if connection_json["802-1x"].get(cert):
+                                    connection_json["802-1x"][
+                                        cert
+                                    ] = convert_cert_to_nm_path_scheme(
+                                        connection_json["802-1x"][cert]
+                                    )
+                            variant_builder.add_value(
+                                GLib.Variant.new_dict_entry(
+                                    GLib.Variant.new_string(
+                                        str(NM.SETTING_802_1X_SETTING_NAME)
+                                    ),
+                                    get_variant(
+                                        connection_json[NM.SETTING_802_1X_SETTING_NAME]
+                                    ),
+                                )
+                            )
+
+                # Build the 'GSM' section
+                # Name constant:    NM.SETTING_GSM_SETTING_NAME
+                # Constant value:   gsm
+                if connection_json.get(NM.SETTING_GSM_SETTING_NAME):
+                    variant_builder.add_value(
+                        GLib.Variant.new_dict_entry(
+                            GLib.Variant.new_string(str(NM.SETTING_GSM_SETTING_NAME)),
+                            get_variant(connection_json[NM.SETTING_GSM_SETTING_NAME]),
+                        )
+                    )
+
+                new_connection = NM.SimpleConnection.new_from_dbus(
+                    variant_builder.end()
+                )
+
+                # Due to the complexity of the IPv4/v6 sections, it is simpler to add these
+                # properties explicitly (i.e., do not attempt to convert them to D-Bus-compatible
+                # GLib variants).
+
+                # Build the 'IPv4' section
+                # Name constant:    NM.SETTING_IP4_CONFIG_SETTING_NAME
+                # Constant value:   ipv4
+                if connection_json.get(NM.SETTING_IP4_CONFIG_SETTING_NAME):
+                    setting_ipv4 = NM.SettingIP4Config.new()
+
+                    if connection_json[NM.SETTING_IP4_CONFIG_SETTING_NAME].get(
+                        "address-data"
+                    ):
+                        # Found the 'address-data' property - this isn't technically the proper
+                        # property name to use here (should be 'addresses'), but this is what was
+                        # used in the past, so we need to support it.
+                        for address in connection_json[
+                            NM.SETTING_IP4_CONFIG_SETTING_NAME
+                        ]["address-data"]:
+                            setting_ipv4.add_address(
+                                NM.IPAddress.new(
+                                    AF_INET,
+                                    str(address["address"]),
+                                    int(address["prefix"]),
+                                )
+                            )
+
+                    if connection_json[NM.SETTING_IP4_CONFIG_SETTING_NAME].get(
+                        NM.SETTING_IP_CONFIG_DHCP_REJECT_SERVERS
+                    ):
+                        for dhcp_reject_server in connection_json[
+                            NM.SETTING_IP4_CONFIG_SETTING_NAME
+                        ][NM.SETTING_IP_CONFIG_DHCP_REJECT_SERVERS]:
+                            setting_ipv4.add_dhcp_reject_server(str(dhcp_reject_server))
+
+                    if connection_json[NM.SETTING_IP4_CONFIG_SETTING_NAME].get(
+                        NM.SETTING_IP_CONFIG_DNS
+                    ):
+                        for dns_entry in connection_json[
+                            NM.SETTING_IP4_CONFIG_SETTING_NAME
+                        ][NM.SETTING_IP_CONFIG_DNS]:
+                            setting_ipv4.add_dns(str(dns_entry))
+
+                    if connection_json[NM.SETTING_IP4_CONFIG_SETTING_NAME].get(
+                        NM.SETTING_IP_CONFIG_DNS_OPTIONS
+                    ):
+                        for dns_option in connection_json[
+                            NM.SETTING_IP4_CONFIG_SETTING_NAME
+                        ][NM.SETTING_IP_CONFIG_DNS_OPTIONS]:
+                            setting_ipv4.add_dns_option(str(dns_option))
+
+                    if connection_json[NM.SETTING_IP4_CONFIG_SETTING_NAME].get(
+                        NM.SETTING_IP_CONFIG_DNS_SEARCH
+                    ):
+                        for dns_search in connection_json[
+                            NM.SETTING_IP4_CONFIG_SETTING_NAME
+                        ][NM.SETTING_IP_CONFIG_DNS_SEARCH]:
+                            setting_ipv4.add_dns_search(str(dns_search))
+
+                    if connection_json[NM.SETTING_IP4_CONFIG_SETTING_NAME].get(
+                        NM.SETTING_IP_CONFIG_ROUTES
+                    ):
+                        for route in connection_json[
+                            NM.SETTING_IP4_CONFIG_SETTING_NAME
+                        ][NM.SETTING_IP_CONFIG_ROUTES]:
+                            setting_ipv4.add_route(
+                                NM.IPAddress.new(
+                                    AF_INET,
+                                    str(route["dest"]),
+                                    int(route["prefix"]),
+                                    str(route["next_hop"])
+                                    if route.get("next_hop")
+                                    else None,
+                                    int(route["metric"]) if route.get("metric") else -1,
+                                )
+                            )
+
+                    # Loop through SettingIPConfig and SettingIP4Config properties and apply them,
+                    # if present
+                    for property in (
+                        self.IPCONFIG_PROPERTIES + self.IP4CONFIG_PROPERTIES
+                    ):
+                        if connection_json[NM.SETTING_IP4_CONFIG_SETTING_NAME].get(
+                            property[0]
+                        ):
+                            setting_ipv4.set_property(
+                                property[0],
+                                property[1](
+                                    connection_json[NM.SETTING_IP4_CONFIG_SETTING_NAME][
+                                        property[0]
+                                    ]
+                                ),
+                            )
+
+                    new_connection.add_setting(setting_ipv4)
+
+                # Build the 'IPv6' section
+                # Name constant:    NM.SETTING_IP6_CONFIG_SETTING_NAME
+                # Constant value:   ipv6
+                if connection_json.get(NM.SETTING_IP6_CONFIG_SETTING_NAME):
+                    setting_ipv6 = NM.SettingIP6Config.new()
+
+                    if connection_json[NM.SETTING_IP6_CONFIG_SETTING_NAME].get(
+                        "address-data"
+                    ):
+                        # Found the 'address-data' property - this isn't technically the proper
+                        # property name to use here (should be 'addresses'), but this is what was
+                        # used in the past, so we need to support it.
+                        for address in connection_json[
+                            NM.SETTING_IP6_CONFIG_SETTING_NAME
+                        ]["address-data"]:
+                            setting_ipv6.add_address(
+                                NM.IPAddress.new(
+                                    AF_INET6,
+                                    str(address["address"]),
+                                    int(address["prefix"]),
+                                )
+                            )
+
+                    if connection_json[NM.SETTING_IP6_CONFIG_SETTING_NAME].get(
+                        NM.SETTING_IP_CONFIG_DHCP_REJECT_SERVERS
+                    ):
+                        for dhcp_reject_server in connection_json[
+                            NM.SETTING_IP6_CONFIG_SETTING_NAME
+                        ][NM.SETTING_IP_CONFIG_DHCP_REJECT_SERVERS]:
+                            setting_ipv6.add_dhcp_reject_server(str(dhcp_reject_server))
+
+                    if connection_json[NM.SETTING_IP6_CONFIG_SETTING_NAME].get(
+                        NM.SETTING_IP_CONFIG_DNS
+                    ):
+                        for dns_entry in connection_json[
+                            NM.SETTING_IP6_CONFIG_SETTING_NAME
+                        ][NM.SETTING_IP_CONFIG_DNS]:
+                            setting_ipv6.add_dns(str(dns_entry))
+
+                    if connection_json[NM.SETTING_IP6_CONFIG_SETTING_NAME].get(
+                        NM.SETTING_IP_CONFIG_DNS_OPTIONS
+                    ):
+                        for dns_option in connection_json[
+                            NM.SETTING_IP6_CONFIG_SETTING_NAME
+                        ][NM.SETTING_IP_CONFIG_DNS_OPTIONS]:
+                            setting_ipv6.add_dns_option(str(dns_option))
+
+                    if connection_json[NM.SETTING_IP6_CONFIG_SETTING_NAME].get(
+                        NM.SETTING_IP_CONFIG_DNS_SEARCH
+                    ):
+                        for dns_search in connection_json[
+                            NM.SETTING_IP6_CONFIG_SETTING_NAME
+                        ][NM.SETTING_IP_CONFIG_DNS_SEARCH]:
+                            setting_ipv6.add_dns_search(str(dns_search))
+
+                    # Loop through SettingIPConfig and SettingIP6Config properties and apply them,
+                    # if present
+                    for property in (
+                        self.IPCONFIG_PROPERTIES + self.IP6CONFIG_PROPERTIES
+                    ):
+                        if connection_json[NM.SETTING_IP6_CONFIG_SETTING_NAME].get(
+                            property[0]
+                        ):
+                            setting_ipv6.set_property(
+                                property[0],
+                                property[1](
+                                    connection_json[NM.SETTING_IP6_CONFIG_SETTING_NAME][
+                                        property[0]
+                                    ]
+                                ),
+                            )
+
+                    new_connection.add_setting(setting_ipv6)
+
+                return (new_connection, "")
+            except Exception as e:
+                syslog(
+                    LOG_ERR,
+                    f"Could not build connection from the given parameters: {str(e)}",
+                )
+                return (None, str(e))
+
+        def remove_empty_lists(dictionary: dict) -> dict:
+            """
+            Recursively walks through the given dictionary, removes any key/value pairs whose
+            value is an empty list, and returns a new copy without the empty lists.
+            """
+            new_dictionary = {}
+            for key, value in dictionary.items():
+                if isinstance(value, dict):
+                    new_dictionary[key] = remove_empty_lists(value)
+                else:
+                    if isinstance(value, list) and len(value) == 0:
+                        continue
+                    new_dictionary[key] = value
+
+            return new_dictionary
+
+        def convert_cert_to_nm_path_scheme(cert_name: str) -> bytearray:
+            """
+            For certain certs, NM supports specifying the path to the cert prefixed with "file://"
+            and NUL terminated
+            """
+            return bytearray(
+                str(
+                    "file://{0}{1}\x00".format(
+                        definition.FILEDIR_DICT.get("cert"), cert_name
+                    )
+                ),
+                "utf-8",
+            )
 
         result = {"SDCERR": 1, "InfoMsg": ""}
 
@@ -130,125 +698,78 @@ class NetworkConnection(object):
             result["InfoMsg"] = "connection section must have an id element"
             return result
 
-        nm_connection_objs = NetworkManager.Settings.ListConnections()
-        connections = dict(
-            [(x.GetSettings()["connection"]["id"], x) for x in nm_connection_objs]
-        )
+        with NetworkStatusHelper.get_lock():
+            nm_connection_objs = self.client.get_connections()
+        connections = dict([(x.get_id(), x) for x in nm_connection_objs])
         if id in connections:
-            con_uuid = connections.get(id).GetSettings()["connection"]["uuid"]
+            con_uuid = connections.get(id).get_uuid()
             if t_uuid and con_uuid:
                 if not con_uuid == t_uuid:
                     result["InfoMsg"] = "Provided uuid does not match uuid of given id"
                     return result
             t_uuid = con_uuid
 
-        connections = dict(
-            [(x.GetSettings()["connection"]["uuid"], x) for x in nm_connection_objs]
-        )
-        try:
-            saved_con = connections.get(t_uuid).GetSettings()
-        except BaseException:
-            t_uuid = str(uuid.uuid4())
-            saved_con = None
+        connections = dict([(x.get_uuid(), x) for x in nm_connection_objs])
 
         try:
-            new_settings = {}
+            if not post_data.get("connection"):
+                result["InfoMsg"] = "Invalid parameters"
+                return result
 
-            if post_data.get("connection"):
-                new_settings["connection"] = post_data.get("connection")
-                if not new_settings["connection"].get("uuid"):
-                    new_settings["connection"]["uuid"] = t_uuid
+            existing_connection = connections.get(
+                post_data.get("connection")["uuid"], None
+            )
 
-                if post_data.get("802-11-wireless"):
-                    new_settings["802-11-wireless"] = post_data.get("802-11-wireless")
+            (new_connection, error_msg) = build_connection_from_json(
+                remove_empty_lists(post_data), t_uuid
+            )
+            if not new_connection:
+                result["InfoMsg"] = f"Unable to create connection: {error_msg}"
+                return result
 
-                    if post_data.get("802-11-wireless-security"):
-                        new_settings["802-11-wireless-security"] = post_data.get(
-                            "802-11-wireless-security"
-                        )
+            name = post_data["connection"].get("id", "")
+            if existing_connection:
+                # Connection already exists, delete it
+                saved_profile = NM.SimpleConnection.new_clone(existing_connection)
 
-                        if post_data.get("802-1x"):
-                            new_settings["802-1x"] = post_data.get("802-1x")
-                            """
-								Add path to certificates
-							"""
-                            if new_settings["802-1x"].get("ca-cert"):
-                                new_settings["802-1x"][
-                                    "ca-cert"
-                                ] = definition.FILEDIR_DICT.get("cert") + new_settings[
-                                    "802-1x"
-                                ].get(
-                                    "ca-cert"
-                                )
-                            if new_settings["802-1x"].get("client-cert"):
-                                new_settings["802-1x"][
-                                    "client-cert"
-                                ] = definition.FILEDIR_DICT.get("cert") + new_settings[
-                                    "802-1x"
-                                ].get(
-                                    "client-cert"
-                                )
-                            if new_settings["802-1x"].get("private-key"):
-                                new_settings["802-1x"][
-                                    "private-key"
-                                ] = definition.FILEDIR_DICT.get("cert") + new_settings[
-                                    "802-1x"
-                                ].get(
-                                    "private-key"
-                                )
-                            if new_settings["802-1x"].get("phase2-ca-cert"):
-                                new_settings["802-1x"][
-                                    "phase2-ca-cert"
-                                ] = definition.FILEDIR_DICT.get("cert") + new_settings[
-                                    "802-1x"
-                                ].get(
-                                    "phase2-ca-cert"
-                                )
-                            if new_settings["802-1x"].get("phase2-client-cert"):
-                                new_settings["802-1x"][
-                                    "phase2-client-cert"
-                                ] = definition.FILEDIR_DICT.get("cert") + new_settings[
-                                    "802-1x"
-                                ].get(
-                                    "phase2-client-cert"
-                                )
-                            if new_settings["802-1x"].get("phase2-private-key"):
-                                new_settings["802-1x"][
-                                    "phase2-private-key"
-                                ] = definition.FILEDIR_DICT.get("cert") + new_settings[
-                                    "802-1x"
-                                ].get(
-                                    "phase2-private-key"
-                                )
-
-                if post_data.get("gsm"):
-                    new_settings["gsm"] = post_data.get("gsm")
-
-                if post_data.get("ipv4"):
-                    new_settings["ipv4"] = post_data.get("ipv4")
-                if post_data.get("ipv6"):
-                    new_settings["ipv6"] = post_data.get("ipv6")
-
-                name = new_settings["connection"].get("id", "")
-                if connections.get(new_settings["connection"]["uuid"]):
-                    connections[new_settings["connection"]["uuid"]].Delete()
-
-                    try:
-                        NetworkManager.Settings.AddConnection(new_settings)
+                if self.delete_connection(existing_connection):
+                    # Successfully removed the existing connection, now add the new one
+                    if self.add_connection(new_connection):
+                        # Connection updated successfully
                         result["InfoMsg"] = f"connection {name} updated"
                         result["SDCERR"] = 0
-                    except Exception as e:
-                        NetworkManager.Settings.AddConnection(saved_con)
-                        result[
-                            "InfoMsg"
-                        ] = f"An error occurred trying to save config: {e}; Original config restored"
+                        return result
+                    else:
+                        # Could not add new connnection, restore existing connection
+                        syslog(
+                            LOG_ERR,
+                            "An error occurred trying to save config, restoring original",
+                        )
+                        if self.add_connection(saved_profile):
+                            result[
+                                "InfoMsg"
+                            ] = "An error occurred trying to save config: Original config restored"
+                        else:
+                            # Could not restore existing connection
+                            syslog(LOG_ERR, "Unable to restore origin config")
+                            result[
+                                "InfoMsg"
+                            ] = "An error occurred trying to save config: Unable to restore original config"
                 else:
-                    NetworkManager.Settings.AddConnection(new_settings)
+                    # Could not remove the existing connection
+                    syslog(LOG_ERR, f"Could not update connection {name}")
+                    result["InfoMsg"] = f"Could not update connection {name}"
+            else:
+                if self.add_connection(new_connection):
                     result["InfoMsg"] = f"connection {name} created"
                     result["SDCERR"] = 0
+                    return result
+                else:
+                    result["InfoMsg"] = "Unable to create connection"
 
         except Exception as e:
-            result["InfoMsg"] = f"Connection POST experienced an exception: {e}"
+            syslog(LOG_ERR, f"Connection POST experienced an exception: {str(e)}")
+            result["InfoMsg"] = f"Connection POST experienced an exception: {str(e)}"
 
         return result
 
@@ -256,14 +777,20 @@ class NetworkConnection(object):
     def DELETE(self, uuid):
         result = {"SDCERR": 1, "InfoMsg": ""}
         try:
-            connections = NetworkManager.Settings.ListConnections()
-            connections = dict(
-                [(x.GetSettings()["connection"]["uuid"], x) for x in connections]
-            )
-            connections[uuid].Delete()
-            result["SDCERR"] = 0
+            with NetworkStatusHelper.get_lock():
+                connection = self.client.get_connection_by_uuid(str(uuid))
+            if connection is not None:
+                if self.delete_connection(connection):
+                    result["InfoMsg"] = "Connection deleted"
+                    result["SDCERR"] = 0
+                    return result
+                else:
+                    result["InfoMsg"] = "Unable to delete connection"
+            else:
+                result["InfoMsg"] = "Unable to delete connection, not found"
         except Exception as e:
-            result["InfoMsg"] = f"Unable to delete connection"
+            syslog(LOG_ERR, f"Unable to delete connection : {str(e)}")
+            result["InfoMsg"] = "Unable to delete connection"
 
         return result
 
@@ -313,7 +840,7 @@ class NetworkConnection(object):
                         ret,
                         msg,
                         settings,
-                    ) = NetworkStatusHelper.gi_get_extended_connection_settings(uuid)
+                    ) = NetworkStatusHelper.get_extended_connection_settings(uuid)
 
                     if ret < 0:
                         result["InfoMsg"] = msg
@@ -331,11 +858,19 @@ class NetworkConnection(object):
 
                 return result
             else:
-                connections = NetworkManager.Settings.ListConnections()
-                connections = dict(
-                    [(x.GetSettings()["connection"]["uuid"], x) for x in connections]
+                with NetworkStatusHelper.get_lock():
+                    connections = self.client.get_connections()
+                connections = dict([(x.get_uuid(), x) for x in connections])
+                settings = (
+                    connections[uuid]
+                    .to_dbus(NM.ConnectionSerializationFlags.NO_SECRETS)
+                    .unpack()
                 )
-                settings = connections[uuid].GetSettings()
+                if settings.get("802-11-wireless"):
+                    # Convert SSID to a string
+                    settings["802-11-wireless"]["ssid"] = bytearray(
+                        settings["802-11-wireless"]["ssid"]
+                    ).decode("utf-8")
                 if settings.get("802-1x"):
                     settings["802-1x"]["ca-cert"] = cert_to_filename(
                         settings["802-1x"].get("ca-cert")
@@ -358,6 +893,7 @@ class NetworkConnection(object):
             result["connection"] = settings
             result["SDCERR"] = 0
         except Exception as e:
+            syslog(LOG_ERR, f"Invalid UUID: {str(e)}")
             result["InfoMsg"] = "Invalid UUID"
 
         return result
@@ -365,6 +901,39 @@ class NetworkConnection(object):
 
 @cherrypy.expose
 class NetworkAccessPoints(object):
+    def __init__(self):
+        self.callback_finished = False
+        self.callback_success = False
+        self.callback_lock = Lock()
+        self.client = NetworkStatusHelper.get_client()
+
+    def scan_requested_callback(self, source_object, res, user_data):
+        self.callback_finished = False
+        self.callback_success = False
+
+        try:
+            # Finish the asynchronous operation (source_object is an NM.DeviceWifi)
+            self.callback_success = source_object.request_scan_finish(res)
+        except Exception as e:
+            syslog(LOG_ERR, f"Could not finish requesting scan: {str(e)}")
+
+        self.callback_finished = True
+
+    def request_scan(self, dev: NM.Device) -> bool:
+        success = False
+
+        with self.callback_lock:
+            try:
+                dev.request_scan_async(None, self.scan_requested_callback, None)
+                while not self.callback_finished:
+                    pass
+                success = self.callback_success
+            except Exception as e:
+                syslog(LOG_ERR, f"Error requesting scan: {str(e)}")
+                success = False
+
+        return success
+
     @cherrypy.tools.json_out()
     def PUT(self):
         """
@@ -373,16 +942,18 @@ class NetworkAccessPoints(object):
         result = {"SDCERR": 1, "InfoMsg": ""}
 
         try:
-            for dev in NetworkManager.Device.all():
-                if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
-                    options = []
-                    dev.RequestScan(options)
-
-            result["SDCERR"] = 0
-            result["InfoMsg"] = "Scan requested"
-
+            with NetworkStatusHelper.get_lock():
+                all_devices = self.client.get_all_devices()
+            for dev in all_devices:
+                if dev.get_device_type() == NM.DeviceType.WIFI:
+                    if self.request_scan(dev):
+                        result["SDCERR"] = 0
+                        result["InfoMsg"] = "Scan complete"
+                    else:
+                        result["InfoMsg"] = "Could not request scan"
+                    break
         except Exception as e:
-            result["InfoMsg"] = "Unable to start scan request"
+            result["InfoMsg"] = f"Unable to start scan request: {str(e)}"
 
         return result
 
@@ -398,55 +969,82 @@ class NetworkAccessPoints(object):
         }
 
         try:
-            for ap in NetworkManager.AccessPoint.all():
-                security_string = ""
-                keymgmt = "none"
-                if (
-                    (ap.Flags & NetworkManager.NM_802_11_AP_FLAGS_PRIVACY)
-                    and (ap.WpaFlags == NetworkManager.NM_802_11_AP_SEC_NONE)
-                    and (ap.RsnFlags == NetworkManager.NM_802_11_AP_SEC_NONE)
-                ):
-                    security_string = security_string + "WEP "
-                    keymgmt = "static"
+            with NetworkStatusHelper.get_lock():
+                all_devices = self.client.get_all_devices()
+            for dev in all_devices:
+                if dev.get_device_type() == NM.DeviceType.WIFI:
+                    for ap in dev.get_access_points():
+                        security_string = ""
+                        keymgmt = "none"
+                        if (
+                            (ap.get_flags() & getattr(NM, "80211ApFlags").PRIVACY)
+                            and (
+                                ap.get_wpa_flags()
+                                == getattr(NM, "80211ApSecurityFlags").NONE
+                            )
+                            and (
+                                ap.get_rsn_flags()
+                                == getattr(NM, "80211ApSecurityFlags").NONE
+                            )
+                        ):
+                            security_string = security_string + "WEP "
+                            keymgmt = "static"
 
-                if ap.WpaFlags != NetworkManager.NM_802_11_AP_SEC_NONE:
-                    security_string = security_string + "WPA1 "
+                        if (
+                            ap.get_wpa_flags()
+                            != getattr(NM, "80211ApSecurityFlags").NONE
+                        ):
+                            security_string = security_string + "WPA1 "
 
-                if ap.RsnFlags != NetworkManager.NM_802_11_AP_SEC_NONE:
-                    security_string = security_string + "WPA2 "
+                        if (
+                            ap.get_rsn_flags()
+                            != getattr(NM, "80211ApSecurityFlags").NONE
+                        ):
+                            security_string = security_string + "WPA2 "
 
-                if (ap.WpaFlags & NetworkManager.NM_802_11_AP_SEC_KEY_MGMT_802_1X) or (
-                    ap.RsnFlags & NetworkManager.NM_802_11_AP_SEC_KEY_MGMT_802_1X
-                ):
-                    security_string = security_string + "802.1X "
-                    keymgmt = "wpa-eap"
+                        if (
+                            ap.get_wpa_flags()
+                            & getattr(NM, "80211ApSecurityFlags").KEY_MGMT_802_1X
+                        ) or (
+                            ap.get_rsn_flags()
+                            & getattr(NM, "80211ApSecurityFlags").KEY_MGMT_802_1X
+                        ):
+                            security_string = security_string + "802.1X "
+                            keymgmt = "wpa-eap"
 
-                if (ap.WpaFlags & NetworkManager.NM_802_11_AP_SEC_KEY_MGMT_PSK) or (
-                    ap.RsnFlags & NetworkManager.NM_802_11_AP_SEC_KEY_MGMT_PSK
-                ):
-                    security_string = security_string + "PSK"
-                    keymgmt = "wpa-psk"
+                        if (
+                            ap.get_wpa_flags()
+                            & getattr(NM, "80211ApSecurityFlags").KEY_MGMT_PSK
+                        ) or (
+                            ap.get_rsn_flags()
+                            & getattr(NM, "80211ApSecurityFlags").KEY_MGMT_PSK
+                        ):
+                            security_string = security_string + "PSK"
+                            keymgmt = "wpa-psk"
 
-                ap_data = {
-                    "SSID": ap.Ssid,
-                    "HwAddress": ap.HwAddress,
-                    "Strength": ap.Strength,
-                    "MaxBitrate": ap.MaxBitrate,
-                    "Frequency": ap.Frequency,
-                    "Flags": ap.Flags,
-                    "WpaFlags": ap.WpaFlags,
-                    "RsnFlags": ap.RsnFlags,
-                    "LastSeen": ap.LastSeen,
-                    "Security": security_string,
-                    "Keymgmt": keymgmt,
-                }
-                result["accesspoints"].append(ap_data)
+                        ssid = ap.get_ssid()
+                        ap_data = {
+                            "SSID": ssid.get_data().decode("utf-8")
+                            if ssid is not None
+                            else "",
+                            "HwAddress": ap.get_bssid(),
+                            "Strength": ap.get_strength(),
+                            "MaxBitrate": ap.get_max_bitrate(),
+                            "Frequency": ap.get_frequency(),
+                            "Flags": int(ap.get_flags()),
+                            "WpaFlags": int(ap.get_wpa_flags()),
+                            "RsnFlags": int(ap.get_rsn_flags()),
+                            "LastSeen": int(ap.get_last_seen()),
+                            "Security": security_string,
+                            "Keymgmt": keymgmt,
+                        }
+                        result["accesspoints"].append(ap_data)
 
-            if len(result["accesspoints"]) > 0:
-                result["SDCERR"] = 0
-                result["count"] = len(result["accesspoints"])
-            else:
-                result["InfoMsg"] = "No access points found"
+                    if len(result["accesspoints"]) > 0:
+                        result["SDCERR"] = 0
+                        result["count"] = len(result["accesspoints"])
+                    else:
+                        result["InfoMsg"] = "No access points found"
 
         except Exception as e:
             result["InfoMsg"] = "Unable to get access point list"
@@ -464,31 +1062,39 @@ class Version(object):
     def GET(self, *args, **kwargs):
         try:
             if not Version._version:
-                Version._version["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
-                Version._version["InfoMsg"] = ""
-                Version._version["nm_version"] = NetworkManager.NetworkManager.Version
-                Version._version[
-                    "weblcm_python_webapp"
-                ] = definition.WEBLCM_PYTHON_VERSION
-                Version._version["build"] = (
-                    subprocess.check_output(
-                        "sed -n 's/^VERSION=//p' /etc/os-release", shell=True
+                _client = NetworkStatusHelper.get_client()
+                with NetworkStatusHelper.get_lock():
+                    Version._version["SDCERR"] = definition.WEBLCM_ERRORS[
+                        "SDCERR_SUCCESS"
+                    ]
+                    Version._version["InfoMsg"] = ""
+                    Version._version["nm_version"] = str(_client.get_version())
+                    Version._version[
+                        "weblcm_python_webapp"
+                    ] = definition.WEBLCM_PYTHON_VERSION
+                    Version._version["build"] = (
+                        subprocess.check_output(
+                            "sed -n 's/^VERSION=//p' /etc/os-release", shell=True
+                        )
+                        .decode("ascii")
+                        .strip()
+                        .strip('"')
                     )
-                    .decode("ascii")
-                    .strip()
-                    .strip('"')
-                )
-                Version._version["supplicant"] = (
-                    subprocess.check_output(["sdcsupp", "-v"]).decode("ascii").rstrip()
-                )
-                Version._version[
-                    "radio_stack"
-                ] = NetworkManager.NetworkManager.Version.partition("-")[0]
-                for dev in NetworkManager.Device.all():
-                    if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
-                        Version._version["driver"] = dev.Driver
-                        Version._version["kernel_vermagic"] = dev.DriverVersion
-                        break
+                    Version._version["supplicant"] = (
+                        subprocess.check_output(["sdcsupp", "-v"])
+                        .decode("ascii")
+                        .rstrip()
+                    )
+                    Version._version["radio_stack"] = str(
+                        _client.get_version()
+                    ).partition("-")[0]
+                    for dev in _client.get_all_devices():
+                        if dev.get_device_type() == NM.DeviceType.WIFI:
+                            Version._version["driver"] = dev.get_driver()
+                            Version._version[
+                                "kernel_vermagic"
+                            ] = dev.get_driver_version()
+                            break
         except Exception as e:
             Version._version = {
                 "SDCERR": definition.WEBLCM_ERRORS["SDCERR_FAIL"],
@@ -519,13 +1125,15 @@ class NetworkInterfaces(object):
                 .get("unmanaged_hardware_devices", "")
                 .split()
             )
-            for dev in NetworkManager.NetworkManager.GetDevices():
+            with NetworkStatusHelper.get_lock():
+                all_devices = NetworkStatusHelper.get_client().get_all_devices()
+            for dev in all_devices:
                 # Don't return connections with unmanaged interfaces
-                if dev.State == NetworkManager.NM_DEVICE_STATE_UNMANAGED:
+                if dev.get_state() == NM.DeviceState.UNMANAGED:
                     continue
-                if dev.Interface in unmanaged_devices:
+                if dev.get_iface() in unmanaged_devices:
                     continue
-                interfaces.append(dev.Interface)
+                interfaces.append(dev.get_iface())
 
             for dev in managed_devices:
                 if dev not in interfaces:
@@ -540,8 +1148,8 @@ class NetworkInterfaces(object):
         return result
 
     """
-			Add virtual interface
-	"""
+            Add virtual interface
+    """
 
     @cherrypy.tools.accept(media="application/json")
     @cherrypy.tools.json_in()
@@ -573,8 +1181,8 @@ class NetworkInterfaces(object):
             return result
 
         """
-			Currently only support wlan1/managed
-		"""
+            Currently only support wlan1/managed
+        """
         result["InfoMsg"] = f"Unable to add virtual interface {interface}."
         try:
             proc = run(
@@ -592,7 +1200,7 @@ class NetworkInterfaces(object):
         except Exception as e:
             syslog(
                 LOG_ERR,
-                f"Call 'iw dev wlan0 interface add {interface} type {int_type}' failed",
+                f"Call 'iw dev wlan0 interface add {interface} type {int_type}' failed: {str(e)}",
             )
 
         return result
@@ -615,7 +1223,7 @@ class NetworkInterfaces(object):
         except TimeoutExpired:
             syslog(LOG_ERR, f"Call 'iw dev {interface} del' timeout")
         except Exception as e:
-            syslog(LOG_ERR, f"Call 'iw dev {interface} del' failed")
+            syslog(LOG_ERR, f"Call 'iw dev {interface} del' failed: {str(e)}")
 
         return result
 
@@ -641,78 +1249,101 @@ class NetworkInterface(object):
                 result["InfoMsg"] = "invalid interface name provided"
                 return result
 
-            devices = NetworkManager.Device.all()
+            with NetworkStatusHelper.get_lock():
+                devices = NetworkStatusHelper.get_client().get_all_devices()
             for dev in devices:
-                if name == dev.Interface:
+                if name == dev.get_iface():
                     # Read all NM device properties
                     dev_properties = {}
-                    dev_properties["udi"] = dev.Udi
-                    dev_properties["path"] = dev.Path
-                    dev_properties["interface"] = dev.Interface
-                    dev_properties["ip_interface"] = dev.IpInterface
-                    dev_properties["driver"] = dev.Driver
-                    dev_properties["driver_version"] = dev.DriverVersion
-                    dev_properties["firmware_version"] = dev.FirmwareVersion
-                    dev_properties["capabilities"] = dev.Capabilities
-                    dev_properties["state_reason"] = dev.StateReason
+                    dev_properties["udi"] = dev.get_udi()
+                    dev_properties["path"] = dev.get_path()
+                    dev_properties["interface"] = dev.get_iface()
+                    dev_properties["ip_interface"] = dev.get_ip_iface()
+                    dev_properties["driver"] = dev.get_driver()
+                    dev_properties["driver_version"] = dev.get_driver_version()
+                    dev_properties["firmware_version"] = dev.get_firmware_version()
+                    dev_properties["capabilities"] = int(dev.get_capabilities())
+                    dev_properties["state_reason"] = int(dev.get_state_reason())
                     dev_properties[
                         "connection_active"
                     ] = NetworkStatusHelper.get_active_connection(dev)
                     dev_properties[
                         "ip4config"
-                    ] = NetworkStatusHelper.get_ipv4_properties(dev.Ip4Config)
+                    ] = NetworkStatusHelper.get_ipconfig_properties(
+                        dev.get_ip4_config()
+                    )
                     dev_properties[
                         "ip6config"
-                    ] = NetworkStatusHelper.get_ipv6_properties(dev.Ip6Config)
+                    ] = NetworkStatusHelper.get_ipconfig_properties(
+                        dev.get_ip6_config()
+                    )
                     dev_properties[
                         "dhcp4config"
-                    ] = NetworkStatusHelper.get_dhcp4_properties(dev.Dhcp4Config)
+                    ] = NetworkStatusHelper.get_dhcp_config_properties(
+                        dev.get_dhcp4_config()
+                    )
                     dev_properties[
                         "dhcp6config"
-                    ] = NetworkStatusHelper.get_dhcp6_properties(dev.Dhcp6Config)
-                    dev_properties["managed"] = dev.Managed
-                    dev_properties["autoconnect"] = dev.Autoconnect
-                    dev_properties["firmware_missing"] = dev.FirmwareMissing
-                    dev_properties["nm_plugin_missing"] = dev.NmPluginMissing
+                    ] = NetworkStatusHelper.get_dhcp_config_properties(
+                        dev.get_dhcp6_config()
+                    )
+                    dev_properties["managed"] = bool(dev.get_managed())
+                    dev_properties["autoconnect"] = bool(dev.get_autoconnect())
+                    dev_properties["firmware_missing"] = bool(
+                        dev.get_firmware_missing()
+                    )
+                    dev_properties["nm_plugin_missing"] = bool(
+                        dev.get_nm_plugin_missing()
+                    )
                     dev_properties["status"] = NetworkStatusHelper.get_dev_status(dev)
                     dev_properties[
                         "available_connections"
                     ] = NetworkStatusHelper.get_available_connections(
-                        dev.AvailableConnections
+                        dev.get_available_connections()
                     )
-                    dev_properties["physical_port_id"] = dev.PhysicalPortId
-                    dev_properties["metered"] = dev.Metered
+                    dev_properties["physical_port_id"] = dev.get_physical_port_id()
+                    dev_properties["metered"] = int(dev.get_metered())
                     dev_properties["metered_text"] = definition.WEBLCM_METERED_TEXT.get(
-                        dev.Metered
+                        int(dev.get_metered())
                     )
-                    dev_properties["lldp_neighbors"] = dev.LldpNeighbors
-                    dev_properties["real"] = dev.Real
-                    dev_properties["ip4connectivity"] = dev.Ip4Connectivity
+                    lldp_neighbors = []
+                    for neighbor in dev.get_lldp_neighbors():
+                        attrs = {}
+                        for attr_name in neighbor.get_attr_names():
+                            attrs[attr_name] = str(neighbor.get_attr_value(attr_name))
+                        lldp_neighbors.append(attrs)
+                    dev_properties["lldp_neighbors"] = lldp_neighbors
+                    dev_properties["real"] = dev.is_real()
+                    dev_properties["ip4connectivity"] = int(
+                        dev.get_connectivity(int(AF_INET))
+                    )
                     dev_properties[
                         "ip4connectivity_text"
                     ] = definition.WEBLCM_CONNECTIVITY_STATE_TEXT.get(
-                        dev.Ip4Connectivity
+                        int(dev.get_connectivity(int(AF_INET)))
                     )
-                    dev_properties["ip6connectivity"] = dev.Ip6Connectivity
+                    dev_properties["ip6connectivity"] = int(
+                        dev.get_connectivity(int(AF_INET6))
+                    )
                     dev_properties[
                         "ip6connectivity_text"
                     ] = definition.WEBLCM_CONNECTIVITY_STATE_TEXT.get(
-                        dev.Ip6Connectivity
+                        int(dev.get_connectivity(int(AF_INET6)))
                     )
-                    dev_properties["interface_flags"] = dev.InterfaceFlags
+                    dev_properties["interface_flags"] = int(dev.get_interface_flags())
 
                     # Get wired specific items
-                    if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_ETHERNET:
+                    if dev.get_device_type() == NM.DeviceType.ETHERNET:
                         dev_properties[
                             "wired"
                         ] = NetworkStatusHelper.get_wired_properties(dev)
 
                     # Get Wi-Fi specific items
-                    if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
+                    if dev.get_device_type() == NM.DeviceType.WIFI:
                         dev_properties[
                             "wireless"
                         ] = NetworkStatusHelper.get_wifi_properties(dev)
-                        if dev.State == NetworkManager.NM_DEVICE_STATE_ACTIVATED:
+                        if dev.get_state() == NM.DeviceState.ACTIVATED:
                             dev_properties[
                                 "activeaccesspoint"
                             ] = NetworkStatusHelper.get_ap_properties(
@@ -745,10 +1376,11 @@ class WifiEnable(object):
 
         result = {"SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")}
 
-        result["wifi_radio_software_enabled"] = self._client.wireless_get_enabled()
-        result[
-            "wifi_radio_hardware_enabled"
-        ] = self._client.wireless_hardware_get_enabled()
+        with NetworkStatusHelper.get_lock():
+            result["wifi_radio_software_enabled"] = self._client.wireless_get_enabled()
+            result[
+                "wifi_radio_hardware_enabled"
+            ] = self._client.wireless_hardware_get_enabled()
 
         result["InfoMsg"] = "wifi enable results"
 
@@ -768,7 +1400,7 @@ class WifiEnable(object):
                 enable_test = 0
             if enable_test < 0:
                 raise ValueError("illegal value passed in")
-        except Exception as e:
+        except Exception:
             result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL")
             result["InfoMsg"] = (
                 "unable to set wireless_set_enable. Supplied enable parameter '%s' invalid."
@@ -777,10 +1409,12 @@ class WifiEnable(object):
 
             return result
 
-        self._client.wireless_set_enabled(enable_test)
+        with NetworkStatusHelper.get_lock():
+            self._client.wireless_set_enabled(enable_test)
         result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
         result["InfoMsg"] = "wireless_radio_software_enabled: %s" % (
             "true" if enable else "false"
         )
-        result["wifi_radio_software_enabled"] = self._client.wireless_get_enabled()
+        with NetworkStatusHelper.get_lock():
+            result["wifi_radio_software_enabled"] = self._client.wireless_get_enabled()
         return result
