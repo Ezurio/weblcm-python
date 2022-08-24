@@ -6,7 +6,6 @@ import gi
 
 gi.require_version("NM", "1.0")
 from gi.repository import GLib, NM
-import NetworkManager
 from threading import Thread, Lock
 from .settings import SystemSettingsManage
 from . import definition
@@ -42,8 +41,8 @@ class NetworkStatusHelper(object):
                     return m.group(0)[8:10]
         except TimeoutExpired:
             syslog(LOG_ERR, "Call 'iw reg get' timeout")
-        except:
-            syslog(LOG_ERR, "Call 'iw reg get' failed")
+        except Exception as e:
+            syslog(LOG_ERR, f"Call 'iw reg get' failed: {str(e)}")
 
         return "WW"
 
@@ -69,167 +68,134 @@ class NetworkStatusHelper(object):
                         return m.group(0)
         except TimeoutExpired:
             syslog(LOG_ERR, "Call 'iw dev' timeout")
-        except:
-            syslog(LOG_ERR, "Call 'iw dev' failed")
+        except Exception as e:
+            syslog(LOG_ERR, f"Call 'iw dev' failed: {str(e)}")
 
         return frequency
 
     @classmethod
     def get_dev_status(cls, dev):
         status = {}
-        status["State"] = dev.State
+        status["State"] = int(dev.get_state())
         try:
-            status["StateText"] = definition.WEBLCM_STATE_TEXT.get(dev.State)
-        except:
+            status["StateText"] = definition.WEBLCM_STATE_TEXT.get(status["State"])
+        except Exception:
             status["StateText"] = "Unknown"
             syslog(
                 "unknown device state value %d.  See https://developer-old.gnome.org/NetworkManager/stable/nm-dbus-types.html"
-                % dev.State
+                % status["State"]
             )
-        status["Mtu"] = dev.Mtu
-        status["DeviceType"] = dev.DeviceType
+        status["Mtu"] = dev.get_mtu()
+        status["DeviceType"] = int(dev.get_device_type())
         try:
             status["DeviceTypeText"] = definition.WEBLCM_DEVTYPE_TEXT.get(
-                dev.DeviceType
+                status["DeviceType"]
             )
-        except:
+        except Exception:
             status["DeviceTypeText"] = "Unknown"
             syslog(
                 "unknown device type value %d.  See https://developer-old.gnome.org/NetworkManager/stable/nm-dbus-types.html"
-                % dev.DeviceType
+                % status["DeviceType"]
             )
         return status
 
     @classmethod
-    def get_ipv4_properties(cls, ipv4):
+    def get_ipconfig_properties(cls, ipconfig):
 
-        ip4Properties = {}
-        if not ipv4:
-            return ip4Properties
-
-        addresses = {}
-        i = 0
-        for addr in ipv4.Addresses:
-            addresses[i] = str(addr[0]) + "/" + str(addr[1])
-            i += 1
-        ip4Properties["Addresses"] = addresses
-        ip4Properties["AddressData"] = ipv4.AddressData
-
-        routes = {}
-        i = 0
-        for rt in ipv4.Routes:
-            routes[i] = str(rt[0]) + "/" + str(rt[1]) + " metric " + str(rt[3])
-            i += 1
-        ip4Properties["Routes"] = routes
-        ip4Properties["RouteData"] = ipv4.RouteData
-        ip4Properties["Gateway"] = ipv4.Gateway
-
-        i = 0
-        domains = {}
-        for dns in ipv4.Domains:
-            domains[i] = str(dns)
-            i += 1
-        ip4Properties["Domains"] = domains
-
-        ip4Properties["NameserverData"] = ipv4.NameserverData
-        ip4Properties["DnsOptions"] = ipv4.DnsOptions
-        ip4Properties["DnsPriority"] = ipv4.DnsPriority
-        ip4Properties["WinsServerData"] = ipv4.WinsServerData
-
-        return ip4Properties
-
-    @classmethod
-    def get_ipv6_properties(cls, ipv6):
-
-        ip6Properties = {}
-        if not ipv6:
-            return ip6Properties
+        ipconfig_properties = {}
+        if not ipconfig:
+            return ipconfig_properties
 
         addresses = {}
+        address_data = []
         i = 0
-        for addr in ipv6.Addresses:
-            addresses[i] = str(addr[0]) + "/" + str(addr[1])
+        for addr in ipconfig.get_addresses():
+            data = {}
+            data["address"] = addr.get_address()
+            data["prefix"] = addr.get_prefix()
+            address_data.append(data)
+            addresses[i] = data["address"] + "/" + str(data["prefix"])
             i += 1
-        ip6Properties["Addresses"] = addresses
-        ip6Properties["AddressData"] = ipv6.AddressData
+        ipconfig_properties["Addresses"] = addresses
+        ipconfig_properties["AddressData"] = address_data
 
         routes = {}
+        route_data = []
         i = 0
-        for rt in ipv6.Routes:
-            routes[i] = str(rt[0]) + "/" + str(rt[1]) + " metric " + str(rt[3])
+        for rt in ipconfig.get_routes():
+            data = {}
+            data["dest"] = rt.get_dest()
+            data["prefix"] = rt.get_prefix()
+            data["metric"] = rt.get_metric()
+            route_data.append(data)
+            routes[i] = (
+                data["dest"]
+                + "/"
+                + str(data["prefix"])
+                + " metric "
+                + str(data["metric"])
+            )
             i += 1
-        ip6Properties["Routes"] = routes
-        ip6Properties["RouteData"] = ipv6.RouteData
+        ipconfig_properties["Routes"] = routes
+        ipconfig_properties["RouteData"] = route_data
+        ipconfig_properties["Gateway"] = ipconfig.get_gateway()
+        ipconfig_properties["Domains"] = ipconfig.get_domains()
 
-        ip6Properties["Gateway"] = ipv6.Gateway
+        ipconfig_properties["NameserverData"] = ipconfig.get_nameservers()
+        ipconfig_properties["WinsServerData"] = ipconfig.get_wins_servers()
 
-        i = 0
-        domains = {}
-        for dns in ipv6.Domains:
-            domains[i] = str(dns)
-            i += 1
-        ip6Properties["Domains"] = domains
-
-        ip6Properties["Nameservers"] = ipv6.Nameservers
-        ip6Properties["DnsOptions"] = ipv6.DnsOptions
-        ip6Properties["DnsPriority"] = ipv6.DnsPriority
-
-        return ip6Properties
+        return ipconfig_properties
 
     @classmethod
-    def get_dhcp4_properties(cls, dhcp4):
+    def get_dhcp_config_properties(cls, dhcp_config):
 
-        if not dhcp4:
+        if not dhcp_config:
             return {}
 
-        return dhcp4.Options
+        return dhcp_config.get_options()
 
     @classmethod
-    def get_dhcp6_properties(cls, dhcp6):
-
-        if not dhcp6:
-            return {}
-
-        return dhcp6.Options
-
-    @classmethod
-    def get_ap_properties(cls, ap, dev):
+    def get_ap_properties(cls, dev):
+        ap = dev.get_active_access_point()
 
         apProperties = {}
-        apProperties["Ssid"] = ap.Ssid
-        apProperties["HwAddress"] = ap.HwAddress
-        apProperties["Maxbitrate"] = ap.MaxBitrate
-        apProperties["Flags"] = ap.Flags
-        apProperties["Wpaflags"] = ap.WpaFlags
-        apProperties["Rsnflags"] = ap.RsnFlags
+        ssid = ap.get_ssid()
+        apProperties["Ssid"] = (
+            ssid.get_data().decode("utf-8") if ssid is not None else ""
+        )
+        apProperties["HwAddress"] = ap.get_bssid()
+        apProperties["Maxbitrate"] = ap.get_max_bitrate()
+        apProperties["Flags"] = int(ap.get_flags())
+        apProperties["Wpaflags"] = int(ap.get_wpa_flags())
+        apProperties["Rsnflags"] = int(ap.get_rsn_flags())
         # Use iw dev to get channel/frequency info for AP mode
-        if dev.Mode == NetworkManager.NM_802_11_MODE_AP:
+        if dev.get_mode() is getattr(NM, "80211Mode").AP:
             apProperties["Strength"] = 100
             apProperties["Frequency"] = cls.get_frequency_info(
-                dev.Interface, ap.Frequency
+                dev.get_iface(), ap.get_frequency()
             )
         else:
-            apProperties["Strength"] = ap.Strength
-            apProperties["Frequency"] = ap.Frequency
+            apProperties["Strength"] = ap.get_strength()
+            apProperties["Frequency"] = ap.get_frequency()
         return apProperties
 
     @classmethod
     def get_wifi_properties(cls, dev):
         wireless = {}
-        wireless["Bitrate"] = dev.Bitrate
-        wireless["HwAddress"] = dev.HwAddress
-        wireless["PermHwAddress"] = dev.PermHwAddress
-        wireless["Mode"] = dev.Mode
-        wireless["LastScan"] = dev.LastScan
+        wireless["Bitrate"] = dev.get_bitrate()
+        wireless["HwAddress"] = dev.get_hw_address()
+        wireless["PermHwAddress"] = dev.get_permanent_hw_address()
+        wireless["Mode"] = int(dev.get_mode())
+        wireless["LastScan"] = dev.get_last_scan()
         return wireless
 
     @classmethod
     def get_wired_properties(cls, dev):
         wired = {}
-        wired["HwAddress"] = dev.HwAddress
-        wired["PermHwAddress"] = dev.PermHwAddress
-        wired["Speed"] = dev.Speed
-        wired["Carrier"] = dev.Carrier
+        wired["HwAddress"] = dev.get_hw_address()
+        wired["PermHwAddress"] = dev.get_permanent_hw_address()
+        wired["Speed"] = dev.get_speed()
+        wired["Carrier"] = dev.get_carrier()
         return wired
 
     @classmethod
@@ -240,20 +206,29 @@ class NetworkStatusHelper(object):
 
         connections = []
         for connection in available_connections:
-            connections.append(connection.GetSettings()["connection"])
+            connections.append(
+                connection.to_dbus(NM.ConnectionSerializationFlags.NO_SECRETS).unpack()[
+                    "connection"
+                ]
+            )
 
         return connections
 
     @classmethod
     def get_active_connection(cls, dev):
 
-        if not dev or not dev.ActiveConnection:
+        if not dev or not dev.get_active_connection():
             return {}
 
-        return dev.ActiveConnection.Connection.GetSettings()["connection"]
+        return (
+            dev.get_active_connection()
+            .get_connection()
+            .to_dbus(NM.ConnectionSerializationFlags.NO_SECRETS)
+            .unpack()["connection"]
+        )
 
     @classmethod
-    def gi_extract_properties_from_nm_setting(cls, nm_setting):
+    def extract_properties_from_nm_setting(cls, nm_setting):
         if not nm_setting:
             return {}
 
@@ -308,7 +283,7 @@ class NetworkStatusHelper(object):
         return properties
 
     @classmethod
-    def gi_extract_general_properties_from_active_connection(cls, active_connection):
+    def extract_general_properties_from_active_connection(cls, active_connection):
         # Attempt to match output from:
         # 'nmcli connection show <target_profile>'
         properties = {}
@@ -348,7 +323,7 @@ class NetworkStatusHelper(object):
         return properties
 
     @classmethod
-    def gi_extract_ip_config_properties_from_active_connection(cls, ip_config):
+    def extract_ip_config_properties_from_active_connection(cls, ip_config):
         # Attempt to match output from:
         # 'nmcli connection show <target_profile>'
         properties = {}
@@ -374,7 +349,7 @@ class NetworkStatusHelper(object):
         return properties
 
     @classmethod
-    def gi_extract_dhcp_config_properties_from_active_connection(cls, dhcp_config):
+    def extract_dhcp_config_properties_from_active_connection(cls, dhcp_config):
         if not dhcp_config:
             return {}
 
@@ -387,7 +362,7 @@ class NetworkStatusHelper(object):
         return properties
 
     @classmethod
-    def gi_get_802_1x_settings(cls, settings):
+    def get_802_1x_settings(cls, settings):
         if not settings:
             return {}
 
@@ -469,7 +444,7 @@ class NetworkStatusHelper(object):
         return properties
 
     @classmethod
-    def gi_get_extended_connection_settings(cls, uuid) -> Tuple[int, Any, object]:
+    def get_extended_connection_settings(cls, uuid) -> Tuple[int, Any, object]:
         if not uuid or uuid == "":
             return (-1, "Invalid UUID", {})
 
@@ -488,51 +463,49 @@ class NetworkStatusHelper(object):
 
             settings[
                 definition.WEBLCM_NM_SETTING_CONNECTION_TEXT
-            ] = cls.gi_extract_properties_from_nm_setting(
+            ] = cls.extract_properties_from_nm_setting(
                 connection.get_setting_connection()
             )
             settings[
                 definition.WEBLCM_NM_SETTING_IP4_CONFIG_TEXT
-            ] = cls.gi_extract_properties_from_nm_setting(
+            ] = cls.extract_properties_from_nm_setting(
                 connection.get_setting_ip4_config()
             )
             settings[
                 definition.WEBLCM_NM_SETTING_IP6_CONFIG_TEXT
-            ] = cls.gi_extract_properties_from_nm_setting(
+            ] = cls.extract_properties_from_nm_setting(
                 connection.get_setting_ip6_config()
             )
             settings[
                 definition.WEBLCM_NM_SETTING_PROXY_TEXT
-            ] = cls.gi_extract_properties_from_nm_setting(
-                connection.get_setting_proxy()
-            )
+            ] = cls.extract_properties_from_nm_setting(connection.get_setting_proxy())
 
             # Get settings only available if the requested connection is the active one
             for active_connection in cls._client.get_active_connections():
                 if active_connection.get_uuid() == connection.get_uuid():
                     settings[
                         definition.WEBLCM_NM_SETTING_GENERAL_TEXT
-                    ] = cls.gi_extract_general_properties_from_active_connection(
+                    ] = cls.extract_general_properties_from_active_connection(
                         active_connection
                     )
                     settings[
                         definition.WEBLCM_NM_SETTING_IP4_TEXT
-                    ] = cls.gi_extract_ip_config_properties_from_active_connection(
+                    ] = cls.extract_ip_config_properties_from_active_connection(
                         active_connection.get_ip4_config()
                     )
                     settings[
                         definition.WEBLCM_NM_SETTING_IP6_TEXT
-                    ] = cls.gi_extract_ip_config_properties_from_active_connection(
+                    ] = cls.extract_ip_config_properties_from_active_connection(
                         active_connection.get_ip6_config()
                     )
                     settings[
                         definition.WEBLCM_NM_SETTING_DHCP4_TEXT
-                    ] = cls.gi_extract_dhcp_config_properties_from_active_connection(
+                    ] = cls.extract_dhcp_config_properties_from_active_connection(
                         active_connection.get_dhcp4_config()
                     )
                     settings[
                         definition.WEBLCM_NM_SETTING_DHCP6_TEXT
-                    ] = cls.gi_extract_dhcp_config_properties_from_active_connection(
+                    ] = cls.extract_dhcp_config_properties_from_active_connection(
                         active_connection.get_dhcp6_config()
                     )
 
@@ -546,7 +519,7 @@ class NetworkStatusHelper(object):
                 ):
                     settings[
                         definition.WEBLCM_NM_SETTING_WIRED_TEXT
-                    ] = cls.gi_extract_properties_from_nm_setting(
+                    ] = cls.extract_properties_from_nm_setting(
                         connection.get_setting_wired()
                     )
 
@@ -556,12 +529,12 @@ class NetworkStatusHelper(object):
                 ):
                     settings[
                         definition.WEBLCM_NM_SETTING_WIRELESS_TEXT
-                    ] = cls.gi_extract_properties_from_nm_setting(
+                    ] = cls.extract_properties_from_nm_setting(
                         connection.get_setting_wireless()
                     )
                     settings[
                         definition.WEBLCM_NM_SETTING_WIRELESS_SECURITY_TEXT
-                    ] = cls.gi_extract_properties_from_nm_setting(
+                    ] = cls.extract_properties_from_nm_setting(
                         connection.get_setting_wireless_security()
                     )
 
@@ -570,7 +543,7 @@ class NetworkStatusHelper(object):
             if enterprise_802_1x_settings is not None:
                 settings[
                     definition.WEBLCM_NM_SETTING_802_1X_TEXT
-                ] = cls.gi_get_802_1x_settings(enterprise_802_1x_settings)
+                ] = cls.get_802_1x_settings(enterprise_802_1x_settings)
 
         return (0, "", settings)
 
@@ -578,152 +551,184 @@ class NetworkStatusHelper(object):
     def network_status_query(cls):
         cls._network_status = {}
         with cls._lock:
-            devices = NetworkManager.NetworkManager.GetDevices()
+            devices = cls._client.get_all_devices()
             for dev in devices:
-
-                # Dont add unmanaged devices
-                if dev.State == NetworkManager.NM_DEVICE_STATE_UNMANAGED:
+                # Don't add unmanaged devices
+                if dev.get_state() is NM.DeviceState.UNMANAGED:
                     continue
 
-                interface_name = dev.Interface
+                interface_name = dev.get_iface()
                 cls._network_status[interface_name] = {}
 
                 cls._network_status[interface_name]["status"] = cls.get_dev_status(dev)
 
-                if dev.State == NetworkManager.NM_DEVICE_STATE_ACTIVATED:
-                    settings = dev.ActiveConnection.Connection.GetSettings()
-                    cls._network_status[interface_name]["connection_active"] = settings[
-                        "connection"
-                    ]
+                if dev.get_state() is NM.DeviceState.ACTIVATED:
+                    active_connection = dev.get_active_connection().get_connection()
+                    setting_connection = active_connection.get_setting_connection()
+
+                    connection_active = {}
+                    connection_active["id"] = setting_connection.get_id()
+                    connection_active[
+                        "interface-name"
+                    ] = setting_connection.get_interface_name()
+                    connection_active["permissions"] = setting_connection.get_property(
+                        "permissions"
+                    )
+                    connection_active["type"] = setting_connection.get_property("type")
+                    connection_active["uuid"] = setting_connection.get_uuid()
+                    connection_active["zone"] = setting_connection.get_zone()
+                    cls._network_status[interface_name][
+                        "connection_active"
+                    ] = connection_active
+
                     cls._network_status[interface_name][
                         "ip4config"
-                    ] = cls.get_ipv4_properties(dev.Ip4Config)
+                    ] = cls.get_ipconfig_properties(dev.get_ip4_config())
                     cls._network_status[interface_name][
                         "ip6config"
-                    ] = cls.get_ipv6_properties(dev.Ip6Config)
+                    ] = cls.get_ipconfig_properties(dev.get_ip6_config())
                     cls._network_status[interface_name][
                         "dhcp4config"
-                    ] = cls.get_dhcp4_properties(dev.Dhcp4Config)
+                    ] = cls.get_dhcp_config_properties(dev.get_dhcp4_config())
                     cls._network_status[interface_name][
                         "dhcp6config"
-                    ] = cls.get_dhcp6_properties(dev.Dhcp6Config)
+                    ] = cls.get_dhcp_config_properties(dev.get_dhcp6_config())
 
                 # Get wired specific items
-                if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_ETHERNET:
+                if dev.get_device_type() is NM.DeviceType.ETHERNET:
                     cls._network_status[interface_name][
                         "wired"
                     ] = cls.get_wired_properties(dev)
 
                 # Get Wifi specific items
-                if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
+                if dev.get_device_type() == NM.DeviceType.WIFI:
                     cls._network_status[interface_name][
                         "wireless"
                     ] = cls.get_wifi_properties(dev)
-                    if dev.State == NetworkManager.NM_DEVICE_STATE_ACTIVATED:
+                    if dev.get_state() is NM.DeviceState.ACTIVATED:
                         cls._network_status[interface_name][
                             "activeaccesspoint"
-                        ] = cls.get_ap_properties(dev.ActiveAccessPoint, dev)
+                        ] = cls.get_ap_properties(dev)
 
     @classmethod
     def get_client(cls):
         return cls._client
 
+    @classmethod
+    def get_lock(cls):
+        return cls._lock
 
-def dev_added(nm, interface, signal, device_path):
+
+def dev_added(client, device):
     with NetworkStatusHelper._lock:
-        NetworkStatusHelper._network_status[device_path.Interface] = {}
-        NetworkStatusHelper._network_status[device_path.Interface][
+        NetworkStatusHelper._network_status[device.get_iface()] = {}
+        NetworkStatusHelper._network_status[device.get_iface()][
             "status"
-        ] = NetworkStatusHelper.get_dev_status(device_path)
+        ] = NetworkStatusHelper.get_dev_status(device)
 
 
-def dev_removed(nm, interface, signal, device_path):
+def dev_removed(client, device):
     with NetworkStatusHelper._lock:
-        NetworkStatusHelper._network_status.pop(device_path.Interface, None)
+        NetworkStatusHelper._network_status.pop(device.get_iface(), None)
 
 
-def ap_propchange(ap, interface, signal, properties):
-    if "Strength" in properties:
-        for k in NetworkStatusHelper._network_status:
-            if NetworkStatusHelper._network_status[k].get("activeaccesspoint", None):
-                if (
-                    NetworkStatusHelper._network_status[k]["activeaccesspoint"].get(
-                        "Ssid"
-                    )
-                    == ap.Ssid
-                ):
-                    with NetworkStatusHelper._lock:
-                        NetworkStatusHelper._network_status[k]["activeaccesspoint"][
-                            "Strength"
-                        ] = properties["Strength"]
+# def ap_propchange(ap, interface, signal, properties):
+#     if "Strength" in properties:
+#         for k in NetworkStatusHelper._network_status:
+#             if NetworkStatusHelper._network_status[k].get("activeaccesspoint", None):
+#                 if (
+#                     NetworkStatusHelper._network_status[k]["activeaccesspoint"].get(
+#                         "Ssid"
+#                     )
+#                     == ap.Ssid
+#                 ):
+#                     with NetworkStatusHelper._lock:
+#                         NetworkStatusHelper._network_status[k]["activeaccesspoint"][
+#                             "Strength"
+#                         ] = properties["Strength"]
 
 
-def dev_statechange(dev, interface, signal, new_state, old_state, reason):
-    if dev.Interface not in NetworkStatusHelper._network_status:
-        NetworkStatusHelper._network_status[dev.Interface] = {}
+def dev_statechange(dev, new_state, old_state, reason):
+    interface_name = dev.get_iface()
+    if interface_name not in NetworkStatusHelper._network_status:
+        NetworkStatusHelper._network_status[interface_name] = {}
 
     with NetworkStatusHelper._lock:
-        if new_state == NetworkManager.NM_DEVICE_STATE_ACTIVATED:
-            NetworkStatusHelper._network_status[dev.Interface][
+        if new_state == int(NM.DeviceState.ACTIVATED):
+            NetworkStatusHelper._network_status[interface_name][
                 "status"
             ] = NetworkStatusHelper.get_dev_status(dev)
-            settings = dev.ActiveConnection.Connection.GetSettings()
-            NetworkStatusHelper._network_status[dev.Interface][
+
+            active_connection = dev.get_active_connection().get_connection()
+            setting_connection = active_connection.get_setting_connection()
+
+            connection_active = {}
+            connection_active["id"] = setting_connection.get_id()
+            connection_active[
+                "interface-name"
+            ] = setting_connection.get_interface_name()
+            connection_active["permissions"] = setting_connection.get_property(
+                "permissions"
+            )
+            connection_active["type"] = setting_connection.get_property("type")
+            connection_active["uuid"] = setting_connection.get_uuid()
+            connection_active["zone"] = setting_connection.get_zone()
+            NetworkStatusHelper._network_status[interface_name][
                 "connection_active"
-            ] = settings["connection"]
-            NetworkStatusHelper._network_status[dev.Interface][
+            ] = connection_active
+
+            NetworkStatusHelper._network_status[interface_name][
                 "ip4config"
-            ] = NetworkStatusHelper.get_ipv4_properties(dev.Ip4Config)
-            NetworkStatusHelper._network_status[dev.Interface][
+            ] = NetworkStatusHelper.get_ipconfig_properties(dev.get_ip4_config())
+            NetworkStatusHelper._network_status[interface_name][
                 "ip6config"
-            ] = NetworkStatusHelper.get_ipv6_properties(dev.Ip6Config)
-            NetworkStatusHelper._network_status[dev.Interface][
+            ] = NetworkStatusHelper.get_ipconfig_properties(dev.get_ip6_config())
+            NetworkStatusHelper._network_status[interface_name][
                 "dhcp4config"
-            ] = NetworkStatusHelper.get_dhcp4_properties(dev.Dhcp4Config)
-            NetworkStatusHelper._network_status[dev.Interface][
+            ] = NetworkStatusHelper.get_dhcp_config_properties(dev.get_dhcp4_config())
+            NetworkStatusHelper._network_status[interface_name][
                 "dhcp6config"
-            ] = NetworkStatusHelper.get_dhcp6_properties(dev.Dhcp6Config)
-            if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_ETHERNET:
-                NetworkStatusHelper._network_status[dev.Interface][
-                    "wired"
-                ] = NetworkStatusHelper.get_wired_properties(dev)
-            if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
-                NetworkStatusHelper._network_status[dev.Interface][
-                    "wireless"
-                ] = NetworkStatusHelper.get_wifi_properties(dev)
-                NetworkStatusHelper._network_status[dev.Interface][
-                    "activeaccesspoint"
-                ] = NetworkStatusHelper.get_ap_properties(dev.ActiveAccessPoint, dev)
+            ] = NetworkStatusHelper.get_dhcp_config_properties(dev.get_dhcp6_config())
         # 				dev.ActiveAccessPoint.OnPropertiesChanged(ap_propchange)
-        elif new_state == NetworkManager.NM_DEVICE_STATE_DISCONNECTED:
-            if "ip4config" in NetworkStatusHelper._network_status[dev.Interface]:
-                NetworkStatusHelper._network_status[dev.Interface].pop(
+        elif new_state == int(NM.DeviceState.DISCONNECTED):
+            if "ip4config" in NetworkStatusHelper._network_status[interface_name]:
+                NetworkStatusHelper._network_status[interface_name].pop(
                     "ip4config", None
                 )
-            if "ip6config" in NetworkStatusHelper._network_status[dev.Interface]:
-                NetworkStatusHelper._network_status[dev.Interface].pop(
+            if "ip6config" in NetworkStatusHelper._network_status[interface_name]:
+                NetworkStatusHelper._network_status[interface_name].pop(
                     "ip6config", None
+                )
+            if "dhcp4config" in NetworkStatusHelper._network_status[interface_name]:
+                NetworkStatusHelper._network_status[interface_name].pop(
+                    "dhcp4config", None
+                )
+            if "dhcp6config" in NetworkStatusHelper._network_status[interface_name]:
+                NetworkStatusHelper._network_status[interface_name].pop(
+                    "dhcp6config", None
                 )
             if (
                 "activeaccesspoint"
-                in NetworkStatusHelper._network_status[dev.Interface]
+                in NetworkStatusHelper._network_status[interface_name]
             ):
-                NetworkStatusHelper._network_status[dev.Interface].pop(
+                NetworkStatusHelper._network_status[interface_name].pop(
                     "activeaccesspoint", None
                 )
             if (
                 "connection_active"
-                in NetworkStatusHelper._network_status[dev.Interface]
+                in NetworkStatusHelper._network_status[interface_name]
             ):
-                NetworkStatusHelper._network_status[dev.Interface].pop(
+                NetworkStatusHelper._network_status[interface_name].pop(
                     "connection_active", None
                 )
-        elif new_state == NetworkManager.NM_DEVICE_STATE_UNAVAILABLE:
-            if "wired" in NetworkStatusHelper._network_status[dev.Interface]:
-                NetworkStatusHelper._network_status[dev.Interface].pop("wired", None)
-            if "wireless" in NetworkStatusHelper._network_status[dev.Interface]:
-                NetworkStatusHelper._network_status[dev.Interface].pop("wireless", None)
-        NetworkStatusHelper._network_status[dev.Interface]["status"][
+        elif new_state == int(NM.DeviceState.UNAVAILABLE):
+            if "wired" in NetworkStatusHelper._network_status[interface_name]:
+                NetworkStatusHelper._network_status[interface_name].pop("wired", None)
+            if "wireless" in NetworkStatusHelper._network_status[interface_name]:
+                NetworkStatusHelper._network_status[interface_name].pop(
+                    "wireless", None
+                )
+        NetworkStatusHelper._network_status[interface_name]["status"][
             "State"
         ] = new_state
 
@@ -732,16 +737,18 @@ def run_event_listener():
 
     NetworkStatusHelper.network_status_query()
 
-    NetworkManager.NetworkManager.OnDeviceAdded(dev_added)
-    NetworkManager.NetworkManager.OnDeviceRemoved(dev_removed)
+    NetworkStatusHelper.get_client().connect("device-added", dev_added)
+    NetworkStatusHelper.get_client().connect("device-removed", dev_removed)
 
-    for dev in NetworkManager.Device.all():
-        if dev.DeviceType in (
-            NetworkManager.NM_DEVICE_TYPE_ETHERNET,
-            NetworkManager.NM_DEVICE_TYPE_WIFI,
-            NetworkManager.NM_DEVICE_TYPE_MODEM,
+    with NetworkStatusHelper.get_lock():
+        all_devices = NetworkStatusHelper.get_client().get_all_devices()
+    for dev in all_devices:
+        if dev.get_device_type() in (
+            NM.DeviceType.ETHERNET,
+            NM.DeviceType.WIFI,
+            NM.DeviceType.MODEM,
         ):
-            dev.OnStateChanged(dev_statechange)
+            dev.connect("state-changed", dev_statechange)
         # In case wifi connection is already activated
     # 		if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI and dev.ActiveAccessPoint:
     # 			dev.ActiveAccessPoint.OnPropertiesChanged(ap_propchange)
@@ -764,13 +771,14 @@ class NetworkStatus(object):
         result = {"SDCERR": 0, "InfoMsg": ""}
 
         NetworkStatusHelper.network_status_query()
-        with NetworkStatusHelper._lock:
+        with NetworkStatusHelper.get_lock():
             result["status"] = NetworkStatusHelper._network_status
 
-        devices = NetworkManager.NetworkManager.GetDevices()
+        with NetworkStatusHelper.get_lock():
+            devices = NetworkStatusHelper.get_client().get_devices()
         for dev in devices:
-            if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI:
-                result["status"][dev.Interface]["wireless"][
+            if dev.get_device_type() is NM.DeviceType.WIFI:
+                result["status"][dev.get_iface()]["wireless"][
                     "RegDomain"
                 ] = NetworkStatusHelper.get_reg_domain_info()
 
