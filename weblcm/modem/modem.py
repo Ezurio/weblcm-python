@@ -307,7 +307,7 @@ class ModemEnable(object):
                 # disable on device
                 os.remove(MODEM_ENABLE_FILE)
 
-            result["modem_enabled"] = True if enable_test == 1 else False
+            result["modem_enabled"] = enable_test == 1
             result["InfoMsg"] = "Modem is %s" % (
                 "enabled" if enable_test == 1 else "disabled"
             )
