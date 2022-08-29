@@ -153,15 +153,18 @@ class ModemFirmwareUpdate(object):
         result = {
             "SDCERR": WEBLCM_ERRORS.get("SDCERR_FAIL"),
             "InfoMsg": "",
+            "Status": "not-updating", # options are not-updating, in-progress, queued
         }
 
         if os.path.exists(MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE):
             result["InfoMsg"] = "Modem firmware update already in progress"
+            result["Status"] = "in-progress"
             return result
 
         if os.path.exists(MODEM_FIRMWARE_UPDATE_FILE):
             result["InfoMsg"] = "Modem firmware update already queued for next boot"
             result["SDCERR"] = WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+            result["Status"] = "queued"
             return result
 
         if not os.path.isdir(MODEM_FIRMWARE_UPDATE_SRC_DIR):
@@ -212,6 +215,7 @@ class ModemFirmwareUpdate(object):
         )
         result["InfoMsg"] += "Modem Firmware Update queued for next boot"
         result["SDCERR"] = WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+        result["Status"] = "queued"
 
         return result
 
@@ -220,12 +224,15 @@ class ModemFirmwareUpdate(object):
         result = {
             "SDCERR": WEBLCM_ERRORS["SDCERR_SUCCESS"],
             "InfoMsg": "No modem firmware update in progress",
+            "Status": "not-updating", # options are not-updating, in-progress, queued
         }
 
         if os.path.exists(MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE):
             result["InfoMsg"] = "Modem firmware update in progress"
+            result["Status"] = "in-progress"
         elif os.path.exists(MODEM_FIRMWARE_UPDATE_FILE):
             result["InfoMsg"] = "Modem firmware update queued for next boot"
+            result["Status"] = "queued"
 
         return result
 
