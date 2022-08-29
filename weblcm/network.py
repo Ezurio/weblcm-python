@@ -9,6 +9,8 @@ from subprocess import run, TimeoutExpired
 from .settings import SystemSettingsManage
 from .network_status import NetworkStatusHelper
 import gi
+import os
+import definition
 
 gi.require_version("NM", "1.0")
 from gi.repository import GLib, NM
@@ -1135,9 +1137,10 @@ class NetworkInterfaces(object):
                     continue
                 interfaces.append(dev.get_iface())
 
-            for dev in managed_devices:
-                if dev not in interfaces:
-                    interfaces.append(dev)
+            if os.path.exists(definition.MODEM_ENABLE_FILE):
+                for dev in managed_devices:
+                    if dev not in interfaces:
+                        interfaces.append(dev)
 
             result["SDCERR"] = 0
             result["interfaces"] = interfaces
