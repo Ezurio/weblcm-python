@@ -4,7 +4,7 @@ from typing import Any, Optional, Tuple
 import cherrypy
 import subprocess
 from . import definition
-from syslog import syslog, LOG_ERR
+from syslog import syslog, LOG_ERR, LOG_WARNING
 from subprocess import run, TimeoutExpired
 from .settings import SystemSettingsManage
 from .network_status import NetworkStatusHelper
@@ -69,8 +69,6 @@ class NetworkConnection(object):
     IPCONFIG_PROPERTIES = [
         (NM.SETTING_IP_CONFIG_DAD_TIMEOUT, int),
         (NM.SETTING_IP_CONFIG_DHCP_HOSTNAME, str),
-        (NM.SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS, int),
-        (NM.SETTING_IP_CONFIG_DHCP_IAID, str),
         (NM.SETTING_IP_CONFIG_DHCP_SEND_HOSTNAME, bool),
         (NM.SETTING_IP_CONFIG_DHCP_TIMEOUT, int),
         (NM.SETTING_IP_CONFIG_DNS_PRIORITY, int),
@@ -87,14 +85,12 @@ class NetworkConnection(object):
     IP4CONFIG_PROPERTIES = [
         (NM.SETTING_IP4_CONFIG_DHCP_CLIENT_ID, str),
         (NM.SETTING_IP4_CONFIG_DHCP_FQDN, str),
-        (NM.SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER, str),
     ]
 
     IP6CONFIG_PROPERTIES = [
         (NM.SETTING_IP6_CONFIG_ADDR_GEN_MODE, int),
         (NM.SETTING_IP6_CONFIG_DHCP_DUID, str),
         (NM.SETTING_IP6_CONFIG_IP6_PRIVACY, NM.SettingIP6ConfigPrivacy),
-        (NM.SETTING_IP6_CONFIG_RA_TIMEOUT, int),
         (NM.SETTING_IP6_CONFIG_TOKEN, str),
     ]
 
@@ -103,6 +99,48 @@ class NetworkConnection(object):
         self.callback_success = False
         self.callback_lock = Lock()
         self.client = NetworkStatusHelper.get_client()
+
+        # Determine if newer NM settings are supported
+        self.nm_ip_config_dhcp_hostname_flags_supported = (
+            getattr(NM, "SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS", None) is not None
+        )
+        if self.nm_ip_config_dhcp_hostname_flags_supported:
+            self.IPCONFIG_PROPERTIES.append(
+                (NM.SETTING_IP_CONFIG_DHCP_HOSTNAME_FLAGS, int)
+            )
+        else:
+            syslog(LOG_WARNING, "'dhcp-hostname-flags' setting not supported")
+        self.nm_ip_config_dhcp_iaid_supported = (
+            getattr(NM, "SETTING_IP_CONFIG_DHCP_IAID", None) is not None
+        )
+        if self.nm_ip_config_dhcp_iaid_supported:
+            self.IPCONFIG_PROPERTIES.append((NM.SETTING_IP_CONFIG_DHCP_IAID, str))
+        else:
+            syslog(LOG_WARNING, "'dhcp-iaid' setting not supported")
+        self.nm_ip_config_dhcp_reject_servers_supported = (
+            getattr(NM, "SETTING_IP_CONFIG_DHCP_REJECT_SERVERS", None) is not None
+        )
+        if not self.nm_ip_config_dhcp_reject_servers_supported:
+            syslog(LOG_WARNING, "'dhcp-reject-servers' setting not supported")
+
+        self.nm_ip4_config_dhcp_vendor_class_identifier_supported = (
+            getattr(NM, "SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER", None)
+            is not None
+        )
+        if self.nm_ip4_config_dhcp_vendor_class_identifier_supported:
+            self.IP4CONFIG_PROPERTIES.append(
+                (NM.SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER, str)
+            )
+        else:
+            syslog(LOG_WARNING, "'dhcp-vendor-class-identifier' setting not supported")
+
+        self.nm_ip6_config_ra_timeout_supported = (
+            getattr(NM, "SETTING_IP6_CONFIG_RA_TIMEOUT", None) is not None
+        )
+        if self.nm_ip6_config_ra_timeout_supported:
+            self.IP6CONFIG_PROPERTIES.append((NM.SETTING_IP6_CONFIG_RA_TIMEOUT, int))
+        else:
+            syslog(LOG_WARNING, "'ra-timeout' setting not supported")
 
     def connection_added_callback(self, source_object, res, user_data):
         self.callback_finished = False
@@ -484,6 +522,48 @@ class NetworkConnection(object):
                 # Name constant:    NM.SETTING_IP4_CONFIG_SETTING_NAME
                 # Constant value:   ipv4
                 if connection_json.get(NM.SETTING_IP4_CONFIG_SETTING_NAME):
+                    # Check for the presence of possibly unsupported settings
+                    if (
+                        connection_json[NM.SETTING_IP4_CONFIG_SETTING_NAME].get(
+                            "dhcp-hostname-flags"
+                        )
+                        and not self.nm_ip_config_dhcp_hostname_flags_supported
+                    ):
+                        return (
+                            None,
+                            "Invalid configuration, 'dhcp-hostname-flags' setting not supported",
+                        )
+                    if (
+                        connection_json[NM.SETTING_IP4_CONFIG_SETTING_NAME].get(
+                            "dhcp-iaid"
+                        )
+                        and not self.nm_ip_config_dhcp_iaid_supported
+                    ):
+                        return (
+                            None,
+                            "Invalid configuration, 'dhcp-iaid' setting not supported",
+                        )
+                    if (
+                        connection_json[NM.SETTING_IP4_CONFIG_SETTING_NAME].get(
+                            "dhcp-reject-servers"
+                        )
+                        and not self.nm_ip_config_dhcp_reject_servers_supported
+                    ):
+                        return (
+                            None,
+                            "Invalid configuration, 'dhcp-reject-servers' setting not supported",
+                        )
+                    if (
+                        connection_json[NM.SETTING_IP4_CONFIG_SETTING_NAME].get(
+                            "dhcp-vendor-class-identifier"
+                        )
+                        and not self.nm_ip4_config_dhcp_vendor_class_identifier_supported
+                    ):
+                        return (
+                            None,
+                            "Invalid configuration, 'dhcp-vendor-class-identifier' setting not supported",
+                        )
+
                     setting_ipv4 = NM.SettingIP4Config.new()
 
                     if connection_json[NM.SETTING_IP4_CONFIG_SETTING_NAME].get(
@@ -503,8 +583,11 @@ class NetworkConnection(object):
                                 )
                             )
 
-                    if connection_json[NM.SETTING_IP4_CONFIG_SETTING_NAME].get(
-                        NM.SETTING_IP_CONFIG_DHCP_REJECT_SERVERS
+                    if (
+                        self.nm_ip_config_dhcp_reject_servers_supported
+                        and connection_json[NM.SETTING_IP4_CONFIG_SETTING_NAME].get(
+                            NM.SETTING_IP_CONFIG_DHCP_REJECT_SERVERS
+                        )
                     ):
                         for dhcp_reject_server in connection_json[
                             NM.SETTING_IP4_CONFIG_SETTING_NAME
@@ -576,6 +659,48 @@ class NetworkConnection(object):
                 # Name constant:    NM.SETTING_IP6_CONFIG_SETTING_NAME
                 # Constant value:   ipv6
                 if connection_json.get(NM.SETTING_IP6_CONFIG_SETTING_NAME):
+                    # Check for the presence of possibly unsupported settings
+                    if (
+                        connection_json[NM.SETTING_IP6_CONFIG_SETTING_NAME].get(
+                            "dhcp-hostname-flags"
+                        )
+                        and not self.nm_ip_config_dhcp_hostname_flags_supported
+                    ):
+                        return (
+                            None,
+                            "Invalid configuration, 'dhcp-hostname-flags' setting not supported",
+                        )
+                    if (
+                        connection_json[NM.SETTING_IP6_CONFIG_SETTING_NAME].get(
+                            "dhcp-iaid"
+                        )
+                        and not self.nm_ip_config_dhcp_iaid_supported
+                    ):
+                        return (
+                            None,
+                            "Invalid configuration, 'dhcp-iaid' setting not supported",
+                        )
+                    if (
+                        connection_json[NM.SETTING_IP6_CONFIG_SETTING_NAME].get(
+                            "dhcp-reject-servers"
+                        )
+                        and not self.nm_ip_config_dhcp_reject_servers_supported
+                    ):
+                        return (
+                            None,
+                            "Invalid configuration, 'dhcp-reject-servers' setting not supported",
+                        )
+                    if (
+                        connection_json[NM.SETTING_IP6_CONFIG_SETTING_NAME].get(
+                            "ra-timeout"
+                        )
+                        and not self.nm_ip6_config_ra_timeout_supported
+                    ):
+                        return (
+                            None,
+                            "Invalid configuration, 'ra-timeout' setting not supported",
+                        )
+
                     setting_ipv6 = NM.SettingIP6Config.new()
 
                     if connection_json[NM.SETTING_IP6_CONFIG_SETTING_NAME].get(
@@ -595,8 +720,11 @@ class NetworkConnection(object):
                                 )
                             )
 
-                    if connection_json[NM.SETTING_IP6_CONFIG_SETTING_NAME].get(
-                        NM.SETTING_IP_CONFIG_DHCP_REJECT_SERVERS
+                    if (
+                        self.nm_ip_config_dhcp_reject_servers_supported
+                        and connection_json[NM.SETTING_IP6_CONFIG_SETTING_NAME].get(
+                            NM.SETTING_IP_CONFIG_DHCP_REJECT_SERVERS
+                        )
                     ):
                         for dhcp_reject_server in connection_json[
                             NM.SETTING_IP6_CONFIG_SETTING_NAME
