@@ -1328,7 +1328,7 @@ function prepareWirelessConnection() {
     let v;
     let wxs = {};
 
-    wxs['eap'] = $("#eap-method").val().trim();
+    wxs['eap'] = $("#eap-method").val();
 
     if($("#tls-disable-time-checks").val())
       wxs['tls-disable-time-checks'] = $("#tls-disable-time-checks").val();
@@ -1373,12 +1373,12 @@ function prepareWirelessConnection() {
     if(v)
       wxs['private-key-password'] = v;
 
-    v = $("#phase2-auth").val().join(" ");
-    if(v != "none")
+    v = $("#phase2-auth").val();
+    if(v && !(v.length == 1 && v[0] === "none"))
       wxs['phase2-auth'] = v;
 
-    v = $("#phase2-autheap").val().join(" ");
-    if(v != "none")
+    v = $("#phase2-autheap").val();
+    if(v && !(v.length == 1 && v[0] === "none"))
       wxs['phase2-autheap'] = v;
 
     v = $("#phase2-ca-cert").val();
