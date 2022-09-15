@@ -338,7 +338,11 @@ class LoginManage(object):
             if not cnt or UserManageHelper.verify(default_username, default_password):
 
                 LoginManageHelper.login_reset(username)
-                if LoginManageHelper.is_user_logged_in(username):
+                if LoginManageHelper.is_user_logged_in(
+                    username
+                ) and not cherrypy.request.app.config["weblcm"].get(
+                    "allow_multiple_user_sessions", False
+                ):
                     result["SDCERR"] = WEBLCM_ERRORS.get("SDCERR_USER_LOGGED")
                     result["InfoMsg"] = "User already logged in"
                     return result
@@ -369,7 +373,11 @@ class LoginManage(object):
 
             LoginManageHelper.login_reset(username)
 
-            if LoginManageHelper.is_user_logged_in(username):
+            if LoginManageHelper.is_user_logged_in(
+                username
+            ) and not cherrypy.request.app.config["weblcm"].get(
+                "allow_multiple_user_sessions", False
+            ):
                 result["SDCERR"] = WEBLCM_ERRORS.get("SDCERR_USER_LOGGED")
                 result["InfoMsg"] = "User already logged in"
                 return result
@@ -402,6 +410,6 @@ class LoginManage(object):
             syslog(f"logout user {username}")
         else:
             result["SDCERR"] = WEBLCM_ERRORS.get("SDCERR_FAIL")
-            result["InfoMsg"] = f"user {username} not found"
+            result["InfoMsg"] = "user not found"
         cherrypy.lib.sessions.expire()
         return result
