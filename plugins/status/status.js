@@ -255,7 +255,13 @@ function updateStatus(){
           // Frequency
           activeaccesspoint.children(".channel").text(g_i18nData['Channel'] + ": " + wifi_freq_to_channel(data.status[interfaceName].activeaccesspoint.Frequency));
           // Signal Strength
-          activeaccesspoint.children(".strength").text(g_i18nData['Signal Strength'] + ": " + data.status[interfaceName].activeaccesspoint.Strength + "%");
+          var rssi = data.status[interfaceName].activeaccesspoint.Signal
+          if (rssi < -9000) {
+            // RSSI value is invalid, so don't display it
+            activeaccesspoint.children(".strength").text(g_i18nData['Signal Strength'] + ": " + data.status[interfaceName].activeaccesspoint.Strength + "%");
+          } else {
+            activeaccesspoint.children(".strength").text(g_i18nData['Signal Strength'] + ": " + data.status[interfaceName].activeaccesspoint.Strength + "% (" + rssi + " dBm)");
+          }
           // Progress Bar
           progress_bar = activeaccesspoint.children(".progress-bar");
           progress_bar.removeClass("d-none");

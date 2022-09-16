@@ -1608,9 +1608,7 @@ class NetworkInterface(object):
                         if dev.get_state() == NM.DeviceState.ACTIVATED:
                             dev_properties[
                                 "activeaccesspoint"
-                            ] = NetworkStatusHelper.get_ap_properties(
-                                dev.ActiveAccessPoint, dev
-                            )
+                            ] = NetworkStatusHelper.get_ap_properties(dev)
 
                     result["properties"] = dev_properties
                     result["SDCERR"] = 0
