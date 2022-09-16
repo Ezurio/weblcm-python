@@ -1,5 +1,5 @@
 import os
-from typing import Any, Tuple
+from typing import Any, Optional, Tuple
 import cherrypy
 from dbus.mainloop.glib import DBusGMainLoop
 import gi
@@ -20,6 +20,39 @@ class NetworkStatusHelper(object):
     _lock = Lock()
     _IW_PATH = "/usr/sbin/iw"
     _client = NM.Client.new(None)
+
+    @classmethod
+    def get_active_ap_rssi(cls, ifname: Optional[str] = "wlan0") -> Tuple[bool, float]:
+        """
+        Retrieve the signal strength in dBm for the active accesspoint on the specified interface
+        (default is wlan0).
+
+        The return value is a tuple in the form of: (success, rssi)
+        """
+        _RSSI_RE = r"signal: (?P<RSSI>.*) dBm"
+
+        if not os.path.exists(cls._IW_PATH):
+            return (False, definition.INVALID_RSSI)
+
+        try:
+            proc = run(
+                [cls._IW_PATH, "dev", ifname, "link"],
+                capture_output=True,
+                timeout=SystemSettingsManage.get_user_callback_timeout(),
+            )
+
+            if not proc.returncode:
+                for line in proc.stdout.decode("utf-8").splitlines():
+                    line = line.strip()
+                    match = re.match(_RSSI_RE, line)
+                    if match:
+                        return (True, float(match.group("RSSI")))
+        except TimeoutExpired:
+            syslog(LOG_ERR, f"Call 'iw dev {str(ifname)} link' timeout")
+        except Exception as e:
+            syslog(LOG_ERR, f"Call 'iw dev {str(ifname)} link' failed: {str(e)}")
+
+        return (False, definition.INVALID_RSSI)
 
     @classmethod
     def get_reg_domain_info(cls):
@@ -168,15 +201,18 @@ class NetworkStatusHelper(object):
         apProperties["Flags"] = int(ap.get_flags())
         apProperties["Wpaflags"] = int(ap.get_wpa_flags())
         apProperties["Rsnflags"] = int(ap.get_rsn_flags())
-        # Use iw dev to get channel/frequency info for AP mode
+        # Use iw dev to get channel/frequency/rssi info for AP mode
         if dev.get_mode() is getattr(NM, "80211Mode").AP:
             apProperties["Strength"] = 100
             apProperties["Frequency"] = cls.get_frequency_info(
                 dev.get_iface(), ap.get_frequency()
             )
+            apProperties["Signal"] = definition.INVALID_RSSI
         else:
             apProperties["Strength"] = ap.get_strength()
             apProperties["Frequency"] = ap.get_frequency()
+            (success, signal) = NetworkStatusHelper.get_active_ap_rssi(dev.get_iface())
+            apProperties["Signal"] = signal if success else definition.INVALID_RSSI
         return apProperties
 
     @classmethod
