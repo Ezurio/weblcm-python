@@ -1,5 +1,6 @@
 import itertools
 import logging
+import os
 import re
 from syslog import syslog, LOG_ERR, LOG_INFO
 from typing import Optional, List, Dict
@@ -9,6 +10,9 @@ import dbus
 import dbus.exceptions
 import dbus.mainloop.glib
 import dbus.service
+
+from ..settings import SystemSettingsManage
+from subprocess import run, TimeoutExpired
 
 from . import bt_plugin
 from .. import definition
@@ -126,6 +130,37 @@ class Bluetooth(object):
                 plugin.adapter_commands for plugin in bluetooth_plugins
             )
         )
+
+    @staticmethod
+    def get_bluez_version() -> str:
+        """
+        Retrieve the current version of BlueZ as a string by running 'bluetoothctl --version'
+        """
+        BLUEZ_VERSION_RE = r"bluetoothctl: (?P<VERSION>.*)"
+        BLUETOOTHCTL_PATH = "/usr/bin/bluetoothctl"
+
+        if not os.path.exists(BLUETOOTHCTL_PATH):
+            return "Unknown"
+
+        try:
+            proc = run(
+                [BLUETOOTHCTL_PATH, "--version"],
+                capture_output=True,
+                timeout=SystemSettingsManage.get_user_callback_timeout(),
+            )
+
+            if not proc.returncode:
+                for line in proc.stdout.decode("utf-8").splitlines():
+                    line = line.strip()
+                    match = re.match(BLUEZ_VERSION_RE, line)
+                    if match:
+                        return str(match.group("VERSION"))
+        except TimeoutExpired:
+            syslog(LOG_ERR, "Call to 'bluetoothctl --version' timeout")
+        except Exception as e:
+            syslog(LOG_ERR, f"Call to 'bluetoothctl --version' failed: {str(e)}")
+
+        return "Unknown"
 
     def get_remapped_controller(self, controller_friendly_name: str):
         """Scan present controllers and find the controller with address associated with
