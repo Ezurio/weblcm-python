@@ -15,6 +15,11 @@ from . import definition
 gi.require_version("NM", "1.0")
 from gi.repository import GLib, NM
 
+try:
+    from .bluetooth.bt import Bluetooth
+except ImportError:
+    Bluetooth = None
+
 
 @cherrypy.expose
 class NetworkConnections(object):
@@ -1225,6 +1230,11 @@ class Version(object):
                                 "kernel_vermagic"
                             ] = dev.get_driver_version()
                             break
+                    Version._version["bluez"] = (
+                        Bluetooth.get_bluez_version()
+                        if Bluetooth is not None
+                        else "n/a"
+                    )
         except Exception as e:
             Version._version = {
                 "SDCERR": definition.WEBLCM_ERRORS["SDCERR_FAIL"],
