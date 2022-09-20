@@ -686,6 +686,8 @@ def dev_removed(client, device):
 
 def dev_statechange(dev, new_state, old_state, reason):
     interface_name = dev.get_iface()
+    if not interface_name:
+        return
     if interface_name not in NetworkStatusHelper._network_status:
         NetworkStatusHelper._network_status[interface_name] = {}
 
