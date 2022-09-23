@@ -7,7 +7,6 @@ from typing import Optional, List, Dict
 import cherrypy
 import dbus
 import dbus.exceptions
-import dbus.mainloop.glib
 import dbus.service
 
 from . import bt_plugin

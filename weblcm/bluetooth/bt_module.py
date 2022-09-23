@@ -7,11 +7,7 @@
 import dbus
 import dbus.exceptions
 import threading
-import dbus.mainloop.glib
 import logging
-
-from gi.repository import GObject as gobject
-from gi.repository import GLib as glib
 
 BT_OBJ = "org.bluez"
 BT_OBJ_PATH = "/org/bluez/hci0"
@@ -46,13 +42,6 @@ class BtMgr(threading.Thread):
 
         self.devices = {}
 
-        # Set up DBus loop
-        self.loop = None
-        dbus.mainloop.glib.threads_init()
-        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-
-        self.loop = glib.MainLoop()
-
         # Get DBus objects
         self.manager = dbus.Interface(
             dbus.SystemBus().get_object(BT_OBJ, "/"), DBUS_OBJ_MGR_IFACE
@@ -79,25 +68,7 @@ class BtMgr(threading.Thread):
         # Power on the bluetooth module
         self.adapter_props.Set(BT_ADAPTER_IFACE, "Powered", dbus.Boolean(1))
 
-        # Run main loop
         self.start()
-
-    def run(self):
-        """
-        Method to run the DBus main loop (on a thread)
-        """
-        self.logger.info("Starting main loop.")
-        if self.loop:
-            self.loop.run()
-        self.logger.info("Main loop has exited.")
-
-    def quit_loop(self):
-        if self.loop:
-            self.loop.quit()
-
-    def deinit(self):
-        if self.loop:
-            gobject.timeout_add(0, self.quit_loop)
 
     def start_discovery(self):
         """
@@ -852,12 +823,6 @@ def bt_init(
     except dbus.exceptions.DBusException as e:
         logging.getLogger(__name__).error("Cannot open BT interface: {}".format(e))
         return None
-
-
-def bt_deinit(bt):
-    """De-initialize the IG bluetooth API"""
-    if bt:
-        bt.deinit()
 
 
 def bt_start_discovery(bt):

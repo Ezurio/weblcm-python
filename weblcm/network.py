@@ -186,8 +186,13 @@ class NetworkConnection(object):
         with self.callback_lock:
             try:
                 with NetworkStatusHelper.get_lock():
-                    self.client.add_connection_async(
-                        new_connection, True, None, self.connection_added_callback, None
+                    GLib.idle_add(
+                        self.client.add_connection_async,
+                        new_connection,
+                        True,
+                        None,
+                        self.connection_added_callback,
+                        None,
                     )
                 while not self.callback_finished:
                     pass
@@ -203,8 +208,11 @@ class NetworkConnection(object):
 
         with self.callback_lock:
             try:
-                connection_to_delete.delete_async(
-                    None, self.connection_deleted_callback, None
+                GLib.idle_add(
+                    connection_to_delete.delete_async,
+                    None,
+                    self.connection_deleted_callback,
+                    None,
                 )
                 while not self.callback_finished:
                     pass
@@ -223,7 +231,8 @@ class NetworkConnection(object):
         with self.callback_lock:
             try:
                 with NetworkStatusHelper.get_lock():
-                    self.client.activate_connection_async(
+                    GLib.idle_add(
+                        self.client.activate_connection_async,
                         connection,
                         dev,
                         "/",
@@ -1052,7 +1061,9 @@ class NetworkAccessPoints(object):
 
         with self.callback_lock:
             try:
-                dev.request_scan_async(None, self.scan_requested_callback, None)
+                GLib.idle_add(
+                    dev.request_scan_async, None, self.scan_requested_callback, None
+                )
                 while not self.callback_finished:
                     pass
                 success = self.callback_success

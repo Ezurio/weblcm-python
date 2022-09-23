@@ -1,11 +1,10 @@
 import os
 from typing import Any, Tuple
 import cherrypy
-from dbus.mainloop.glib import DBusGMainLoop
 import gi
 
 gi.require_version("NM", "1.0")
-from gi.repository import GLib, NM
+from gi.repository import NM
 from threading import Thread, Lock
 from .settings import SystemSettingsManage
 from . import definition
@@ -755,18 +754,11 @@ def run_event_listener():
     # 		if dev.DeviceType == NetworkManager.NM_DEVICE_TYPE_WIFI and dev.ActiveAccessPoint:
     # 			dev.ActiveAccessPoint.OnPropertiesChanged(ap_propchange)
 
-    GLib.MainLoop().run()
-
 
 @cherrypy.expose
 class NetworkStatus(object):
-
-    DBusGMainLoop(set_as_default=True)
-
     def __init__(self):
-
-        t = Thread(target=run_event_listener, daemon=True)
-        t.start()
+        run_event_listener()
 
     @cherrypy.tools.json_out()
     def GET(self, *args, **kwargs):

@@ -9,7 +9,6 @@ from typing import Optional
 
 import dbus
 import dbus.exceptions
-import dbus.mainloop.glib
 
 from .bt_module import (
     BtMgr,
@@ -19,8 +18,6 @@ from .bt_module import (
     BT_OBJ_PATH,
     DBUS_PROP_IFACE,
 )
-
-from gi.repository import GLib as glib
 
 
 class BtMgrEx(BtMgr):
@@ -35,7 +32,6 @@ class BtMgrEx(BtMgr):
         connection_callback=None,
         write_notification_callback=None,
         logger: Optional[logging.Logger] = None,
-        setup_dbus_loop=True,
         throw_exceptions=False,
         **kwargs
     ):
@@ -47,13 +43,6 @@ class BtMgrEx(BtMgr):
         self.throw_exceptions = throw_exceptions
 
         self.devices = {}
-
-        # Set up DBus loop
-        self.loop = None
-        if setup_dbus_loop:
-            dbus.mainloop.glib.threads_init()
-            dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-            self.loop = glib.MainLoop()
 
         # Get DBus objects
         self.manager = dbus.Interface(
@@ -81,10 +70,6 @@ class BtMgrEx(BtMgr):
         # Power on the bluetooth module
         self.adapter_props.Set(BT_ADAPTER_IFACE, "Powered", dbus.Boolean(1))
 
-        # Run main loop
-        if setup_dbus_loop:
-            self.start()
-
 
 def bt_init_ex(
     discovery_callback,
@@ -92,7 +77,6 @@ def bt_init_ex(
     connection_callback=None,
     write_notification_callback=None,
     logger: Optional[logging.Logger] = None,
-    setup_dbus_loop=True,
     **kwargs
 ) -> Optional[BtMgrEx]:
     """
@@ -106,7 +90,6 @@ def bt_init_ex(
             connection_callback,
             write_notification_callback,
             logger,
-            setup_dbus_loop,
             **kwargs
         )
         return bt
