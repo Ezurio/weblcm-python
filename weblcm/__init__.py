@@ -1,6 +1,7 @@
 import configparser
 import os
 from syslog import syslog, LOG_ERR
+import threading
 import cherrypy
 import logging
 from typing import List
@@ -25,6 +26,9 @@ from .advanced import PowerOff, Suspend, Reboot, FactoryReset
 from .datetime import DateTimeSetting
 from .settings import SystemSettingsManage
 from .advanced import Fips
+
+from gi.repository import GLib
+import dbus.mainloop.glib
 
 weblcm_plugins: List[str] = []
 
@@ -242,7 +246,10 @@ def secureheaders():
     headers["Strict-Transport-Security"] = "max-age=31536000"  # one year
 
 
-def main(args=None):
+def weblcm_cherrypy_start():
+    """
+    Configure and start CherryPy
+    """
     setup_http_server()
 
     logging.getLogger("cherrypy").propagate = False
@@ -257,3 +264,26 @@ def main(args=None):
     )
 
     cherrypy.quickstart(WebApp(), "/", config=definition.WEBLCM_PYTHON_SERVER_CONF_FILE)
+
+
+def main(args=None):
+    # Initialize the DBus/GLib main loop
+    dbus.mainloop.glib.threads_init()
+    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+    dbus_mainloop = GLib.MainLoop()
+
+    syslog("Starting webserver")
+    threading.Thread(
+        name="webserver_thread", target=weblcm_cherrypy_start, daemon=True
+    ).start()
+
+    syslog("Starting DBus mainloop")
+    try:
+        dbus_mainloop.run()
+    except KeyboardInterrupt:
+        syslog("Received signal, shutting down service.")
+    except Exception as e:
+        syslog(f"Unexpected exception occurred: {str(e)}")
+    finally:
+        cherrypy.engine.exit()
+        dbus_mainloop.quit()

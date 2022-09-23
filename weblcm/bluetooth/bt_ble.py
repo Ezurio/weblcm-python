@@ -81,7 +81,6 @@ class BluetoothBlePlugin(BluetoothPlugin):
                 self.characteristic_property_change_callback,
                 self.connection_callback,
                 self.write_notification_callback,
-                setup_dbus_loop=False,
                 logger=self.ble_logger,
                 daemon=True,
                 throw_exceptions=True,

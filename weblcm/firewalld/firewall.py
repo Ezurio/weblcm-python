@@ -5,7 +5,6 @@ from typing import Optional, List
 import cherrypy
 import dbus
 import dbus.exceptions
-import dbus.mainloop.glib
 import dbus.service
 
 from weblcm import definition
