@@ -33,9 +33,9 @@ PAIR_TIMEOUT_SECONDS = 60
 CONNECT_TIMEOUT_SECONDS = 60
 
 # These device properties can be directly set, without requiring any special-case logic.
-SETTABLE_DEVICE_PROPS = [("Trusted", bool)]
+SETTABLE_DEVICE_PROPS = [("Trusted", bool), ("AutoConnect", bool)]
 
-CACHED_DEVICE_PROPS = ["connected"]
+CACHED_DEVICE_PROPS = ["connected", "autoConnect"]
 
 # These controller properties can be directly set, without requiring any special-case logic.
 PASS_ADAPTER_PROPS = ["Discovering", "Powered", "Discoverable"]
@@ -92,6 +92,11 @@ def get_controller_obj(controller: str = ""):
         controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
 
     return bus, controller_obj, result
+
+
+def lower_camel_case(upper_camel_string: str):
+    """Return supplied UpperCamelCase string in lowerCamelCase"""
+    return upper_camel_string[:1].lower() + upper_camel_string[1:]
 
 
 @cherrypy.expose
@@ -719,7 +724,7 @@ class Bluetooth(object):
         result = {}
         for settable_property in SETTABLE_DEVICE_PROPS:
             prop_name, prop_type = settable_property
-            value = post_data.get(prop_name.lower(), None)
+            value = post_data.get(lower_camel_case(prop_name), None)
             if value is not None:
                 device_properties.Set(
                     DEVICE_IFACE, prop_name, python_to_dbus(value, prop_type)
