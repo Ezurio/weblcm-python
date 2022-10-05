@@ -67,6 +67,8 @@ class Suspend(object):
 
             result["SDCERR"] = WEBLCM_ERRORS["SDCERR_SUCCESS"]
             result["InfoMsg"] = "Suspend initiated"
+
+            cherrypy.lib.sessions.expire()
         except Exception as e:
             syslog(LOG_ERR, f"Suspend cannot be initiated: {str(e)}")
 
