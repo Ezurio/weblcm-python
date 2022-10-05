@@ -222,6 +222,7 @@ class NetworkStatusHelper(object):
         wireless["PermHwAddress"] = dev.get_permanent_hw_address()
         wireless["Mode"] = int(dev.get_mode())
         wireless["LastScan"] = dev.get_last_scan()
+        wireless["RegDomain"] = NetworkStatusHelper.get_reg_domain_info()
         return wireless
 
     @classmethod
@@ -567,6 +568,9 @@ class NetworkStatusHelper(object):
                     ] = cls.extract_properties_from_nm_setting(
                         connection.get_setting_wireless()
                     )
+                    settings[definition.WEBLCM_NM_SETTING_WIRELESS_TEXT][
+                        "RegDomain"
+                    ] = NetworkStatusHelper.get_reg_domain_info()
                     settings[
                         definition.WEBLCM_NM_SETTING_WIRELESS_SECURITY_TEXT
                     ] = cls.extract_properties_from_nm_setting(
