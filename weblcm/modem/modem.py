@@ -3,6 +3,7 @@ import os
 import dbus
 from syslog import syslog
 from xml.etree import ElementTree
+from ..systemd_unit import SystemdUnit
 from ..definition import (
     WEBLCM_ERRORS,
     MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE,
@@ -10,8 +11,8 @@ from ..definition import (
     MODEM_FIRMWARE_UPDATE_DST_DIR,
     MODEM_FIRMWARE_UPDATE_SRC_DIR,
     MODEM_ENABLE_FILE,
+    MODEM_CONTROL_SERVICE_FILE,
 )
-from subprocess import run, call, TimeoutExpired
 from pathlib import Path
 
 
@@ -153,7 +154,7 @@ class ModemFirmwareUpdate(object):
         result = {
             "SDCERR": WEBLCM_ERRORS.get("SDCERR_FAIL"),
             "InfoMsg": "",
-            "Status": "not-updating", # options are not-updating, in-progress, queued
+            "Status": "not-updating",  # options are not-updating, in-progress, queued
         }
 
         if os.path.exists(MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE):
@@ -224,7 +225,7 @@ class ModemFirmwareUpdate(object):
         result = {
             "SDCERR": WEBLCM_ERRORS["SDCERR_SUCCESS"],
             "InfoMsg": "No modem firmware update in progress",
-            "Status": "not-updating", # options are not-updating, in-progress, queued
+            "Status": "not-updating",  # options are not-updating, in-progress, queued
         }
 
         if os.path.exists(MODEM_FIRMWARE_UPDATE_IN_PROGRESS_FILE):
@@ -238,7 +239,10 @@ class ModemFirmwareUpdate(object):
 
 
 @cherrypy.expose
-class ModemEnable(object):
+class ModemEnable(SystemdUnit):
+    def __init__(self) -> None:
+        super().__init__(MODEM_CONTROL_SERVICE_FILE)
+
     @cherrypy.tools.json_out()
     def GET(self):
         result = {"SDCERR": WEBLCM_ERRORS.get("SDCERR_SUCCESS")}
@@ -266,7 +270,7 @@ class ModemEnable(object):
                 enable_test = 0
             if enable_test < 0:
                 raise ValueError("illegal value passed in")
-        except Exception as e:
+        except Exception:
             result["infoMsg"] = (
                 "unable to set modem enable. Supplied enable parameter '%s' invalid."
                 % kwargs.get("enable")
@@ -286,33 +290,24 @@ class ModemEnable(object):
             result["InfoMsg"] = "modem already disabled. No change"
             result["modem_enabled"] = False
         else:
-            MODEM_CONTROL_SCRIPT = "/usr/lib/systemd/system-sleep/modem_sleep_control.sh"
-
-            param = "pre"
-            if enable_test == 1:
-                # enable on device
-                Path(MODEM_ENABLE_FILE).touch()
-                param = "post"
 
             try:
-                proc = run(
-                    [
-                        MODEM_CONTROL_SCRIPT,
-                        param,
-                    ],
-                    capture_output=True,
-                    timeout=120,
-                )
-            except TimeoutExpired:
-                result["InfoMsg"] = "Update checking timeout"
-                return result
+                if enable_test == 1:
+                    # enable on device
+                    Path(MODEM_ENABLE_FILE).touch()
+
+                    if not self.activate():
+                        result["InfoMsg"] = "Unable to enable modem"
+                        return
+                else:
+                    if not self.deactivate():
+                        result["InfoMsg"] = "Unable to disable modem"
+                        return
+                    # disable on device
+                    os.remove(MODEM_ENABLE_FILE)
             except Exception as e:
                 result["InfoMsg"] = "{}".format(e)
                 return result
-
-            if enable_test == 0:
-                # disable on device
-                os.remove(MODEM_ENABLE_FILE)
 
             result["modem_enabled"] = enable_test == 1
             result["InfoMsg"] = "Modem is %s" % (

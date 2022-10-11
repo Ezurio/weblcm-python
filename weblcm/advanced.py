@@ -184,6 +184,20 @@ class Fips(object):
             syslog("FIPS set exception: %s" % e)
             result["InfoMsg"] = "FIPS SET exception: {}".format(e)
 
+        try:
+            from .stunnel.stunnel import Stunnel
+
+            if fips == "fips" or fips == "fips_wifi":
+                Stunnel.configure_fips(enabled=True)
+            elif fips == "unset":
+                Stunnel.configure_fips(enabled=False)
+        except ImportError:
+            # stunnel module not loaded
+            pass
+        except Exception as e:
+            syslog("FIPS stunnel set exception: %s" % e)
+            result["InfoMsg"] = "FIPS stunnel SET exception: {}".format(e)
+
         return result
 
     @cherrypy.tools.json_out()
