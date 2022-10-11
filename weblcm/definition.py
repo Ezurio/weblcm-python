@@ -208,5 +208,6 @@ MODEM_FIRMWARE_UPDATE_DST_DIR = "/etc/modem"
 MODEM_FIRMWARE_UPDATE_SRC_DIR = "/lib/firmware/modem"
 # MODEM_ENABLE_FILE in sync with /usr/bin/modem_check_enable.sh
 MODEM_ENABLE_FILE = "/etc/modem/modem_enabled"
+MODEM_CONTROL_SERVICE_FILE = "modem-control.service"
 
 INVALID_RSSI = -9999.9999

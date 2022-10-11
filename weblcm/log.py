@@ -5,16 +5,11 @@ import cherrypy
 import dbus
 import time
 from datetime import datetime
+from .systemd_unit import SystemdUnit
 from .settings import SystemSettingsManage
 from subprocess import run
 from .definition import (
     LOG_FORWARDING_ENABLED_FLAG_FILE,
-    SYSTEMD_BUS_NAME,
-    SYSTEMD_MAIN_OBJ,
-    SYSTEMD_MANAGER_IFACE,
-    SYSTEMD_UNIT_ACTIVE_STATE_PROP,
-    SYSTEMD_UNIT_IFACE,
-    SYSTEMD_UNIT_UNIT_FILE_STATE_PROP,
     WEBLCM_ERRORS,
     WPA_IFACE,
     WPA_OBJ,
@@ -122,129 +117,9 @@ class LogData(object):
 
 
 @cherrypy.expose
-class LogForwarding(object):
-    @property
-    def active_state(self) -> str:
-        """
-        The current 'ActiveState' value for the 'systemd-journal-gatewayd.socket' (log forwarding)
-        service as a string. Possible values are:
-        - active
-        - reloading
-        - inactive
-        - failed
-        - activating
-        - deactivating
-        - unknown (error state added by us)
-
-        See below for more info:
-        https://www.freedesktop.org/software/systemd/man/org.freedesktop.systemd1.html
-        """
-        try:
-            bus = dbus.SystemBus()
-            manager = dbus.Interface(
-                bus.get_object(SYSTEMD_BUS_NAME, SYSTEMD_MAIN_OBJ),
-                SYSTEMD_MANAGER_IFACE,
-            )
-            socket_unit_props = dbus.Interface(
-                bus.get_object(
-                    SYSTEMD_BUS_NAME,
-                    manager.LoadUnit(SYSTEMD_JOURNAL_GATEWAYD_SOCKET_FILE),
-                ),
-                DBUS_PROP_IFACE,
-            )
-            active_state = socket_unit_props.Get(
-                SYSTEMD_UNIT_IFACE, SYSTEMD_UNIT_ACTIVE_STATE_PROP
-            )
-            return active_state
-        except Exception as e:
-            syslog(
-                LOG_ERR,
-                f"Could not read 'ActiveState' of {SYSTEMD_JOURNAL_GATEWAYD_SOCKET_FILE}: {str(e)}",
-            )
-            return "unknown"
-
-    @property
-    def unit_file_state(self) -> str:
-        """
-        The current 'UnitFileState' value for the 'systemd-journal-gatewayd.socket' (log forwarding)
-        service as a string. Possible values are:
-        - enabled
-        - enabled-runtime
-        - linked
-        - linked-runtime
-        - masked
-        - masked-runtime
-        - static
-        - disabled
-        - invalid
-        - unknown (error state added by us)
-
-        See below for more info:
-        https://www.freedesktop.org/software/systemd/man/org.freedesktop.systemd1.html
-        """
-        try:
-            bus = dbus.SystemBus()
-            manager = dbus.Interface(
-                bus.get_object(SYSTEMD_BUS_NAME, SYSTEMD_MAIN_OBJ),
-                SYSTEMD_MANAGER_IFACE,
-            )
-            socket_unit_props = dbus.Interface(
-                bus.get_object(
-                    SYSTEMD_BUS_NAME,
-                    manager.LoadUnit(SYSTEMD_JOURNAL_GATEWAYD_SOCKET_FILE),
-                ),
-                DBUS_PROP_IFACE,
-            )
-            active_state = socket_unit_props.Get(
-                SYSTEMD_UNIT_IFACE, SYSTEMD_UNIT_UNIT_FILE_STATE_PROP
-            )
-            return active_state
-        except Exception as e:
-            syslog(
-                LOG_ERR,
-                f"Could not read 'UnitFileState' of {SYSTEMD_JOURNAL_GATEWAYD_SOCKET_FILE}: {str(e)}",
-            )
-            return "unknown"
-
-    @classmethod
-    def activate(self) -> bool:
-        """
-        Activate the log forwarding service (systemd-journal-gatewayd.socket)
-        """
-        try:
-            bus = dbus.SystemBus()
-            manager = dbus.Interface(
-                bus.get_object(SYSTEMD_BUS_NAME, SYSTEMD_MAIN_OBJ),
-                SYSTEMD_MANAGER_IFACE,
-            )
-            manager.StartUnit(SYSTEMD_JOURNAL_GATEWAYD_SOCKET_FILE, "replace")
-            return True
-        except Exception as e:
-            syslog(
-                LOG_ERR,
-                f"Could not activate the log forwarding service: {str(e)}",
-            )
-            return False
-
-    @classmethod
-    def deactivate(self) -> bool:
-        """
-        Deactivate the log forwarding service (systemd-journal-gatewayd.socket)
-        """
-        try:
-            bus = dbus.SystemBus()
-            manager = dbus.Interface(
-                bus.get_object(SYSTEMD_BUS_NAME, SYSTEMD_MAIN_OBJ),
-                SYSTEMD_MANAGER_IFACE,
-            )
-            manager.StopUnit(SYSTEMD_JOURNAL_GATEWAYD_SOCKET_FILE, "replace")
-            return True
-        except Exception as e:
-            syslog(
-                LOG_ERR,
-                f"Could not deactivate the log forwarding service: {str(e)}",
-            )
-            return False
+class LogForwarding(SystemdUnit):
+    def __init__(self) -> None:
+        super().__init__(SYSTEMD_JOURNAL_GATEWAYD_SOCKET_FILE)
 
     @cherrypy.tools.json_out()
     def GET(self):
@@ -278,6 +153,9 @@ class LogForwarding(object):
 
             post_data = cherrypy.request.json
             requested_state = post_data.get("state", None)
+            if not requested_state:
+                result["InfoMsg"] = f"Invalid state; valid states: {valid_states}"
+                return result
             if requested_state not in valid_states:
                 result[
                     "InfoMsg"

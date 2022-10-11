@@ -58,6 +58,15 @@ except ImportError:
     cherrypy.log("__main__: AWM NOT loaded")
 
 try:
+    from .stunnel.stunnel import Stunnel
+
+    weblcm_plugins.append("stunnel")
+    cherrypy.log("__main__: stunnel loaded")
+except ImportError:
+    Stunnel = None
+    cherrypy.log("__main__: stunnel NOT loaded")
+
+try:
     from .modem.modem import (
         PositioningSwitch,
         Positioning,
@@ -134,6 +143,9 @@ class WebApp(object):
             self.firewall = Firewall()
         else:
             self.firewall = None
+
+        if Stunnel:
+            self.stunnel = Stunnel()
 
     @cherrypy.expose
     @cherrypy.tools.accept(media="application/json")
