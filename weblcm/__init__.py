@@ -22,6 +22,7 @@ from .swupdate import SWUpdate
 from .unauthenticated import AllowUnauthenticatedResetReboot
 from .users import UserManage, LoginManage
 from .files import FileManage, FilesManage
+from .certificates import Certificates
 from .advanced import PowerOff, Suspend, Reboot, FactoryReset
 from .datetime import DateTimeSetting
 from .settings import SystemSettingsManage
@@ -113,6 +114,7 @@ class WebApp(object):
         self.users = UserManage()
         self.file = FileManage()
         self.files = FilesManage()
+        self.certificates = Certificates()
         if AWMCfgManage:
             self.awm = AWMCfgManage()
 
@@ -227,6 +229,7 @@ def force_session_checking():
         "poweroff",
         "suspend",
         "files",
+        "certificates",
         "datetime",
         "fips",
         "modemEnable",
