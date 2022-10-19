@@ -189,6 +189,8 @@ class NetworkStatusHelper(object):
     @classmethod
     def get_ap_properties(cls, dev):
         ap = dev.get_active_access_point()
+        if not ap:
+            return {}
 
         apProperties = {}
         ssid = ap.get_ssid()
