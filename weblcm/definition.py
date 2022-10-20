@@ -17,6 +17,7 @@ LOG_FORWARDING_ENABLED_FLAG_FILE = "/etc/weblcm-python/log_forwarding_enabled"
 # timezone list
 WEBLCM_PYTHON_ZONELIST_COMMAND = ["timedatectl", "list-timezones"]
 WEBLCM_PYTHON_ZONEINFO = "/etc/localtime"
+WEBLCM_PYTHON_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 WIFI_DRIVER_DEBUG_PARAM = "/sys/module/lrdmwl/parameters/lrd_debug"
 # Change to ath6kl driver for wb50n
@@ -38,6 +39,9 @@ FILEFMT_DICT = {
 DBUS_PROP_IFACE = "org.freedesktop.DBus.Properties"
 WPA_OBJ = "/fi/w1/wpa_supplicant1"
 WPA_IFACE = "fi.w1.wpa_supplicant1"
+
+TIMEDATE1_BUS_NAME = "org.freedesktop.timedate1"
+TIMEDATE1_MAIN_OBJ = "/org/freedesktop/timedate1"
 
 LOGIND_BUS_NAME = "org.freedesktop.login1"
 LOGIND_MAIN_OBJ = "/org/freedesktop/login1"
