@@ -24,7 +24,7 @@ from .users import UserManage, LoginManage
 from .files import FileManage, FilesManage
 from .certificates import Certificates
 from .advanced import PowerOff, Suspend, Reboot, FactoryReset
-from .datetime import DateTimeSetting
+from .date_time import DateTimeSetting
 from .settings import SystemSettingsManage
 from .advanced import Fips
 
@@ -278,7 +278,9 @@ def weblcm_cherrypy_start():
         }
     )
 
-    cherrypy.quickstart(WebApp(), "/", config=definition.WEBLCM_PYTHON_SERVER_CONF_FILE)
+    web_app = WebApp()
+    threading.Thread(target=web_app.datetime.populate_time_zone_list).start()
+    cherrypy.quickstart(web_app, "/", config=definition.WEBLCM_PYTHON_SERVER_CONF_FILE)
 
 
 def main(args=None):
