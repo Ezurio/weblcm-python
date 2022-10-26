@@ -4,8 +4,8 @@ source global_settings
 VSP_SVC_UUID="${VSP_SVC_UUID:-6e400001-b5a3-f393-e0a9-e50e24dcca9e}"
 VSP_READ_CHR_UUID="${VSP_READ_CHR_UUID:-6e400003-b5a3-f393-e0a9-e50e24dcca9e}"
 VSP_WRITE_CHR_UUID="${VSP_WRITE_CHR_UUID:-6e400002-b5a3-f393-e0a9-e50e24dcca9e}"
-# tcpPort may be in the range 1000 to 49151
-VSP_TCP_PORT="${VSP_TCP_PORT:-1001}"
+# tcpPort may be in the range 1025 to 49151
+VSP_TCP_PORT="${VSP_TCP_PORT:-1025}"
 # socketRxType may be JSON or raw
 VSP_SOCKET_RX_TYPE="JSON"
 

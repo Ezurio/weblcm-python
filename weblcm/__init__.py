@@ -2,7 +2,6 @@ import os
 import cherrypy
 import logging
 from typing import List
-
 from . import definition
 from .network_status import NetworkStatus
 from .network import (
@@ -42,8 +41,6 @@ except ImportError:
 
 class WebApp(object):
     def __init__(self):
-        self._firewalld_disabled = os.system("systemctl is-active --quiet firewalld")
-
         self.login = LoginManage()
         self.networkStatus = NetworkStatus()
         self.connections = NetworkConnections()
@@ -85,8 +82,6 @@ class WebApp(object):
             plugins.append(k)
 
         settings = {}
-        # Whether to display 'zone' on the 'edit connection' page
-        settings["firewalld_disabled"] = self._firewalld_disabled
         settings["session_timeout"] = SystemSettingsManage.get_session_timeout()
 
         return {
