@@ -888,10 +888,6 @@ function editConnection(uuid, id, ssid, key_mgmt) {
     setLanguage("main_section");
     clearReturnData();
 
-    //Hide connection-zone-display if firewalld is not enabled
-    if (!g_defines.SETTINGS.firewalld_disabled)
-      $("#connection-zone-display").removeClass("d-none");
-
     if(-1 == g_curr_user_permission.indexOf("networking_ap_activate"))
       $("#radio-mode-display").addClass("d-none");
 

@@ -23,8 +23,6 @@ from .bt_ble_logger import BleLogger
 from .bt_plugin import BluetoothPlugin
 from ..tcp_connection import (
     TcpConnection,
-    firewalld_open_port,
-    firewalld_close_port,
     TCP_SOCKET_HOST,
     SOCK_TIMEOUT,
 )
@@ -330,8 +328,6 @@ class BluetoothTcpServer(TcpConnection):
             args=(self.sock,),
         )
         self.thread.start()
-        if port:
-            firewalld_open_port(port)
 
         return ""
 
@@ -339,8 +335,6 @@ class BluetoothTcpServer(TcpConnection):
         self.stop_tcp_server(self.sock)
         if self.thread:
             self.thread.join()
-        if self.port:
-            firewalld_close_port(self.port)
 
     def stop_read_thread(self):
         os.write(self._stop_pipe_w, b"c")

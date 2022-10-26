@@ -1,13 +1,9 @@
 source global_settings
+IP_VERSION="${IP_VERSION:-"ipv4"}"
 
 echo -e "\n========================="
 echo "Port forward"
 
-if [ -z "$ZONE" ]
-then
-    echo "Please invoke with zone set e.g. ZONE=external $0"
-    exit
-fi
 if [ -z "$PORT" ]
 then
     echo "Please invoke with port set e.g. PORT=22 $0"
@@ -30,21 +26,22 @@ then
 fi
 
 
-echo -e "\nforward port ${VSP_TCP_PORT}:\n"
+echo -e "\nforward port ${PORT}:\n"
 
-${CURL_APP} --location --request PUT ${URL}/firewall/${ZONE}/addForwardPort \
+${CURL_APP} --location --request PUT ${URL}/firewall/addForwardPort \
     --header "Content-Type: application/json" \
     -b cookie --insecure\
     --data '{
         "port": "'"${PORT}"'",
         "protocol": "'"${PROTOCOL}"'",
         "toport": "'"${TOPORT}"'",
-        "toaddr": "'"${TOADDR}"'"
+        "toaddr": "'"${TOADDR}"'",
+        "ip_version": "'"${IP_VERSION}"'"
         }' \
     | ${JQ_APP}
 
 echo -e "\n\ncheck forwarded ports:\n"
-${CURL_APP} --location --request GET ${URL}/firewall/${ZONE} \
+${CURL_APP} --location --request GET ${URL}/firewall \
     --header "Content-Type: application/json" \
     -b cookie --insecure\
     | ${JQ_APP}

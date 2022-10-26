@@ -3,21 +3,13 @@ import threading
 from syslog import syslog
 from typing import Optional
 
-import dbus
-
-TCP_PORT_MIN: int = 1000
+TCP_PORT_MIN: int = 1025
 # Keep away from dynamic ports, 49152 to 65535
 TCP_PORT_MAX: int = 49152 - 1
 
 TCP_SOCKET_HOST = "0.0.0.0"
 SOCK_TIMEOUT = 5
 """ Interval to monitor socket for errors or closure in seconds """
-
-FIREWALLD_TIMEOUT_SECONDS = 20
-FIREWALLD_SERVICE_NAME = "org.fedoraproject.FirewallD1"
-FIREWALLD_OBJECT_PATH = "/org/fedoraproject/FirewallD1"
-FIREWALLD_ZONE_INTERFACE = "org.fedoraproject.FirewallD1.zone"
-FIREWALLD_ZONE = "internal"
 
 
 class TcpConnection(object):
@@ -37,7 +29,7 @@ class TcpConnection(object):
         """
         try:
             return TCP_PORT_MIN <= int(port) <= TCP_PORT_MAX
-        except:
+        except Exception:
             return False
 
     def tcp_server(self, host, params) -> socket.socket:
@@ -91,42 +83,5 @@ class TcpConnection(object):
             if self._tcp_connection:
                 try:
                     self._tcp_connection.sendall(data_encoded)
-                except:
+                except Exception:
                     pass
-
-
-def firewalld_open_port(port):
-    try:
-        bus = dbus.SystemBus()
-        bus.call_blocking(
-            bus_name=FIREWALLD_SERVICE_NAME,
-            object_path=FIREWALLD_OBJECT_PATH,
-            dbus_interface=FIREWALLD_ZONE_INTERFACE,
-            method="addPort",
-            signature="sssi",
-            args=[
-                dbus.String(FIREWALLD_ZONE),
-                dbus.String(port),
-                dbus.String("tcp"),
-                dbus.Int32(0),
-            ],
-            timeout=FIREWALLD_TIMEOUT_SECONDS,
-        )
-    except Exception as e:
-        syslog("firewalld_open_port: Exception: " + str(e))
-
-
-def firewalld_close_port(port):
-    try:
-        bus = dbus.SystemBus()
-        bus.call_blocking(
-            bus_name=FIREWALLD_SERVICE_NAME,
-            object_path=FIREWALLD_OBJECT_PATH,
-            dbus_interface=FIREWALLD_ZONE_INTERFACE,
-            method="removePort",
-            signature="sss",
-            args=[dbus.String(FIREWALLD_ZONE), dbus.String(port), dbus.String("tcp")],
-            timeout=FIREWALLD_TIMEOUT_SECONDS,
-        )
-    except Exception as e:
-        syslog("firewalld_close_port: Exception: " + str(e))
