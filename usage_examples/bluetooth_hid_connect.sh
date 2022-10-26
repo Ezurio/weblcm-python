@@ -1,7 +1,7 @@
 source global_settings
 
-# tcpPort may be in the range 1000 to 49151
-HID_TCP_PORT="${HID_TCP_PORT:-1001}"
+# tcpPort may be in the range 1025 to 49151
+HID_TCP_PORT="${HID_TCP_PORT:-1025}"
 
 echo -e "\n========================="
 echo "Bluetooth hid barcode scanner connect"

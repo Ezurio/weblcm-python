@@ -1,6 +1,6 @@
 source global_settings
 
-VSP_TCP_PORT="${VSP_TCP_PORT:-1001}"
+VSP_TCP_PORT="${VSP_TCP_PORT:-1025}"
 
 echo -e "\n========================="
 echo "Bluetooth virtual serial port (gatt characteristics) disconnect"

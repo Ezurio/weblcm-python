@@ -13,8 +13,6 @@ import pyudev
 from ..bluetooth.bt_plugin import BluetoothPlugin
 from ..tcp_connection import (
     TcpConnection,
-    firewalld_open_port,
-    firewalld_close_port,
     TCP_SOCKET_HOST,
     SOCK_TIMEOUT,
 )
@@ -167,7 +165,7 @@ class HidBarcodeScannerPlugin(BluetoothPlugin):
                     self.hid_connections[device_uuid] = hid_connection
         elif command == "hidDisconnect":
             processed = True
-            if not device_uuid in self.hid_connections:
+            if device_uuid not in self.hid_connections:
                 error_message = f"device {device_uuid} has no hid connection"
             else:
                 hid_connection = self.hid_connections.pop(device_uuid)
@@ -344,8 +342,6 @@ class HidBarcodeScanner(TcpConnection):
                     args=(self.sock,),
                 )
                 self.thread.start()
-                if port:
-                    firewalld_open_port(port)
                 if hid_input_devname and not self._barcode_read_thread_count:
                     self.read_thread = threading.Thread(
                         target=self.barcode_scanner_read_thread,
@@ -365,8 +361,6 @@ class HidBarcodeScanner(TcpConnection):
         self.stop_tcp_server(self.sock)
         if self.thread:
             self.thread.join()
-        if self.port:
-            firewalld_close_port(self.port)
 
     def stop_read_thread(self):
         os.write(self._stop_pipe_w, b"c")

@@ -19,8 +19,6 @@ from ..bluetooth.bt_plugin import BluetoothPlugin
 from ..tcp_connection import (
     TcpConnection,
     TCP_SOCKET_HOST,
-    firewalld_open_port,
-    firewalld_close_port,
     SOCK_TIMEOUT,
 )
 
@@ -62,7 +60,7 @@ class VspConnectionPlugin(BluetoothPlugin):
                     self.vsp_connections[device_uuid] = vsp_connection
         elif command == "gattDisconnect":
             processed = True
-            if not device_uuid in self.vsp_connections:
+            if device_uuid not in self.vsp_connections:
                 error_message = f"device {device_uuid} has no vsp connection"
             else:
                 vsp_connection = self.vsp_connections.pop(device_uuid)
@@ -171,7 +169,7 @@ class VspConnection(TcpConnection):
                     f"vsp device_prop_changed_cb: ServicesResolved: "
                     f"{changed_props['ServicesResolved']}",
                 )
-                if changed_props["ServicesResolved"] == True:
+                if changed_props["ServicesResolved"]:
                     if self._waiting_for_services_resolved:
                         self._waiting_for_services_resolved = False
                         self.gatt_only_connected()
@@ -373,8 +371,6 @@ class VspConnection(TcpConnection):
                 self.signal_device_prop_changed = device_iface.connect_to_signal(
                     "PropertiesChanged", self.device_prop_changed_cb
                 )
-                if port:
-                    firewalld_open_port(port)
         except Exception:
             self.stop_client()
             raise
@@ -395,8 +391,6 @@ class VspConnection(TcpConnection):
         self.stop_tcp_server(self.sock)
         if self.thread:
             self.thread.join()
-        if self.port:
-            firewalld_close_port(self.port)
         syslog(LOG_INFO, f"vsp_close: closed for device {self.device_uuid}")
 
     def gatt_only_reconnect(self):
@@ -424,7 +418,7 @@ class VspConnection(TcpConnection):
 
         services_resolved = device_props.get("ServicesResolved")
 
-        if services_resolved == True:
+        if services_resolved:
             self.gatt_only_connected()
         else:
             syslog(
