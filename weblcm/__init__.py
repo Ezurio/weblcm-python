@@ -1,5 +1,4 @@
-import os
-from syslog import syslog, LOG_ERR
+from syslog import syslog
 import threading
 import cherrypy
 import logging
@@ -107,26 +106,6 @@ class WebApp(object):
         }
 
 
-# Redirect http to https
-def force_tls():
-
-    if cherrypy.request.scheme == "http":
-        raise cherrypy.HTTPRedirect(
-            cherrypy.url().replace("http:", "https:"), status=301
-        )
-
-
-def setup_http_server():
-
-    httpServer = cherrypy._cpserver.Server()
-    httpServer.socket_host = "::"
-    httpServer.socket_port = 80
-    httpServer.thread_pool = 0
-    httpServer.subscribe()
-
-    cherrypy.request.hooks.attach("on_start_resource", force_tls)
-
-
 def force_session_checking():
     """
     Raise HTTP 401 Unauthorized client error if a session with invalid id tries to assess following resources.
@@ -181,7 +160,6 @@ def weblcm_cherrypy_start():
     """
     Configure and start CherryPy
     """
-    setup_http_server()
 
     logging.getLogger("cherrypy").propagate = False
 
