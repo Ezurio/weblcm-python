@@ -8,7 +8,7 @@ SYSTEM_CONF_DIR = "/data/"
 
 NETWORKMANAGER_CONF_DIR = "/etc/NetworkManager/"
 # weblcm-python.ini is for server config. It should be updated only by software update.
-WEBLCM_PYTHON_SERVER_CONF_FILE = "/etc/weblcm-python/weblcm-python.ini"
+WEBLCM_PYTHON_SERVER_CONF_FILE = "/etc/weblcm-python.ini"
 # system settings
 WEBLCM_PYTHON_SETTINGS_FILE = "/etc/weblcm-python/weblcm-settings.ini"
 # log forwarding
