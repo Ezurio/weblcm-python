@@ -5,10 +5,10 @@ import gi
 
 gi.require_version("NM", "1.0")
 from gi.repository import NM
-from threading import Thread, Lock
+from threading import Lock
 from .settings import SystemSettingsManage
 from . import definition
-from syslog import LOG_WARNING, syslog, LOG_ERR
+from syslog import syslog, LOG_ERR
 from subprocess import run, TimeoutExpired
 import re
 
@@ -350,18 +350,27 @@ class NetworkStatusHelper(object):
 
         connection = active_connection.get_connection()
         properties["con-path"] = connection.get_path()
-        properties["zone"] = connection.get_setting_connection().get_zone()
+        connection_setting_connection = connection.get_setting_connection()
+        properties["zone"] = (
+            connection_setting_connection.get_zone()
+            if connection_setting_connection
+            else NM.SettingConnection.props.zone.default_value
+        )
 
         master = active_connection.get_master()
-        if master:
-            properties["master-path"] = master.get_path()
-        else:
-            properties["master-path"] = None
+        properties["master-path"] = (
+            master.get_path()
+            if master
+            else NM.ActiveConnection.props.master.default_value
+        )
 
         return properties
 
     @classmethod
     def extract_ip_config_properties_from_active_connection(cls, ip_config):
+        if not ip_config:
+            return {}
+
         # Attempt to match output from:
         # 'nmcli connection show <target_profile>'
         properties = {}
@@ -489,12 +498,6 @@ class NetworkStatusHelper(object):
         settings = {}
 
         with cls._lock:
-            if not cls._client.reload_connections(None):
-                syslog(
-                    LOG_WARNING,
-                    "Unable to reload connection settings, reported settings could be stale",
-                )
-
             connection = cls._client.get_connection_by_uuid(str(uuid))
             if not connection:
                 return (-1, "Invalid UUID", {})
@@ -518,7 +521,7 @@ class NetworkStatusHelper(object):
                 definition.WEBLCM_NM_SETTING_PROXY_TEXT
             ] = cls.extract_properties_from_nm_setting(connection.get_setting_proxy())
 
-            # Get settings only available if the requested connection is the active one
+            # Get settings only available if the requested connection is active
             for active_connection in cls._client.get_active_connections():
                 if active_connection.get_uuid() == connection.get_uuid():
                     settings[
@@ -604,23 +607,28 @@ class NetworkStatusHelper(object):
                 cls._network_status[interface_name]["status"] = cls.get_dev_status(dev)
 
                 if dev.get_state() is NM.DeviceState.ACTIVATED:
-                    active_connection = dev.get_active_connection().get_connection()
-                    setting_connection = active_connection.get_setting_connection()
+                    dev_active_connection = dev.get_active_connection()
+                    if dev_active_connection:
+                        active_connection = dev_active_connection.get_connection()
+                        setting_connection = active_connection.get_setting_connection()
 
-                    connection_active = {}
-                    connection_active["id"] = setting_connection.get_id()
-                    connection_active[
-                        "interface-name"
-                    ] = setting_connection.get_interface_name()
-                    connection_active["permissions"] = setting_connection.get_property(
-                        "permissions"
-                    )
-                    connection_active["type"] = setting_connection.get_property("type")
-                    connection_active["uuid"] = setting_connection.get_uuid()
-                    connection_active["zone"] = setting_connection.get_zone()
-                    cls._network_status[interface_name][
-                        "connection_active"
-                    ] = connection_active
+                        if setting_connection:
+                            connection_active = {}
+                            connection_active["id"] = setting_connection.get_id()
+                            connection_active[
+                                "interface-name"
+                            ] = setting_connection.get_interface_name()
+                            connection_active[
+                                "permissions"
+                            ] = setting_connection.get_property("permissions")
+                            connection_active["type"] = setting_connection.get_property(
+                                "type"
+                            )
+                            connection_active["uuid"] = setting_connection.get_uuid()
+                            connection_active["zone"] = setting_connection.get_zone()
+                            cls._network_status[interface_name][
+                                "connection_active"
+                            ] = connection_active
 
                     cls._network_status[interface_name][
                         "ip4config"
@@ -702,23 +710,26 @@ def dev_statechange(dev, new_state, old_state, reason):
                 "status"
             ] = NetworkStatusHelper.get_dev_status(dev)
 
-            active_connection = dev.get_active_connection().get_connection()
-            setting_connection = active_connection.get_setting_connection()
+            dev_active_connection = dev.get_active_connection()
+            if dev_active_connection:
+                active_connection = dev_active_connection.get_connection()
+                setting_connection = active_connection.get_setting_connection()
 
-            connection_active = {}
-            connection_active["id"] = setting_connection.get_id()
-            connection_active[
-                "interface-name"
-            ] = setting_connection.get_interface_name()
-            connection_active["permissions"] = setting_connection.get_property(
-                "permissions"
-            )
-            connection_active["type"] = setting_connection.get_property("type")
-            connection_active["uuid"] = setting_connection.get_uuid()
-            connection_active["zone"] = setting_connection.get_zone()
-            NetworkStatusHelper._network_status[interface_name][
-                "connection_active"
-            ] = connection_active
+                if setting_connection:
+                    connection_active = {}
+                    connection_active["id"] = setting_connection.get_id()
+                    connection_active[
+                        "interface-name"
+                    ] = setting_connection.get_interface_name()
+                    connection_active["permissions"] = setting_connection.get_property(
+                        "permissions"
+                    )
+                    connection_active["type"] = setting_connection.get_property("type")
+                    connection_active["uuid"] = setting_connection.get_uuid()
+                    connection_active["zone"] = setting_connection.get_zone()
+                    NetworkStatusHelper._network_status[interface_name][
+                        "connection_active"
+                    ] = connection_active
 
             NetworkStatusHelper._network_status[interface_name][
                 "ip4config"
