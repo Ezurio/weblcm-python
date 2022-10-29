@@ -9,6 +9,7 @@ from subprocess import run, TimeoutExpired
 from .settings import SystemSettingsManage
 from .network_status import NetworkStatusHelper
 import gi
+import os
 
 gi.require_version("NM", "1.0")
 from gi.repository import GLib, NM
@@ -27,30 +28,48 @@ class NetworkConnections(object):
             .split()
         )
 
+        # Get a list of all known connections (profiles)
         with NetworkStatusHelper.get_lock():
             connections = _client.get_connections()
+
+        # Loop through the connections and build a dictionary to return
         for conn in connections:
             if unmanaged_devices and conn.get_interface_name() in unmanaged_devices:
                 continue
 
-            t = {}
-            t["id"] = conn.get_id()
-            t["activated"] = 0
+            entry = {}
 
-            s_wifi = conn.get_setting_wireless()
-            if s_wifi and s_wifi.get_mode() == "ap":
-                t["type"] = "ap"
+            # Assume the connection is not in the 'Activated' state by default until we can check it
+            # against the list of 'Active' connections later
+            entry["activated"] = 0
+            entry["id"] = conn.get_id()
 
-            result["connections"][conn.get_uuid()] = t
+            # Check if the connection is an AP
+            try:
+                entry["type"] = (
+                    "ap" if conn.get_setting_wireless().get_mode() == "ap" else ""
+                )
+            except Exception:
+                # Couldn't read the wireless settings, so assume it's not an AP
+                pass
 
-        with NetworkStatusHelper.get_lock():
-            active_connections = _client.get_active_connections()
-        for conn in active_connections:
-            uuid = conn.get_uuid()
-            if result.get("connections") and result.get("connections").get(uuid):
-                result["connections"][uuid]["activated"] = 1
-
+            # Add the connection to the dictionary
+            result["connections"][conn.get_uuid()] = entry
         result["count"] = len(result["connections"])
+
+        if result["count"] > 0:
+            # Get a list of all active connections (profiles) so that we can mark which ones are in
+            # the 'Activated' state
+            with NetworkStatusHelper.get_lock():
+                active_connections = _client.get_active_connections()
+            for conn in active_connections:
+                try:
+                    if conn.get_state() == NM.ActiveConnectionState.ACTIVATED:
+                        result["connections"][conn.get_uuid()]["activated"] = 1
+                except Exception:
+                    # Couldn't mark the connection as 'Activated', so just assume it's not
+                    pass
+
         return result
 
 
@@ -280,12 +299,16 @@ class NetworkConnection(object):
                 cherrypy.request.json["activate"] == 1
                 or cherrypy.request.json["activate"] == "1"
             ):
-                if conn.get_setting_connection().get_property("type") == "bridge":
+                connection_setting_connection = conn.get_setting_connection()
+                if connection_setting_connection is None:
+                    result["InfoMsg"] = "Unable to read connection settings"
+                    return result
+                if connection_setting_connection.get_property("type") == "bridge":
                     if self.activate_connection(conn, None):
                         result["SDCERR"] = 0
                         result["InfoMsg"] = "Bridge activated"
                 else:
-                    interface_name = conn.get_setting_connection().get_interface_name()
+                    interface_name = connection_setting_connection.get_interface_name()
                     with NetworkStatusHelper.get_lock():
                         all_devices = self.client.get_all_devices()
                     for dev in all_devices:
