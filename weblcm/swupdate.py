@@ -164,6 +164,9 @@ class SWUpdate:
             return result
 
         url = cherrypy.request.json.get("url", None)
+        if url and " " in url:
+            result["InfoMsg"] = "Invalid URL"
+            return result
         image = cherrypy.request.json.get("image", "main")
         running_mode = self.get_running_mode_for_update(image)
 
