@@ -124,6 +124,10 @@ class SWUpdate:
 			SWUpdate._isUpdating = True
 
 		url = cherrypy.request.json.get('url', None)
+		if url and " " in url:
+			SWUpdate._isUpdating = False
+			result["message"] = "Invalid URL"
+			return
 		image = cherrypy.request.json.get('image', "main")
 		imageset = get_imageset_for_update(image)
 

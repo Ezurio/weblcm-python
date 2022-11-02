@@ -69,17 +69,17 @@ post_update() {
 
 case $1 in
 	pre-update)
-		pre_update $2
+		pre_update "$2"
 		#Success
 		exit 0
 		;;
 	do-update)
-		pre_update $2 $3
+		pre_update "$2" "$3"
 		#Success
 		exit 0
 		;;
 	get-update)
-		get_update $2
+		get_update "$2"
 		;;
 	post-update)
 		post_update
