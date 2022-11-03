@@ -155,7 +155,7 @@ static PyObject * get_cert_info(PyObject *self, PyObject *args)
 #endif
 	num_of_exts = exts ? sk_X509_EXTENSION_num(exts) : 0;
 	if (num_of_exts < 0) {
-		PyErr_SetString(PyExc_RuntimeError, "get_cert_extensions: unable to parse extensions");
+		PyErr_SetString(PyExc_RuntimeError, "get_cert_info: unable to parse extensions");
 		goto exit;
 	}
 	extensions_list = PyList_New(num_of_exts);
@@ -164,27 +164,27 @@ static PyObject * get_cert_info(PyObject *self, PyObject *args)
 		ex = sk_X509_EXTENSION_value(exts, i);
 		if (ex == NULL) {
 			PyErr_SetString(PyExc_RuntimeError,
-				"get_cert_extensions: unable to extract extension from stack");
+				"get_cert_info: unable to extract extension from stack");
 			goto exit;
 		}
 		obj = X509_EXTENSION_get_object(ex);
 		if (obj == NULL) {
 			PyErr_SetString(PyExc_RuntimeError,
-				"get_cert_extensions: unable to extract ASN1 object from extension");
+				"get_cert_info: unable to extract ASN1 object from extension");
 			goto exit;
 		}
 
 		BIO *ext_bio = BIO_new(BIO_s_mem());
 		if (ext_bio == NULL) {
 			PyErr_SetString(PyExc_RuntimeError,
-				"get_cert_extensions: unable to allocate memory for extension value BIO");
+				"get_cert_info: unable to allocate memory for extension value BIO");
 			goto exit;
 		}
 		if (!X509V3_EXT_print(ext_bio, ex, 0, 0)) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-			ASN1_STRING_print_ex(ext_bio, (ASN1_STRING *)X509_EXTENSION_get_data(ex), 0);
+			ASN1_STRING_print(ext_bio, (ASN1_STRING *)X509_EXTENSION_get_data(ex));
 #else
-			ASN1_STRING_print_ex(ext_bio, (ASN1_STRING *)ex->value, 0);
+			ASN1_STRING_print(ext_bio, (ASN1_STRING *)ex->value);
 #endif
 		}
 
@@ -193,9 +193,13 @@ static PyObject * get_cert_info(PyObject *self, PyObject *args)
 		BIO_set_close(ext_bio, BIO_NOCLOSE);
 		BIO_free(ext_bio);
 
-		// Ensure the data value string is null terminated
-		if (strlen(bptr->data) > bptr->length) {
-			bptr->data[bptr->length] = '\0';
+		// Decode data value string as UTF-8 using the 'replace' error handling method
+		PyObject *value = PyUnicode_DecodeUTF8(bptr->data, bptr->length, "replace");
+		if (value == NULL) {
+			PyErr_SetString(PyExc_RuntimeError,
+				"get_cert_info: unable to parse extension value");
+			goto exit;
+
 		}
 
 		unsigned nid = OBJ_obj2nid(obj);
@@ -205,19 +209,21 @@ static PyObject * get_cert_info(PyObject *self, PyObject *args)
 			OBJ_obj2txt(extname, EXTNAME_LEN, (const ASN1_OBJECT *) obj, 1);
 			PyList_SET_ITEM(extensions_list,
 				i,
-				Py_BuildValue("{s:s,s:s}", "name", extname, "value", bptr->data));
+				Py_BuildValue("{s:s,s:s}", "name", extname, "value", PyUnicode_AsUTF8(value)));
 		} else {
 			// The OID translated to a NID which implies that the OID has a known sn/ln
 			const char *c_ext_name = OBJ_nid2ln(nid);
 			if (c_ext_name == NULL) {
+				Py_XDECREF(value);
 				PyErr_SetString(PyExc_RuntimeError,
-					"get_cert_extensions: invalid X509v3 extension name");
+					"get_cert_info: invalid X509v3 extension name");
 				goto exit;
 			}
 			PyList_SET_ITEM(extensions_list,
 				i,
-				Py_BuildValue("{s:s,s:s}", "name", c_ext_name, "value", bptr->data));
+				Py_BuildValue("{s:s,s:s}", "name", c_ext_name, "value", PyUnicode_AsUTF8(value)));
 		}
+		Py_XDECREF(value);
 	}
 
 	result = Py_BuildValue("{s:i,s:s,s:s,s:s,s:s,s:s,s:O}",
