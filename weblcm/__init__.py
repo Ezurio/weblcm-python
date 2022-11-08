@@ -1,4 +1,4 @@
-from syslog import syslog
+from syslog import LOG_ERR, syslog
 import threading
 import cherrypy
 import logging
@@ -27,9 +27,19 @@ from .advanced import Fips
 
 from gi.repository import GLib
 import dbus.mainloop.glib
+import configparser
 
 weblcm_plugins: List[str] = []
 
+PY_SSL_CERT_REQUIRED_NO_CHECK_TIME = 3
+"""
+Custom OpenSSL verify mode to disable time checking during certificate verification
+"""
+
+X509_V_FLAG_NO_CHECK_TIME = 0x200000
+"""
+Flags for OpenSSL 1.1.1 or newer to disable time checking during certificate verification
+"""
 
 """
 Note: Authenticating websocket users by header token is non-standard; an alternative method
@@ -154,7 +164,13 @@ class WebApp(object):
             plugins.append(k)
 
         settings = {}
-        settings["session_timeout"] = SystemSettingsManage.get_session_timeout()
+        # If sessions aren't enabled, set the session_timeout to -1 to alert the frontend that we
+        # don't need to auto log out.
+        settings["session_timeout"] = (
+            SystemSettingsManage.get_session_timeout()
+            if cherrypy.request.app.config["/"].get("tools.sessions.on", True)
+            else -1
+        )
 
         return {
             "SDCERR": definition.WEBLCM_ERRORS["SDCERR_SUCCESS"],
@@ -175,6 +191,18 @@ def force_session_checking():
     Raise HTTP 401 Unauthorized client error if a session with invalid id tries to assess following resources.
     HTMLs still can be loaded to keep consistency, i.e. loaded from local cache or remotely.
     """
+    # Check if SSL client authentication is enabled and if it failed ('SSL_CLIENT_VERIFY' is
+    # 'SUCCESS' when authentication is successful).
+    if (
+        cherrypy.request.app.config["weblcm"].get("enable_client_auth", False)
+        and cherrypy.request.wsgi_environ.get("SSL_CLIENT_VERIFY", "NONE") != "SUCCESS"
+    ):
+        # Could not authenticate client
+        raise cherrypy.HTTPError(401)
+
+    # Check if sessions are enabled
+    if not cherrypy.request.app.config["/"].get("tools.sessions.on", True):
+        return
 
     paths = [
         "connections",
@@ -239,6 +267,50 @@ def weblcm_cherrypy_start():
             "tools.sessions.timeout": SystemSettingsManage.get_session_timeout(),
         }
     )
+
+    # Configure SSL client authentication if enabled
+    try:
+        parser = configparser.ConfigParser()
+        parser.read(definition.WEBLCM_PYTHON_SERVER_CONF_FILE)
+
+        if bool(parser["weblcm"].get("enable_client_auth", False).strip('"')):
+            from ssl import CERT_REQUIRED, OPENSSL_VERSION_NUMBER
+            from cheroot.ssl.builtin import BuiltinSSLAdapter
+
+            ssl_certificate = (
+                parser["global"]
+                .get("server.ssl_certificate", "/etc/weblcm-python/ssl/server.crt")
+                .strip('"')
+            )
+            ssl_private_key = (
+                parser["global"]
+                .get("server.ssl_private_key", "/etc/weblcm-python/ssl/server.key")
+                .strip('"')
+            )
+            ssl_certificate_chain = (
+                parser["global"]
+                .get("server.ssl_certificate_chain", "/etc/weblcm-python/ssl/ca.crt")
+                .strip('"')
+            )
+
+            ssl_adapter = BuiltinSSLAdapter(
+                certificate=ssl_certificate,
+                private_key=ssl_private_key,
+                certificate_chain=ssl_certificate_chain,
+            )
+            if OPENSSL_VERSION_NUMBER >= 0x10101000:
+                # OpenSSL 1.1.1 or newer - we can use the built-in functionality to disable time
+                # checking during certificate verification
+                ssl_adapter.context.verify_mode = CERT_REQUIRED
+                ssl_adapter.context.verify_flags |= X509_V_FLAG_NO_CHECK_TIME
+            else:
+                # OpenSSL 1.0.2 - we need to use the patched-in functionality to disable time
+                # checking during certificate verification
+                ssl_adapter.context.verify_mode = PY_SSL_CERT_REQUIRED_NO_CHECK_TIME
+            cherrypy.server.httpserver_from_self()[0].ssl_adapter = ssl_adapter
+            cherrypy.server.ssl_context = ssl_adapter.context
+    except Exception as e:
+        syslog(LOG_ERR, f"Error configuring SSL client authentication - {str(e)}")
 
     web_app = WebApp()
     threading.Thread(target=web_app.datetime.populate_time_zone_list).start()
