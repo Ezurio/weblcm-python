@@ -96,7 +96,7 @@ class Firewall(object):
                 forwarded_port_present = True
                 break
         if command == ADD_PORT and forwarded_port_present:
-            return (False, "Forwarded port already exists")
+            return (True, "Forwarded port already exists")
         elif command == REMOVE_PORT and not forwarded_port_present:
             return (False, "Forwarded port doesn't exist")
 
@@ -347,10 +347,9 @@ class Firewall(object):
                         toaddr,
                         ip_version if ip_version else IPV4,
                     )
+                    result["InfoMsg"] = msg
                     if success:
                         result["SDCERR"] = WEBLCM_ERRORS["SDCERR_SUCCESS"]
-                    else:
-                        result["InfoMsg"] = msg
             else:
                 result["InfoMsg"] = "No command specified"
 
