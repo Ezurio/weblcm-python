@@ -17,6 +17,8 @@ IPV4 = "ipv4"
 IPV6 = "ipv6"
 IPV4V6 = "ipv4v6"
 IP_VERSIONS = [IPV4, IPV6]
+FIREWALL_GET_MAX_PATH_DEPTH = 2
+FIREWALL_PUT_MAX_PATH_DEPTH = 3
 
 
 @cherrypy.expose
@@ -284,6 +286,9 @@ class Firewall(object):
 
     @cherrypy.tools.json_out()
     def GET(self, *args, **kwargs):
+        if len(cherrypy.request.path_info.split("/")) > FIREWALL_GET_MAX_PATH_DEPTH:
+            raise cherrypy.HTTPError(404, "Invalid path")
+
         result = {
             "SDCERR": WEBLCM_ERRORS["SDCERR_FAIL"],
             "InfoMsg": "",
@@ -302,6 +307,9 @@ class Firewall(object):
     @cherrypy.tools.accept(media="application/json")
     @cherrypy.tools.json_out()
     def PUT(self, *args, **kwargs):
+        if len(cherrypy.request.path_info.split("/")) > FIREWALL_PUT_MAX_PATH_DEPTH:
+            raise cherrypy.HTTPError(404, "Invalid path")
+
         result = {
             "SDCERR": WEBLCM_ERRORS["SDCERR_FAIL"],
             "InfoMsg": "",
