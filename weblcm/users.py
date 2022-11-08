@@ -305,6 +305,13 @@ class LoginManage(object):
             "InfoMsg": "",
         }
 
+        # Check if sessions are enabled
+        if not cherrypy.request.app.config["/"].get("tools.sessions.on", True):
+            result["PERMISSION"] = USER_PERMISSION_TYPES["UserPermissionTypes"]
+            result["SDCERR"] = WEBLCM_ERRORS.get("SDCERR_SUCCESS")
+            result["InfoMsg"] = "User logged in"
+            return result
+
         post_data = cherrypy.request.json
         username = post_data.get("username", "")
         password = post_data.get("password", "")

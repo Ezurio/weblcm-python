@@ -176,7 +176,10 @@ function login(user, passwd) {
   .done(function (data) {
     if (data.SDCERR == g_defines.SDCERR.SDCERR_SUCCESS) {
       $("#form-login").addClass("d-none");
-      $("#form-logout").removeClass("d-none");
+      // session_timeout of -1 means sessions are disabled
+      if (g_defines.SETTINGS.session_timeout != -1) {
+        $("#form-logout").removeClass("d-none");
+      }
 
       clearReturnData();
 
@@ -209,7 +212,10 @@ function login(user, passwd) {
       if(g_sess_timeout_id != -1){
         clearTimeout(g_sess_timeout_id);
       }
-      g_sess_timeout_id = setTimeout(session_timeout, g_defines.SETTINGS.session_timeout * 60 * 1000);
+      // session_timeout of -1 means sessions are disabled
+      if (g_defines.SETTINGS.session_timeout != -1) {
+        g_sess_timeout_id = setTimeout(session_timeout, g_defines.SETTINGS.session_timeout * 60 * 1000);
+      }
 
       ret = true;
 
