@@ -1,5 +1,4 @@
 import os
-import cherrypy
 
 WEBLCM_PYTHON_VERSION = "1.0.0.5"
 
