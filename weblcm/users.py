@@ -370,26 +370,27 @@ class LoginManage(object):
                 syslog(f"User {username} logged in")
                 return result
 
-        # If session already exists, return success; otherwise verify login username and password.
-        if not cherrypy.session.get("USERNAME", None):
+        if not UserManageHelper.verify(username, password):
+            LoginManageHelper.login_failed(username)
+            result["InfoMsg"] = "unable to verify user/password"
 
-            if not UserManageHelper.verify(username, password):
-                LoginManageHelper.login_failed(username)
-                result["InfoMsg"] = "unable to verify user/password"
-                return result
+            # Expire the current session if user has already logged in
+            if cherrypy.session.get("USERNAME", None):
+                cherrypy.lib.sessions.expire()
+            return result
 
-            LoginManageHelper.login_reset(username)
+        LoginManageHelper.login_reset(username)
 
-            if LoginManageHelper.is_user_logged_in(
-                username
-            ) and not cherrypy.request.app.config["weblcm"].get(
-                "allow_multiple_user_sessions", False
-            ):
-                result["SDCERR"] = WEBLCM_ERRORS.get("SDCERR_USER_LOGGED")
-                result["InfoMsg"] = "User already logged in"
-                return result
+        if LoginManageHelper.is_user_logged_in(
+            username
+        ) and not cherrypy.request.app.config["weblcm"].get(
+            "allow_multiple_user_sessions", False
+        ):
+            result["SDCERR"] = WEBLCM_ERRORS.get("SDCERR_USER_LOGGED")
+            result["InfoMsg"] = "User already logged in"
+            return result
 
-            cherrypy.session["USERNAME"] = username
+        cherrypy.session["USERNAME"] = username
 
         result["PERMISSION"] = UserManageHelper.getPermission(
             cherrypy.session.get("USERNAME", None)
