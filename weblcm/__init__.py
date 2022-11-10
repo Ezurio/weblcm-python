@@ -273,7 +273,9 @@ def weblcm_cherrypy_start():
         parser = configparser.ConfigParser()
         parser.read(definition.WEBLCM_PYTHON_SERVER_CONF_FILE)
 
-        if bool(parser["weblcm"].get("enable_client_auth", False).strip('"')):
+        if parser.getboolean(
+            section="weblcm", option="enable_client_auth", fallback=False
+        ):
             from ssl import CERT_REQUIRED, OPENSSL_VERSION_NUMBER
             from cheroot.ssl.builtin import BuiltinSSLAdapter
 
@@ -309,6 +311,9 @@ def weblcm_cherrypy_start():
                 ssl_adapter.context.verify_mode = PY_SSL_CERT_REQUIRED_NO_CHECK_TIME
             cherrypy.server.httpserver_from_self()[0].ssl_adapter = ssl_adapter
             cherrypy.server.ssl_context = ssl_adapter.context
+            syslog("SSL client authentication enabled")
+        else:
+            syslog("SSL client authentication NOT enabled")
     except Exception as e:
         syslog(LOG_ERR, f"Error configuring SSL client authentication - {str(e)}")
 
