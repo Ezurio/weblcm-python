@@ -106,7 +106,7 @@ def run_setup(CYTHON):
     if CYTHON:
         cmdclass, ext_modules = get_cython_options()
     else:
-        cmdclass, ext_modules = {}, []
+        cmdclass, ext_modules = {}, [openssl_extension_module]
 
     setup(
         name="weblcm-python",
