@@ -485,6 +485,31 @@ class NetworkConnection(object):
                     # Name constant:    NM.SETTING_WIRELESS_SECURITY_SETTING_NAME
                     # Constant value:   802-11-wireless-security
                     if connection_json.get(NM.SETTING_WIRELESS_SECURITY_SETTING_NAME):
+                        # libnm expects some 802-11-wireless-security properties to be an array of strings
+                        for property in [
+                            "pairwise",
+                            "group",
+                            "proto",
+                        ]:
+                            if connection_json["802-11-wireless-security"].get(
+                                property
+                            ):
+                                if not isinstance(
+                                    connection_json["802-11-wireless-security"][
+                                        property
+                                    ],
+                                    list,
+                                ):
+                                    connection_json["802-11-wireless-security"][
+                                        property
+                                    ] = [
+                                        str(
+                                            connection_json["802-11-wireless-security"][
+                                                property
+                                            ]
+                                        )
+                                    ]
+
                         variant_builder.add_value(
                             GLib.Variant.new_dict_entry(
                                 GLib.Variant.new_string(
@@ -881,8 +906,10 @@ class NetworkConnection(object):
                 result["InfoMsg"] = "Invalid parameters"
                 return result
 
-            existing_connection = connections.get(
-                post_data.get("connection")["uuid"], None
+            existing_connection = (
+                connections.get(post_data.get("connection")["uuid"], None)
+                if post_data.get("connection").get("uuid")
+                else None
             )
 
             (new_connection, error_msg) = build_connection_from_json(
