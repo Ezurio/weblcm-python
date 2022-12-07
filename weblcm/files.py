@@ -5,6 +5,7 @@ from threading import Lock
 from syslog import LOG_ERR, syslog
 from typing import Any, Tuple
 import cherrypy
+from .advanced import FactoryReset
 from .network_status import NetworkStatusHelper
 from . import definition
 from .settings import SystemSettingsManage
@@ -47,6 +48,9 @@ class FileManage(object):
         except Exception:
             return None
 
+    def is_encrypted_storage_toolkit_enabled(self) -> bool:
+        return os.path.exists(FactoryReset.FACTORY_RESET_SCRIPT)
+
     @cherrypy.tools.json_out()
     def POST(self, *args, **kwargs):
         result = {"SDCERR": definition.WEBLCM_ERRORS["SDCERR_FAIL"], "InfoMsg": ""}
@@ -84,6 +88,15 @@ class FileManage(object):
                     syslog("FileManage POST type failure to copy file")
                     result["InfoMsg"] = "file POST failure to copy file"  # bad request
                     return result
+
+                if type == "config" and not self.is_encrypted_storage_toolkit_enabled():
+                    syslog(
+                        "FileManage POST - config import not available on non-encrypted file system images"
+                    )
+                    raise cherrypy.HTTPError(
+                        400,
+                        "config import not available on non-encrypted file system images",
+                    )
 
                 # Only attempt to unzip the uploaded file if the 'type' requires a zip file. Otherwise,
                 # just saving the file is sufficient (i.e., for a certificate)
@@ -132,6 +145,16 @@ class FileManage(object):
             if not password:
                 syslog("FileManage Get - no password provided")
                 raise cherrypy.HTTPError(400, "no password provided")
+
+            if not self.is_encrypted_storage_toolkit_enabled():
+                syslog(
+                    "FileManage GET - config export not available on non-encrypted file system images"
+                )
+                raise cherrypy.HTTPError(
+                    400,
+                    "config export not available on non-encrypted file system images",
+                )
+
             args = [
                 FileManage.FILE_MANAGE_SCRIPT,
                 "config",
