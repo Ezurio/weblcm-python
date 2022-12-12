@@ -224,6 +224,7 @@ def force_session_checking():
         "datetime",
         "fips",
         "modemEnable",
+        "wifiEnable",
     ] + weblcm_plugins
 
     if not AllowUnauthenticatedResetReboot.allow_unauthenticated_reset_reboot():
