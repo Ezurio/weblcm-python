@@ -131,6 +131,7 @@ def force_session_checking():
         "files",
         "datetime",
         "fips",
+        "wifiEnable",
     ] + weblcm_plugins
 
     if Bluetooth and websockets_auth_by_header_token:
