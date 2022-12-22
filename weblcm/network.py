@@ -1,5 +1,6 @@
 from socket import AF_INET, AF_INET6
 from threading import Lock
+import time
 from typing import Any, Optional, Tuple
 import cherrypy
 import subprocess
@@ -12,7 +13,7 @@ import gi
 import os
 
 gi.require_version("NM", "1.0")
-from gi.repository import GLib, NM
+from gi.repository import GLib, NM, Gio
 
 try:
     from .bluetooth.bt import Bluetooth
@@ -118,10 +119,11 @@ class NetworkConnection(object):
         (NM.SETTING_IP6_CONFIG_TOKEN, str),
     ]
 
+    ADD_CONNECTION_TIMEOUT_S: int = 10
+    DELETE_CONNECTION_TIMEOUT_S: int = 10
+    ACTIVATE_CONNECTION_TIMEOUT_S: int = 10
+
     def __init__(self):
-        self.callback_finished = False
-        self.callback_success = False
-        self.callback_lock = Lock()
         self.client = NetworkStatusHelper.get_client()
 
         # Determine if newer NM settings are supported
@@ -166,84 +168,102 @@ class NetworkConnection(object):
         else:
             syslog(LOG_WARNING, "'ra-timeout' setting not supported")
 
-    def connection_added_callback(self, source_object, res, user_data):
-        self.callback_finished = False
-        self.callback_success = False
-
-        try:
-            # Finish the asynchronous operation (source_object is the client)
-            with NetworkStatusHelper.get_lock():
-                self.callback_success = source_object.add_connection_finish(res)
-        except Exception as e:
-            syslog(LOG_ERR, f"Could not finish adding new connection: {str(e)}")
-
-        self.callback_finished = True
-
-    def connection_deleted_callback(self, source_object, res, user_data):
-        self.callback_finished = False
-        self.callback_success = False
-
-        try:
-            # Finish the asynchronous operation (source_object is an NM.RemoteConnection)
-            self.callback_success = source_object.delete_finish(res)
-        except Exception as e:
-            syslog(LOG_ERR, f"Could not finish deleting the connection: {str(e)}")
-
-        self.callback_finished = True
-
-    def connection_activated_callback(self, source_object, res, user_data):
-        self.callback_finished = False
-        self.callback_success = False
-
-        try:
-            # Finish the asynchronous operation (source_object is the client)
-            with NetworkStatusHelper.get_lock():
-                self.callback_success = source_object.activate_connection_finish(res)
-        except Exception as e:
-            syslog(LOG_ERR, f"Could not finish activating connection: {str(e)}")
-
-        self.callback_finished = True
-
     def add_connection(self, new_connection: NM.SimpleConnection) -> bool:
         success = False
+        callback_finished = False
+        cancellable = Gio.Cancellable()
+        lock = Lock()
 
-        with self.callback_lock:
-            try:
-                with NetworkStatusHelper.get_lock():
-                    GLib.idle_add(
-                        self.client.add_connection_async,
-                        new_connection,
-                        True,
-                        None,
-                        self.connection_added_callback,
-                        None,
-                    )
-                while not self.callback_finished:
-                    pass
-                success = self.callback_success
-            except Exception as e:
-                syslog(LOG_ERR, f"Error adding connection: {str(e)}")
-                success = False
+        def connection_added_callback(source_object, res, user_data):
+            nonlocal callback_finished
+            nonlocal success
+            nonlocal lock
+            callback_finished = False
+            success = False
+
+            with lock:
+                try:
+                    # Finish the asynchronous operation (source_object is the client and the return
+                    # type of add_connection_finish() is NM.RemoteConnection on success or None on
+                    # failure)
+                    with NetworkStatusHelper.get_lock():
+                        success = source_object.add_connection_finish(res) is not None
+                except Exception as e:
+                    syslog(LOG_ERR, f"Could not finish adding new connection: {str(e)}")
+                    success = False
+
+                callback_finished = True
+
+        try:
+            with NetworkStatusHelper.get_lock():
+                GLib.idle_add(
+                    self.client.add_connection_async,
+                    new_connection,
+                    True,
+                    cancellable,
+                    connection_added_callback,
+                    None,
+                )
+            start = time.time()
+            while True:
+                with lock:
+                    if callback_finished:
+                        break
+                if time.time() - start > self.ADD_CONNECTION_TIMEOUT_S:
+                    cancellable.cancel()
+                    raise Exception("timeout")
+                time.sleep(0.1)
+        except Exception as e:
+            syslog(LOG_ERR, f"Error adding connection: {str(e)}")
+            success = False
 
         return success
 
     def delete_connection(self, connection_to_delete: NM.RemoteConnection) -> bool:
         success = False
+        callback_finished = False
+        cancellable = Gio.Cancellable()
+        lock = Lock()
 
-        with self.callback_lock:
-            try:
-                GLib.idle_add(
-                    connection_to_delete.delete_async,
-                    None,
-                    self.connection_deleted_callback,
-                    None,
-                )
-                while not self.callback_finished:
-                    pass
-                success = self.callback_success
-            except Exception as e:
-                syslog(LOG_ERR, f"Error deleting connection: {str(e)}")
-                success = False
+        def connection_deleted_callback(source_object, res, user_data):
+            nonlocal callback_finished
+            nonlocal success
+            nonlocal lock
+            callback_finished = False
+            success = False
+
+            with lock:
+                try:
+                    # Finish the asynchronous operation (source_object is an NM.RemoteConnection and
+                    # the return type of delete_finish() is bool)
+                    success = source_object.delete_finish(res)
+                except Exception as e:
+                    syslog(
+                        LOG_ERR, f"Could not finish deleting the connection: {str(e)}"
+                    )
+                    success = False
+
+                callback_finished = True
+
+        try:
+            GLib.idle_add(
+                connection_to_delete.delete_async,
+                cancellable,
+                connection_deleted_callback,
+                None,
+            )
+            start = time.time()
+            while True:
+                with lock:
+                    if callback_finished:
+                        break
+                if time.time() - start > self.DELETE_CONNECTION_TIMEOUT_S:
+                    cancellable.cancel()
+                    raise Exception("timeout")
+                time.sleep(0.1)
+        except Exception as e:
+            syslog(LOG_ERR, f"Error deleting connection: {str(e)}")
+            success = False
 
         return success
 
@@ -251,25 +271,55 @@ class NetworkConnection(object):
         self, connection: NM.Connection, dev: Optional[NM.Device] = None
     ) -> bool:
         success = False
+        callback_finished = False
+        cancellable = Gio.Cancellable()
+        lock = Lock()
 
-        with self.callback_lock:
-            try:
-                with NetworkStatusHelper.get_lock():
-                    GLib.idle_add(
-                        self.client.activate_connection_async,
-                        connection,
-                        dev,
-                        "/",
-                        None,
-                        self.connection_activated_callback,
-                        None,
-                    )
-                while not self.callback_finished:
-                    pass
-                success = self.callback_success
-            except Exception as e:
-                syslog(LOG_ERR, f"Error activating connection: {str(e)}")
-                success = False
+        def connection_activated_callback(source_object, res, user_data):
+            nonlocal callback_finished
+            nonlocal success
+            callback_finished = False
+            success = False
+            nonlocal lock
+
+            with lock:
+                try:
+                    # Finish the asynchronous operation (source_object is the client and the return
+                    # type of activate_connection_finish() is NM.ActiveConnection on success or None
+                    # on failure)
+                    with NetworkStatusHelper.get_lock():
+                        success = (
+                            source_object.activate_connection_finish(res) is not None
+                        )
+                except Exception as e:
+                    syslog(LOG_ERR, f"Could not finish activating connection: {str(e)}")
+                    success = False
+
+                callback_finished = True
+
+        try:
+            with NetworkStatusHelper.get_lock():
+                GLib.idle_add(
+                    self.client.activate_connection_async,
+                    connection,
+                    dev,
+                    "/",
+                    cancellable,
+                    connection_activated_callback,
+                    None,
+                )
+            start = time.time()
+            while True:
+                with lock:
+                    if callback_finished:
+                        break
+                if time.time() - start > self.ACTIVATE_CONNECTION_TIMEOUT_S:
+                    cancellable.cancel()
+                    raise Exception("timeout")
+                time.sleep(0.1)
+        except Exception as e:
+            syslog(LOG_ERR, f"Error activating connection: {str(e)}")
+            success = False
 
         return success
 
@@ -1093,38 +1143,51 @@ class NetworkConnection(object):
 
 @cherrypy.expose
 class NetworkAccessPoints(object):
+    SCAN_REQUEST_TIMEOUT_S: int = 10
+
     def __init__(self):
-        self.callback_finished = False
-        self.callback_success = False
-        self.callback_lock = Lock()
         self.client = NetworkStatusHelper.get_client()
-
-    def scan_requested_callback(self, source_object, res, user_data):
-        self.callback_finished = False
-        self.callback_success = False
-
-        try:
-            # Finish the asynchronous operation (source_object is an NM.DeviceWifi)
-            self.callback_success = source_object.request_scan_finish(res)
-        except Exception as e:
-            syslog(LOG_ERR, f"Could not finish requesting scan: {str(e)}")
-
-        self.callback_finished = True
 
     def request_scan(self, dev: NM.Device) -> bool:
         success = False
+        callback_finished = False
+        cancellable = Gio.Cancellable()
+        lock = Lock()
 
-        with self.callback_lock:
-            try:
-                GLib.idle_add(
-                    dev.request_scan_async, None, self.scan_requested_callback, None
-                )
-                while not self.callback_finished:
-                    pass
-                success = self.callback_success
-            except Exception as e:
-                syslog(LOG_ERR, f"Error requesting scan: {str(e)}")
-                success = False
+        def scan_requested_callback(source_object, res, user_data):
+            nonlocal callback_finished
+            nonlocal success
+            nonlocal lock
+            callback_finished = False
+            success = False
+
+            with lock:
+                try:
+                    # Finish the asynchronous operation (source_object is an NM.DeviceWifi and the
+                    # return type of request_scan_finish() is bool)
+                    success = source_object.request_scan_finish(res)
+                except Exception as e:
+                    syslog(LOG_ERR, f"Could not finish requesting scan: {str(e)}")
+                    success = False
+
+                callback_finished = True
+
+        try:
+            GLib.idle_add(
+                dev.request_scan_async, cancellable, scan_requested_callback, None
+            )
+            start = time.time()
+            while True:
+                with lock:
+                    if callback_finished:
+                        break
+                if time.time() - start > self.SCAN_REQUEST_TIMEOUT_S:
+                    cancellable.cancel()
+                    raise Exception("timeout")
+                time.sleep(0.1)
+        except Exception as e:
+            syslog(LOG_ERR, f"Error requesting scan: {str(e)}")
+            success = False
 
         return success
 

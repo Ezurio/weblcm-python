@@ -1,10 +1,11 @@
 import os
+import time
 from typing import Any, Optional, Tuple
 import cherrypy
 import gi
 
 gi.require_version("NM", "1.0")
-from gi.repository import NM, GLib
+from gi.repository import NM, GLib, Gio
 from threading import Lock
 from .settings import SystemSettingsManage
 from . import definition
@@ -19,43 +20,55 @@ class NetworkStatusHelper(object):
     _lock = Lock()
     _IW_PATH = "/usr/sbin/iw"
     _client = NM.Client.new(None)
-    _callback_finished = False
-    _callback_success = False
-    _callback_lock = Lock()
+    RELOAD_CONNECTIONS_TIMEOUT_S: int = 10
 
-    @classmethod
-    def connections_reloaded_callback(cls, source_object, res, user_data):
-        cls._callback_finished = False
-        cls._callback_success = False
+    @staticmethod
+    def reload_connections() -> bool:
+        success = False
+        callback_finished = False
+        cancellable = Gio.Cancellable()
+        lock = Lock()
+
+        @staticmethod
+        def connections_reloaded_callback(source_object, res, user_data):
+            nonlocal callback_finished
+            nonlocal success
+            nonlocal lock
+            callback_finished = False
+            success = False
+
+            with lock:
+                try:
+                    # Finish the asynchronous operation (source_object is the client and the return
+                    # type of reload_connections_finish() is bool)
+                    with NetworkStatusHelper.get_lock():
+                        success = source_object.reload_connections_finish(res)
+                except Exception as e:
+                    syslog(LOG_ERR, f"Could not finish reloading connections: {str(e)}")
+                    success = False
+
+                callback_finished = True
 
         try:
-            # Finish the asynchronous operation (source_object is the client)
-            with cls.get_lock():
-                cls._callback_success = source_object.reload_connections_finish(res)
+            with NetworkStatusHelper.get_lock():
+                GLib.idle_add(
+                    NetworkStatusHelper.get_client().reload_connections_async,
+                    cancellable,
+                    connections_reloaded_callback,
+                    None,
+                )
+            start = time.time()
+            while True:
+                with lock:
+                    if callback_finished:
+                        break
+                if time.time() - start > NetworkStatusHelper.RELOAD_CONNECTIONS_TIMEOUT_S:
+                    cancellable.cancel()
+                    raise Exception("timeout")
+                time.sleep(0.1)
         except Exception as e:
-            syslog(LOG_ERR, f"Could not finish reloading connections: {str(e)}")
-
-        cls._callback_finished = True
-
-    @classmethod
-    def reload_connections(cls) -> bool:
-        success = False
-
-        with cls._callback_lock:
-            try:
-                with cls.get_lock():
-                    GLib.idle_add(
-                        cls._client.reload_connections_async,
-                        None,
-                        cls.connections_reloaded_callback,
-                        None,
-                    )
-                while not cls._callback_finished:
-                    pass
-                success = cls._callback_success
-            except Exception as e:
-                syslog(LOG_ERR, f"Error reloading connections: {str(e)}")
-                success = False
+            syslog(LOG_ERR, f"Error reloading connections: {str(e)}")
+            success = False
 
         return success
 
