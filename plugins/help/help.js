@@ -25,6 +25,7 @@ function clickHelpVersionPage(){
       $("#version-weblcm").text(msg['weblcm_python_webapp']);
       $("#version-radio-stack").text(msg['radio_stack']);
       $("#version-bluez").text(msg['bluez']);
+      $("#version-u-boot").text(msg['u-boot']);
     })
     .fail(function( xhr, textStatus, errorThrown) {
       httpErrorResponseHandler(xhr, textStatus, errorThrown)
