@@ -1315,6 +1315,20 @@ class Version(object):
 
     _version = {}
 
+    def get_u_boot_version(self) -> str:
+        """
+        Read and return the U-Boot 'version' environment variable
+        """
+        try:
+            return (
+                subprocess.check_output("fw_printenv -n version", shell=True)
+                .decode("ascii")
+                .strip()
+                .strip('"')
+            )
+        except Exception:
+            return ""
+
     @cherrypy.tools.json_out()
     def GET(self, *args, **kwargs):
         try:
@@ -1357,6 +1371,7 @@ class Version(object):
                         if Bluetooth is not None
                         else "n/a"
                     )
+                    Version._version["u-boot"] = self.get_u_boot_version()
         except Exception as e:
             Version._version = {
                 "SDCERR": definition.WEBLCM_ERRORS["SDCERR_FAIL"],
