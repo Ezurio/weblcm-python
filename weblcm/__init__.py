@@ -8,6 +8,7 @@ from .network_status import NetworkStatus
 from .network import (
     NetworkInterfaces,
     NetworkInterface,
+    NetworkInterfaceStatistics,
     NetworkConnections,
     NetworkConnection,
     NetworkAccessPoints,
@@ -110,6 +111,7 @@ class WebApp(object):
         self.accesspoints = NetworkAccessPoints()
         self.networkInterfaces = NetworkInterfaces()
         self.networkInterface = NetworkInterface()
+        self.networkInterfaceStatistics = NetworkInterfaceStatistics()
         self.version = Version()
 
         self.logData = LogData()

@@ -1644,6 +1644,66 @@ class NetworkInterface(object):
 
 
 @cherrypy.expose
+class NetworkInterfaceStatistics(object):
+    @cherrypy.tools.json_out()
+    def GET(self, *args, **kwargs):
+        """
+        Retrieve receive/transmit statistics for the requested interface
+        """
+
+        result = {
+            "SDCERR": 1,
+            "InfoMsg": "",
+            "statistics": {
+                "rx_bytes": 0,
+                "rx_packets": 0,
+                "rx_errors": 0,
+                "rx_dropped": 0,
+                "multicast": 0,
+                "tx_bytes": 0,
+                "tx_packets": 0,
+                "tx_errors": 0,
+                "tx_dropped": 0,
+            },
+        }
+
+        try:
+            name = kwargs.get("name", None)
+            if not name:
+                result["InfoMsg"] = "No interface name provided"
+                return result
+
+            path_to_stats_dir = f"/sys/class/net/{name}/statistics"
+            stats = {
+                "rx_bytes": f"{path_to_stats_dir}/rx_bytes",
+                "rx_packets": f"{path_to_stats_dir}/rx_packets",
+                "rx_errors": f"{path_to_stats_dir}/rx_errors",
+                "rx_dropped": f"{path_to_stats_dir}/rx_dropped",
+                "multicast": f"{path_to_stats_dir}/multicast",
+                "tx_bytes": f"{path_to_stats_dir}/tx_bytes",
+                "tx_packets": f"{path_to_stats_dir}/tx_packets",
+                "tx_errors": f"{path_to_stats_dir}/tx_errors",
+                "tx_dropped": f"{path_to_stats_dir}/tx_dropped",
+            }
+            outputstats = {}
+            for key in stats:
+                with open(stats[key]) as f:
+                    output = int(f.readline().strip())
+                    outputstats[key] = output
+
+            result["SDCERR"] = 0
+            result["statistics"] = outputstats
+            return result
+        except FileNotFoundError as e:
+            syslog(f"Invalid interface name - {str(e)}")
+            result["InfoMsg"] = f"Invalid interface name - {str(e)}"
+            return result
+        except Exception as e:
+            result["InfoMsg"] = f"Could not read interface statistics - {str(e)}"
+            return result
+
+
+@cherrypy.expose
 class WifiEnable(object):
     _client = NetworkStatusHelper.get_client()
 
