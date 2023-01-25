@@ -63,9 +63,12 @@ class Certificates(object):
                 if len(cert_info) > 0:
                     result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
             else:
-                # No cert name give, so just return the list of certs as already available from the
-                # '/files' endpoint
-                return FilesManage.GET(None, type="cert")
+                # No cert name give, so just return the list of certs available
+                files = FilesManage.get_cert_or_pac_files("cert")
+                result["files"] = files
+                result["count"] = len(files)
+                result["InfoMsg"] = "cert files"
+                result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
         except Exception as e:
             syslog(LOG_ERR, f"Could not read certificate info: {str(e)}")
             result["InfoMsg"] = "Could not read certificate info"

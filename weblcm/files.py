@@ -3,7 +3,7 @@ from shutil import copy2, rmtree
 from subprocess import run, call
 from threading import Lock
 from syslog import LOG_ERR, syslog
-from typing import Any, Tuple
+from typing import Any, List, Tuple
 import cherrypy
 from .advanced import FactoryReset
 from .network_status import NetworkStatusHelper
@@ -395,6 +395,22 @@ class FilesManage(object):
             result = (False, msg, None)
         return result
 
+    @staticmethod
+    def get_cert_or_pac_files(type: str) -> List[str]:
+        """Retrieve a list of files of the specified type ('cert' or 'pac')"""
+        if type not in ["cert", "pac"]:
+            return []
+
+        files = []
+        with os.scandir(definition.FILEDIR_DICT.get(type)) as listOfEntries:
+            for entry in listOfEntries:
+                if entry.is_file():
+                    strs = entry.name.split(".")
+                    if len(strs) == 2 and strs[1] in definition.FILEFMT_DICT.get(type):
+                        files.append(entry.name)
+        files.sort()
+        return files
+
     # Since we sometimes return a binary file and sometimes return JSON with the GET endpoint, we
     # can't use the @cherrypy.tools.json_out() decorator here. Therefore, we have to mimick this
     # logic when returning JSON.
@@ -439,16 +455,7 @@ class FilesManage(object):
                 syslog(LOG_ERR, f"Could not export connections - {msg}")
                 raise cherrypy.HTTPError(500, f"Could not export connections - {msg}")
         else:
-            files = []
-            with os.scandir(definition.FILEDIR_DICT.get(type)) as listOfEntries:
-                for entry in listOfEntries:
-                    if entry.is_file():
-                        strs = entry.name.split(".")
-                        if len(strs) == 2 and strs[1] in definition.FILEFMT_DICT.get(
-                            type
-                        ):
-                            files.append(entry.name)
-            files.sort()
+            files = FilesManage.get_cert_or_pac_files(type)
             result["files"] = files
             result["count"] = len(files)
             result["InfoMsg"] = f"{type} files"
