@@ -1,5 +1,5 @@
 from syslog import syslog, LOG_ERR
-from typing import Tuple
+from typing import Tuple, Union
 
 import dbus
 
@@ -90,7 +90,7 @@ def controller_bus_name(pretty_name: str):
     return pretty_name.replace("controller", "hci")
 
 
-def uri_to_uuid(uri_uuid: str) -> str:
+def uri_to_uuid(uri_uuid: Union[str, dbus.ObjectPath]) -> str:
     """
     Standardize a device UUID (MAC address) from URI format (xx_xx_xx_xx_xx_xx) to conventional
     format (XX:XX:XX:XX:XX:XX)

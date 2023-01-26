@@ -3,7 +3,7 @@ import logging
 import os
 import re
 from syslog import syslog, LOG_ERR, LOG_INFO
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Union
 
 import cherrypy
 import dbus
@@ -80,7 +80,7 @@ except ImportError:
     cherrypy.log("weblcm_bluetooth: BluetoothBlePlugin NOT loaded")
 
 
-def get_controller_obj(controller: str = ""):
+def get_controller_obj(controller: Union[str, dbus.ObjectPath] = ""):
     result = {}
     # get the system bus
     bus = dbus.SystemBus()
