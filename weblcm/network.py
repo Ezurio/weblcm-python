@@ -600,6 +600,16 @@ class NetworkConnection(object):
                                     ] = convert_cert_to_nm_path_scheme(
                                         connection_json["802-1x"][cert]
                                     )
+
+                            if connection_json["802-1x"].get("pac-file"):
+                                # pac-file parameter provided, prepend path to certs
+                                connection_json["802-1x"]["pac-file"] = str(
+                                    "{0}{1}".format(
+                                        definition.FILEDIR_DICT.get("pac"),
+                                        connection_json["802-1x"]["pac-file"],
+                                    ),
+                                )
+
                             variant_builder.add_value(
                                 GLib.Variant.new_dict_entry(
                                     GLib.Variant.new_string(
