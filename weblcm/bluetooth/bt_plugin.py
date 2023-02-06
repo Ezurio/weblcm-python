@@ -13,7 +13,14 @@ class BluetoothPlugin(object):
         return []
 
     def ProcessDeviceCommand(
-        self, bus, command, device_uuid: str, device: dbus.ObjectPath, post_data
+        self,
+        bus,
+        command,
+        device_uuid: str,
+        device: dbus.ObjectPath,
+        adapter_obj: dbus.ObjectPath,
+        post_data,
+        remove_device_method=None,
     ) -> Tuple[bool, str]:
         """Process a device-specific command."""
         return False, ""

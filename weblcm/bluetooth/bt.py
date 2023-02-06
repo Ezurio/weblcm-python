@@ -36,9 +36,13 @@ PAIR_TIMEOUT_SECONDS = 60
 CONNECT_TIMEOUT_SECONDS = 60
 
 # These device properties can be directly set, without requiring any special-case logic.
-SETTABLE_DEVICE_PROPS = [("Trusted", bool), ("AutoConnect", bool)]
+SETTABLE_DEVICE_PROPS = [
+    ("Trusted", bool),
+    ("AutoConnect", bool),
+    ("AutoConnectAutoDisable", bool),
+]
 
-CACHED_DEVICE_PROPS = ["connected", "autoConnect"]
+CACHED_DEVICE_PROPS = ["connected", "autoConnect", "autoConnectAutoDisable"]
 
 # These controller properties can be directly set, without requiring any special-case logic.
 PASS_ADAPTER_PROPS = ["Discovering", "Powered", "Discoverable"]
@@ -400,9 +404,10 @@ class Bluetooth(object):
             )
             try:
                 self.set_device_properties(
+                    adapter_obj,
                     adapter_methods,
-                    device_methods,
                     device_obj,
+                    device_methods,
                     device_properties,
                     device_uuid,
                     cached_device_properties,
@@ -494,9 +499,9 @@ class Bluetooth(object):
                         matched_filter = True
 
                     for pass_property in PASS_ADAPTER_PROPS:
-                        if not filters or pass_property.lower() in filters:
+                        if not filters or lower_camel_case(pass_property) in filters:
                             controller_result[
-                                pass_property.lower()
+                                lower_camel_case(pass_property)
                             ] = adapter_props.Get(ADAPTER_IFACE, pass_property)
                             matched_filter = True
 
@@ -607,7 +612,9 @@ class Bluetooth(object):
                         # Forward device-specific commands on to plugins even if device
                         # is not found:
                         result.update(
-                            self.execute_device_command(bus, command, device_uuid, None)
+                            self.execute_device_command(
+                                bus, command, device_uuid, None, None
+                            )
                         )
                     return result
 
@@ -622,7 +629,9 @@ class Bluetooth(object):
 
                 if command:
                     result.update(
-                        self.execute_device_command(bus, command, device_uuid, device)
+                        self.execute_device_command(
+                            bus, command, device_uuid, device, adapter_obj
+                        )
                     )
                     return result
                 else:
@@ -634,9 +643,10 @@ class Bluetooth(object):
                             cached_device_properties[prop] = post_data.get(prop)
                     result.update(
                         self.set_device_properties(
+                            adapter_obj,
                             adapter_methods,
-                            device_methods,
                             device_obj,
+                            device_methods,
                             device_properties,
                             device_uuid,
                             post_data,
@@ -748,9 +758,10 @@ class Bluetooth(object):
 
     def set_device_properties(
         self,
+        adapter_obj,
         adapter_methods,
-        device_methods,
         device_obj: dbus.ObjectPath,
+        device_methods,
         device_properties,
         device_uuid: str,
         post_data,
@@ -779,16 +790,8 @@ class Bluetooth(object):
                     timeout=PAIR_TIMEOUT_SECONDS,
                 )
         elif paired == 0:
-            if device_properties.Get(DEVICE_IFACE, "Connected"):
-                device_methods.get_dbus_method("Disconnect", DEVICE_IFACE)()
-            adapter_methods.get_dbus_method("RemoveDevice", ADAPTER_IFACE)(device_obj)
-            # If RemoveDevice is successful, further work on device will not be possible.
+            self.remove_device_method(adapter_obj, device_obj.object_path)
             result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
-            for plugin in bluetooth_plugins:
-                try:
-                    plugin.DeviceRemovedNotify(device_uuid, device_obj)
-                except Exception as e:
-                    self.log_exception(e)
             return result
         connected = post_data.get("connected", None)
         connected_state = device_properties.Get(DEVICE_IFACE, "Connected")
@@ -821,8 +824,33 @@ class Bluetooth(object):
 
         return result
 
+    def remove_device_method(self, adapter_obj, device):
+        bus = dbus.SystemBus()
+        device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
+        device_methods = dbus.Interface(device_obj, "org.freedesktop.DBus.Methods")
+        device_properties = dbus.Interface(
+            device_obj, "org.freedesktop.DBus.Properties"
+        )
+        if device_properties.Get(DEVICE_IFACE, "Connected"):
+            device_methods.get_dbus_method("Disconnect", DEVICE_IFACE)()
+        adapter_methods = dbus.Interface(adapter_obj, "org.freedesktop.DBus.Methods")
+        device_address = device_properties.Get(DEVICE_IFACE, "Address")
+        adapter_methods.get_dbus_method("RemoveDevice", ADAPTER_IFACE)(device_obj)
+        # If RemoveDevice is successful, further work on device will not be possible.
+        device_uuid = uri_to_uuid(device_address)
+        for plugin in bluetooth_plugins:
+            try:
+                plugin.DeviceRemovedNotify(device_uuid, device_obj)
+            except Exception as e:
+                self.log_exception(e)
+
     def execute_device_command(
-        self, bus, command, device_uuid: str, device: Optional[dbus.ObjectPath]
+        self,
+        bus,
+        command,
+        device_uuid: str,
+        device: Optional[dbus.ObjectPath],
+        adapter_obj: Optional[dbus.ObjectPath],
     ):
         result = {}
         error_message = None
@@ -840,7 +868,13 @@ class Bluetooth(object):
             for plugin in bluetooth_plugins:
                 try:
                     processed, error_message = plugin.ProcessDeviceCommand(
-                        bus, command, device_uuid, device, post_data
+                        bus,
+                        command,
+                        device_uuid,
+                        device,
+                        adapter_obj,
+                        post_data,
+                        self.remove_device_method,
                     )
                 except Exception as e:
                     self.log_exception(e)
@@ -863,7 +897,11 @@ class Bluetooth(object):
         return result
 
     def execute_adapter_command(
-        self, bus, command, controller_friendly_name: str, adapter_obj: dbus.ObjectPath
+        self,
+        bus,
+        command,
+        controller_friendly_name: str,
+        adapter_obj: dbus.ObjectPath,
     ):
         result = {}
         error_message = None
