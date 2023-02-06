@@ -1,3 +1,4 @@
+import logging
 import threading
 import time
 import socket
@@ -40,7 +41,14 @@ class VspConnectionPlugin(BluetoothPlugin):
         return ["gattList"]
 
     def ProcessDeviceCommand(
-        self, bus, command, device_uuid: str, device: dbus.ObjectPath, post_data
+        self,
+        bus,
+        command,
+        device_uuid: str,
+        device: dbus.ObjectPath,
+        adapter_obj: dbus.ObjectPath,
+        post_data,
+        remove_device_method,
     ):
         processed = False
         error_message = None
@@ -54,7 +62,12 @@ class VspConnectionPlugin(BluetoothPlugin):
             else:
                 vsp_connection = VspConnection()
                 error_message = vsp_connection.gatt_connect(
-                    bus, device_uuid, device, post_data
+                    bus,
+                    adapter_obj,
+                    device_uuid,
+                    device,
+                    post_data,
+                    remove_device_method,
                 )
                 if not error_message:
                     self.vsp_connections[device_uuid] = vsp_connection
@@ -108,8 +121,8 @@ class VspConnectionPlugin(BluetoothPlugin):
 
 
 class VspConnection(TcpConnection):
-    """Represent a VSP connection with GATT read and write characteristics to a device, and an associated TCP socket
-    connection.
+    """Represent a VSP connection with GATT read and write characteristics to a
+    device, and an associated TCP socket connection.
     """
 
     def __init__(self):
@@ -129,7 +142,13 @@ class VspConnection(TcpConnection):
         self.tx_wait_event = threading.Event()
         self.tx_complete = False
         self.tx_error = False
+        self._logger = logging.getLogger(__name__)
+        self.auth_failure_unpair = False
         super().__init__()
+
+    def log_exception(self, e, message: str = ""):
+        self._logger.exception(e)
+        syslog(LOG_ERR, message + str(e))
 
     def process_chrc(self, chrc_path, vsp_read_chr_uuid, vsp_write_chr_uuid):
         bus = dbus.SystemBus()
@@ -161,7 +180,21 @@ class VspConnection(TcpConnection):
                         f"{{\"Connected\": {changed_props['Connected']}}}\n".encode()
                     )
             except Exception as e:
-                syslog(LOG_ERR, str(e))
+                self.log_exception(e)
+        if (
+            self.auth_failure_unpair
+            and "DisconnectReason" in changed_props
+            and changed_props["DisconnectReason"] == "auth failure"
+        ):
+            try:
+                syslog(
+                    LOG_INFO,
+                    f"vsp device_prop_changed_cb: disconnect auth failure, auto-unpairing",
+                )
+                if self.remove_device_method:
+                    self.remove_device_method(self.adapter_obj, self.device)
+            except Exception as e:
+                self.log_exception(e)
         if "ServicesResolved" in changed_props:
             try:
                 syslog(
@@ -174,7 +207,7 @@ class VspConnection(TcpConnection):
                         self._waiting_for_services_resolved = False
                         self.gatt_only_connected()
             except Exception as e:
-                syslog(LOG_ERR, str(e))
+                self.log_exception(e)
 
         if len(changed_props):
             syslog(
@@ -318,12 +351,22 @@ class VspConnection(TcpConnection):
             return None
 
     def gatt_connect(
-        self, bus, device_uuid: str, device: dbus.ObjectPath = None, params=None
+        self,
+        bus,
+        adapter_obj: dbus.ObjectPath,
+        device_uuid: str,
+        device: dbus.ObjectPath,
+        params=None,
+        remove_device_method=None,
     ):
         if not params:
             return "no params specified"
         self.device = device
+        self.adapter_obj = adapter_obj
         self.device_uuid = device_uuid
+        self.remove_device_method = remove_device_method
+        if "authFailureUnpair" in params:
+            self.auth_failure_unpair = params["authFailureUnpair"]
         if "vspSvcUuid" not in params:
             return "vspSvcUuid param not specified"
         self.vsp_svc_uuid = params["vspSvcUuid"]
@@ -509,9 +552,7 @@ class VspConnection(TcpConnection):
                             break
                         syslog("vsp_tcp_server_thread:" + str(e))
                     except Exception as e:
-                        syslog(
-                            "vsp_tcp_server_thread: non-OSError Exception: " + str(e)
-                        )
+                        self.log_exception(e)
                     finally:
                         with self._tcp_lock:
                             self.close_tcp_connection()
