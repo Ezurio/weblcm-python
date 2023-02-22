@@ -110,6 +110,15 @@ except ImportError:
     RadioSISOMode = None
     cherrypy.log("__main__: Radio SISO mode NOT loaded")
 
+try:
+    from .chrony.ntp import NTP
+
+    weblcm_plugins.append("ntp")
+    cherrypy.log("__main__: chrony NTP loaded")
+except ImportError:
+    NTP = None
+    cherrypy.log("__main__: chrony NTP NOT loaded")
+
 
 class WebApp(object):
     def __init__(self):
@@ -169,6 +178,11 @@ class WebApp(object):
             self.radioSISOMode = RadioSISOMode()
         else:
             self.radioSISOMode = None
+
+        if NTP:
+            self.ntp = NTP()
+        else:
+            self.ntp = None
 
     @cherrypy.expose
     @cherrypy.tools.accept(media="application/json")
