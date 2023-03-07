@@ -101,6 +101,24 @@ except ImportError:
     Firewall = None
     cherrypy.log("__main__: firewall NOT loaded")
 
+try:
+    from .radio_siso_mode.radio_siso_mode import RadioSISOMode
+
+    weblcm_plugins.append("radioSISOMode")
+    cherrypy.log("__main__: Radio SISO mode loaded")
+except ImportError:
+    RadioSISOMode = None
+    cherrypy.log("__main__: Radio SISO mode NOT loaded")
+
+try:
+    from .chrony.ntp import NTP
+
+    weblcm_plugins.append("ntp")
+    cherrypy.log("__main__: chrony NTP loaded")
+except ImportError:
+    NTP = None
+    cherrypy.log("__main__: chrony NTP NOT loaded")
+
 
 class WebApp(object):
     def __init__(self):
@@ -155,6 +173,16 @@ class WebApp(object):
 
         if Stunnel:
             self.stunnel = Stunnel()
+
+        if RadioSISOMode:
+            self.radioSISOMode = RadioSISOMode()
+        else:
+            self.radioSISOMode = None
+
+        if NTP:
+            self.ntp = NTP()
+        else:
+            self.ntp = None
 
     @cherrypy.expose
     @cherrypy.tools.accept(media="application/json")
