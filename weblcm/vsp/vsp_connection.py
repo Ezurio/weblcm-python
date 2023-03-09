@@ -23,8 +23,10 @@ from ..tcp_connection import (
     SOCK_TIMEOUT,
 )
 
-MAX_TX_LEN = 16
-""" Maximum bytes to transfer wrapped in one JSON packet over TCP. """
+MAX_RECV_LEN = 512
+""" Maximum bytes to read over TCP"""
+DEFAULT_WRITE_SIZE = 1
+""" Default GATT write size """
 
 
 class VspConnectionPlugin(BluetoothPlugin):
@@ -144,6 +146,8 @@ class VspConnection(TcpConnection):
         self.tx_error = False
         self._logger = logging.getLogger(__name__)
         self.auth_failure_unpair = False
+        self.write_size: int = DEFAULT_WRITE_SIZE
+        self.rx_buffer: bytes = b""
         super().__init__()
 
     def log_exception(self, e, message: str = ""):
@@ -380,6 +384,11 @@ class VspConnection(TcpConnection):
             return "tcpPort param not specified"
         if "socketRxType" in params:
             self.socket_rx_type = params["socketRxType"]
+        if "vspWriteChrSize" in params:
+            try:
+                self.write_size = int(params["vspWriteChrSize"])
+            except ValueError:
+                return "invalid value for vspWriteChrSize param"
 
         vsp_service = self.create_vsp_service()
         if not vsp_service:
@@ -508,6 +517,26 @@ class VspConnection(TcpConnection):
                     break
         return vsp_service
 
+    def vsp_tcp_server_write_data(self, data: bytes):
+        # Convert string to array of DBus Bytes & send
+        val = [dbus.Byte(b) for b in bytearray(data)]
+        self.tx_complete = False
+        self.tx_error = False
+        self.tx_wait_event.clear()
+        # Use simple wait event rather than private queue, to inform network
+        # to wait for Bluetooth to consume stream and simplify buffer management.
+        if self.gatt_send_data(val):
+            if not self.tx_wait_event.wait():
+                syslog("vsp_tcp_server_thread: ERROR: gatt tx no completion")
+        if self.tx_error:
+            syslog(f"vsp transmit failed, data: 0x{data.hex()}")
+            if self.socket_rx_type == "JSON":
+                self._tcp_connection.sendall(
+                    '{"Error": "Transmit failed"'
+                    f', "Data": "0x{data.hex()}'
+                    '"}\n'.encode()
+                )
+
     def vsp_tcp_server_thread(self, sock):
         try:
             sock.settimeout(SOCK_TIMEOUT)
@@ -516,34 +545,27 @@ class VspConnection(TcpConnection):
                     tcp_connection, client_address = sock.accept()
                     with self._tcp_lock:
                         self._tcp_connection = tcp_connection
+                        self.rx_buffer = b""
                     syslog(
                         "vsp_tcp_server_thread: tcp client connected:"
                         + str(client_address)
                     )
                     try:
                         while True:
-                            data = self._tcp_connection.recv(MAX_TX_LEN)
+                            data = self._tcp_connection.recv(MAX_RECV_LEN)
                             if data:
-                                # Convert string to array of DBus Bytes & send
-                                val = [dbus.Byte(b) for b in bytearray(data)]
-                                self.tx_complete = False
-                                self.tx_error = False
-                                self.tx_wait_event.clear()
-                                # Use simple wait event rather than private queue, to inform network
-                                # to wait for Bluetooth to consume stream and simplify buffer management.
-                                if self.gatt_send_data(val):
-                                    if not self.tx_wait_event.wait():
-                                        syslog(
-                                            "vsp_tcp_server_thread: ERROR: gatt tx no completion"
-                                        )
-                                if self.tx_error:
-                                    syslog(f"vsp transmit failed, data: 0x{data.hex()}")
-                                    if self.socket_rx_type == "JSON":
-                                        self._tcp_connection.sendall(
-                                            '{"Error": "Transmit failed"'
-                                            f', "Data": "0x{data.hex()}'
-                                            '"}\n'.encode()
-                                        )
+                                # Add the incoming data to the Rx buffer
+                                self.rx_buffer += data
+
+                                while len(self.rx_buffer) >= self.write_size:
+                                    # Grab a chunk of 'write_size' bytes from the Rx buffer and send
+                                    # it
+                                    self.vsp_tcp_server_write_data(
+                                        self.rx_buffer[: self.write_size]
+                                    )
+
+                                    # Update the Rx buffer to remove the now-sent chunk of data
+                                    self.rx_buffer = self.rx_buffer[self.write_size :]
                             else:
                                 break
                     except OSError as e:
@@ -557,6 +579,7 @@ class VspConnection(TcpConnection):
                         with self._tcp_lock:
                             self.close_tcp_connection()
                             self._tcp_connection, client_address = None, None
+                            self.rx_buffer = b""
                 except socket.timeout:
                     continue
                 except OSError as e:
