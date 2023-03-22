@@ -3,6 +3,7 @@ import dbus
 import time
 from systemd import journal
 from . import definition
+from .utils import DBusManager
 
 
 @cherrypy.expose
@@ -83,7 +84,7 @@ class LogSetting(object):
             return result
 
         try:
-            bus = dbus.SystemBus()
+            bus = DBusManager().get_system_bus()
             proxy = bus.get_object(definition.WPA_IFACE, definition.WPA_OBJ)
             wpas = dbus.Interface(proxy, definition.DBUS_PROP_IFACE)
             wpas.Set(definition.WPA_IFACE, "DebugLevel", supp_level)
@@ -122,7 +123,7 @@ class LogSetting(object):
         result = {"SDCERR": 0, "InfoMsg": ""}
 
         try:
-            bus = dbus.SystemBus()
+            bus = DBusManager().get_system_bus()
             proxy = bus.get_object(definition.WPA_IFACE, definition.WPA_OBJ)
             wpas = dbus.Interface(proxy, definition.DBUS_PROP_IFACE)
             debug_level = wpas.Get(definition.WPA_IFACE, "DebugLevel")
