@@ -14,6 +14,7 @@ from ..definition import (
     MODEM_CONTROL_SERVICE_FILE,
 )
 from pathlib import Path
+from ..utils import DBusManager
 
 
 def dbus_to_python(data):
@@ -41,7 +42,7 @@ def dbus_to_python(data):
 
 class Modem(object):
 
-    _bus = dbus.SystemBus()
+    _bus = DBusManager().get_system_bus()
 
     def get_modem_location_interface(self, bus):
         _mm_location = "org.freedesktop.ModemManager1.Modem.Location"

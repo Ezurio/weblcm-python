@@ -10,6 +10,7 @@ from .definition import (
     WEBLCM_PYTHON_TIME_FORMAT,
 )
 import dbus
+from .utils import DBusManager
 from datetime import datetime, timezone
 
 LOCALTIME = "/etc/localtime"
@@ -47,7 +48,9 @@ class DateTimeSetting(object):
         # See below for more info:
         # https://www.freedesktop.org/software/systemd/man/org.freedesktop.timedate1.html
         dbus.Interface(
-            dbus.SystemBus().get_object(TIMEDATE1_BUS_NAME, TIMEDATE1_MAIN_OBJ),
+            DBusManager()
+            .get_system_bus()
+            .get_object(TIMEDATE1_BUS_NAME, TIMEDATE1_MAIN_OBJ),
             TIMEDATE1_BUS_NAME,
         ).SetTimezone(new_zone, False)
 
@@ -64,7 +67,9 @@ class DateTimeSetting(object):
             # See below for more info:
             # https://www.freedesktop.org/software/systemd/man/org.freedesktop.timedate1.html
             zones_from_systemd = dbus.Interface(
-                dbus.SystemBus().get_object(TIMEDATE1_BUS_NAME, TIMEDATE1_MAIN_OBJ),
+                DBusManager()
+                .get_system_bus()
+                .get_object(TIMEDATE1_BUS_NAME, TIMEDATE1_MAIN_OBJ),
                 TIMEDATE1_BUS_NAME,
             ).ListTimezones()
 
@@ -150,7 +155,9 @@ class DateTimeSetting(object):
                 # See below for more info:
                 # https://www.freedesktop.org/software/systemd/man/org.freedesktop.timedate1.html
                 dbus.Interface(
-                    dbus.SystemBus().get_object(TIMEDATE1_BUS_NAME, TIMEDATE1_MAIN_OBJ),
+                    DBusManager()
+                    .get_system_bus()
+                    .get_object(TIMEDATE1_BUS_NAME, TIMEDATE1_MAIN_OBJ),
                     TIMEDATE1_BUS_NAME,
                 ).SetTime(dt, False, False)
             except Exception as e:

@@ -10,6 +10,8 @@ from typing import Optional
 import dbus
 import dbus.exceptions
 
+from ..utils import DBusManager
+
 from .bt_module import (
     BtMgr,
     DBUS_OBJ_MGR_IFACE,
@@ -46,13 +48,15 @@ class BtMgrEx(BtMgr):
 
         # Get DBus objects
         self.manager = dbus.Interface(
-            dbus.SystemBus().get_object(BT_OBJ, "/"), DBUS_OBJ_MGR_IFACE
+            DBusManager().get_system_bus().get_object(BT_OBJ, "/"), DBUS_OBJ_MGR_IFACE
         )
         self.adapter = dbus.Interface(
-            dbus.SystemBus().get_object(BT_OBJ, BT_OBJ_PATH), BT_ADAPTER_IFACE
+            DBusManager().get_system_bus().get_object(BT_OBJ, BT_OBJ_PATH),
+            BT_ADAPTER_IFACE,
         )
         self.adapter_props = dbus.Interface(
-            dbus.SystemBus().get_object(BT_OBJ, BT_OBJ_PATH), DBUS_PROP_IFACE
+            DBusManager().get_system_bus().get_object(BT_OBJ, BT_OBJ_PATH),
+            DBUS_PROP_IFACE,
         )
         self.objects = self.manager.GetManagedObjects()
 
