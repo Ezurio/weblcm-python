@@ -1,5 +1,6 @@
 from syslog import syslog, LOG_ERR
 from typing import Tuple, Union
+from ..utils import DBusManager
 
 import dbus
 
@@ -169,7 +170,7 @@ def find_device(bus, uuid) -> Tuple[dbus.ObjectPath, dict]:
 
 
 def set_trusted(path):
-    bus = dbus.SystemBus()
+    bus = DBusManager().get_system_bus()
     props = dbus.Interface(
         bus.get_object("org.bluez", path), "org.freedesktop.DBus.Properties"
     )
@@ -184,7 +185,7 @@ def device_is_connected(bus, device):
 
 
 def dev_connect(path):
-    bus = dbus.SystemBus()
+    bus = DBusManager().get_system_bus()
     dev = dbus.Interface(bus.get_object("org.bluez", path), "org.bluez.Device1")
     dev.Connect()
 
@@ -216,7 +217,7 @@ class AgentSingleton:
             syslog("Registering agent for auto-pairing...")
             try:
                 # get the system bus
-                bus = dbus.SystemBus()
+                bus = DBusManager().get_system_bus()
                 agent = AuthenticationAgent(bus, AGENT_PATH)
 
                 obj = bus.get_object(BLUEZ_SERVICE_NAME, "/org/bluez")

@@ -25,9 +25,7 @@ from .advanced import PowerOff, Suspend, Reboot, FactoryReset
 from .date_time import DateTimeSetting
 from .settings import SystemSettingsManage
 from .advanced import Fips
-
-from gi.repository import GLib
-import dbus.mainloop.glib
+from .utils import DBusManager
 import configparser
 
 weblcm_plugins: List[str] = []
@@ -354,10 +352,8 @@ def weblcm_cherrypy_start():
 
 
 def main(args=None):
-    # Initialize the DBus/GLib main loop
-    dbus.mainloop.glib.threads_init()
-    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-    dbus_mainloop = GLib.MainLoop()
+    DBusManager().start()
+    glib_mainloop = DBusManager().get_glib_mainloop()
 
     syslog("Starting webserver")
     threading.Thread(
@@ -366,11 +362,11 @@ def main(args=None):
 
     syslog("Starting DBus mainloop")
     try:
-        dbus_mainloop.run()
+        glib_mainloop.run()
     except KeyboardInterrupt:
         syslog("Received signal, shutting down service.")
     except Exception as e:
         syslog(f"Unexpected exception occurred: {str(e)}")
     finally:
         cherrypy.engine.exit()
-        dbus_mainloop.quit()
+        glib_mainloop.quit()

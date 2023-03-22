@@ -15,6 +15,7 @@ from subprocess import run, TimeoutExpired
 
 from . import bt_plugin
 from .. import definition
+from ..utils import DBusManager
 from .ble import (
     controller_pretty_name,
     find_device,
@@ -87,7 +88,7 @@ except ImportError:
 def get_controller_obj(controller: Union[str, dbus.ObjectPath] = ""):
     result = {}
     # get the system bus
-    bus = dbus.SystemBus()
+    bus = DBusManager().get_system_bus()
     # get the ble controller
     if not controller:
         result[
@@ -179,7 +180,7 @@ class Bluetooth(object):
         if controller_friendly_name not in self._controller_addresses.keys():
             return None
         address = self._controller_addresses[controller_friendly_name]
-        bus = dbus.SystemBus()
+        bus = DBusManager().get_system_bus()
         remote_om = dbus.Interface(
             bus.get_object(BLUEZ_SERVICE_NAME, "/"), DBUS_OM_IFACE
         )
@@ -199,7 +200,7 @@ class Bluetooth(object):
         """Lookup the REST API name of the controller with the address matching the provided
         controller by dbus path.
         """
-        bus = dbus.SystemBus()
+        bus = DBusManager().get_system_bus()
         controller_obj = bus.get_object(BLUEZ_SERVICE_NAME, controller)
 
         if not controller_obj:
@@ -224,7 +225,7 @@ class Bluetooth(object):
         If these assumptions are not true, renumber can be set to simply number
         discovered controllers as controller0 and up.
         """
-        bus = dbus.SystemBus()
+        bus = DBusManager().get_system_bus()
         remote_om = dbus.Interface(
             bus.get_object(BLUEZ_SERVICE_NAME, "/"), DBUS_OM_IFACE
         )
@@ -255,7 +256,7 @@ class Bluetooth(object):
         if not self._controller_callbacks_registered:
             self._controller_callbacks_registered = True
 
-            bus = dbus.SystemBus()
+            bus = DBusManager().get_system_bus()
             bus.add_signal_receiver(
                 handler_function=self.interface_removed_cb,
                 signal_name="InterfacesRemoved",
@@ -453,7 +454,7 @@ class Bluetooth(object):
                 device_uuid = None
 
             # get the system bus
-            bus = dbus.SystemBus()
+            bus = DBusManager().get_system_bus()
             # get the ble controller
             if controller_friendly_name:
                 controller = (
@@ -779,7 +780,7 @@ class Bluetooth(object):
             paired_state = device_properties.Get(DEVICE_IFACE, "Paired")
             if paired_state != paired:
                 AgentSingleton()
-                bus = dbus.SystemBus()
+                bus = DBusManager().get_system_bus()
                 bus.call_blocking(
                     bus_name=BLUEZ_SERVICE_NAME,
                     object_path=device_obj.object_path,
@@ -825,7 +826,7 @@ class Bluetooth(object):
         return result
 
     def remove_device_method(self, adapter_obj, device):
-        bus = dbus.SystemBus()
+        bus = DBusManager().get_system_bus()
         device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
         device_methods = dbus.Interface(device_obj, "org.freedesktop.DBus.Methods")
         device_properties = dbus.Interface(

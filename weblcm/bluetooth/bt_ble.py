@@ -112,7 +112,14 @@ class BluetoothBlePlugin(BluetoothPlugin):
             o.ble_notify(message)
 
     def ProcessDeviceCommand(
-        self, bus, command, device_uuid: str, device: dbus.ObjectPath, post_data
+        self,
+        bus,
+        command,
+        device_uuid: str,
+        device: dbus.ObjectPath,
+        adapter_obj,
+        post_data,
+        remove_device_method=None,
     ):
         processed = False
         error_message = None

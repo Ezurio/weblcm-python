@@ -23,6 +23,8 @@ from ..tcp_connection import (
     SOCK_TIMEOUT,
 )
 
+from ..utils import DBusManager
+
 MAX_RECV_LEN = 512
 """ Maximum bytes to read over TCP"""
 DEFAULT_WRITE_SIZE = 1
@@ -104,7 +106,7 @@ class VspConnectionPlugin(BluetoothPlugin):
     def DeviceRemovedNotify(self, device_uuid: str, device: dbus.ObjectPath):
         """Called when user has requested device be unpaired."""
         if device_uuid in self.vsp_connections:
-            bus = dbus.SystemBus()
+            bus = DBusManager().get_system_bus()
             vsp_connection = self.vsp_connections.pop(device_uuid)
             vsp_connection.vsp_close(bus, device_uuid)
 
@@ -155,7 +157,7 @@ class VspConnection(TcpConnection):
         syslog(LOG_ERR, message + str(e))
 
     def process_chrc(self, chrc_path, vsp_read_chr_uuid, vsp_write_chr_uuid):
-        bus = dbus.SystemBus()
+        bus = DBusManager().get_system_bus()
         chrc = bus.get_object(BLUEZ_SERVICE_NAME, chrc_path)
         chrc_props = chrc.GetAll(GATT_CHRC_IFACE, dbus_interface=DBUS_PROP_IFACE)
 
@@ -330,7 +332,7 @@ class VspConnection(TcpConnection):
         vsp_read_chr_uuid,
         vsp_write_chr_uuid,
     ):
-        bus = dbus.SystemBus()
+        bus = DBusManager().get_system_bus()
         service = bus.get_object(BLUEZ_SERVICE_NAME, service_path)
         service_props = service.GetAll(
             GATT_SERVICE_IFACE, dbus_interface=DBUS_PROP_IFACE
@@ -452,7 +454,7 @@ class VspConnection(TcpConnection):
         Note: Services will NOT resolve if connect was not issued through LCM, as connect
         will not have been performed by controller_restore in that case.
         """
-        bus = dbus.SystemBus()
+        bus = DBusManager().get_system_bus()
         self.device, device_props = find_device(bus, self.device_uuid)
 
         if not self.device:
@@ -488,7 +490,7 @@ class VspConnection(TcpConnection):
         self.start_client()
 
     def create_vsp_service(self):
-        bus = dbus.SystemBus()
+        bus = DBusManager().get_system_bus()
         om = dbus.Interface(bus.get_object(BLUEZ_SERVICE_NAME, "/"), DBUS_OM_IFACE)
         objects = om.GetManagedObjects()
         chrcs = []

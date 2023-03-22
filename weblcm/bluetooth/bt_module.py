@@ -9,6 +9,8 @@ import dbus.exceptions
 import threading
 import logging
 
+from ..utils import DBusManager
+
 BT_OBJ = "org.bluez"
 BT_OBJ_PATH = "/org/bluez/hci0"
 BT_ADAPTER_IFACE = "org.bluez.Adapter1"
@@ -44,13 +46,15 @@ class BtMgr(threading.Thread):
 
         # Get DBus objects
         self.manager = dbus.Interface(
-            dbus.SystemBus().get_object(BT_OBJ, "/"), DBUS_OBJ_MGR_IFACE
+            DBusManager().get_system_bus().get_object(BT_OBJ, "/"), DBUS_OBJ_MGR_IFACE
         )
         self.adapter = dbus.Interface(
-            dbus.SystemBus().get_object(BT_OBJ, BT_OBJ_PATH), BT_ADAPTER_IFACE
+            DBusManager().get_system_bus().get_object(BT_OBJ, BT_OBJ_PATH),
+            BT_ADAPTER_IFACE,
         )
         self.adapter_props = dbus.Interface(
-            dbus.SystemBus().get_object(BT_OBJ, BT_OBJ_PATH), DBUS_PROP_IFACE
+            DBusManager().get_system_bus().get_object(BT_OBJ, BT_OBJ_PATH),
+            DBUS_PROP_IFACE,
         )
         self.objects = self.manager.GetManagedObjects()
 
@@ -416,7 +420,7 @@ class Device:
         self.services = []
 
         self.path = path
-        self.object = dbus.SystemBus().get_object(BT_OBJ, path)
+        self.object = DBusManager().get_system_bus().get_object(BT_OBJ, path)
         self.interface = dbus.Interface(self.object, BT_DEVICE_IFACE)
         self.properties = dbus.Interface(self.object, DBUS_PROP_IFACE)
         self.properties_signal = None
@@ -603,7 +607,7 @@ class Service:
         self.write_notification_callback = write_notification_callback
         self.characteristics = []
 
-        self.object = dbus.SystemBus().get_object(BT_OBJ, path)
+        self.object = DBusManager().get_system_bus().get_object(BT_OBJ, path)
         self.interface = dbus.Interface(self.object, BT_SERVICE_IFACE)
         self.properties = dbus.Interface(self.object, DBUS_PROP_IFACE)
         self.properties_signal = None
@@ -695,7 +699,7 @@ class Characteristic:
         self.property_change_callback = property_change_callback
         self.write_notification_callback = write_notification_callback
 
-        self.object = dbus.SystemBus().get_object(BT_OBJ, path)
+        self.object = DBusManager().get_system_bus().get_object(BT_OBJ, path)
         self.interface = dbus.Interface(self.object, BT_CHARACTERISTIC_IFACE)
         self.properties = dbus.Interface(self.object, DBUS_PROP_IFACE)
         self.properties_signal = self.properties.connect_to_signal(
