@@ -11,6 +11,7 @@ from .definition import (
 )
 from .settings import SystemSettingsManage
 import dbus
+from .utils import DBusManager
 
 
 @cherrypy.expose
@@ -27,7 +28,7 @@ class PowerOff(object):
             return result
 
         try:
-            bus = dbus.SystemBus()
+            bus = DBusManager().get_system_bus()
             manager = dbus.Interface(
                 bus.get_object(LOGIND_BUS_NAME, LOGIND_MAIN_OBJ), LOGIND_MAIN_IFACE
             )
@@ -57,7 +58,7 @@ class Suspend(object):
             return result
 
         try:
-            bus = dbus.SystemBus()
+            bus = DBusManager().get_system_bus()
             manager = dbus.Interface(
                 bus.get_object(LOGIND_BUS_NAME, LOGIND_MAIN_OBJ), LOGIND_MAIN_IFACE
             )
@@ -89,7 +90,7 @@ class Reboot(object):
             return result
 
         try:
-            bus = dbus.SystemBus()
+            bus = DBusManager().get_system_bus()
             manager = dbus.Interface(
                 bus.get_object(LOGIND_BUS_NAME, LOGIND_MAIN_OBJ), LOGIND_MAIN_IFACE
             )

@@ -1,5 +1,6 @@
 from syslog import LOG_ERR, syslog
 import dbus
+from .utils import DBusManager
 from .definition import (
     SYSTEMD_BUS_NAME,
     SYSTEMD_MAIN_OBJ,
@@ -31,7 +32,7 @@ class SystemdUnit(object):
         https://www.freedesktop.org/software/systemd/man/org.freedesktop.systemd1.html
         """
         try:
-            bus = dbus.SystemBus()
+            bus = DBusManager().get_system_bus()
             manager = dbus.Interface(
                 bus.get_object(SYSTEMD_BUS_NAME, SYSTEMD_MAIN_OBJ),
                 SYSTEMD_MANAGER_IFACE,
@@ -73,7 +74,7 @@ class SystemdUnit(object):
         https://www.freedesktop.org/software/systemd/man/org.freedesktop.systemd1.html
         """
         try:
-            bus = dbus.SystemBus()
+            bus = DBusManager().get_system_bus()
             manager = dbus.Interface(
                 bus.get_object(SYSTEMD_BUS_NAME, SYSTEMD_MAIN_OBJ),
                 SYSTEMD_MANAGER_IFACE,
@@ -101,7 +102,7 @@ class SystemdUnit(object):
         Activate the unit
         """
         try:
-            bus = dbus.SystemBus()
+            bus = DBusManager().get_system_bus()
             manager = dbus.Interface(
                 bus.get_object(SYSTEMD_BUS_NAME, SYSTEMD_MAIN_OBJ),
                 SYSTEMD_MANAGER_IFACE,
@@ -120,7 +121,7 @@ class SystemdUnit(object):
         Deactivate the unit
         """
         try:
-            bus = dbus.SystemBus()
+            bus = DBusManager().get_system_bus()
             manager = dbus.Interface(
                 bus.get_object(SYSTEMD_BUS_NAME, SYSTEMD_MAIN_OBJ),
                 SYSTEMD_MANAGER_IFACE,

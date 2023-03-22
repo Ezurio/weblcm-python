@@ -17,6 +17,7 @@ from .definition import (
     DBUS_PROP_IFACE,
     SYSTEMD_JOURNAL_GATEWAYD_SOCKET_FILE,
 )
+from .utils import DBusManager
 
 
 @cherrypy.expose
@@ -231,7 +232,7 @@ class LogSetting(object):
             return result
 
         try:
-            bus = dbus.SystemBus()
+            bus = DBusManager().get_system_bus()
             proxy = bus.get_object(WPA_IFACE, WPA_OBJ)
             wpas = dbus.Interface(proxy, DBUS_PROP_IFACE)
             wpas.Set(WPA_IFACE, "DebugLevel", supp_level)
@@ -272,7 +273,7 @@ class LogSetting(object):
         result = {"SDCERR": 0, "InfoMsg": ""}
 
         try:
-            bus = dbus.SystemBus()
+            bus = DBusManager().get_system_bus()
             proxy = bus.get_object(WPA_IFACE, WPA_OBJ)
             wpas = dbus.Interface(proxy, DBUS_PROP_IFACE)
             debug_level = wpas.Get(WPA_IFACE, "DebugLevel")
