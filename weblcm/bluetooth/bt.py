@@ -824,12 +824,15 @@ class Bluetooth(object):
         post_data = cherrypy.request.json
         if command == "getConnInfo":
             processed = True
-            device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
-            interface = dbus.Interface(device_obj, DEVICE_IFACE)
-            (rssi, tx_power, max_tx_power) = interface.GetConnInfo()
-            result["rssi"] = rssi
-            result["tx_power"] = tx_power
-            result["max_tx_power"] = max_tx_power
+            if device is None:
+                error_message = "Device not found"
+            else:
+                device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
+                interface = dbus.Interface(device_obj, DEVICE_IFACE)
+                (rssi, tx_power, max_tx_power) = interface.GetConnInfo()
+                result["rssi"] = rssi
+                result["tx_power"] = tx_power
+                result["max_tx_power"] = max_tx_power
         else:
             for plugin in bluetooth_plugins:
                 try:
