@@ -499,6 +499,27 @@ class Bluetooth(object):
             "InfoMsg": "",
         }
 
+        try:
+            post_data = cherrypy.request.json
+            if (
+                "command" in post_data
+                and post_data["command"] == "getConnInfo"
+                and "device" in cherrypy.request.params
+            ):
+                bus = dbus.SystemBus()
+                device_uuid = uri_to_uuid(cherrypy.request.params["device"])
+                device, device_props = find_device(bus, device_uuid)
+                result.update(
+                    self.execute_device_command(
+                        bus, "getConnInfo", device_uuid, device, None
+                    )
+                )
+                return result
+        except Exception:
+            # "Fast-track" for the getConnInfo command threw an error, so just handle it the
+            # old-fashioned way.
+            pass
+
         self.register_controller_callbacks()
 
         if "controller" in cherrypy.request.params:
