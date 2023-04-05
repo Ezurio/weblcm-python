@@ -1,4 +1,5 @@
 import logging
+import select
 import threading
 import time
 import socket
@@ -20,7 +21,6 @@ from ..bluetooth.bt_plugin import BluetoothPlugin
 from ..tcp_connection import (
     TcpConnection,
     TCP_SOCKET_HOST,
-    SOCK_TIMEOUT,
 )
 
 from ..utils import DBusManager
@@ -29,6 +29,8 @@ MAX_RECV_LEN = 512
 """ Maximum bytes to read over TCP"""
 DEFAULT_WRITE_SIZE = 1
 """ Default GATT write size """
+
+READ_ONLY = select.POLLIN | select.POLLERR
 
 
 class VspConnectionPlugin(BluetoothPlugin):
@@ -81,7 +83,7 @@ class VspConnectionPlugin(BluetoothPlugin):
                 error_message = f"device {device_uuid} has no vsp connection"
             else:
                 vsp_connection = self.vsp_connections.pop(device_uuid)
-                vsp_connection.vsp_close(bus, device_uuid, post_data)
+                vsp_connection.vsp_close()
         return processed, error_message
 
     def ProcessAdapterCommand(
@@ -106,15 +108,14 @@ class VspConnectionPlugin(BluetoothPlugin):
     def DeviceRemovedNotify(self, device_uuid: str, device: dbus.ObjectPath):
         """Called when user has requested device be unpaired."""
         if device_uuid in self.vsp_connections:
-            bus = DBusManager().get_system_bus()
             vsp_connection = self.vsp_connections.pop(device_uuid)
-            vsp_connection.vsp_close(bus, device_uuid)
+            vsp_connection.vsp_close()
 
     def ControllerRemovedNotify(
         self, controller_name: str, adapter_obj: dbus.ObjectPath
     ):
         for vsp_uuid, vsp_connection in self.vsp_connections.items():
-            vsp_connection.gatt_only_disconnect()
+            vsp_connection.vsp_close()
 
     def DeviceAddedNotify(
         self, device: str, device_uuid: str, device_obj: dbus.ObjectPath
@@ -150,6 +151,9 @@ class VspConnection(TcpConnection):
         self.auth_failure_unpair = False
         self.write_size: int = DEFAULT_WRITE_SIZE
         self.rx_buffer: bytes = b""
+        self._producer: socket.socket = None
+        self._consumer: socket.socket = None
+        self._closing = False
         super().__init__()
 
     def log_exception(self, e, message: str = ""):
@@ -181,8 +185,8 @@ class VspConnection(TcpConnection):
                     f"vsp device_prop_changed_cb: Connected: "
                     f"{changed_props['Connected']}",
                 )
-                if self._tcp_connection and self.socket_rx_type == "JSON":
-                    self._tcp_connection.sendall(
+                if self._producer and self.socket_rx_type == "JSON":
+                    self._producer.sendall(
                         f"{{\"Connected\": {changed_props['Connected']}}}\n".encode()
                     )
             except Exception as e:
@@ -244,16 +248,15 @@ class VspConnection(TcpConnection):
 
     def gatt_vsp_read_val_cb(self, value):
         python_value = dbus_to_python_ex(value, bytearray)
-        if self._tcp_connection:
-            try:
-                if self.socket_rx_type == "JSON":
-                    self._tcp_connection.sendall(
-                        f'{{"Received": "0x{python_value.hex()}"}}\n'.encode()
-                    )
-                else:
-                    self._tcp_connection.sendall(python_value)
-            except OSError as e:
-                syslog("gatt_vsp_read_val_cb:" + str(e))
+        try:
+            if self._producer and not self._closing:
+                self._producer.sendall(
+                    f'{{"Received": "0x{python_value.hex()}"}}\n'.encode()
+                    if self.socket_rx_type == "JSON"
+                    else python_value
+                )
+        except OSError as e:
+            syslog("gatt_vsp_read_val_cb:" + str(e))
 
     def write_val_cb(self):
         self.tx_complete = True
@@ -307,8 +310,8 @@ class VspConnection(TcpConnection):
 
     def bt_disconnected(self):
         syslog("vsp bt_disconnected: Connected: 0")
-        if self._tcp_connection and self.socket_rx_type == "JSON":
-            self._tcp_connection.sendall('{"Connected": 0}\n'.encode())
+        if self._producer and self.socket_rx_type == "JSON":
+            self._producer.sendall('{"Connected": 0}\n'.encode())
 
     def gatt_send_data(self, data) -> bool:
         if self.vsp_write_chrc and len(self.vsp_write_chrc):
@@ -398,35 +401,21 @@ class VspConnection(TcpConnection):
 
         # TODO: Enhance for simultaneous clients
         self.recent_error = None
+        self._closing = False
         try:
-            self.start_client()
-            time.sleep(0.5)
-            # For RESTful API, return BT connection errors if they occur within 0.5 seconds.
-            if self.recent_error:
-                self.stop_client()
-                return self.recent_error
-
-            if "tcpPort" in params:
-                port = params["tcpPort"]
-                if not self.validate_port(int(port)):
-                    return f"port {port} not valid"
-                host = TCP_SOCKET_HOST  # cherrypy.server.socket_host
-                self.sock = self.tcp_server(host, params)
-                if self.sock:
-                    self.thread = threading.Thread(
-                        target=self.vsp_tcp_server_thread,
-                        name="vsp_tcp_server_thread",
-                        daemon=True,
-                        args=(self.sock,),
-                    )
-                    self.thread.start()
-                device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
-                device_iface = dbus.Interface(device_obj, DBUS_PROP_IFACE)
-                self.signal_device_prop_changed = device_iface.connect_to_signal(
-                    "PropertiesChanged", self.device_prop_changed_cb
-                )
+            self.thread = threading.Thread(
+                target=self.vsp_tcp_server_thread,
+                name="vsp_tcp_server_thread",
+                daemon=True,
+                args=(params,),
+            )
+            self.thread.start()
+            device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
+            device_iface = dbus.Interface(device_obj, DBUS_PROP_IFACE)
+            self.signal_device_prop_changed = device_iface.connect_to_signal(
+                "PropertiesChanged", self.device_prop_changed_cb
+            )
         except Exception:
-            self.stop_client()
             raise
 
     def gatt_only_disconnect(self):
@@ -439,10 +428,16 @@ class VspConnection(TcpConnection):
                 syslog(LOG_ERR, "gatt_only_disconnect: " + str(e))
         self.stop_client()
 
-    def vsp_close(self, bus, device_uuid: str = "", params=None):
+    def vsp_close(self):
         """Close the VSP connection down, including the REST host connection."""
-        self.gatt_only_disconnect()
+        self._closing = True
+        self.tx_wait_event.set()
         self.stop_tcp_server(self.sock)
+        try:
+            if self._producer:
+                self._producer.sendall(b"")
+        except Exception:
+            pass
         if self.thread:
             self.thread.join()
         syslog(LOG_INFO, f"vsp_close: closed for device {self.device_uuid}")
@@ -532,65 +527,90 @@ class VspConnection(TcpConnection):
                 syslog("vsp_tcp_server_thread: ERROR: gatt tx no completion")
         if self.tx_error:
             syslog(f"vsp transmit failed, data: 0x{data.hex()}")
-            if self.socket_rx_type == "JSON":
-                self._tcp_connection.sendall(
+            if self.socket_rx_type == "JSON" and self._producer:
+                self._producer.sendall(
                     '{"Error": "Transmit failed"'
                     f', "Data": "0x{data.hex()}'
                     '"}\n'.encode()
                 )
 
-    def vsp_tcp_server_thread(self, sock):
+    def vsp_tcp_server_thread(self, params):
         try:
-            sock.settimeout(SOCK_TIMEOUT)
-            while True:
-                try:
-                    tcp_connection, client_address = sock.accept()
-                    with self._tcp_lock:
-                        self._tcp_connection = tcp_connection
-                        self.rx_buffer = b""
-                    syslog(
-                        "vsp_tcp_server_thread: tcp client connected:"
-                        + str(client_address)
-                    )
-                    try:
-                        while True:
-                            data = self._tcp_connection.recv(MAX_RECV_LEN)
-                            if data:
-                                # Add the incoming data to the Rx buffer
-                                self.rx_buffer += data
+            self.start_client()
+            time.sleep(0.5)
+            if self.recent_error:
+                syslog(f"vsp_tcp_server_thread: error - {str(self.recent_error)}")
+                return
 
-                                while len(self.rx_buffer) >= self.write_size:
-                                    # Grab a chunk of 'write_size' bytes from the Rx buffer and send
-                                    # it
-                                    self.vsp_tcp_server_write_data(
-                                        self.rx_buffer[: self.write_size]
+            if "tcpPort" not in params:
+                syslog("vsp_tcp_server_thread: missing tcpPort param")
+                return
+
+            port = params["tcpPort"]
+            if not self.validate_port(int(port)):
+                syslog(f"vsp_tcp_server_thread: port {port} not valid")
+                return
+
+            host = TCP_SOCKET_HOST  # cherrypy.server.socket_host
+            self.sock = self.tcp_server(host, params, backlog=1)
+            if not self.sock:
+                syslog("vsp_tcp_server_thread: Could not create TCP socket server")
+                return
+
+            (self._producer, self._consumer) = socket.socketpair(
+                socket.AF_UNIX, socket.SOCK_SEQPACKET, 0
+            )
+            with self.sock, self._consumer, self._producer:
+                self.rx_buffer = b""
+                tcp_connection: Optional[socket.socket] = None
+                poller = select.poll()
+                poller.register(self.sock, READ_ONLY)
+                poller.register(self._consumer, READ_ONLY)
+                while not self._closing:
+                    events = poller.poll()
+                    for fd, flag in events:
+                        if flag & select.POLLIN:
+                            if fd == self.sock.fileno():
+                                (tcp_connection, client_address) = self.sock.accept()
+                                syslog(
+                                    "vsp_tcp_server_thread: tcp client connected:"
+                                    + str(client_address)
+                                )
+                                tcp_connection.setblocking(0)
+                                poller.register(tcp_connection, READ_ONLY)
+                            elif fd == self._consumer.fileno():
+                                next_msg = self._consumer.recv(MAX_RECV_LEN)
+                                if next_msg and tcp_connection:
+                                    tcp_connection.sendall(next_msg)
+                            elif tcp_connection and fd == tcp_connection.fileno():
+                                data = tcp_connection.recv(MAX_RECV_LEN)
+                                if data:
+                                    # Add the incoming data to the Rx buffer
+                                    self.rx_buffer += data
+
+                                    while len(self.rx_buffer) >= self.write_size:
+                                        # Grab a chunk of 'write_size' bytes from the Rx buffer and
+                                        # send it
+                                        self.vsp_tcp_server_write_data(
+                                            self.rx_buffer[: self.write_size]
+                                        )
+
+                                        # Update the Rx buffer to remove the now-sent chunk of data
+                                        self.rx_buffer = self.rx_buffer[
+                                            self.write_size :
+                                        ]
+                                else:
+                                    syslog(
+                                        f"vsp_tcp_server_thread: closing {str(client_address)}"
                                     )
-
-                                    # Update the Rx buffer to remove the now-sent chunk of data
-                                    self.rx_buffer = self.rx_buffer[self.write_size :]
-                            else:
-                                break
-                    except OSError as e:
-                        # If sock is closed, exit.
-                        if e.errno == socket.EBADF:
-                            break
-                        syslog("vsp_tcp_server_thread:" + str(e))
-                    except Exception as e:
-                        self.log_exception(e)
-                    finally:
-                        with self._tcp_lock:
-                            self.close_tcp_connection()
-                            self._tcp_connection, client_address = None, None
-                            self.rx_buffer = b""
-                except socket.timeout:
-                    continue
-                except OSError as e:
-                    # If the socket was closed by another thread, exit
-                    if e.errno == socket.EBADF:
-                        break
-                    else:
-                        raise
+                                    poller.unregister(tcp_connection)
+                                    tcp_connection.close()
+                                    tcp_connection = None
+                        elif flag & select.POLLERR:
+                            syslog("vsp_tcp_server_thread: exception")
+                            self._closing = True
+                if tcp_connection:
+                    tcp_connection.close()
         finally:
             # TODO: Consider flagging to manager thread for vsp_connections.pop(device_uuid)
-            sock.close()
-            self._tcp_connection, client_address = None, None
+            self.gatt_only_disconnect()
