@@ -761,6 +761,9 @@ class Bluetooth(object):
                 device_properties.Set(
                     DEVICE_IFACE, prop_name, python_to_dbus(value, prop_type)
                 )
+        auto_connect = post_data.get("autoConnect", None)
+        if auto_connect == 1:
+            AgentSingleton()
         paired = post_data.get("paired", None)
         if paired == 1:
             paired_state = device_properties.Get(DEVICE_IFACE, "Paired")
