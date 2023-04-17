@@ -27,6 +27,8 @@ from .settings import SystemSettingsManage
 from .advanced import Fips
 from .utils import DBusManager
 import configparser
+from .ram_boot_time_session import RamBootTimeSession
+
 
 weblcm_plugins: List[str] = []
 
@@ -294,6 +296,7 @@ def weblcm_cherrypy_start():
     cherrypy.config.update(
         {
             "tools.sessions.timeout": SystemSettingsManage.get_session_timeout(),
+            "tools.sessions.storage_class": RamBootTimeSession,
         }
     )
 
