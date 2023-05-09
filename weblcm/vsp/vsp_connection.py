@@ -1,11 +1,10 @@
 import logging
-import select
-import threading
 import socket
-from syslog import syslog, LOG_INFO, LOG_ERR
+from syslog import LOG_WARNING, syslog, LOG_INFO, LOG_ERR
 from typing import Optional, Any, Tuple, List, Dict
 
 import dbus
+from gi.repository import GLib
 
 from ..bluetooth.ble import (
     BLUEZ_SERVICE_NAME,
@@ -29,7 +28,7 @@ MAX_RECV_LEN = 512
 DEFAULT_WRITE_SIZE = 1
 """ Default GATT write size """
 
-READ_ONLY = select.EPOLLIN | select.EPOLLERR
+READ_ONLY = GLib.IOCondition.IN | GLib.IOCondition.ERR | GLib.IOCondition.HUP
 
 
 class VspConnection(TcpConnection):
@@ -39,6 +38,8 @@ class VspConnection(TcpConnection):
 
     def __init__(self, device_uuid: str, on_connection_closed=None):
         self.device: Optional[dbus.ObjectPath] = None
+        self.adapter_obj: Optional[dbus.ObjectPath] = None
+        self.remove_device_method = None
         self._waiting_for_services_resolved: bool = False
         self.vsp_svc_uuid = None
         self.vsp_read_chrc: Optional[Tuple[dbus.proxies.ProxyObject, Any]] = None
@@ -47,19 +48,20 @@ class VspConnection(TcpConnection):
         self.signal_device_prop_changed = None
         self.vsp_write_chrc: Optional[Tuple[dbus.proxies.ProxyObject, Any]] = None
         self.vsp_write_chr_uuid = None
-        self.sock: Optional[socket.socket] = None
+        self.server_socket: Optional[socket.socket] = None
         self.socket_rx_type: str = "JSON"
-        self.thread: Optional[threading.Thread] = None
         self._logger = logging.getLogger(__name__)
         self.auth_failure_unpair = False
         self.write_size: int = DEFAULT_WRITE_SIZE
-        self._producer: socket.socket = None
-        self._consumer: socket.socket = None
-        self.poller: Optional[select.epoll] = None
         self.tcp_connection: Optional[socket.socket] = None
-        self._closing: bool = False
+        self.client_address: Optional[socket._RetAddress] = None
         self.device_uuid = device_uuid
         self.on_connection_closed = on_connection_closed
+        self.server_socket_channel: Optional[GLib.IOChannel] = None
+        self.server_socket_channel_watch_id: int = 0
+        self.tcp_connection_channel: Optional[GLib.IOChannel] = None
+        self.tcp_connection_channel_watch_id: int = 0
+        self.rx_buffer: list[dbus.Byte] = []
         super().__init__()
 
     def log_exception(self, e, message: str = ""):
@@ -88,11 +90,11 @@ class VspConnection(TcpConnection):
             try:
                 syslog(
                     LOG_INFO,
-                    f"vsp device_prop_changed_cb: Connected: "
+                    f"VSP device_prop_changed_cb: Connected: "
                     f"{changed_props['Connected']}",
                 )
-                if self._producer and self.socket_rx_type == "JSON":
-                    self._producer.sendall(
+                if self.tcp_connection and self.socket_rx_type == "JSON":
+                    self.tcp_connection.sendall(
                         f"{{\"Connected\": {changed_props['Connected']}}}\n".encode()
                     )
             except Exception as e:
@@ -105,7 +107,7 @@ class VspConnection(TcpConnection):
             try:
                 syslog(
                     LOG_INFO,
-                    "vsp device_prop_changed_cb: disconnect auth failure, auto-unpairing",
+                    "VSP device_prop_changed_cb: disconnect auth failure, auto-unpairing",
                 )
                 if self.remove_device_method:
                     self.remove_device_method(self.adapter_obj, self.device)
@@ -115,7 +117,7 @@ class VspConnection(TcpConnection):
             try:
                 syslog(
                     LOG_INFO,
-                    f"vsp device_prop_changed_cb: ServicesResolved: "
+                    f"VSP device_prop_changed_cb: ServicesResolved: "
                     f"{changed_props['ServicesResolved']}",
                 )
                 if changed_props["ServicesResolved"]:
@@ -124,12 +126,6 @@ class VspConnection(TcpConnection):
                         self.gatt_only_connected()
             except Exception as e:
                 self.log_exception(e)
-
-        if len(changed_props):
-            syslog(
-                LOG_INFO,
-                "device_prop_changed_cb: property changed " + str(changed_props),
-            )
 
     def vsp_read_prop_changed_cb(self, iface, changed_props, invalidated_props):
         if iface != GATT_CHRC_IFACE:
@@ -150,13 +146,13 @@ class VspConnection(TcpConnection):
         gatt_vsp_notify_cb performs no operation at present, but should be supplied to StartNotify,
         which is necessary to begin receiving PropertiesChanged signals on the VSP data read.
         """
-        return
+        syslog("VSP: subscribed for GATT notifications")
 
     def gatt_vsp_read_val_cb(self, value):
         python_value = dbus_to_python_ex(value, bytearray)
         try:
-            if self._producer and not self._closing:
-                self._producer.sendall(
+            if self.tcp_connection:
+                self.tcp_connection.sendall(
                     f'{{"Received": "0x{python_value.hex()}"}}\n'.encode()
                     if self.socket_rx_type == "JSON"
                     else python_value
@@ -165,24 +161,27 @@ class VspConnection(TcpConnection):
             syslog("gatt_vsp_read_val_cb:" + str(e))
 
     def gatt_vsp_write_val_cb(self):
-        if self.tcp_connection:
-            self.poller.register(self.tcp_connection, READ_ONLY | select.EPOLLRDHUP)
+        if self.tcp_connection_channel:
+            self.tcp_connection_channel_watch_id = GLib.io_add_watch(
+                self.tcp_connection_channel,
+                READ_ONLY,
+                self.tcp_connection_event_handler,
+            )
 
     def generic_val_error_cb(self, error):
         syslog("generic_val_error_cb: D-Bus call failed: " + str(error))
         if "Not connected" in error.args:
-            syslog("vsp bt_disconnected: Connected: 0")
-            if self._producer and self.socket_rx_type == "JSON":
-                self._producer.sendall('{"Connected": 0}\n'.encode())
+            if self.tcp_connection and self.socket_rx_type == "JSON":
+                self.tcp_connection.sendall('{"Connected": 0}\n'.encode())
 
     def gatt_vsp_write_val_error_cb(self, error):
         self.gatt_vsp_write_val_cb()
-        if self.socket_rx_type == "JSON" and self._producer:
-            self._producer.sendall('{"Error": "Transmit failed"}\n'.encode())
+        if self.socket_rx_type == "JSON" and self.tcp_connection:
+            self.tcp_connection.sendall('{"Error": "Transmit failed"}\n'.encode())
         self.generic_val_error_cb(error)
 
     def start_client(self) -> bool:
-        syslog("vsp start_client: start")
+        syslog("VSP: start_client")
         if not self.vsp_read_chrc:
             return False
 
@@ -206,12 +205,13 @@ class VspConnection(TcpConnection):
         # Stop client suppresses all errors, because it can be invoked during a failed startup,
         # in which case we want to focus attention on the startup error, not errors in
         # subsequently attempting to tear down.
+        syslog("VSP: stop_client")
         if self.vsp_read_chrc and len(self.vsp_read_chrc):
             try:
                 self.vsp_read_chrc[0].StopNotify(dbus_interface=GATT_CHRC_IFACE)
-                self.vsp_read_chrc = None
             except Exception as e:
                 syslog(LOG_ERR, "stop_client: " + str(e))
+            self.vsp_read_chrc = None
         if self.signal_vsp_read_prop_changed:
             try:
                 self.signal_vsp_read_prop_changed.remove()
@@ -308,19 +308,35 @@ class VspConnection(TcpConnection):
 
         vsp_service = self.create_vsp_service()
         if not vsp_service:
-            return f"No VSP Service found for device {self.device_uuid}"
+            return f"no VSP Service found for device {self.device_uuid}"
 
         if not self.start_client():
-            return "Could not start GATT client"
+            return "could not start GATT client"
 
-        self._closing = False
-        self.thread = threading.Thread(
-            target=self.vsp_tcp_server_thread,
-            name="vsp_tcp_server_thread",
-            daemon=True,
-            args=(port,),
+        self.server_socket = self.tcp_server(
+            TCP_SOCKET_HOST, {"tcpPort": port}, backlog=1
         )
-        self.thread.start()
+        if not self.server_socket:
+            syslog("gatt_connect: Could not create TCP server socket")
+            self.vsp_close()
+            return "could not create TCP server socket"
+
+        try:
+            self.server_socket_channel = GLib.IOChannel.unix_new(
+                self.server_socket.fileno()
+            )
+            self.server_socket_channel.set_encoding(None)
+            self.server_socket_channel_watch_id = GLib.io_add_watch(
+                self.server_socket_channel, READ_ONLY, self.server_socket_event_handler
+            )
+        except Exception as exception:
+            syslog(
+                LOG_ERR,
+                f"gatt_connect: server socket IO channel configuration error - {str(exception)}",
+            )
+            self.vsp_close()
+            return "could not configure server socket IO channel"
+
         device_obj = bus.get_object(BLUEZ_SERVICE_NAME, device)
         device_iface = dbus.Interface(device_obj, DBUS_PROP_IFACE)
         self.signal_device_prop_changed = device_iface.connect_to_signal(
@@ -336,16 +352,6 @@ class VspConnection(TcpConnection):
             except Exception as e:
                 syslog(LOG_ERR, "gatt_only_disconnect: " + str(e))
         self.stop_client()
-
-    def vsp_close(self):
-        """Close the VSP connection down, including the REST host connection."""
-        self._closing = True
-        try:
-            if self._producer:
-                self._producer.sendall(b"")
-        except Exception:
-            pass
-        syslog(LOG_INFO, f"vsp_close: closed for device {self.device_uuid}")
 
     def gatt_only_reconnect(self):
         """
@@ -389,6 +395,9 @@ class VspConnection(TcpConnection):
             syslog(LOG_ERR, f"Failed to reconnect vsp_service for {str(self.device)}")
         if not self.start_client():
             syslog(LOG_ERR, f"Failed to restart GATT client for {str(self.device)}")
+        self.tcp_connection_channel_watch_id = GLib.io_add_watch(
+            self.tcp_connection_channel, READ_ONLY, self.tcp_connection_event_handler
+        )
 
     def create_vsp_service(self):
         bus = DBusManager().get_system_bus()
@@ -420,140 +429,161 @@ class VspConnection(TcpConnection):
                     break
         return vsp_service
 
-    def vsp_tcp_server_thread(self, port: int):
-        def cleanup_tcp_connection():
-            nonlocal self
-
-            if self.tcp_connection:
-                try:
-                    self.poller.unregister(self.tcp_connection)
-                except FileNotFoundError:
-                    # Ignore file not found errors while unregistering
-                    pass
-                self.tcp_connection.close()
-                self.tcp_connection = None
-
-        syslog("vsp_tcp_server_thread: start")
+    def cleanup_tcp_connection(self):
+        """
+        Close the TCP client connection and stop watching for events on the TCP client connection
+        channel
+        """
         try:
-            self.sock = self.tcp_server(TCP_SOCKET_HOST, {"tcpPort": port}, backlog=1)
-            if not self.sock:
-                syslog("vsp_tcp_server_thread: Could not create TCP socket server")
-                raise Exception("Could not create TCP socket server")
-
-            (self._producer, self._consumer) = socket.socketpair(
-                socket.AF_UNIX, socket.SOCK_SEQPACKET, 0
+            if self.tcp_connection_channel_watch_id:
+                GLib.source_remove(self.tcp_connection_channel_watch_id)
+        except GLib.GError as glib_error:
+            syslog(
+                LOG_WARNING,
+                f"VSP: error while cleaning up TCP client - {str(glib_error)}",
             )
-            rx_buffer: list[dbus.Byte] = []
-            with self.sock, self._consumer, self._producer:
-                self.poller = select.epoll()
-                self.poller.register(self.sock, READ_ONLY)
-                self.poller.register(self._consumer, READ_ONLY)
-
-                while not self._closing:
-                    # Poll for events from the registered sockets
-                    events = self.poller.poll()
-
-                    # Check if we need to exit
-                    if self._closing:
-                        break
-
-                    # Handle any incoming events
-                    for fd, flag in events:
-                        if flag & select.EPOLLIN:
-                            if fd == self.sock.fileno():
-                                # POLLIN event from the main server socket
-                                (
-                                    self.tcp_connection,
-                                    client_address,
-                                ) = self.sock.accept()
-                                syslog(
-                                    "vsp_tcp_server_thread: tcp client connected:"
-                                    + str(client_address)
-                                )
-                                self.tcp_connection.setblocking(0)
-                                rx_buffer = []
-                                self.poller.register(
-                                    self.tcp_connection, READ_ONLY | select.EPOLLRDHUP
-                                )
-
-                            elif fd == self._consumer.fileno():
-                                # POLLIN event from the consumer socket
-                                next_msg = self._consumer.recv(MAX_RECV_LEN)
-                                if next_msg and self.tcp_connection:
-                                    self.tcp_connection.sendall(next_msg)
-
-                            elif (
-                                self.tcp_connection
-                                and fd == self.tcp_connection.fileno()
-                            ):
-                                # POLLIN event from the client TCP connection
-                                try:
-                                    data = self.tcp_connection.recv(self.write_size)
-                                    if not data:
-                                        # When recv() returns 0 bytes this indicates that the TCP
-                                        # client connection was closed
-                                        syslog(
-                                            f"vsp_tcp_server_thread: closing {str(client_address)}"
-                                        )
-                                        cleanup_tcp_connection()
-                                        continue
-
-                                    # Add the incoming data to the Rx buffer
-                                    rx_buffer += [dbus.Byte(b) for b in bytearray(data)]
-                                    if len(rx_buffer) < self.write_size:
-                                        # Not enough data to transmit
-                                        continue
-
-                                    # Unregister the TCP client connection from the poller so we can
-                                    # queue up data in the socket. The GATT Tx callbacks are
-                                    # responsible for re-registering it.
-                                    self.poller.unregister(self.tcp_connection)
-
-                                    # Convert bytes array to array of DBus Bytes and send
-                                    self.gatt_send_data(rx_buffer[: self.write_size])
-
-                                    # Update the Rx buffer to remove the now-sent chunk of data
-                                    rx_buffer = rx_buffer[self.write_size :]
-                                except Exception as e:
-                                    syslog(
-                                        f"vsp_tcp_server_thread: closing {str(client_address)} - "
-                                        f"{str(e)}"
-                                    )
-                                    cleanup_tcp_connection()
-
-                        elif flag & (select.EPOLLERR | select.EPOLLRDHUP):
-                            # Handle error or hangup event
-                            if fd == self.tcp_connection.fileno():
-                                syslog(
-                                    "vsp_tcp_server_thread: client closed connection"
-                                )
-                                if self.tcp_connection:
-                                    cleanup_tcp_connection()
-                            elif fd == self.sock.fileno():
-                                syslog("vsp_tcp_server_thread: error")
-                                self._closing = True
-
-        except Exception as e:
-            syslog(LOG_ERR, f"vsp_tcp_server_thread: exception - {str(e)}")
         finally:
-            # Ensure we mark the VSP server connection as closing
-            self._closing = True
+            self.tcp_connection_channel_watch_id = 0
 
-            # Perform any necessary cleanup
-            if self.on_connection_closed:
-                self.on_connection_closed(self)
+        try:
+            if self.tcp_connection_channel:
+                self.tcp_connection_channel.shutdown(False)
+        except GLib.GError as glib_error:
+            syslog(
+                LOG_WARNING,
+                f"VSP: error while cleaning up TCP channel - {str(glib_error)}",
+            )
+        finally:
+            self.tcp_connection_channel = None
+            self.tcp_connection = None
+
+    def cleanup_server_socket(self):
+        """Close the server socket and stop watching for events on the server socket channel"""
+        try:
+            if self.server_socket_channel_watch_id:
+                GLib.source_remove(self.server_socket_channel_watch_id)
+        except GLib.GError as glib_error:
+            syslog(
+                LOG_WARNING,
+                f"VSP: error while cleaning up server socket channel - {str(glib_error)}",
+            )
+        finally:
+            self.server_socket_channel_watch_id = 0
+
+        try:
+            if self.server_socket_channel:
+                self.server_socket_channel.shutdown(False)
+        except GLib.GError as glib_error:
+            syslog(
+                LOG_WARNING,
+                f"VSP: error while cleaning up server socket channel - {str(glib_error)}",
+            )
+        finally:
+            self.server_socket_channel = None
+            self.server_socket = None
+
+    def vsp_close(self):
+        """
+        Close the VSP connection down, including the REST host connection, and perform any necessary
+        cleanup
+        """
+        # Signal to the VspConnectionPlugin that this VspConnection instance is closing
+        if self.on_connection_closed:
+            self.on_connection_closed(self)
+
+        # Cleanup TCP client connection and channel
+        self.cleanup_tcp_connection()
+
+        # Cleanup server socket and channel
+        self.cleanup_server_socket()
+
+        # Other cleanup
+        self.gatt_only_disconnect()
+        self.stop_tcp_server(self.server_socket)
+        syslog(LOG_INFO, f"VSP: closed for device {self.device_uuid}")
+
+    def tcp_connection_event_handler(self, _, condition):
+        """
+        Handler for IO events on the TCP client connection IO channel
+        """
+        if condition & GLib.IOCondition.IN:
+            # IN event from the TCP client connection
+            try:
+                data = self.tcp_connection.recv(self.write_size)
+                if not data:
+                    # When recv() returns 0 bytes this indicates that the TCP client connection was
+                    # closed
+                    syslog(f"VSP: closing TCP client {str(self.client_address)}")
+                    self.cleanup_tcp_connection()
+                    return
+
+                # Add the incoming data to the Rx buffer
+                self.rx_buffer += [dbus.Byte(b) for b in bytearray(data)]
+                if len(self.rx_buffer) < self.write_size:
+                    # Not enough data to transmit
+                    return
+
+                # Unregister the TCP client connection as a source so we can queue up data in the
+                # socket. The GATT Tx callbacks are responsible for re-registering it.
+                if self.tcp_connection_channel_watch_id:
+                    GLib.source_remove(self.tcp_connection_channel_watch_id)
+                self.tcp_connection_channel_watch_id = 0
+
+                # Convert bytes array to array of DBus Bytes and send
+                self.gatt_send_data(self.rx_buffer[: self.write_size])
+
+                # Update the Rx buffer to remove the now-sent chunk of data
+                self.rx_buffer = self.rx_buffer[self.write_size :]
+            except Exception as exception:
+                syslog(
+                    f"VSP: error - closing TCP client {str(self.client_address)} - {str(exception)}"
+                )
+                self.cleanup_tcp_connection()
+        else:
+            # HUP or ERR event from the TCP client connection
+            syslog("VSP: client closed connection")
             if self.tcp_connection:
-                cleanup_tcp_connection()
-            self.gatt_only_disconnect()
-            self.stop_tcp_server(self.sock)
-            syslog("vsp_tcp_server_thread: tcp server stopped")
+                self.cleanup_tcp_connection()
+
+    def server_socket_event_handler(self, _, condition):
+        """
+        Handler for IO events on the main server socket IO channel
+        """
+        if condition & GLib.IOCondition.IN:
+            # IO in event from the main server socket
+
+            # Make sure the TCP client connection is in a good initial state
+            self.cleanup_tcp_connection()
+            self.rx_buffer = []
+
+            # Accept an incoming TCP client connection
+            (
+                self.tcp_connection,
+                self.client_address,
+            ) = self.server_socket.accept()
+            syslog("VSP: TCP client connected:" + str(self.client_address))
+            self.tcp_connection.setblocking(0)
+
+            # Setup the TCP client connection IO channel and watch for events
+            self.tcp_connection_channel = GLib.IOChannel.unix_new(
+                self.tcp_connection.fileno()
+            )
+            self.tcp_connection_channel.set_encoding(None)
+            self.tcp_connection_channel_watch_id = GLib.io_add_watch(
+                self.tcp_connection_channel,
+                READ_ONLY,
+                self.tcp_connection_event_handler,
+            )
+        else:
+            # HUP or ERR event from the main server socket
+            syslog("VSP: TCP server socket error")
+            self.vsp_close()
 
 
 class VspConnectionPlugin(BluetoothPlugin):
     def __init__(self):
-        self._vsp_connections: Dict[str, VspConnection] = {}
+        self.vsp_connections: Dict[str, VspConnection] = {}
         """Dictionary of devices by UUID and their associated VspConnection, if any"""
-        self.lock: threading.Lock = threading.Lock()
 
     @property
     def device_commands(self) -> List[str]:
@@ -563,11 +593,6 @@ class VspConnectionPlugin(BluetoothPlugin):
     def adapter_commands(self) -> List[str]:
         return ["gattList"]
 
-    @property
-    def vsp_connections(self) -> Dict[str, VspConnection]:
-        with self.lock:
-            return self._vsp_connections
-
     def ProcessDeviceCommand(
         self,
         bus,
@@ -576,7 +601,7 @@ class VspConnectionPlugin(BluetoothPlugin):
         device: dbus.ObjectPath,
         adapter_obj: dbus.ObjectPath,
         post_data,
-        remove_device_method,
+        remove_device_method=None,
     ):
         processed = False
         error_message = None
@@ -636,14 +661,15 @@ class VspConnectionPlugin(BluetoothPlugin):
         self, controller_name: str, adapter_obj: dbus.ObjectPath
     ):
         for vsp_uuid, vsp_connection in self.vsp_connections.items():
-            syslog("Closing VSP because the controller was removed")
-            vsp_connection.vsp_close()
+            syslog("Controller removed, removing GATT change subscriptions")
+            vsp_connection.gatt_only_disconnect()
 
     def DeviceAddedNotify(
         self, device: str, device_uuid: str, device_obj: dbus.ObjectPath
     ):
         for vsp_uuid, vsp_connection in self.vsp_connections.items():
             if vsp_uuid == device_uuid:
+                syslog(f"Re-connecting GATT subscriptions for device {device_uuid}")
                 vsp_connection.gatt_only_reconnect()
 
     def on_connection_closed(self, connection: VspConnection) -> None:
