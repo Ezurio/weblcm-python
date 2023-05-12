@@ -241,6 +241,7 @@ def force_session_checking():
         "allowUnauthenticatedResetReboot",
         "networkInterfaces",
         "networkInterface",
+        "networkInterfaceStatistics",
         "file",
         "users",
         "firmware",
