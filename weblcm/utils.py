@@ -1,5 +1,7 @@
 from syslog import LOG_ERR, syslog
 from typing import Optional
+import functools
+import threading
 import dbus
 
 from gi.repository import GLib
@@ -40,3 +42,25 @@ class DBusManager(object, metaclass=Singleton):
                 syslog(LOG_ERR, f"Could not connect to DBus system bus: {str(e)}")
                 self._bus = None
         return self._bus
+
+
+def glib_idle_add_wait(function, *args, **kwargs):
+    """
+    Execute the target function in the main loop using GLib.idle_add() and block until it has
+    completed.
+    """
+    TIMEOUT_S: float = 5.0
+
+    gsource_completed = threading.Event()
+    results = []
+
+    @functools.wraps(function)
+    def wrapper():
+        results.append(function(*args, **kwargs))
+        gsource_completed.set()
+        return False
+
+    GLib.idle_add(wrapper)
+    if not gsource_completed.wait(timeout=TIMEOUT_S):
+        raise TimeoutError()
+    return results.pop()
