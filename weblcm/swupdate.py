@@ -1,4 +1,5 @@
 import logging
+import shutil
 from subprocess import Popen
 from syslog import syslog, LOG_ERR
 from typing import Tuple, Optional
@@ -11,27 +12,21 @@ from .somutil import get_current_side
 
 swclient_fd: int = -1
 
+FILE_STREAMING_BUFFER_SIZE = 128 * 1024
 
-def octet_stream_in(force=True, debug=False):
 
-    request = cherrypy.serving.request
-    if not request.body:
-        return
+class StreamingUpdateFile:
+    """File-like object to handle streaming data from a PUT request and forward it to swupdate."""
 
-    def octet_stream_processor(entity):
-        # Read application/octet-stream data into request.json.
-
-        if not entity.headers.get("Content-Length", ""):
-            raise cherrypy.HTTPError(411)
+    def write(self, data):
+        """Write a block of data to swupdate"""
         try:
-            data = entity.read()
             if swclient_fd < 0:
                 syslog(
-                    LOG_ERR,
-                    f"swupdate.py: octet_stream_processor: no update in progress",
+                    LOG_ERR, "swupdate.py: StreamingUpdateFile: no update in progress"
                 )
                 raise cherrypy.HTTPError(
-                    500, f"Software Update error: no update in progress"
+                    500, "Software Update error: no update in progress"
                 )
             rc = swclient.do_fw_update(data, swclient_fd)
             if rc < 0:
@@ -42,16 +37,9 @@ def octet_stream_in(force=True, debug=False):
                 raise cherrypy.HTTPError(
                     500, f"Software Update received error: {rc} while updating"
                 )
-        except Exception as e:
-            syslog(LOG_ERR, "octet_stream_processor: " + str(e))
-            raise e
-
-    if force:
-        request.body.processors.clear()
-        request.body.default_proc = cherrypy.HTTPError(
-            415, "Expected an application/octet-stream content type"
-        )
-    request.body.processors["application/octet-stream"] = octet_stream_processor
+        except Exception as exception:
+            syslog(LOG_ERR, "StreamingUpdateFile: " + str(exception))
+            raise exception
 
 
 @cherrypy.expose
@@ -62,10 +50,6 @@ class SWUpdate:
     SWU_SDCERR_FAIL = 1
     SWU_SDCERR_NOT_UPDATING = 2
     SWU_SDCERR_UPDATING = 5
-
-    cherrypy.tools.octet_stream_in = cherrypy.Tool(
-        "before_request_body", octet_stream_in
-    )
 
     def __init__(self):
         self._logger = logging.getLogger(__name__)
@@ -119,9 +103,21 @@ class SWUpdate:
         if self.swupdate_client:
             self.swupdate_client.stop_progress_thread()
 
-    @cherrypy.config(**{"tools.octet_stream_in.on": True})
     def PUT(self):
-        pass
+        content_type = cherrypy.request.headers.get("Content-Type", None)
+        if not content_type or content_type != "application/octet-stream":
+            raise cherrypy.HTTPError(
+                415, "Expected an application/octet-stream content type"
+            )
+
+        # In order to support chunked file streaming, we can use the copyfileobj() function which
+        # supports reading from a file-like object (the request body) in chunks and writing each
+        # chunk one-at-a-time to another file-like object (StreamingUpdateFile).
+        shutil.copyfileobj(
+            fsrc=cherrypy.request.body,
+            fdst=StreamingUpdateFile(),
+            length=FILE_STREAMING_BUFFER_SIZE,
+        )
 
     @cherrypy.tools.json_out()
     def GET(self, *args, **kwargs):
