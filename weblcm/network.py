@@ -520,6 +520,14 @@ class NetworkConnection(object):
                         variant_builder.end()
                         return (None, "Invalid SSID")
 
+                    # if 'mode' is not provided, assume 'infrastructure'
+                    if not connection_json[NM.SETTING_WIRELESS_SETTING_NAME].get(
+                        NM.SETTING_WIRELESS_MODE, None
+                    ):
+                        connection_json[NM.SETTING_WIRELESS_SETTING_NAME][
+                            NM.SETTING_WIRELESS_MODE
+                        ] = NM.SETTING_WIRELESS_MODE_INFRA
+
                     variant_builder.add_value(
                         GLib.Variant.new_dict_entry(
                             GLib.Variant.new_string(
