@@ -1,11 +1,10 @@
 [Unit]
 Description=Laird Web Configuration Utility
-Wants=network.target
-After=network.target
+Requires=dbus.service
+After=dbus.service network.target
 
 [Service]
 ExecStart=/usr/bin/weblcm-python
-KeyringMode=inherit
 Restart=on-failure
 RestartSec=10s
 
