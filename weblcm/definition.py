@@ -140,6 +140,7 @@ WEBLCM_DEVTYPE_TEXT = {
     29: "WireGuard",
     30: "WiFi P2P",
     31: "VRF",
+    32: "Loopback",
 }
 
 # values from https://developer-old.gnome.org/NetworkManager/stable/nm-dbus-types.html
