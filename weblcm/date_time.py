@@ -2,15 +2,15 @@ from syslog import syslog, LOG_ERR
 import time
 from typing import Tuple, List
 import cherrypy
-from .definition import (
-    DBUS_PROP_IFACE,
+from weblcm.definition import (
     TIMEDATE1_BUS_NAME,
     TIMEDATE1_MAIN_OBJ,
     WEBLCM_ERRORS,
     WEBLCM_PYTHON_TIME_FORMAT,
 )
+from weblcm.provisioning import CertificateProvisioning
 import dbus
-from .utils import DBusManager
+from weblcm.utils import DBusManager
 from datetime import datetime, timezone
 
 LOCALTIME = "/etc/localtime"
@@ -41,6 +41,22 @@ class DateTimeSetting(object):
         except Exception as e:
             syslog(LOG_ERR, f"Get local time zone failure: {str(e)}")
             return "Unable to determine timezone"
+
+    @staticmethod
+    def set_datetime(timestamp: int):
+        """
+        Call the SetTime() method passing the provided timestamp (in usec_utc), set the 'relative'
+        parameter to False, and set the 'interactive' parameter to False. See below for more info:
+        https://www.freedesktop.org/software/systemd/man/org.freedesktop.timedate1.html
+        """
+        dbus.Interface(
+            DBusManager()
+            .get_system_bus()
+            .get_object(TIMEDATE1_BUS_NAME, TIMEDATE1_MAIN_OBJ),
+            TIMEDATE1_BUS_NAME,
+        ).SetTime(timestamp, False, False)
+
+        CertificateProvisioning.time_set_callback()
 
     def set_time_zone(self, new_zone: str):
         # Call the SetTimezone() method passing the provided time zone and set the
@@ -150,16 +166,7 @@ class DateTimeSetting(object):
         # that here.
         elif method == "manual" and dt != "":
             try:
-                # Call the SetTime() method passing the provided timestamp (in usec_utc), set the
-                # 'relative' parameter to False, and set the 'interactive' parameter to False.
-                # See below for more info:
-                # https://www.freedesktop.org/software/systemd/man/org.freedesktop.timedate1.html
-                dbus.Interface(
-                    DBusManager()
-                    .get_system_bus()
-                    .get_object(TIMEDATE1_BUS_NAME, TIMEDATE1_MAIN_OBJ),
-                    TIMEDATE1_BUS_NAME,
-                ).SetTime(dt, False, False)
+                self.set_datetime(dt)
             except Exception as e:
                 syslog(LOG_ERR, f"Could not set datetime: {str(e)}")
                 result["SDCERR"] = WEBLCM_ERRORS["SDCERR_FAIL"]
