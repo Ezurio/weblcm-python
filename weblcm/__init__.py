@@ -3,6 +3,7 @@ import threading
 import cherrypy
 import logging
 from typing import List
+from weblcm.provisioning import CertificateProvisioning, ProvisioningState
 from . import definition
 from .network_status import NetworkStatus
 from .network import (
@@ -121,7 +122,15 @@ except ImportError:
 
 
 class WebApp(object):
-    def __init__(self):
+    def __init__(
+        self,
+        provisioning_state: ProvisioningState = ProvisioningState.FULLY_PROVISIONED,
+    ):
+        if provisioning_state != ProvisioningState.FULLY_PROVISIONED:
+            self.datetime = DateTimeSetting()
+            self.certificateProvisioning = CertificateProvisioning()
+            return
+
         self.login = LoginManage()
         self.networkStatus = NetworkStatus()
         self.connections = NetworkConnections()
@@ -140,6 +149,7 @@ class WebApp(object):
         self.file = FileManage()
         self.files = FilesManage()
         self.certificates = Certificates()
+        self.certificateProvisioning = CertificateProvisioning()
         if AWMCfgManage:
             self.awm = AWMCfgManage()
 
@@ -188,7 +198,6 @@ class WebApp(object):
     @cherrypy.tools.accept(media="application/json")
     @cherrypy.tools.json_out()
     def definitions(self, *args, **kwargs):
-
         plugins = []
         for k in cherrypy.request.app.config["plugins"]:
             plugins.append(k)
@@ -216,20 +225,55 @@ class WebApp(object):
         }
 
 
+def get_ssl_files(provisioning_state: ProvisioningState) -> dict:
+    """Retrieve a dictionary listing the key/certificates to use for HTTPS"""
+
+    parser = configparser.ConfigParser()
+    parser.read(definition.WEBLCM_PYTHON_SERVER_CONF_FILE)
+
+    if provisioning_state == ProvisioningState.FULLY_PROVISIONED:
+        return {
+            "ssl_certificate": parser["global"]
+            .get("server.ssl_certificate", "/etc/weblcm-python/ssl/server.crt")
+            .strip('"'),
+            "ssl_private_key": parser["global"]
+            .get("server.ssl_private_key", "/etc/weblcm-python/ssl/server.key")
+            .strip('"'),
+            "ssl_certificate_chain": parser["global"]
+            .get("server.ssl_certificate_chain", "/etc/weblcm-python/ssl/ca.crt")
+            .strip('"'),
+        }
+
+    if provisioning_state == ProvisioningState.UNPROVISIONED:
+        return {
+            "ssl_certificate": "/etc/weblcm-python/ssl/provisioning.crt",
+            "ssl_private_key": "/etc/weblcm-python/ssl/provisioning.key",
+            "ssl_certificate_chain": "",
+        }
+
+    if provisioning_state == ProvisioningState.PARTIALLY_PROVISIONED:
+        return {
+            "ssl_certificate": parser["global"]
+            .get("server.ssl_certificate", "/etc/weblcm-python/ssl/server.crt")
+            .strip('"'),
+            "ssl_private_key": parser["global"]
+            .get("server.ssl_private_key", "/etc/weblcm-python/ssl/server.key")
+            .strip('"'),
+            "ssl_certificate_chain": "",
+        }
+
+    return {
+        "ssl_certificate": "",
+        "ssl_private_key": "",
+        "ssl_certificate_chain": "",
+    }
+
+
 def force_session_checking():
     """
     Raise HTTP 401 Unauthorized client error if a session with invalid id tries to assess following resources.
     HTMLs still can be loaded to keep consistency, i.e. loaded from local cache or remotely.
     """
-    # Check if SSL client authentication is enabled and if it failed ('SSL_CLIENT_VERIFY' is
-    # 'SUCCESS' when authentication is successful).
-    if (
-        cherrypy.request.app.config["weblcm"].get("enable_client_auth", False)
-        and cherrypy.request.wsgi_environ.get("SSL_CLIENT_VERIFY", "NONE") != "SUCCESS"
-    ):
-        # Could not authenticate client
-        raise cherrypy.HTTPError(401)
-
     # Check if sessions are enabled
     if not cherrypy.request.app.config["/"].get("tools.sessions.on", True):
         return
@@ -303,8 +347,39 @@ def weblcm_cherrypy_start():
 
     # Configure SSL client authentication if enabled
     try:
+        provisioning_state = CertificateProvisioning.get_provisioning_state()
+        ssl_files = get_ssl_files(provisioning_state)
+
         parser = configparser.ConfigParser()
         parser.read(definition.WEBLCM_PYTHON_SERVER_CONF_FILE)
+
+        if parser.getboolean(
+            section="weblcm", option="certificate_provisioning", fallback=False
+        ):
+            if provisioning_state == ProvisioningState.UNPROVISIONED:
+                # The device has not been provisioned yet, so enter restricted provisioning mode
+                syslog("*** RESTRICTED PROVISIONING MODE ***")
+
+                web_app = WebApp(provisioning_state=provisioning_state)
+                config = definition.WEBLCM_PYTHON_SERVER_CONF_FILE
+                cherrypy._global_conf_alias.update(config)
+
+                cherrypy.tree.mount(web_app, "/", config)
+
+                cherrypy.config.update(
+                    {
+                        "server.ssl_certificate": ssl_files["ssl_certificate"],
+                        "server.ssl_private_key": ssl_files["ssl_private_key"],
+                        "server.ssl_certificate_chain": ssl_files[
+                            "ssl_certificate_chain"
+                        ],
+                    }
+                )
+
+                cherrypy.engine.signals.subscribe()
+                cherrypy.engine.start()
+                cherrypy.engine.block()
+                return
 
         if parser.getboolean(
             section="weblcm", option="enable_client_auth", fallback=False
@@ -312,45 +387,43 @@ def weblcm_cherrypy_start():
             from ssl import CERT_REQUIRED, OPENSSL_VERSION_NUMBER
             from cheroot.ssl.builtin import BuiltinSSLAdapter
 
-            ssl_certificate = (
-                parser["global"]
-                .get("server.ssl_certificate", "/etc/weblcm-python/ssl/server.crt")
-                .strip('"')
-            )
-            ssl_private_key = (
-                parser["global"]
-                .get("server.ssl_private_key", "/etc/weblcm-python/ssl/server.key")
-                .strip('"')
-            )
-            ssl_certificate_chain = (
-                parser["global"]
-                .get("server.ssl_certificate_chain", "/etc/weblcm-python/ssl/ca.crt")
-                .strip('"')
-            )
-
             ssl_adapter = BuiltinSSLAdapter(
-                certificate=ssl_certificate,
-                private_key=ssl_private_key,
-                certificate_chain=ssl_certificate_chain,
+                certificate=ssl_files["ssl_certificate"],
+                private_key=ssl_files["ssl_private_key"],
+                certificate_chain=ssl_files["ssl_certificate_chain"],
             )
-            if OPENSSL_VERSION_NUMBER >= 0x10101000:
-                # OpenSSL 1.1.1 or newer - we can use the built-in functionality to disable time
-                # checking during certificate verification
-                ssl_adapter.context.verify_mode = CERT_REQUIRED
-                ssl_adapter.context.verify_flags |= X509_V_FLAG_NO_CHECK_TIME
+            if provisioning_state == ProvisioningState.FULLY_PROVISIONED:
+                disable_certificate_expiry_verification = parser.getboolean(
+                    section="weblcm",
+                    option="disable_certificate_expiry_verification",
+                    fallback=True,
+                )
+
+                if OPENSSL_VERSION_NUMBER >= 0x10101000:
+                    # OpenSSL 1.1.1 or newer - we can use the built-in functionality to disable time
+                    # checking during certificate verification, only if enabled
+                    ssl_adapter.context.verify_mode = CERT_REQUIRED
+                    if disable_certificate_expiry_verification:
+                        ssl_adapter.context.verify_flags |= X509_V_FLAG_NO_CHECK_TIME
+                else:
+                    # OpenSSL 1.0.2 - we need to use the patched-in functionality to disable time
+                    # checking during certificate verification, only if enabled
+                    ssl_adapter.context.verify_mode = (
+                        PY_SSL_CERT_REQUIRED_NO_CHECK_TIME
+                        if disable_certificate_expiry_verification
+                        else CERT_REQUIRED
+                    )
+                syslog("SSL client authentication enabled")
             else:
-                # OpenSSL 1.0.2 - we need to use the patched-in functionality to disable time
-                # checking during certificate verification
-                ssl_adapter.context.verify_mode = PY_SSL_CERT_REQUIRED_NO_CHECK_TIME
+                syslog("*** PARTIALLY PROVISIONED MODE ***")
             cherrypy.server.httpserver_from_self()[0].ssl_adapter = ssl_adapter
             cherrypy.server.ssl_context = ssl_adapter.context
-            syslog("SSL client authentication enabled")
         else:
             syslog("SSL client authentication NOT enabled")
     except Exception as e:
         syslog(LOG_ERR, f"Error configuring SSL client authentication - {str(e)}")
 
-    web_app = WebApp()
+    web_app = WebApp(provisioning_state=provisioning_state)
     threading.Thread(target=web_app.datetime.populate_time_zone_list).start()
     cherrypy.quickstart(web_app, "/", config=definition.WEBLCM_PYTHON_SERVER_CONF_FILE)
 

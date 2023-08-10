@@ -6,6 +6,7 @@ import dbus
 
 from gi.repository import GLib
 import dbus.mainloop.glib
+from weblcm.definition import SYSTEMD_BUS_NAME, SYSTEMD_MAIN_OBJ, SYSTEMD_MANAGER_IFACE
 
 
 class Singleton(type):
@@ -64,3 +65,21 @@ def glib_idle_add_wait(function, *args, **kwargs):
     if not gsource_completed.wait(timeout=TIMEOUT_S):
         raise TimeoutError()
     return results.pop()
+
+
+def restart_weblcm() -> bool:
+    """Restart the weblcm-python systemd service via D-Bus"""
+    try:
+        bus = DBusManager().get_system_bus()
+        manager = dbus.Interface(
+            bus.get_object(SYSTEMD_BUS_NAME, SYSTEMD_MAIN_OBJ),
+            SYSTEMD_MANAGER_IFACE,
+        )
+        manager.RestartUnit("weblcm-python.service", "replace")
+        return True
+    except Exception as exception:
+        syslog(
+            LOG_ERR,
+            f"Could not restart weblcm-python: {str(exception)}",
+        )
+        return False
