@@ -215,3 +215,14 @@ MODEM_ENABLE_FILE = "/etc/modem/modem_enabled"
 MODEM_CONTROL_SERVICE_FILE = "modem-control.service"
 
 INVALID_RSSI = -9999.9999
+
+# Provisioning info
+DEVICE_SERVER_KEY_PATH = "/etc/weblcm-python/provisioning/dev.key"
+DEVICE_SERVER_CSR_PATH = "/etc/weblcm-python/provisioning/dev.csr"
+DEVICE_SERVER_CERT_PATH = "/etc/weblcm-python/provisioning/dev.crt"
+PROVISIONING_SERVER_KEY_PATH = "/etc/weblcm-python/ssl/provisioning.key"
+PROVISIONING_SERVER_CERT_PATH = "/etc/weblcm-python/ssl/provisioning.crt"
+PROVISIONING_CA_CERT_CHAIN_PATH = "/etc/weblcm-python/ssl/provisioning.ca.crt"
+PROVISIONING_DIR = "/etc/weblcm-python/provisioning"
+PROVISIONING_STATE_FILE_PATH = "/etc/weblcm-python/provisioning/state"
+CERT_TEMP_PATH = "/tmp/dev.crt"
