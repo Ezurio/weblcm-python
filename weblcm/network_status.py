@@ -1,6 +1,8 @@
 import os
+from pathlib import Path
 import time
 from typing import Any, List, Optional, Tuple
+from urllib.parse import urlparse
 import cherrypy
 import gi
 
@@ -504,13 +506,26 @@ class NetworkStatusHelper(object):
 
         properties = {}
 
-        # The following properties are omitted as they are binary blobs
-        # - 'ca-cert'
-        # - 'client-cert'
-        # - 'phase2-ca-cert'
-        # - 'phase2-client-cert'
-        # - 'phase2-private-key' (also a secret)
-        # - 'private-key' (also a secret)
+        # The following properties are presented as a GLib.Bytes object containing "file://"
+        # followed by the path to the target file and a terminating null byte
+        # See below for more info:
+        # https://lazka.github.io/pgi-docs/#NM-1.0/classes/Setting8021x.html#NM.Setting8021x.props.ca_cert
+        properties["ca-cert"] = cls.cert_to_filename(settings.get_property("ca-cert"))
+        properties["client-cert"] = cls.cert_to_filename(
+            settings.get_property("client-cert")
+        )
+        properties["private-key"] = cls.cert_to_filename(
+            settings.get_property("private-key")
+        )
+        properties["phase2-ca-cert"] = cls.cert_to_filename(
+            settings.get_property("phase2-ca-cert")
+        )
+        properties["phase2-client-cert"] = cls.cert_to_filename(
+            settings.get_property("phase2-client-cert")
+        )
+        properties["phase2-private-key"] = cls.cert_to_filename(
+            settings.get_property("phase2-private-key")
+        )
 
         # The following properties are arrays of strings
         properties["altsubject-matches"] = settings.get_property("altsubject-matches")
@@ -755,6 +770,27 @@ class NetworkStatusHelper(object):
     @classmethod
     def get_lock(cls):
         return cls._lock
+
+    @staticmethod
+    def cert_to_filename(cert: bytearray | list | GLib.Bytes) -> Optional[str]:
+        """
+        Return base name only.
+        """
+        try:
+            if not cert:
+                return None
+
+            if isinstance(cert, GLib.Bytes):
+                cert = cert.get_data()
+            elif isinstance(cert, list):
+                cert = bytearray(cert)
+            elif not isinstance(cert, bytearray):
+                raise Exception("Invalid type")
+
+            return Path(urlparse(cert.split(b"\0")[0].decode("utf-8")).path).name
+        except Exception as exception:
+            syslog(LOG_ERR, f"Could not decode certificate filename: {exception}")
+            return None
 
 
 def dev_added(client, device):
