@@ -1056,13 +1056,6 @@ class NetworkConnection(object):
 
     @cherrypy.tools.json_out()
     def GET(self, *args, **kwargs):
-        def cert_to_filename(cert):
-            """
-            Return base name only.
-            """
-            if cert:
-                return cert[len(definition.FILEDIR_DICT["cert"]) :]
-
         result = {"SDCERR": 1, "InfoMsg": ""}
         try:
             uuid = kwargs.get("uuid", None)
@@ -1114,7 +1107,7 @@ class NetworkConnection(object):
                     )
                     result[
                         "InfoMsg"
-                    ] = "Unable to retrieve extended connecting settings"
+                    ] = "Unable to retrieve extended connection settings"
 
                 return result
             else:
@@ -1132,22 +1125,34 @@ class NetworkConnection(object):
                         settings["802-11-wireless"]["ssid"]
                     ).decode("utf-8")
                 if settings.get("802-1x"):
-                    settings["802-1x"]["ca-cert"] = cert_to_filename(
+                    settings["802-1x"][
+                        "ca-cert"
+                    ] = NetworkStatusHelper.cert_to_filename(
                         settings["802-1x"].get("ca-cert")
                     )
-                    settings["802-1x"]["client-cert"] = cert_to_filename(
+                    settings["802-1x"][
+                        "client-cert"
+                    ] = NetworkStatusHelper.cert_to_filename(
                         settings["802-1x"].get("client-cert")
                     )
-                    settings["802-1x"]["private-key"] = cert_to_filename(
+                    settings["802-1x"][
+                        "private-key"
+                    ] = NetworkStatusHelper.cert_to_filename(
                         settings["802-1x"].get("private-key")
                     )
-                    settings["802-1x"]["phase2-ca-cert"] = cert_to_filename(
+                    settings["802-1x"][
+                        "phase2-ca-cert"
+                    ] = NetworkStatusHelper.cert_to_filename(
                         settings["802-1x"].get("phase2-ca-cert")
                     )
-                    settings["802-1x"]["phase2-client-cert"] = cert_to_filename(
+                    settings["802-1x"][
+                        "phase2-client-cert"
+                    ] = NetworkStatusHelper.cert_to_filename(
                         settings["802-1x"].get("phase2-client-cert")
                     )
-                    settings["802-1x"]["phase2-private-key"] = cert_to_filename(
+                    settings["802-1x"][
+                        "phase2-private-key"
+                    ] = NetworkStatusHelper.cert_to_filename(
                         settings["802-1x"].get("phase2-private-key")
                     )
             result["connection"] = settings
