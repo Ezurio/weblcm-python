@@ -54,7 +54,7 @@ class AWMCfgManage(object):
         # determine if in LITE mode
         litemode = False
         with open("/etc/default/adaptive_ww", "r") as file:
-            if "LITE" in file.read():
+            if "lite" in file.read().lower():
                 litemode = True
 
         if not litemode:
