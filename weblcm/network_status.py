@@ -792,6 +792,115 @@ class NetworkStatusHelper(object):
             syslog(LOG_ERR, f"Could not decode certificate filename: {exception}")
             return None
 
+    @staticmethod
+    def get_access_point_security_description(
+        flags: int, wpa_flags: int, rsn_flags: int
+    ) -> Tuple[str, str]:
+        """Analyze the provided AP flags and return the security and key management supported"""
+
+        security_string = ""
+        keymgmt = ""
+        if (
+            flags & int(getattr(NM, "80211ApFlags").PRIVACY)
+            and wpa_flags == int(getattr(NM, "80211ApSecurityFlags").NONE)
+            and rsn_flags == int(getattr(NM, "80211ApSecurityFlags").NONE)
+        ):
+            # WEP
+            security_string += "WEP "
+            keymgmt = "static"
+        else:
+            if wpa_flags != int(getattr(NM, "80211ApSecurityFlags").NONE):
+                # WPA1
+                security_string += "WPA1 "
+
+            if (
+                (rsn_flags & int(getattr(NM, "80211ApSecurityFlags").KEY_MGMT_PSK))
+                or (rsn_flags & int(getattr(NM, "80211ApSecurityFlags").KEY_MGMT_CCKM))
+                or (
+                    rsn_flags
+                    & int(getattr(NM, "80211ApSecurityFlags").KEY_MGMT_SUITE_B)
+                )
+                or (
+                    rsn_flags & int(getattr(NM, "80211ApSecurityFlags").KEY_MGMT_802_1X)
+                )
+            ):
+                # WPA2
+                security_string += "WPA2 "
+
+            if rsn_flags & int(getattr(NM, "80211ApSecurityFlags").KEY_MGMT_SAE):
+                # WPA3
+                security_string += "WPA3 "
+                keymgmt += "sae "
+
+            if (wpa_flags == int(getattr(NM, "80211ApSecurityFlags").NONE)) and (
+                rsn_flags
+                == (
+                    int(getattr(NM, "80211ApSecurityFlags").KEY_MGMT_EAP_SUITE_B_192)
+                    | int(getattr(NM, "80211ApSecurityFlags").PAIR_GCMP_256)
+                    | int(getattr(NM, "80211ApSecurityFlags").GROUP_GCMP_256)
+                    | int(getattr(NM, "80211ApSecurityFlags").MGMT_GROUP_GMAC_256)
+                )
+            ):
+                # WPA3
+                security_string += "WPA3 "
+                keymgmt = "wpa-eap-suite-b-192"
+
+            if rsn_flags & int(getattr(NM, "80211ApSecurityFlags").KEY_MGMT_OWE) != 0:
+                # OWE
+                security_string += "OWE "
+                keymgmt = "owe"
+            elif (
+                rsn_flags & int(getattr(NM, "80211ApSecurityFlags").KEY_MGMT_OWE_TM)
+                != 0
+            ):
+                # OWE-TM
+                security_string += "OWE-TM "
+                keymgmt = "owe"
+
+            if (
+                (wpa_flags & int(getattr(NM, "80211ApSecurityFlags").KEY_MGMT_802_1X))
+                or (rsn_flags & int(getattr(NM, "80211ApSecurityFlags").KEY_MGMT_CCKM))
+                or (
+                    rsn_flags
+                    & int(getattr(NM, "80211ApSecurityFlags").KEY_MGMT_SUITE_B)
+                )
+                or (
+                    rsn_flags & int(getattr(NM, "80211ApSecurityFlags").KEY_MGMT_802_1X)
+                )
+            ):
+                # 802.1X
+                security_string += "802.1X "
+                if rsn_flags & int(
+                    getattr(NM, "80211ApSecurityFlags").KEY_MGMT_SUITE_B
+                ):
+                    keymgmt += "wpa-eap-suite-b "
+                else:
+                    keymgmt += "wpa-eap "
+
+            if (
+                wpa_flags
+                & int(getattr(NM, "80211ApSecurityFlags").KEY_MGMT_EAP_SUITE_B_192)
+            ) or (
+                rsn_flags
+                & int(getattr(NM, "80211ApSecurityFlags").KEY_MGMT_EAP_SUITE_B_192)
+            ):
+                # WPA-EAP-SUITE-B-192
+                security_string += "WPA-EAP-SUITE-B-192 "
+                keymgmt += "wpa-eap-suite-b-192 "
+
+            if (wpa_flags & int(getattr(NM, "80211ApSecurityFlags").KEY_MGMT_PSK)) or (
+                rsn_flags & int(getattr(NM, "80211ApSecurityFlags").KEY_MGMT_PSK)
+            ):
+                # PSK
+                security_string += "PSK "
+                keymgmt += "wpa-psk "
+
+        if not keymgmt:
+            # Open
+            keymgmt = "none"
+
+        return security_string.rstrip(" "), keymgmt.rstrip(" ")
+
 
 def dev_added(client, device):
     with NetworkStatusHelper._lock:

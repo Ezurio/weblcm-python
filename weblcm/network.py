@@ -1256,54 +1256,14 @@ class NetworkAccessPoints(object):
             for dev in all_devices:
                 if dev.get_device_type() == NM.DeviceType.WIFI:
                     for ap in dev.get_access_points():
-                        security_string = ""
-                        keymgmt = "none"
-                        if (
-                            (ap.get_flags() & getattr(NM, "80211ApFlags").PRIVACY)
-                            and (
-                                ap.get_wpa_flags()
-                                == getattr(NM, "80211ApSecurityFlags").NONE
-                            )
-                            and (
-                                ap.get_rsn_flags()
-                                == getattr(NM, "80211ApSecurityFlags").NONE
-                            )
-                        ):
-                            security_string = security_string + "WEP "
-                            keymgmt = "static"
-
-                        if (
-                            ap.get_wpa_flags()
-                            != getattr(NM, "80211ApSecurityFlags").NONE
-                        ):
-                            security_string = security_string + "WPA1 "
-
-                        if (
-                            ap.get_rsn_flags()
-                            != getattr(NM, "80211ApSecurityFlags").NONE
-                        ):
-                            security_string = security_string + "WPA2 "
-
-                        if (
-                            ap.get_wpa_flags()
-                            & getattr(NM, "80211ApSecurityFlags").KEY_MGMT_802_1X
-                        ) or (
-                            ap.get_rsn_flags()
-                            & getattr(NM, "80211ApSecurityFlags").KEY_MGMT_802_1X
-                        ):
-                            security_string = security_string + "802.1X "
-                            keymgmt = "wpa-eap"
-
-                        if (
-                            ap.get_wpa_flags()
-                            & getattr(NM, "80211ApSecurityFlags").KEY_MGMT_PSK
-                        ) or (
-                            ap.get_rsn_flags()
-                            & getattr(NM, "80211ApSecurityFlags").KEY_MGMT_PSK
-                        ):
-                            security_string = security_string + "PSK"
-                            keymgmt = "wpa-psk"
-
+                        (
+                            security_string,
+                            keymgmt,
+                        ) = NetworkStatusHelper.get_access_point_security_description(
+                            flags=int(ap.get_flags()),
+                            wpa_flags=int(ap.get_wpa_flags()),
+                            rsn_flags=int(ap.get_rsn_flags()),
+                        )
                         ssid = ap.get_ssid()
                         flags = int(ap.get_flags())
                         wpa_flags = int(ap.get_wpa_flags())
