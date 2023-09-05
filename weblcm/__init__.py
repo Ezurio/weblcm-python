@@ -16,7 +16,7 @@ from .network import (
     Version,
     WifiEnable,
 )
-from .log import LogData, LogSetting, LogForwarding
+from .log import LogData, LogSetting
 from .swupdate import SWUpdate
 from .unauthenticated import AllowUnauthenticatedResetReboot
 from .users import UserManage, LoginManage
@@ -120,6 +120,15 @@ except ImportError:
     NTP = None
     cherrypy.log("__main__: chrony NTP NOT loaded")
 
+try:
+    from weblcm.log_forwarding.log_forwarding import LogForwarding
+
+    weblcm_plugins.append("logForwarding")
+    cherrypy.log("__main__: log forwarding loaded")
+except ImportError:
+    LogForwarding = None
+    cherrypy.log("__main__: log forwarding NOT loaded")
+
 
 class WebApp(object):
     def __init__(
@@ -143,7 +152,8 @@ class WebApp(object):
 
         self.logData = LogData()
         self.logSetting = LogSetting()
-        self.logForwarding = LogForwarding()
+        if LogForwarding:
+            self.logForwarding = LogForwarding()
 
         self.users = UserManage()
         self.file = FileManage()
@@ -291,7 +301,6 @@ def force_session_checking():
         "firmware",
         "logData",
         "logSetting",
-        "logForwarding",
         "poweroff",
         "suspend",
         "files",
