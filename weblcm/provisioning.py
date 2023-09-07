@@ -7,6 +7,7 @@ import shutil
 from threading import Timer
 from pathlib import Path
 import configparser
+from typing import Optional
 import cherrypy
 from weblcm import definition
 from weblcm.utils import restart_weblcm
@@ -18,6 +19,7 @@ from weblcm.definition import (
     PROVISIONING_CA_CERT_CHAIN_PATH,
     PROVISIONING_STATE_FILE_PATH,
     CERT_TEMP_PATH,
+    CONFIG_FILE_TEMP_PATH,
 )
 
 
@@ -89,45 +91,70 @@ class CertificateProvisioning:
             provisioning_state_file.write(str(int(provisioning_state)))
 
     @staticmethod
-    def generate_key_and_csr(subject: str):
+    def generate_key_and_csr(config_file, openssl_key_gen_args: Optional[str] = None):
         """
-        Utilize OpenSSL to create a CSR using the provided subject and, if not already present, also
-        generate a private key
+        Utilize OpenSSL to generate a private key and CSR using the provided configuration file. If
+        desired, optional OpenSSL key generation args can be provided.
         """
-        args = ["openssl", "req"]
+        # Save the config file to a temporary location
+        with open(CONFIG_FILE_TEMP_PATH, "wb") as config_file_on_disk:
+            while True:
+                data = config_file.file.read(8192)
+                if not data:
+                    break
+                config_file_on_disk.write(data)
+
         Path(PROVISIONING_DIR).mkdir(exist_ok=True)
+
         if Path(DEVICE_SERVER_KEY_PATH).exists():
-            # Private key has already been generated
-            args.extend(
-                [
-                    "-new",
-                    "-key",
-                    DEVICE_SERVER_KEY_PATH,
-                    "-out",
-                    DEVICE_SERVER_CSR_PATH,
-                    "-subj",
-                    subject,
-                ]
-            )
+            # Private key has already been generated, remove it
+            Path(DEVICE_SERVER_KEY_PATH).unlink()
+
+        if openssl_key_gen_args:
+            # Generate the key using the arguments provided
+            args = ["openssl"]
+            args.extend(openssl_key_gen_args.split(" "))
+            proc = run(args=args, capture_output=True)
+            if proc.returncode:
+                raise Exception(proc.stderr.decode("utf-8"))
+
+            if not Path(DEVICE_SERVER_KEY_PATH).exists():
+                raise Exception("Key file not found")
+
+            # Build the args to use the new key
+            args = [
+                "openssl",
+                "req",
+                "-new",
+                "-key",
+                DEVICE_SERVER_KEY_PATH,
+                "-out",
+                DEVICE_SERVER_CSR_PATH,
+                "-config",
+                CONFIG_FILE_TEMP_PATH,
+            ]
         else:
-            # Private key not yet generated
-            args.extend(
-                [
-                    "-nodes",
-                    "-newkey",
-                    "rsa:2048",
-                    "-keyout",
-                    DEVICE_SERVER_KEY_PATH,
-                    "-out",
-                    DEVICE_SERVER_CSR_PATH,
-                    "-subj",
-                    subject,
-                ]
-            )
+            # Build the args to generate a key and CSR using the default algorithm (rsa:2048)
+            args = [
+                "openssl",
+                "req",
+                "-nodes",
+                "-newkey",
+                "rsa:2048",
+                "-keyout",
+                DEVICE_SERVER_KEY_PATH,
+                "-out",
+                DEVICE_SERVER_CSR_PATH,
+                "-config",
+                CONFIG_FILE_TEMP_PATH,
+            ]
 
         proc = run(args=args, capture_output=True)
         if proc.returncode:
             raise Exception(proc.stderr.decode("utf-8"))
+
+        # Remove the temporary config file
+        Path(CONFIG_FILE_TEMP_PATH).unlink(missing_ok=True)
 
     @staticmethod
     def verify_certificate_against_ca(cert_path: str, ca_cert_path: str) -> bool:
@@ -179,34 +206,29 @@ class CertificateProvisioning:
             "state": self.get_provisioning_state(),
         }
 
-    @cherrypy.tools.accept(media="application/json")
-    @cherrypy.tools.json_in()
-    def POST(self):
+    def POST(self, *args, **kwargs):
         try:
             if self.get_provisioning_state() != ProvisioningState.UNPROVISIONED:
                 syslog("CertificateProvisioning POST - already provisioned")
                 raise cherrypy.HTTPError(400, "Already provisioned")
-            country_name = cherrypy.request.json.get("countryName", "US")
-            state_name = cherrypy.request.json.get("stateOrProvinceName", "OH")
-            locality_name = cherrypy.request.json.get("localityName", "Akron")
-            organization_name = cherrypy.request.json.get(
-                "organizationName", "LairdConnectivity"
-            )
-            organizational_unit_name = cherrypy.request.json.get(
-                "organizationalUnitName", "IT"
-            )
-            common_name = cherrypy.request.json.get("commonName", "Summit")
 
-            subject = (
-                f"/C={str(country_name)}"
-                f"/ST={str(state_name)}"
-                f"/L={str(locality_name)}"
-                f"/O={str(organization_name)}"
-                f"/OU={str(organizational_unit_name)}"
-                f"/CN={str(common_name)}"
+            config_file = kwargs.get("configFile", None)
+            if not config_file:
+                syslog("CertificateProvisioning POST - no config file specified")
+                raise cherrypy.HTTPError(400, "'configFile' not specified")
+
+            if not config_file.filename.endswith(".cnf"):
+                syslog("CertificateProvisioning POST - invalid config file type")
+                raise cherrypy.HTTPError(400, "'invalid config file type")
+
+            openssl_key_gen_args = kwargs.get("opensslKeyGenArgs", None)
+
+            self.generate_key_and_csr(
+                config_file=config_file, openssl_key_gen_args=openssl_key_gen_args
             )
 
-            self.generate_key_and_csr(subject=subject)
+            if not Path(DEVICE_SERVER_KEY_PATH).exists():
+                raise cherrypy.HTTPError(500, "Could not generate private key")
 
             if not Path(DEVICE_SERVER_CSR_PATH).exists():
                 raise cherrypy.HTTPError(500, "Could not generate CSR")
@@ -223,6 +245,9 @@ class CertificateProvisioning:
         except Exception as exception:
             syslog(f"Couldn't generate key and CSR: {str(exception)}")
             raise cherrypy.HTTPError(500, "Could not generate CSR")
+        finally:
+            # Remove the temporary config file, if present
+            Path(CONFIG_FILE_TEMP_PATH).unlink(missing_ok=True)
 
     @cherrypy.tools.json_out()
     def PUT(self, *args, **kwargs):
