@@ -16,6 +16,8 @@ FILE_READ_SIZE = 8192
 UNZIP = "/usr/bin/unzip"
 ZIP = "/usr/bin/zip"
 NETWORKMANAGER_DIR = "etc/NetworkManager"
+PERSISTENT_LOG_PATH = "/var/log/journal/"
+VOLATILE_LOG_PATH = "/run/log/journal/"
 
 
 @cherrypy.expose
@@ -27,11 +29,16 @@ class FileManage(object):
     FILE_MANAGE_SCRIPT = "/usr/bin/weblcm-python.scripts/weblcm_files.sh"
     FILE_MANAGE_POST_ZIP_TYPES = ["config", "timezone"]
 
-    # log will be saved in /var/run/log/journal/ for volatile mode, or /var/log/journal/ for persistent mode
-    # If "/var/run/log/journal/" exists, it should be in volatile mode.
-    _log_data_dir = "/var/run/log/journal/"
-    if not os.path.exists("/var/run/log/journal/"):
-        _log_data_dir = "/var/log/journal/"
+    # Log will be saved in "/run/log/journal/" for volatile mode  or "/var/log/journal/" for
+    # persistent mode. If "/var/log/journal/" exists and "/run/log/journal" is non-empty, the
+    # journal should be operating in volatile mode.
+    # https://www.freedesktop.org/software/systemd/man/journald.conf.html#Storage=
+    _log_data_dir = PERSISTENT_LOG_PATH
+
+    if not os.path.exists(PERSISTENT_LOG_PATH) or (
+        os.path.exists(VOLATILE_LOG_PATH) and len(os.listdir(VOLATILE_LOG_PATH)) > 0
+    ):
+        _log_data_dir = VOLATILE_LOG_PATH
 
     def save_file(self, type, file):
         path = os.path.normpath(
