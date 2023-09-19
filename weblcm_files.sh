@@ -11,10 +11,16 @@ exit_on_error() {
 	exit 1
 }
 
-do_zip(){
+do_zip_log(){
 
-	#Encrypt the zip file and preserver symlinks
+	#Encrypt the zip file and preserve symlinks
 	cd ${source} && /usr/bin/zip --symlinks --password ${passwd} -9 -qqr ${target} * || exit_on_error "Failed to zip files in ${source}"
+}
+
+do_zip_config(){
+
+	#Encrypt the zip file and preserve symlinks
+	cd ${source} && /usr/bin/zip --symlinks --password ${passwd} -9 -qqr ${target} weblcm-python/* NetworkManager/certs/* NetworkManager/system-connections/* || exit_on_error "Failed to zip files in ${source}"
 }
 
 do_unzip_config(){
@@ -22,7 +28,7 @@ do_unzip_config(){
 	#zip test: return error if file is not encrypted, or the password is not correct
 	cd ${target} && unzip -P 1234 -qqt ${source} && exit_on_error "File is not encrypted"
 	cd ${target} && unzip -P ${passwd} -qqt ${source} || exit_on_error "Failed to unzip due to wrong password"
-	cd ${target} && rm -fr NetworkManager/ weblcm-python/ && /usr/bin/unzip -P ${passwd} -qqo ${source} || exit_on_error "Failed to unzip(decrypt) files to ${target}"
+	cd ${target} && rm -fr NetworkManager/system-connections/* NetworkManager/certs/* weblcm-python/* && /usr/bin/unzip -P ${passwd} -qqo ${source} || exit_on_error "Failed to unzip(decrypt) files to ${target}"
 }
 
 do_unzip_timezone(){
@@ -49,7 +55,7 @@ case ${typ} in
 	config)
 		passwd=${5}
 		if [ ${action} = "zip" ]; then
-			do_zip
+			do_zip_config
 		else
 			do_unzip_config
 		fi
@@ -61,6 +67,6 @@ case ${typ} in
 
 	log)
 		passwd=${5}
-		do_zip
+		do_zip_log
 		;;
 esac
