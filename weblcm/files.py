@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from shutil import copy2, rmtree
 from subprocess import run, call
 from threading import Lock
@@ -41,9 +42,7 @@ class FileManage(object):
         _log_data_dir = VOLATILE_LOG_PATH
 
     def save_file(self, type, file):
-        path = os.path.normpath(
-            os.path.join(definition.FILEDIR_DICT[type], file.filename)
-        )
+        path = os.path.normpath(os.path.join("/tmp/", file.filename))
         try:
             with open(path, "wb+") as out:
                 while True:
@@ -96,15 +95,6 @@ class FileManage(object):
                     result["InfoMsg"] = "file POST failure to copy file"  # bad request
                     return result
 
-                if type == "config" and not self.is_encrypted_storage_toolkit_enabled():
-                    syslog(
-                        "FileManage POST - config import not available on non-encrypted file system images"
-                    )
-                    raise cherrypy.HTTPError(
-                        400,
-                        "config import not available on non-encrypted file system images",
-                    )
-
                 # Only attempt to unzip the uploaded file if the 'type' requires a zip file. Otherwise,
                 # just saving the file is sufficient (i.e., for a certificate)
                 if type in FileManage.FILE_MANAGE_POST_ZIP_TYPES:
@@ -152,15 +142,6 @@ class FileManage(object):
             if not password:
                 syslog("FileManage Get - no password provided")
                 raise cherrypy.HTTPError(400, "no password provided")
-
-            if not self.is_encrypted_storage_toolkit_enabled():
-                syslog(
-                    "FileManage GET - config export not available on non-encrypted file system images"
-                )
-                raise cherrypy.HTTPError(
-                    400,
-                    "config export not available on non-encrypted file system images",
-                )
 
             args = [
                 FileManage.FILE_MANAGE_SCRIPT,
@@ -237,6 +218,7 @@ class FileManage(object):
         if type not in valid:
             result["InfoMsg"] = f"type not one of {valid}"
             return result
+        file = Path(file).name
         path = os.path.normpath(os.path.join(definition.FILEDIR_DICT[type], file))
         if os.path.isfile(path):
             os.remove(path)
