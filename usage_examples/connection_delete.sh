@@ -6,10 +6,7 @@ echo "========================="
 echo "DELETE Connection ${UUID}"
 ${CURL_APP}  \
     -s --request DELETE ${URL}/connection?uuid=${UUID} \
-    -b cookie -c cookie --insecure \
+     ${AUTH_OPT} \
 | ${JQ_APP}
 
 echo -e "\n"
-
-
-

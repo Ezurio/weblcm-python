@@ -10,7 +10,7 @@ echo -e "\nopen ble server port ${BLE_TCP_PORT}:\n"
 
 ${CURL_APP} --location --request PUT ${URL}/bluetooth/${BT_CONTROLLER} \
     --header "Content-Type: application/json" \
-    -b cookie -c cookie --insecure\
+     ${AUTH_OPT} \
     --data '{
         "command": "bleStartServer",
         "tcpPort": "'"${BLE_TCP_PORT}"'"
@@ -19,4 +19,3 @@ ${CURL_APP} --location --request PUT ${URL}/bluetooth/${BT_CONTROLLER} \
 
 echo -e "\n\nlisten on port:\n"
 nc ${IPADDR} ${BLE_TCP_PORT}
-

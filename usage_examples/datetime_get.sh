@@ -6,7 +6,6 @@ echo "Get datetime"
 ${CURL_APP} -s --location \
     --request GET "${URL}/datetime" \
     --header "Content-Type: application/json" \
-    -b cookie -c cookie --insecure \
+     ${AUTH_OPT} \
 | ${JQ_APP}
 echo -e "\n"
-

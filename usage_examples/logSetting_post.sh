@@ -9,9 +9,8 @@ echo "Set LogLevel"
 ${CURL_APP} -s --location \
     --request POST ${URL}/logSetting \
     --header "Content-Type: application/json" \
-    -b cookie -c cookie --insecure \
+     ${AUTH_OPT} \
     --data '{"suppDebugLevel":"'"${SUPP_LEVEL}"'", "driverDebugLevel":"'"${DRIVER_LEVEL}"'"}' \
 | ${JQ_APP}
 
 echo -e "\n"
-

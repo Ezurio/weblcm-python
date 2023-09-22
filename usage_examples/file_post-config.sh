@@ -5,12 +5,9 @@ echo "POST config"
 
 ${CURL_APP} -s --location \
     --request POST "${URL}/file" \
-    --insecure \
-    -b cookie -c cookie \
+    ${AUTH_OPT} \
     --form 'type="config"' \
     --form 'file=@"config.zip"' \
     --form 'password="test"' \
 | ${JQ_APP}
 echo -e "\nconfig.zip uploaded. Reboot to take effect"
-
-

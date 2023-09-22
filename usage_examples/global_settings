@@ -1,8 +1,10 @@
+#!/bin/bash
 # global settings.  If these values are set prior to sourcing this file,
 #                   the earlier value will be retained.
 #                   Adjust these values for your system.
 
-# setup the Ip address of the DUT
+# setup the IP address of the DUT, use a domain name if using a CA certificate
+# Domain name is assumed to be provided by DNS or /etc/hosts
 if [ -z "$IPADDR" ]
 then
     IPADDR=192.168.1.233
@@ -25,7 +27,6 @@ function smart_jq {
 }
 
 # Use jq if it is installed.
-
 if [ -z "${JQ_APP+x}" ]
 then
     if ! command -v jq &> /dev/null
@@ -36,6 +37,33 @@ then
         JQ_APP=smart_jq
     fi
 fi
+
+# Path to the CA certificate to use for server authentication, leave blank for default insecure mode
+AUTH_CA_CERT=""
+# Path to the client certificate and key to use for mutual authentication, leave blank for default insecure mode
+AUTH_CLIENT_CERT=""
+AUTH_CLIENT_KEY=""
+
+# Set authentication type to use for the WebLCM API, one of:
+#  - "insecure" for no authentication using username/password (default)
+#  - "server-only" for server authentication using a CA certificate and username/password
+#  - "mutual" for server and client authentication using CA certificate and client key/certificate pair
+AUTH_TYPE="${AUTH_TYPE:-insecure}"
+case "${AUTH_TYPE}" in
+    insecure)
+        AUTH_OPT="--insecure -b cookie -c cookie"
+        ;;
+    server-only)
+        AUTH_OPT="--cacert ${AUTH_CA_CERT} -b cookie -c cookie"
+        ;;
+    mutual)
+        AUTH_OPT="--cacert ${AUTH_CA_CERT} --cert ${AUTH_CLIENT_CERT} --key ${AUTH_CLIENT_KEY}"
+        ;;
+    *)
+        echo "Invalid AUTH_TYPE: ${AUTH_TYPE}"
+        exit 1
+        ;;
+esac
 
 URL="${URL:-"https://${IPADDR}"}"
 WEBLCM_USERNAME="${WEBLCM_USERNAME:-root}"
@@ -53,7 +81,3 @@ CA_CERT="${CA_CERT:-SystestCA.cer}"
 BT_CONTROLLER="${BT_CONTROLLER:-controller0}"
 
 CURL_APP="${CURL_APP:-curl}"
-
-
-
-
