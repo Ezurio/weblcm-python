@@ -6,7 +6,7 @@ echo "Bluetooth scan"
 echo -e "reset controller, clear cache and force fresh scan:\n"
 ${CURL_APP} --location --request PUT ${URL}/bluetooth/${BT_CONTROLLER} \
     --header "Content-Type: application/json" \
-    -b cookie -c cookie --insecure\
+     ${AUTH_OPT} \
     --data '{"powered": 0, "discovering": 0, "discoverable": 0}' \
     | ${JQ_APP} --raw-output
 echo -e '\n'
@@ -14,7 +14,7 @@ echo -e '\n'
 echo -e "\nscan:\n"
 ${CURL_APP} --location --request PUT ${URL}/bluetooth/${BT_CONTROLLER} \
     --header "Content-Type: application/json" \
-    -b cookie -c cookie --insecure\
+     ${AUTH_OPT} \
     --data '{"powered": 1, "discovering": 1, "discoverable": 1}' \
     | ${JQ_APP}
 echo -e '\n'
@@ -22,7 +22,7 @@ echo -e '\n'
 echo -e "\nconfirm:\n"
 ${CURL_APP} --location --request GET ${URL}/bluetooth/${BT_CONTROLLER}?filter=powered,discovering,discoverable \
     --header "Content-Type: application/json" \
-    -b cookie -c cookie --insecure\
+     ${AUTH_OPT} \
     | ${JQ_APP}
 echo -e '\n'
 
@@ -31,7 +31,7 @@ for i in {1..5}; do
     reset
     echo -e "\nresults:\n"
     ${CURL_APP} --location --request GET ${URL}/bluetooth/${BT_CONTROLLER}?filter=bluetoothDevices \
-        -b cookie -c cookie --insecure\
+         ${AUTH_OPT} \
         | ${JQ_APP}
 done
 

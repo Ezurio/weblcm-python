@@ -5,6 +5,6 @@ echo "definitions"
 ${CURL_APP} -s --header "Content-Type: application/json" \
     --request GET \
     ${URL}/definitions \
-    -b cookie -c cookie --insecure \
+     ${AUTH_OPT} \
 | ${JQ_APP}
 echo -e "\n"

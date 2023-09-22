@@ -25,12 +25,11 @@ then
     exit
 fi
 
-
 echo -e "\nforward port ${PORT}:\n"
 
 ${CURL_APP} --location --request PUT ${URL}/firewall/addForwardPort \
     --header "Content-Type: application/json" \
-    -b cookie --insecure\
+     ${AUTH_OPT} \
     --data '{
         "port": "'"${PORT}"'",
         "protocol": "'"${PROTOCOL}"'",
@@ -43,7 +42,5 @@ ${CURL_APP} --location --request PUT ${URL}/firewall/addForwardPort \
 echo -e "\n\ncheck forwarded ports:\n"
 ${CURL_APP} --location --request GET ${URL}/firewall \
     --header "Content-Type: application/json" \
-    -b cookie --insecure\
+     ${AUTH_OPT} \
     | ${JQ_APP}
-
-

@@ -8,7 +8,7 @@ echo "Modify connection"
 ${CURL_APP} -s --header "Content-Type: application/json" \
     --request POST \
     ${URL}/connection \
-    -b cookie -c cookie --insecure \
+     ${AUTH_OPT} \
     --data '{
     "connection": {
       "id": "br-slave-wlan0",
@@ -34,5 +34,3 @@ ${CURL_APP} -s --header "Content-Type: application/json" \
         | ${JQ_APP}
 
 echo -e "\n"
-
-

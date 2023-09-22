@@ -12,27 +12,26 @@ fi
 
 . ./global_settings
 
-
 echo -e "\n\n========================="
 echo "Firmware update (streaming)"
 echo "========================="
 ${CURL_APP} -s -S \
-    --request DELETE --insecure \
-    ${URL}/firmware -b cookie -c cookie | ${JQ_APP}
+    --request DELETE ${AUTH_OPT} \
+    ${URL}/firmware  | ${JQ_APP}
 
 ${CURL_APP} -s -S --header "Content-Type: application/json" \
     --request POST   --data \
-    '{"image":"main"}'  --insecure \
-    ${URL}/firmware -b cookie -c cookie | ${JQ_APP}
+    '{"image":"main"}'  ${AUTH_OPT} \
+    ${URL}/firmware  | ${JQ_APP}
 
-${CURL_APP} -s -S --request PUT ${URL}/firmware --header "Content-type: application/octet-stream" -b cookie -c cookie --insecure --data-binary @${FIRMWARE}
+${CURL_APP} -s -S --request PUT ${URL}/firmware --header "Content-type: application/octet-stream"  ${AUTH_OPT} --data-binary @${FIRMWARE}
 
 SUCCESS=false
 echo
 echo
 while true; do
     echo "Checking status:"
-    ${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie -c cookie | tee status | ${JQ_APP}
+    ${CURL_APP} -s --request GET ${AUTH_OPT} ${URL}/firmware  | tee status | ${JQ_APP}
     echo
     if grep -q Updated status; then
         SUCCESS=true
@@ -46,7 +45,6 @@ done
 
 echo
 ${SUCCESS} && . ./reboot_put.sh
-
 
 echo ""
 echo "Done"

@@ -7,7 +7,6 @@ fi
 
 . ./global_settings
 
-
 echo -e "\n\n========================="
 echo "Firmware update"
 echo "========================="
@@ -15,15 +14,15 @@ echo "Requesting device pull FW from ${FIRMWARE}..."
 echo
 ${CURL_APP} -s --header "Content-Type: application/json" \
     --request POST   --data \
-    '{"image":"full", "url":"'"${FIRMWARE}"'"}'  --insecure \
-    ${URL}/firmware -b cookie -c cookie
+    '{"image":"full", "url":"'"${FIRMWARE}"'"}' ${AUTH_OPT} \
+    ${URL}/firmware
 
 SUCCESS=false
 echo
 echo
 while true; do
     echo "Checking status:"
-    ${CURL_APP} -s --request GET --insecure ${URL}/firmware -b cookie -c cookie | tee status | ${JQ_APP}
+    ${CURL_APP} -s --request GET ${AUTH_OPT} ${URL}/firmware | tee status | ${JQ_APP}
     echo
     if grep -q Updated status; then
         SUCCESS=true
@@ -37,7 +36,6 @@ done
 
 echo
 ${SUCCESS} && . ./reboot_put.sh
-
 
 echo ""
 echo "Done"

@@ -2,9 +2,9 @@ This is a set up scripts which can be used for testing/verification and examples
 
 These scripts and testing are verified on Ubuntu 20.04 but the curl commands should work on other platforms.  The global_settings will likely only work on Linux variants without modifications.
 
-The intent is for settings that remain consistent amongst all the scripts can be stored in the global_settings file.  The ip address of the Device Under Test (DUT) can be supplied with the variable IPADDR and this will be stored automatically.  Any other changes to global_settings must be manually modified.
+The intent is for settings that remain consistent amongst all the scripts can be stored in the global_settings file.  The ip address or optional domain name of the Device Under Test (DUT) can be supplied with the variable IPADDR and this will be stored automatically.  Any other changes to global_settings must be manually modified.
 
-The global_settings in my setup are set for after the initial password change.  Therefore, for the initial login, I will supply the original password as a parameter.
+The global_settings are set for after the initial password change. Therefore, for the initial login, the users_put-changepw.sh performs a login POST with the password stored in the ORIGINAL_WEBLCM_PASSWORD variable and then changes the password to the value stored in the WEBLCM_PASSWORD variable.
 
 Finally, a word about the cookie file.  The login script will save a cookie file over an existing cookie even if the login fails. This could cause you to lose the session id and get errors when trying other commands, including logging out.  To prevent this, you can make a copy of your cookie file with the appropriate command for your system.  If the issue does occur, you can wait for your session to expire (about 10 minutes), restart the weblcm-python.service from the console login, or reboot the DUT. This condition presents itself with a message like:
 ```html
@@ -2933,9 +2933,13 @@ Next, pull the ca.crt from the DUT and put it in the directory from which you ar
 
 	scp root@192.168.1.233:/etc/weblcm-python/ssl/ca.crt .
 
-Finally, replace --insecure with --cacert ca.crt and use the DNS name insead of IPADDR.  Example:
+Finally, in the global_settings file, add the path of the ca.crt to the AUTH_CA_CERT variable, set the AUTH_TYPE to "server-only" and use the DNS name insead of IPADDR.  Example:
 
     IPADDR=test.summit.com ./login.sh
+
+## Mutual certificate-based authentication
+
+Instructions for setting up mutual certificate-based authentication is outside of the scope of this README, you will need a custom build and a reference PKI for producing a client key and certificate. Please contact support for more details, the contact information can be found on our main website.
 
 ## Override global_setting values
 
@@ -2945,4 +2949,3 @@ For instance, the actual strings curl is sending can be examined by adding CURL_
     CURL_APP=echo JQ_APP=tee ./login.sh
 
 *Note that these substitutions are not persistent - with the exception of IPADDR which is persistent.*
-
