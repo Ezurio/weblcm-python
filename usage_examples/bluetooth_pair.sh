@@ -12,7 +12,7 @@ fi
 echo -e "\nenable discovery:\n"
 ${CURL_APP} --location --request PUT ${URL}/bluetooth/${BT_CONTROLLER} \
     --header "Content-Type: application/json" \
-    -b cookie -c cookie --insecure\
+     ${AUTH_OPT} \
     --data '{"discoverable": 1}' \
     | ${JQ_APP}
 echo -e '\n'
@@ -20,7 +20,7 @@ echo -e '\n'
 echo -e "\npair:\n"
 ${CURL_APP} --location --request PUT ${URL}/bluetooth/${BT_CONTROLLER}/${BT_DEVICE} \
     --header "Content-Type: application/json" \
-    -b cookie -c cookie --insecure\
+     ${AUTH_OPT} \
     --data '{"paired": 1}' \
     | ${JQ_APP}
 echo -e '\n'
@@ -28,6 +28,6 @@ echo -e '\n'
 echo -e "\nread state:\n"
 ${CURL_APP} --location --request GET ${URL}/bluetooth/${BT_CONTROLLER}/${BT_DEVICE} \
     --header "Content-Type: application/json" \
-    -b cookie -c cookie --insecure\
+     ${AUTH_OPT} \
     | ${JQ_APP}
 echo -e '\n'

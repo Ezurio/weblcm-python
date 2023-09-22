@@ -21,9 +21,7 @@ login () {
     ${CURL_APP} -s --header "Content-Type: application/json" \
         --request POST \
         --data '{"username":"'"${WEBLCM_USERNAME}"'","password":"'"${WEBLCM_PASSWORD}"'"}' \
-        --insecure ${URL}/login \
-        -c cookie \
-        -b cookie \
+        ${AUTH_OPT} ${URL}/login \
     | ${JQ_APP}
 
     echo "Login complete"
@@ -35,7 +33,7 @@ find_wlan0_mac_address () {
 
     network_interface=`${CURL_APP} -s --location \
         --request GET ${URL}/networkInterface?name=wlan0 \
-        -b cookie -c cookie --insecure \
+         ${AUTH_OPT} \
     | ${JQ_APP}`
 
     WLAN_MAC=`echo $network_interface | tr '\n' ' ' | sed -nr 's/.*"PermHwAddress": "([a-fA-F0-9\:]*)",.*/\1/p'`
@@ -49,7 +47,7 @@ set_radio_siso_mode () {
 
     ${CURL_APP} -s --location \
         --request PUT "${URL}/radioSISOMode?SISO_mode=$1" \
-        -b cookie -c cookie --insecure \
+         ${AUTH_OPT} \
         --data-raw '' \
     | ${JQ_APP}
 
@@ -64,7 +62,7 @@ create_ap_connection () {
     ${CURL_APP} -s --header "Content-Type: application/json" \
         --request POST \
         ${URL}/connection \
-        -b cookie -c cookie --insecure \
+         ${AUTH_OPT} \
         --data '{
             "connection": {
                 "autoconnect": 1,
@@ -90,7 +88,7 @@ create_ap_connection () {
     connections=`${CURL_APP} -s --header "Content-Type: application/json" \
         --request GET \
         ${URL}/connections \
-        -b cookie -c cookie --insecure \
+         ${AUTH_OPT} \
     | ${JQ_APP}`
 
     CONNECTION_UUID=`echo $connections | tr '\n' ' ' | sed -nr "s/.*\"(.*)\": \{\s*\"activated\": .,\s*\"id\": \"${SSID}\".*/\1/p"`
@@ -106,7 +104,7 @@ activate_connection () {
     ${CURL_APP} -s --header "Content-Type: application/json" \
         --request PUT \
         ${URL}/connection \
-        -b cookie -c cookie --insecure \
+         ${AUTH_OPT} \
         --data '{
             "uuid": "'"$1"'",
             "activate" : '1'
@@ -131,7 +129,7 @@ remove_connection () {
 
     ${CURL_APP}  \
         -s --request DELETE ${URL}/connection?uuid=$1 \
-        -b cookie -c cookie --insecure \
+         ${AUTH_OPT} \
     | ${JQ_APP}
 
     echo "Connection deleted"

@@ -5,7 +5,7 @@ echo "Modem Firmware Update Get"
 
 ${CURL_APP} -s --location --request GET ${URL}/modemFirmwareUpdate \
     --header "Content-Type: application/json" \
-    -b cookie -c cookie --insecure\
+     ${AUTH_OPT} \
     --data-raw ''\
     | ${JQ_APP}
 
