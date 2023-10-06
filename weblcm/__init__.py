@@ -138,6 +138,7 @@ class WebApp(object):
         if provisioning_state != ProvisioningState.FULLY_PROVISIONED:
             self.datetime = DateTimeSetting()
             self.certificateProvisioning = CertificateProvisioning()
+            self.networkStatus = NetworkStatus()
             return
 
         self.login = LoginManage()
