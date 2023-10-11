@@ -43,18 +43,24 @@ class DateTimeSetting(object):
             return "Unable to determine timezone"
 
     @staticmethod
-    def set_datetime(timestamp: int):
+    def set_datetime(timestamp_usec: int):
         """
-        Call the SetTime() method passing the provided timestamp (in usec_utc), set the 'relative'
-        parameter to False, and set the 'interactive' parameter to False. See below for more info:
-        https://www.freedesktop.org/software/systemd/man/org.freedesktop.timedate1.html
+        Set the system time using the given timestamp (in microseconds) after first setting the
+        validity period (also in microseconds, if provided) and verifying the new timestamp against
+        the validity period.
         """
+        if not CertificateProvisioning.validate_new_timestamp(int(timestamp_usec)):
+            raise InvalidTimestampError()
+
+        # Call the SetTime() method passing the provided timestamp (in usec_utc), set the 'relative'
+        # parameter to False, and set the 'interactive' parameter to False. See below for more info:
+        # https://www.freedesktop.org/software/systemd/man/org.freedesktop.timedate1.html
         dbus.Interface(
             DBusManager()
             .get_system_bus()
             .get_object(TIMEDATE1_BUS_NAME, TIMEDATE1_MAIN_OBJ),
             TIMEDATE1_BUS_NAME,
-        ).SetTime(timestamp, False, False)
+        ).SetTime(timestamp_usec, False, False)
 
         CertificateProvisioning.time_set_callback()
 
@@ -166,7 +172,31 @@ class DateTimeSetting(object):
         # that here.
         elif method == "manual" and dt != "":
             try:
-                self.set_datetime(dt)
+                self.set_datetime(int(dt))
+            except InvalidTimestampError:
+                result["SDCERR"] = WEBLCM_ERRORS["SDCERR_FAIL"]
+                result["InfoMsg"] = "Invalid timestamp"
+
+                # Return current timestamp and validity period
+                result["time"] = (
+                    datetime.now(timezone.utc)
+                    .astimezone()
+                    .strftime(WEBLCM_PYTHON_TIME_FORMAT)
+                )
+                try:
+                    (
+                        not_before,
+                        not_after,
+                    ) = CertificateProvisioning.get_validity_period()
+                    result["notBefore"] = not_before.strftime(WEBLCM_PYTHON_TIME_FORMAT)
+                    result["notAfter"] = not_after.strftime(WEBLCM_PYTHON_TIME_FORMAT)
+                except Exception as exception:
+                    syslog(
+                        LOG_ERR,
+                        f"Could not retrieve validity period - {str(exception)}",
+                    )
+
+                return result
             except Exception as e:
                 syslog(LOG_ERR, f"Could not set datetime: {str(e)}")
                 result["SDCERR"] = WEBLCM_ERRORS["SDCERR_FAIL"]
@@ -184,3 +214,7 @@ class DateTimeSetting(object):
             result["InfoMsg"] = msg
             result["SDCERR"] = WEBLCM_ERRORS["SDCERR_FAIL"]
         return result
+
+
+class InvalidTimestampError(ValueError):
+    """Custom error class for when an invalid timestamp is provided."""

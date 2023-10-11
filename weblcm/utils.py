@@ -1,3 +1,4 @@
+import configparser
 from syslog import LOG_ERR, syslog
 from typing import Optional
 import functools
@@ -6,7 +7,12 @@ import dbus
 
 from gi.repository import GLib
 import dbus.mainloop.glib
-from weblcm.definition import SYSTEMD_BUS_NAME, SYSTEMD_MAIN_OBJ, SYSTEMD_MANAGER_IFACE
+from weblcm.definition import (
+    SYSTEMD_BUS_NAME,
+    SYSTEMD_MAIN_OBJ,
+    SYSTEMD_MANAGER_IFACE,
+    WEBLCM_PYTHON_SERVER_CONF_FILE,
+)
 
 
 class Singleton(type):
@@ -83,3 +89,19 @@ def restart_weblcm() -> bool:
             f"Could not restart weblcm-python: {str(exception)}",
         )
         return False
+
+
+class ServerConfig(metaclass=Singleton):
+    """Singleton class to access WebLCM server config parser"""
+
+    def __init__(self) -> None:
+        self.parser = configparser.ConfigParser()
+        self.parser.read(WEBLCM_PYTHON_SERVER_CONF_FILE)
+
+    def get(self, *args, **kwargs) -> str:
+        """Singleton wrapper around the WebCLM server config parser get() function"""
+        return self.parser.get(*args, **kwargs)
+
+    def getboolean(self, *args, **kwargs) -> bool:
+        """Singleton wrapper around the WebCLM server config parser getboolean() function"""
+        return self.parser.getboolean(*args, **kwargs)

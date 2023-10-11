@@ -1,17 +1,17 @@
 """Module to handle provisioning"""
 
+from datetime import datetime
 from enum import IntEnum
 from subprocess import run
 from syslog import LOG_ERR, syslog
 import shutil
 from threading import Timer
 from pathlib import Path
-import configparser
-from typing import Optional
+from typing import Optional, Tuple
 import cherrypy
-from weblcm import definition
-from weblcm.utils import restart_weblcm
+from weblcm.utils import ServerConfig, restart_weblcm
 from weblcm.definition import (
+    DEVICE_CA_CERT_CHAIN_PATH,
     DEVICE_SERVER_KEY_PATH,
     DEVICE_SERVER_CSR_PATH,
     DEVICE_SERVER_CERT_PATH,
@@ -20,7 +20,11 @@ from weblcm.definition import (
     PROVISIONING_STATE_FILE_PATH,
     CERT_TEMP_PATH,
     CONFIG_FILE_TEMP_PATH,
+    WEBLCM_ERRORS,
 )
+import openssl_extension
+
+OPENSSL_CERT_DATETIME_FORMAT = "%b %d %H:%M:%S %Y %Z"
 
 
 class ProvisioningState(IntEnum):
@@ -43,6 +47,104 @@ class CertificateProvisioning:
     """
 
     @staticmethod
+    def parse_datetime_from_openssl_str(datetime_str: str) -> datetime:
+        """Parse the given OpenSSL format date/time string into a datetime object"""
+        if datetime_str is None:
+            raise Exception()
+
+        return datetime.strptime(datetime_str, OPENSSL_CERT_DATETIME_FORMAT)
+
+    @staticmethod
+    def get_client_cert_validity_period() -> Tuple[datetime, datetime]:
+        """
+        Retrieve the validity period from the client's certificate using the CherryPy WSGI
+        environment.
+        """
+        if not (
+            cherrypy.request.wsgi_environ
+            and cherrypy.request.wsgi_environ.get("SSL_CLIENT_VERIFY", "NONE")
+            == "SUCCESS"
+        ):
+            raise Exception("Could not read client certificate validity period")
+
+        return (
+            CertificateProvisioning.parse_datetime_from_openssl_str(
+                cherrypy.request.wsgi_environ.get("SSL_CLIENT_V_START", None)
+            ),
+            CertificateProvisioning.parse_datetime_from_openssl_str(
+                cherrypy.request.wsgi_environ.get("SSL_CLIENT_V_END", None)
+            ),
+        )
+
+    @staticmethod
+    def get_ca_cert_validity_period() -> Tuple[datetime, datetime]:
+        """
+        Retrieve the validity period from the CA certificate using OpenSSL.
+        """
+        ca_cert_path = (
+            ServerConfig()
+            .get(
+                section="global",
+                option="server.ssl_certificate_chain",
+                fallback=DEVICE_CA_CERT_CHAIN_PATH,
+            )
+            .strip('"')
+        )
+
+        if not Path(ca_cert_path).exists():
+            raise Exception(
+                "Could not get CA certificate validity period - file not found"
+            )
+
+        cert_info = openssl_extension.get_cert_info(ca_cert_path, "")
+
+        return (
+            CertificateProvisioning.parse_datetime_from_openssl_str(
+                cert_info.get("not_before", None)
+            ),
+            CertificateProvisioning.parse_datetime_from_openssl_str(
+                cert_info.get("not_after", None)
+            ),
+        )
+
+    @staticmethod
+    def get_validity_period() -> Tuple[datetime, datetime]:
+        """
+        Determine the current valid timestamps for setting the current time first using the client's
+        certificate validity period (from the CherryPy WSGI environment), and if that isn't present,
+        using the CA certificate's validity period.
+        """
+        try:
+            return CertificateProvisioning.get_client_cert_validity_period()
+        except Exception:
+            # Couldn't read the validity period from the client certificate, so just continue
+            pass
+
+        try:
+            return CertificateProvisioning.get_ca_cert_validity_period()
+        except Exception:
+            # Couldn't read the validity period from the CA certificate, so throw an exception
+            raise Exception("Could not get validity period")
+
+    @staticmethod
+    def validate_new_timestamp(new_timestamp_usec: int) -> bool:
+        """
+        Validate the given timestamp against the current validity period.
+        """
+        if not CertificateProvisioning.provisioning_enabled():
+            # Certificate provisioning isn't enabled, so no need to perform any validation on the
+            # new timestamp
+            return True
+
+        try:
+            new_timestamp_dt = datetime.fromtimestamp(new_timestamp_usec / 1000000)
+            not_before, not_after = CertificateProvisioning.get_validity_period()
+            return new_timestamp_dt > not_before and new_timestamp_dt < not_after
+        except Exception as exception:
+            syslog(f"Could not validate timestamp - {str(exception)}")
+            return False
+
+    @staticmethod
     def time_set_callback():
         """Callback fired when the time is set via REST"""
         if (
@@ -58,15 +160,17 @@ class CertificateProvisioning:
             Timer(0.1, restart_weblcm).start()
 
     @staticmethod
+    def provisioning_enabled() -> bool:
+        """Determine if certificate provisioning is enabled"""
+        return ServerConfig().getboolean(
+            section="weblcm", option="certificate_provisioning", fallback=False
+        )
+
+    @staticmethod
     def get_provisioning_state() -> ProvisioningState:
         """Read current provisioning state"""
 
-        parser = configparser.ConfigParser()
-        parser.read(definition.WEBLCM_PYTHON_SERVER_CONF_FILE)
-
-        if not parser.getboolean(
-            section="weblcm", option="certificate_provisioning", fallback=False
-        ):
+        if not CertificateProvisioning.provisioning_enabled():
             # If provisioning isn't enabled, then treat it as if we're fully provisioned
             return ProvisioningState.FULLY_PROVISIONED
 
@@ -201,7 +305,7 @@ class CertificateProvisioning:
     @cherrypy.tools.json_out()
     def GET(self):
         return {
-            "SDCERR": definition.WEBLCM_ERRORS["SDCERR_SUCCESS"],
+            "SDCERR": WEBLCM_ERRORS["SDCERR_SUCCESS"],
             "InfoMsg": "",
             "state": self.get_provisioning_state(),
         }
@@ -251,7 +355,7 @@ class CertificateProvisioning:
 
     @cherrypy.tools.json_out()
     def PUT(self, *args, **kwargs):
-        result = {"SDCERR": definition.WEBLCM_ERRORS["SDCERR_FAIL"], "InfoMsg": ""}
+        result = {"SDCERR": WEBLCM_ERRORS["SDCERR_FAIL"], "InfoMsg": ""}
 
         if self.get_provisioning_state() != ProvisioningState.UNPROVISIONED:
             syslog("CertificateProvisioning PUT - already provisioned")
@@ -278,7 +382,7 @@ class CertificateProvisioning:
             # Trigger a restart of WebLCM to ensure the new SSL configuration takes effect
             Timer(0.1, restart_weblcm).start()
 
-            result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
+            result["SDCERR"] = WEBLCM_ERRORS["SDCERR_SUCCESS"]
         except InvalidCertificateError:
             result["InfoMsg"] = "Invalid certificate file"
         except Exception as exception:

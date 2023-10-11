@@ -26,8 +26,7 @@ from .advanced import PowerOff, Suspend, Reboot, FactoryReset
 from .date_time import DateTimeSetting
 from .settings import SystemSettingsManage
 from .advanced import Fips
-from .utils import DBusManager
-import configparser
+from .utils import DBusManager, ServerConfig
 from .ram_boot_time_session import RamBootTimeSession
 
 
@@ -238,20 +237,28 @@ class WebApp(object):
 
 def get_ssl_files(provisioning_state: ProvisioningState) -> dict:
     """Retrieve a dictionary listing the key/certificates to use for HTTPS"""
-
-    parser = configparser.ConfigParser()
-    parser.read(definition.WEBLCM_PYTHON_SERVER_CONF_FILE)
-
     if provisioning_state == ProvisioningState.FULLY_PROVISIONED:
         return {
-            "ssl_certificate": parser["global"]
-            .get("server.ssl_certificate", "/etc/weblcm-python/ssl/server.crt")
+            "ssl_certificate": ServerConfig()
+            .get(
+                section="gobal",
+                option="server.ssl_certificate",
+                fallback="/etc/weblcm-python/ssl/server.crt",
+            )
             .strip('"'),
-            "ssl_private_key": parser["global"]
-            .get("server.ssl_private_key", "/etc/weblcm-python/ssl/server.key")
+            "ssl_private_key": ServerConfig()
+            .get(
+                section="global",
+                option="server.ssl_private_key",
+                fallback="/etc/weblcm-python/ssl/server.key",
+            )
             .strip('"'),
-            "ssl_certificate_chain": parser["global"]
-            .get("server.ssl_certificate_chain", "/etc/weblcm-python/ssl/ca.crt")
+            "ssl_certificate_chain": ServerConfig()
+            .get(
+                section="global",
+                option="server.ssl_certificate_chain",
+                fallback="/etc/weblcm-python/ssl/ca.crt",
+            )
             .strip('"'),
         }
 
@@ -264,11 +271,19 @@ def get_ssl_files(provisioning_state: ProvisioningState) -> dict:
 
     if provisioning_state == ProvisioningState.PARTIALLY_PROVISIONED:
         return {
-            "ssl_certificate": parser["global"]
-            .get("server.ssl_certificate", "/etc/weblcm-python/ssl/server.crt")
+            "ssl_certificate": ServerConfig()
+            .get(
+                section="global",
+                option="server.ssl_certificate",
+                fallback="/etc/weblcm-python/ssl/server.crt",
+            )
             .strip('"'),
-            "ssl_private_key": parser["global"]
-            .get("server.ssl_private_key", "/etc/weblcm-python/ssl/server.key")
+            "ssl_private_key": ServerConfig()
+            .get(
+                section="global",
+                option="server.ssl_private_key",
+                fallback="/etc/weblcm-python/ssl/server.key",
+            )
             .strip('"'),
             "ssl_certificate_chain": "",
         }
@@ -360,10 +375,7 @@ def weblcm_cherrypy_start():
         provisioning_state = CertificateProvisioning.get_provisioning_state()
         ssl_files = get_ssl_files(provisioning_state)
 
-        parser = configparser.ConfigParser()
-        parser.read(definition.WEBLCM_PYTHON_SERVER_CONF_FILE)
-
-        if parser.getboolean(
+        if ServerConfig().getboolean(
             section="weblcm", option="certificate_provisioning", fallback=False
         ):
             if provisioning_state == ProvisioningState.UNPROVISIONED:
@@ -391,7 +403,7 @@ def weblcm_cherrypy_start():
                 cherrypy.engine.block()
                 return
 
-        if parser.getboolean(
+        if ServerConfig().getboolean(
             section="weblcm", option="enable_client_auth", fallback=False
         ):
             from ssl import CERT_REQUIRED, OPENSSL_VERSION_NUMBER
@@ -403,7 +415,7 @@ def weblcm_cherrypy_start():
                 certificate_chain=ssl_files["ssl_certificate_chain"],
             )
             if provisioning_state == ProvisioningState.FULLY_PROVISIONED:
-                disable_certificate_expiry_verification = parser.getboolean(
+                disable_certificate_expiry_verification = ServerConfig().getboolean(
                     section="weblcm",
                     option="disable_certificate_expiry_verification",
                     fallback=True,
