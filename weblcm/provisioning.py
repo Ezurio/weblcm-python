@@ -238,13 +238,16 @@ class CertificateProvisioning:
                 CONFIG_FILE_TEMP_PATH,
             ]
         else:
-            # Build the args to generate a key and CSR using the default algorithm (rsa:2048)
+            # Build the args to generate a key and CSR using the default algorithm (ECDSA with the
+            # prime256v1 curve
             args = [
                 "openssl",
                 "req",
                 "-nodes",
                 "-newkey",
-                "rsa:2048",
+                "ec",
+                "-pkeyopt",
+                "ec_paramgen_curve:prime256v1",
                 "-keyout",
                 DEVICE_SERVER_KEY_PATH,
                 "-out",
