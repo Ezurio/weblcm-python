@@ -5,6 +5,7 @@ from typing import Any, Optional, Tuple
 import cherrypy
 import subprocess
 from weblcm.utils import DBusManager
+from weblcm.somutil import get_current_side
 from . import definition
 from syslog import syslog, LOG_ERR, LOG_WARNING
 from subprocess import run, TimeoutExpired
@@ -1326,6 +1327,20 @@ class Version(object):
         except Exception:
             return ""
 
+    def get_next_bootside(self) -> str:
+        """
+        Read and return the U-Boot 'bootside' environment variable
+        """
+        try:
+            return (
+                subprocess.check_output("fw_printenv -n bootside", shell=True)
+                .decode("ascii")
+                .strip()
+                .strip('"')
+            )
+        except Exception:
+            return ""
+
     @cherrypy.tools.json_out()
     def GET(self, *args, **kwargs):
         try:
@@ -1369,6 +1384,11 @@ class Version(object):
                         else "n/a"
                     )
                     Version._version["u-boot"] = self.get_u_boot_version()
+                    try:
+                        Version._version["current_bootside"] = get_current_side()
+                    except ValueError:
+                        Version._version["current_bootside"] = "sd"
+            Version._version["next_bootside"] = self.get_next_bootside()
         except Exception as e:
             Version._version = {
                 "SDCERR": definition.WEBLCM_ERRORS["SDCERR_FAIL"],
