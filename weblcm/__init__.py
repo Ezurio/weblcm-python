@@ -139,6 +139,8 @@ class WebApp(object):
             self.certificateProvisioning = CertificateProvisioning()
             self.networkStatus = NetworkStatus()
             self.version = Version()
+            self.poweroff = PowerOff()
+            self.reboot = Reboot()
             return
 
         self.login = LoginManage()
