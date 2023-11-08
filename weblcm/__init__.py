@@ -138,6 +138,7 @@ class WebApp(object):
             self.datetime = DateTimeSetting()
             self.certificateProvisioning = CertificateProvisioning()
             self.networkStatus = NetworkStatus()
+            self.version = Version()
             return
 
         self.login = LoginManage()
