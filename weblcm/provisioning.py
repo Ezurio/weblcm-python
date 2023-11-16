@@ -248,6 +248,8 @@ class CertificateProvisioning:
                 "ec",
                 "-pkeyopt",
                 "ec_paramgen_curve:prime256v1",
+                "-pkeyopt",
+                "ec_param_enc:named_curve",
                 "-keyout",
                 DEVICE_SERVER_KEY_PATH,
                 "-out",
