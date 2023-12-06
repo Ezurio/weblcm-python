@@ -1,3 +1,4 @@
+import re
 from socket import AF_INET, AF_INET6
 from threading import Lock
 import time
@@ -1703,6 +1704,73 @@ class NetworkInterfaceStatistics(object):
             return result
         except Exception as e:
             result["InfoMsg"] = f"Could not read interface statistics - {str(e)}"
+            return result
+
+
+@cherrypy.expose
+class NetworkInterfaceDriverInfo(object):
+    DRIVER_CC_SYSFS_FILE: str = "/sys/class/ieee80211/phy0/device/lrd/cc"
+
+    @cherrypy.tools.json_out()
+    def GET(self, *args, **kwargs):
+        """
+        Retrieve driver info for the requested interface
+        """
+
+        result = {
+            "SDCERR": 1,
+            "InfoMsg": "",
+            "driverInfo": {
+                "adoptedCountryCode": "",
+                "otpCountryCode": "",
+            },
+        }
+
+        try:
+            name = kwargs.get("name", None)
+            if not name:
+                raise FileNotFoundError("No interface name provided")
+
+            if name in ["wlan0", "wlan1"] and os.path.exists(self.DRIVER_CC_SYSFS_FILE):
+                # The country code sysfs file returns the adopted setting when a 0 is written to it
+                # and returns the OTP setting when a 1 is written to it
+                with open(self.DRIVER_CC_SYSFS_FILE, "w") as f:
+                    f.write("0")
+                with open(self.DRIVER_CC_SYSFS_FILE, "r") as f:
+                    result["driverInfo"]["adoptedCountryCode"] = f.read().strip()
+
+                with open(self.DRIVER_CC_SYSFS_FILE, "w") as f:
+                    f.write("1")
+                with open(self.DRIVER_CC_SYSFS_FILE, "r") as f:
+                    result["driverInfo"]["otpCountryCode"] = f.read().strip()
+
+                result["SDCERR"] = 0
+                return result
+
+            driver_info = ""
+            with open(f"/sys/class/net/{name}/device/lrd/info") as f:
+                driver_info = f.read()
+
+            if driver_info:
+                # Find country code info
+                match = re.search(
+                    r".*Country code\s*: '(?P<ADOPTED>.*)'\s*\('(?P<OTP>.*)'\)",
+                    driver_info,
+                )
+                if match:
+                    result["driverInfo"]["adoptedCountryCode"] = str(
+                        match.group("ADOPTED")
+                    )
+                    result["driverInfo"]["otpCountryCode"] = str(match.group("OTP"))
+
+                    result["SDCERR"] = 0
+
+            return result
+        except FileNotFoundError:
+            result["InfoMsg"] = "Invalid interface name"
+            return result
+        except Exception as e:
+            result["InfoMsg"] = f"Could not read interface driver info - {str(e)}"
             return result
 
 

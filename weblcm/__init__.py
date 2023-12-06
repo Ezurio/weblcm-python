@@ -10,6 +10,7 @@ from .network import (
     NetworkInterfaces,
     NetworkInterface,
     NetworkInterfaceStatistics,
+    NetworkInterfaceDriverInfo,
     NetworkConnections,
     NetworkConnection,
     NetworkAccessPoints,
@@ -151,6 +152,7 @@ class WebApp(object):
         self.networkInterfaces = NetworkInterfaces()
         self.networkInterface = NetworkInterface()
         self.networkInterfaceStatistics = NetworkInterfaceStatistics()
+        self.networkInterfaceDriverInfo = NetworkInterfaceDriverInfo()
         self.version = Version()
 
         self.logData = LogData()
@@ -315,6 +317,7 @@ def force_session_checking():
         "networkInterfaces",
         "networkInterface",
         "networkInterfaceStatistics",
+        "networkInterfaceDriverInfo",
         "file",
         "users",
         "firmware",
