@@ -48,6 +48,7 @@ class VspConnection(TcpConnection):
         self.signal_device_prop_changed = None
         self.vsp_write_chrc: Optional[Tuple[dbus.proxies.ProxyObject, Any]] = None
         self.vsp_write_chr_uuid = None
+        self.vsp_write_chr_type: str = ""
         self.server_socket: Optional[socket.socket] = None
         self.server_socket_channel: Optional[GLib.IOChannel] = None
         self.socket_rx_type: str = "JSON"
@@ -225,7 +226,7 @@ class VspConnection(TcpConnection):
             if self.vsp_write_chrc and len(self.vsp_write_chrc):
                 self.vsp_write_chrc[0].WriteValue(
                     data,
-                    {},
+                    {"type": self.vsp_write_chr_type} if self.vsp_write_chr_type else {},
                     reply_handler=self.gatt_vsp_write_val_cb,
                     error_handler=self.gatt_vsp_write_val_error_cb,
                     dbus_interface=GATT_CHRC_IFACE,
@@ -310,6 +311,10 @@ class VspConnection(TcpConnection):
                     raise ValueError
             except ValueError:
                 return "invalid value for vspWriteChrSize param"
+        if "vspWriteChrType" in params:
+            self.vsp_write_chr_type = str(params["vspWriteChrType"])
+            if self.vsp_write_chr_type not in ["", "command", "request", "reliable"]:
+                return "invalid value for vspWriteChrType param"
 
         vsp_service = self.create_vsp_service()
         if not vsp_service:
