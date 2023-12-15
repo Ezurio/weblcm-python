@@ -1,6 +1,7 @@
 """Module to handle provisioning"""
 
 from datetime import datetime
+import os
 from enum import IntEnum
 from subprocess import run
 from syslog import LOG_ERR, syslog
@@ -25,6 +26,8 @@ from weblcm.definition import (
 import openssl_extension
 
 OPENSSL_CERT_DATETIME_FORMAT = "%b %d %H:%M:%S %Y %Z"
+TOUCH_TIMESTAMP_FORMAT = "%Y%m%d%H%M.%S"
+FALLBACK_TIMESTAMP_FILE_PATH = "/etc/fallback_timestamp"
 
 
 class ProvisioningState(IntEnum):
@@ -147,17 +150,18 @@ class CertificateProvisioning:
     @staticmethod
     def time_set_callback():
         """Callback fired when the time is set via REST"""
-        if (
-            CertificateProvisioning.get_provisioning_state()
-            == ProvisioningState.PARTIALLY_PROVISIONED
-        ):
-            # Flag that the system is now fully provisioned
-            CertificateProvisioning.set_provisioning_state(
-                ProvisioningState.FULLY_PROVISIONED
-            )
+        if CertificateProvisioning.provisioning_enabled():
+            if (
+                CertificateProvisioning.get_provisioning_state()
+                == ProvisioningState.PARTIALLY_PROVISIONED
+            ):
+                # Flag that the system is now fully provisioned
+                CertificateProvisioning.set_provisioning_state(
+                    ProvisioningState.FULLY_PROVISIONED
+                )
 
-            # Trigger a restart of WebLCM to ensure the new SSL configuration takes effect
-            Timer(0.1, restart_weblcm).start()
+                # Trigger a restart of WebLCM to ensure the new SSL configuration takes effect
+                Timer(0.1, restart_weblcm).start()
 
     @staticmethod
     def provisioning_enabled() -> bool:
@@ -306,6 +310,68 @@ class CertificateProvisioning:
         CertificateProvisioning.set_provisioning_state(
             ProvisioningState.PARTIALLY_PROVISIONED
         )
+
+    @staticmethod
+    def read_fallback_timestamp() -> Optional[datetime]:
+        """Read the fallback timestamp from the fallback timestamp file"""
+        try:
+            fallback_timestamp_file = Path(FALLBACK_TIMESTAMP_FILE_PATH)
+
+            return (
+                datetime.fromtimestamp(fallback_timestamp_file.stat().st_mtime)
+                if fallback_timestamp_file.exists()
+                else None
+            )
+        except Exception as exception:
+            syslog(LOG_ERR, f"Error reading fallback timestamp - {str(exception)}")
+            return None
+
+    @staticmethod
+    def set_fallback_timestamp(fallback_timestamp: datetime):
+        """Set the fallback timestamp file to the given datetime"""
+        try:
+            fallback_timestamp_file = Path(FALLBACK_TIMESTAMP_FILE_PATH)
+
+            if not fallback_timestamp_file.exists():
+                fallback_timestamp_file.touch()
+
+            # Call os.utime() to update the timestamp on the fallback timestamp file which accepts a
+            # tuple of (access_time, modification_time)
+            os.utime(
+                path=fallback_timestamp_file,
+                times=(
+                    fallback_timestamp_file.stat().st_atime,
+                    fallback_timestamp.timestamp(),
+                ),
+            )
+        except Exception as exception:
+            syslog(LOG_ERR, f"Error setting fallback timestamp: {str(exception)}")
+
+    @staticmethod
+    def on_request_handler():
+        """Middleware hook called before each request when fully provisioned"""
+        try:
+            (
+                client_cert_not_before,
+                _,
+            ) = CertificateProvisioning.get_client_cert_validity_period()
+
+            try:
+                fallback_timestamp = CertificateProvisioning.read_fallback_timestamp()
+            except Exception:
+                fallback_timestamp = None
+
+            if not fallback_timestamp or client_cert_not_before > fallback_timestamp:
+                # The client certificate's validity period starts after the fallback timestamp, so
+                # update it
+                syslog(
+                    "Updating fallback timestamp to "
+                    f"{str(int(client_cert_not_before.timestamp()))}"
+                )
+                CertificateProvisioning.set_fallback_timestamp(client_cert_not_before)
+        except Exception:
+            # Couldn't read the validity period from the client certificate, so just continue
+            pass
 
     @cherrypy.tools.json_out()
     def GET(self):
