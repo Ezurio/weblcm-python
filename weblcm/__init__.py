@@ -381,9 +381,7 @@ def weblcm_cherrypy_start():
         provisioning_state = CertificateProvisioning.get_provisioning_state()
         ssl_files = get_ssl_files(provisioning_state)
 
-        if ServerConfig().getboolean(
-            section="weblcm", option="certificate_provisioning", fallback=False
-        ):
+        if CertificateProvisioning.provisioning_enabled():
             if provisioning_state == ProvisioningState.UNPROVISIONED:
                 # The device has not been provisioned yet, so enter restricted provisioning mode
                 syslog("*** RESTRICTED PROVISIONING MODE ***")
@@ -441,6 +439,10 @@ def weblcm_cherrypy_start():
                         if disable_certificate_expiry_verification
                         else CERT_REQUIRED
                     )
+
+                cherrypy.request.hooks.attach(
+                    "before_handler", CertificateProvisioning.on_request_handler
+                )
                 syslog("SSL client authentication enabled")
             else:
                 syslog("*** PARTIALLY PROVISIONED MODE ***")
