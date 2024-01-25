@@ -1298,6 +1298,9 @@ class NetworkAccessPoints(object):
                             keymgmt = "wpa-psk"
 
                         ssid = ap.get_ssid()
+                        flags = int(ap.get_flags())
+                        wpa_flags = int(ap.get_wpa_flags())
+                        rsn_flags = int(ap.get_rsn_flags())
                         ap_data = {
                             "SSID": ssid.get_data().decode("utf-8")
                             if ssid is not None
@@ -1306,9 +1309,18 @@ class NetworkAccessPoints(object):
                             "Strength": ap.get_strength(),
                             "MaxBitrate": ap.get_max_bitrate(),
                             "Frequency": ap.get_frequency(),
-                            "Flags": int(ap.get_flags()),
-                            "WpaFlags": int(ap.get_wpa_flags()),
-                            "RsnFlags": int(ap.get_rsn_flags()),
+                            "Flags": flags,
+                            "FlagsList": NetworkStatusHelper.gflags_to_list(
+                                getattr(NM, "80211ApFlags"), flags
+                            ),
+                            "WpaFlags": wpa_flags,
+                            "WpaFlagsList": NetworkStatusHelper.gflags_to_list(
+                                getattr(NM, "80211ApSecurityFlags"), wpa_flags
+                            ),
+                            "RsnFlags": rsn_flags,
+                            "RsnFlagsList": NetworkStatusHelper.gflags_to_list(
+                                getattr(NM, "80211ApSecurityFlags"), rsn_flags
+                            ),
                             "LastSeen": int(ap.get_last_seen()),
                             "Security": security_string,
                             "Keymgmt": keymgmt,
