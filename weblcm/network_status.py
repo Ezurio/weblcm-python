@@ -241,6 +241,31 @@ class NetworkStatusHelper(object):
         return dhcp_config.get_options()
 
     @classmethod
+    def gflags_to_list(cls, flags_type, value) -> list[str]:
+        """
+        Convert an NM 80211ApFlags or 80211ApSecurityFlags GFlags value to a list of strings
+        representing the flags that are set.
+
+        Adapted from the NetworkManager Python examples:
+        https://github.com/NetworkManager/NetworkManager/blob/main/examples/python/gi/show-wifi-networks.py
+        """
+        if value == 0:
+            return []
+        list_of_flags = []
+        for n in sorted(dir(flags_type)):
+            if not re.search("^[A-Z0-9_]+$", n):
+                continue
+            flag_value = getattr(flags_type, n)
+            if value & flag_value:
+                value &= ~flag_value
+                list_of_flags.append(n)
+                if value == 0:
+                    break
+        if value:
+            list_of_flags.append("(0x%0x)" % (value,))
+        return list_of_flags
+
+    @classmethod
     def get_ap_properties(cls, dev):
         ap = dev.get_active_access_point()
         if not ap:
@@ -253,9 +278,21 @@ class NetworkStatusHelper(object):
         )
         apProperties["HwAddress"] = ap.get_bssid()
         apProperties["Maxbitrate"] = ap.get_max_bitrate()
-        apProperties["Flags"] = int(ap.get_flags())
-        apProperties["Wpaflags"] = int(ap.get_wpa_flags())
-        apProperties["Rsnflags"] = int(ap.get_rsn_flags())
+        flags = int(ap.get_flags())
+        wpa_flags = int(ap.get_wpa_flags())
+        rsn_flags = int(ap.get_rsn_flags())
+        apProperties["Flags"] = flags
+        apProperties["FlagsList"] = cls.gflags_to_list(
+            getattr(NM, "80211ApFlags"), flags
+        )
+        apProperties["Wpaflags"] = wpa_flags
+        apProperties["WpaFlagsList"] = cls.gflags_to_list(
+            getattr(NM, "80211ApSecurityFlags"), wpa_flags
+        )
+        apProperties["Rsnflags"] = rsn_flags
+        apProperties["RsnFlagsList"] = cls.gflags_to_list(
+            getattr(NM, "80211ApSecurityFlags"), rsn_flags
+        )
         # Use iw dev to get channel/frequency/rssi info for AP mode
         if dev.get_mode() is getattr(NM, "80211Mode").AP:
             apProperties["Strength"] = 100
