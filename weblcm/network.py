@@ -4,6 +4,7 @@ import time
 from typing import Any, Optional, Tuple
 import cherrypy
 import subprocess
+from weblcm.utils import DBusManager
 from . import definition
 from syslog import syslog, LOG_ERR, LOG_WARNING
 from subprocess import run, TimeoutExpired
@@ -11,6 +12,7 @@ from .settings import SystemSettingsManage
 from .network_status import NetworkStatusHelper
 import gi
 import os
+import dbus
 
 gi.require_version("NM", "1.0")
 from gi.repository import GLib, NM, Gio
@@ -1737,13 +1739,29 @@ class NetworkInterfaceStatistics(object):
 class WifiEnable(object):
     _client = NetworkStatusHelper.get_client()
 
+    @staticmethod
+    def get_wireless_enabled_dbus() -> bool:
+        """
+        Get the value of the WirelessEnabled property via D-Bus
+        """
+        try:
+            bus = DBusManager().get_system_bus()
+            proxy = bus.get_object(NM.DBUS_SERVICE, NM.DBUS_PATH)
+            iface = dbus.Interface(proxy, "org.freedesktop.DBus.Properties")
+            return bool(iface.Get(NM.DBUS_INTERFACE, "WirelessEnabled"))
+        except Exception as exception:
+            syslog(
+                LOG_ERR, f"Unable to read WirelessEnabled property: {str(exception)}"
+            )
+            raise exception
+
     @cherrypy.tools.json_out()
     def GET(self):
 
         result = {"SDCERR": definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")}
 
         with NetworkStatusHelper.get_lock():
-            result["wifi_radio_software_enabled"] = self._client.wireless_get_enabled()
+            result["wifi_radio_software_enabled"] = self.get_wireless_enabled_dbus()
             result[
                 "wifi_radio_hardware_enabled"
             ] = self._client.wireless_hardware_get_enabled()
@@ -1777,10 +1795,28 @@ class WifiEnable(object):
 
         with NetworkStatusHelper.get_lock():
             self._client.wireless_set_enabled(enable_test)
+
+        try:
+            count = 0
+            while self.get_wireless_enabled_dbus() != bool(enable_test):
+                if count == 5:
+                    raise Exception(
+                        "Unable to verify wireless "
+                        f"{'enabled' if bool(enable_test) else 'disabled'}"
+                    )
+
+                time.sleep(0.1)
+                count += 1
+        except Exception as exception:
+            result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_FAIL")
+            result["InfoMsg"] = f"Unable to set wireless enable: {str(exception)}"
+            result["wifi_radio_software_enabled"] = self.get_wireless_enabled_dbus()
+
+            return result
+
         result["SDCERR"] = definition.WEBLCM_ERRORS.get("SDCERR_SUCCESS")
         result["InfoMsg"] = "wireless_radio_software_enabled: %s" % (
-            "true" if enable else "false"
+            "true" if bool(enable_test) else "false"
         )
-        with NetworkStatusHelper.get_lock():
-            result["wifi_radio_software_enabled"] = self._client.wireless_get_enabled()
+        result["wifi_radio_software_enabled"] = self.get_wireless_enabled_dbus()
         return result
