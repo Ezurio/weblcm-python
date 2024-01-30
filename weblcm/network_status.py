@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import time
-from typing import Any, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 from urllib.parse import urlparse
 import cherrypy
 import gi
@@ -241,7 +241,7 @@ class NetworkStatusHelper(object):
         return dhcp_config.get_options()
 
     @classmethod
-    def gflags_to_list(cls, flags_type, value) -> list[str]:
+    def gflags_to_list(cls, flags_type, value) -> List[str]:
         """
         Convert an NM 80211ApFlags or 80211ApSecurityFlags GFlags value to a list of strings
         representing the flags that are set.
