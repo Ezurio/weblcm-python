@@ -2,7 +2,6 @@ import os
 from threading import Lock
 
 import cherrypy
-import libconf
 
 from .. import definition
 
@@ -29,8 +28,12 @@ class AWMCfgManage(object):
             return result
 
         with AWMCfgManage._lock:
+            config = {}
             with open(f, "r", encoding="utf-8") as fp:
-                config = libconf.load(fp)
+                for line in fp.readlines():
+                    line_split = line.strip().split("=")
+                    if len(line_split) == 2:
+                        config[line_split[0]] = line_split[1]
             if "scan_attempts" in config:
                 result["geolocation_scanning_enable"] = config["scan_attempts"]
                 result["InfoMsg"] = ""
@@ -77,8 +80,12 @@ class AWMCfgManage(object):
 
         with AWMCfgManage._lock:
             try:
+                config = {}
                 with open(f, "r", encoding="utf-8") as fp:
-                    config = libconf.load(fp)
+                    for line in fp.readlines():
+                        line_split = line.strip().split("=")
+                        if len(line_split) == 2:
+                            config[line_split[0]] = line_split[1]
             except:
                 config = {}
 
@@ -93,7 +100,8 @@ class AWMCfgManage(object):
 
             if need_store:
                 with open(f, "w", encoding="utf-8") as fp:
-                    libconf.dump(config, fp)
+                    for key, value in config.items():
+                        fp.write(f"{key}={value}\n")
 
         result["geolocation_scanning_enable"] = geolocation_scanning_enable
         result["SDCERR"] = definition.WEBLCM_ERRORS["SDCERR_SUCCESS"]
