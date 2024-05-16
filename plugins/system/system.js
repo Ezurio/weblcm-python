@@ -1,5 +1,5 @@
-// Copyright (c) 2020, Laird
-// Contact: support@lairdconnect.com
+// Copyright (c) 2020, Ezurio
+// Contact: support@ezurio.com
 
 function systemAUTORUN(retry) {
   advancedAUTORUN(retry);

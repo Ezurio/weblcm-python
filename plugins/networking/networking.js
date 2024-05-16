@@ -1,5 +1,5 @@
-// Copyright (c) 2018, Laird Connectivity
-// Contact: support@lairdconnect.com
+// Copyright (c) 2018, Ezurio
+// Contact: support@ezurio.com
 
 function networkingAUTORUN(retry){
 

@@ -1,5 +1,5 @@
-// Copyright (c) 2020, Laird Connectivity
-// Contact: support@lairdconnect.com
+// Copyright (c) 2020, Ezurio
+// Contact: support@ezurio.com
 
 function helpAUTORUN(retry){
 

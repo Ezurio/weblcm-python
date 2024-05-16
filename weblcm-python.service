@@ -1,5 +1,5 @@
 [Unit]
-Description=Laird Web Configuration Utility
+Description=Web Configuration Utility
 Requires=dbus.service
 After=dbus.service network.target
 

@@ -1,5 +1,5 @@
-// Copyright (c) 2019, Laird
-// Contact: support@lairdconnect.com
+// Copyright (c) 2019, Ezurio
+// Contact: support@ezurio.com
 
 function loggingAUTORUN(retry){
 

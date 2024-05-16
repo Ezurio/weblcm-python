@@ -1,7 +1,7 @@
 #
 # bt_module_extended.py
 #
-# Bluetooth API for Laird Sentrius IG devices and weblcm
+# Bluetooth API for Sentrius IG devices and weblcm
 #
 
 import logging
