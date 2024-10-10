@@ -1,7 +1,6 @@
 /*
- * (C) Copyright 2022
- *
- * SPDX-License-Identifier:     GPL-2.0-or-later
+ * SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+ * Copyright (C) 2024 Ezurio LLC.
  */
 
 /*

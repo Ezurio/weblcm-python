@@ -1,3 +1,7 @@
+#
+# SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+# Copyright (C) 2024 Ezurio LLC.
+#
 import logging
 import socket
 from syslog import LOG_WARNING, syslog, LOG_INFO, LOG_ERR

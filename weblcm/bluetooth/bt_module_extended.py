@@ -1,4 +1,9 @@
 #
+# SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+# Copyright (C) 2024 Ezurio LLC.
+#
+
+#
 # bt_module_extended.py
 #
 # Bluetooth API for Sentrius IG devices and weblcm

@@ -1,4 +1,8 @@
 #!/bin/sh
+##
+## SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+## Copyright (C) 2024 Ezurio LLC.
+##
 
 typ=${1}
 action=${2}

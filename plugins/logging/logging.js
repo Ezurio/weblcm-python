@@ -1,5 +1,7 @@
-// Copyright (c) 2019, Ezurio
-// Contact: support@ezurio.com
+/*
+ * SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+ * Copyright (C) 2024 Ezurio LLC.
+ */
 
 function loggingAUTORUN(retry){
 

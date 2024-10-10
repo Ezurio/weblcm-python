@@ -1,3 +1,7 @@
+#
+# SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+# Copyright (C) 2024 Ezurio LLC.
+#
 from cherrypy.lib.sessions import RamSession
 from time import clock_gettime, CLOCK_BOOTTIME
 import datetime

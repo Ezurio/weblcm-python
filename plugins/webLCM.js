@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+ * Copyright (C) 2024 Ezurio LLC.
+ */
 var g_defines;
 var g_i18nData;
 var g_curr_user_permission;
