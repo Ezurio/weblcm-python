@@ -1,3 +1,7 @@
+#
+# SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+# Copyright (C) 2024 Ezurio LLC.
+#
 from syslog import LOG_ERR, syslog
 import dbus
 from .utils import DBusManager

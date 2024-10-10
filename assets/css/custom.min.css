@@ -1,3 +1,8 @@
+/*
+SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+Copyright (C) 2024 Ezurio LLC.
+*/
+
 /* Inserting this collapsed row between two flex items will make
 * the flex item that comes after it break to a new row */
 .break-row {

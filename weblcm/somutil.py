@@ -1,3 +1,7 @@
+#
+# SPDX-License-Identifier: LicenseRef-Ezurio-Clause
+# Copyright (C) 2024 Ezurio LLC.
+#
 from pathlib import Path
 
 CMDLINE_BOOTSIDE_A = "ubi.block=0,1"
