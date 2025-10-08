@@ -4,7 +4,7 @@
 #
 import os
 
-WEBLCM_PYTHON_VERSION = "12.206.0.1"
+WEBLCM_PYTHON_VERSION = "12.206.3.1"
 
 # TODO - deal with directories for file retrieval (see FIELDIR_DICT and files.py)
 SYSTEM_CONF_DIR = "/etc"
